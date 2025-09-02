@@ -1,0 +1,61 @@
+databases:
+- cluster_name: db-postgresql-nyc3-90526
+  db_name: linkmanager
+  db_user: doadmin
+  engine: PG
+  name: db-postgresql-nyc3-90526
+  production: true
+  version: "17"
+ingress:
+  rules:
+  - component:
+      name: api
+    match:
+      path:
+        prefix: /
+name: linkmanager-app
+region: nyc
+services:
+- build_command: npm install
+  envs:
+  - key: NODE_ENV
+    scope: RUN_AND_BUILD_TIME
+    value: production
+  - key: PORT
+    scope: RUN_AND_BUILD_TIME
+    value: "3000"
+  - key: JWT_SECRET
+    scope: RUN_AND_BUILD_TIME
+    type: SECRET
+    value: EV[1:LjqYRObHSwBoC3YBDnQlI4rvYUMBbItL:KxPowE+kO4kpAKP9CEas1t45m5wbS7rj9ZJtk+cw5cz6NkmxgjZ65ivo]
+  - key: CORS_ORIGIN
+    scope: RUN_AND_BUILD_TIME
+    value: '*'
+  - key: DATABASE_URL
+    scope: RUN_TIME
+    value: ${db-postgresql-nyc3-90526.DATABASE_URL}
+  - key: DB_HOST
+    scope: RUN_TIME
+    value: db-postgresql-nyc3-90526-do-user-24010108-0.j.db.ondigitalocean.com
+  - key: DB_PORT
+    scope: RUN_TIME
+    value: "25060"
+  - key: DB_NAME
+    scope: RUN_TIME
+    value: linkmanager
+  - key: DB_USER
+    scope: RUN_TIME
+    value: doadmin
+  - key: DB_PASSWORD
+    scope: RUN_TIME
+    type: SECRET
+  github:
+    branch: main
+    deploy_on_push: true
+    repo: maxximseo/link-manager
+  http_port: 3000
+  instance_count: 1
+  instance_size_slug: basic-xxs
+  name: api
+  run_command: node server-simple.js
+  source_dir: backend
