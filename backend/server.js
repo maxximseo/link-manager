@@ -136,40 +136,16 @@ const wordpressLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// CORS configuration with whitelist
-const corsOrigins = process.env.CORS_ORIGINS 
-  ? process.env.CORS_ORIGINS.split(',').map(origin => origin.trim())
-  : ['http://localhost:3000', 'http://localhost:3002', 'http://localhost:3005', 'https://shark-app-9kv6u.ondigitalocean.app'];
-
-// Middleware
+// CORS - Allow all origins (disabled CORS restrictions)
+// This allows WordPress plugins from any domain to connect
 app.use(compression()); // Enable gzip compression
-
-// Configure CORS based on environment settings
-const isWildcardCors = process.env.CORS_ORIGINS === '*';
-const corsOptions = {
-  origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps or Postman)
-    if (!origin) return callback(null, true);
-    
-    // Allow all origins if CORS_ORIGINS is set to '*'
-    if (isWildcardCors) {
-      return callback(null, true);
-    }
-    
-    if (corsOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      logger.warn(`CORS blocked request from origin: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: !isWildcardCors, // Disable credentials when using wildcard
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
-};
-
-app.use(cors(corsOptions));
+app.use(cors({
+  origin: true,  // Allow any origin
+  credentials: true,
+  methods: '*',
+  allowedHeaders: '*',
+  optionsSuccessStatus: 200
+}));
 app.use(express.json());
 
 // Trust proxy for production (needed for rate limiting behind reverse proxy)
