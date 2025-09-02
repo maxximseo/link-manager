@@ -11,8 +11,20 @@ const rateLimit = require('express-rate-limit');
 const crypto = require('crypto');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
+// Debug environment variables
+console.log('Environment check:', {
+  DATABASE_URL: process.env.DATABASE_URL ? 'provided' : 'missing',
+  DB_HOST: process.env.DB_HOST || 'missing',
+  DB_PORT: process.env.DB_PORT || 'missing',
+  DB_NAME: process.env.DB_NAME || 'missing',
+  DB_USER: process.env.DB_USER || 'missing',
+  DB_PASSWORD: process.env.DB_PASSWORD ? 'provided' : 'missing',
+  NODE_ENV: process.env.NODE_ENV || 'development'
+});
+
 // Parse DATABASE_URL for DigitalOcean and other platforms
-if (process.env.DATABASE_URL && !process.env.DB_HOST) {
+// Always parse if DATABASE_URL exists, overriding individual vars
+if (process.env.DATABASE_URL) {
   try {
     const url = new URL(process.env.DATABASE_URL);
     process.env.DB_HOST = url.hostname;
@@ -20,7 +32,13 @@ if (process.env.DATABASE_URL && !process.env.DB_HOST) {
     process.env.DB_NAME = url.pathname.slice(1);
     process.env.DB_USER = url.username;
     process.env.DB_PASSWORD = decodeURIComponent(url.password);
-    console.log('Parsed DATABASE_URL for connection parameters');
+    console.log('Successfully parsed DATABASE_URL for connection parameters');
+    console.log('Parsed values:', {
+      host: process.env.DB_HOST,
+      port: process.env.DB_PORT,
+      database: process.env.DB_NAME,
+      user: process.env.DB_USER
+    });
   } catch (error) {
     console.error('Failed to parse DATABASE_URL:', error);
   }
@@ -174,15 +192,23 @@ if (!process.env.JWT_SECRET) {
   }
 }
 
-// Check required environment variables
+// Check required environment variables after parsing DATABASE_URL
 const requiredEnvVars = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
 const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
-// Only exit if we don't have DATABASE_URL and are missing individual vars
-if (missingEnvVars.length > 0 && !process.env.DATABASE_URL) {
+// Only exit if we're missing vars after attempting to parse DATABASE_URL
+if (missingEnvVars.length > 0) {
   logger.error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
   logger.error('Please set these variables in your environment or provide DATABASE_URL');
-  if (process.env.NODE_ENV === 'production') {
+  logger.error('Current environment:', {
+    DATABASE_URL: process.env.DATABASE_URL ? 'set' : 'not set',
+    DB_HOST: process.env.DB_HOST || 'not set',
+    NODE_ENV: process.env.NODE_ENV
+  });
+  
+  // Only exit in production if we really have no database config
+  if (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL && missingEnvVars.length === 4) {
+    logger.error('FATAL: No database configuration found in production. Exiting.');
     process.exit(1);
   }
 }

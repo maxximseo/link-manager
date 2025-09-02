@@ -32,23 +32,8 @@ services:
     scope: RUN_AND_BUILD_TIME
     value: '*'
   - key: DATABASE_URL
-    scope: RUN_TIME
+    scope: RUN_AND_BUILD_TIME
     value: ${db-postgresql-nyc3-90526.DATABASE_URL}
-  - key: DB_HOST
-    scope: RUN_TIME
-    value: db-postgresql-nyc3-90526-do-user-24010108-0.j.db.ondigitalocean.com
-  - key: DB_PORT
-    scope: RUN_TIME
-    value: "25060"
-  - key: DB_NAME
-    scope: RUN_TIME
-    value: linkmanager
-  - key: DB_USER
-    scope: RUN_TIME
-    value: doadmin
-  - key: DB_PASSWORD
-    scope: RUN_TIME
-    type: SECRET
   github:
     branch: main
     deploy_on_push: true
