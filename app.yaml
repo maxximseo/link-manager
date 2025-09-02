@@ -16,7 +16,7 @@ ingress:
 name: linkmanager-app
 region: nyc
 services:
-- build_command: npm install
+- build_command: cd backend && npm install
   envs:
   - key: NODE_ENV
     scope: RUN_AND_BUILD_TIME
@@ -57,5 +57,5 @@ services:
   instance_count: 1
   instance_size_slug: basic-xxs
   name: api
-  run_command: npm start
+  run_command: cd backend && node server-simple.js
   source_dir: /

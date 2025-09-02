@@ -11,6 +11,21 @@ const rateLimit = require('express-rate-limit');
 const crypto = require('crypto');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
+// Parse DATABASE_URL for DigitalOcean and other platforms
+if (process.env.DATABASE_URL && !process.env.DB_HOST) {
+  try {
+    const url = new URL(process.env.DATABASE_URL);
+    process.env.DB_HOST = url.hostname;
+    process.env.DB_PORT = url.port || 5432;
+    process.env.DB_NAME = url.pathname.slice(1);
+    process.env.DB_USER = url.username;
+    process.env.DB_PASSWORD = decodeURIComponent(url.password);
+    console.log('Parsed DATABASE_URL for connection parameters');
+  } catch (error) {
+    console.error('Failed to parse DATABASE_URL:', error);
+  }
+}
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -163,10 +178,13 @@ if (!process.env.JWT_SECRET) {
 const requiredEnvVars = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
 const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
-if (missingEnvVars.length > 0 && process.env.NODE_ENV === 'production') {
+// Only exit if we don't have DATABASE_URL and are missing individual vars
+if (missingEnvVars.length > 0 && !process.env.DATABASE_URL) {
   logger.error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
-  logger.error('Please set these variables in your environment or .env file');
-  process.exit(1);
+  logger.error('Please set these variables in your environment or provide DATABASE_URL');
+  if (process.env.NODE_ENV === 'production') {
+    process.exit(1);
+  }
 }
 
 // PostgreSQL connection with increased pool

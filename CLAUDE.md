@@ -90,12 +90,13 @@ LEFT JOIN project_stats ps ON p.id = ps.project_id
 ### DigitalOcean App Platform
 - **Trigger:** Push to `main` branch
 - **Deploy Time:** 2-5 minutes
-- **Config:** `.do/app.yaml`
-- **Build:** `npm start` (runs server-simple.js)
-- **Environment:** Set in DO dashboard, not in code
+- **Config:** `app.yaml` in root
+- **Build:** `cd backend && npm install`
+- **Run:** `cd backend && node server-simple.js`
+- **Environment:** Uses DATABASE_URL (auto-parsed)
 
 ### Production Checklist
-1. Test locally with `NODE_ENV=development PORT=3002 node server-simple.js`
+1. Test locally: `cd backend && PORT=3002 node server-simple.js`
 2. Commit changed files (server-simple.js and/or index.html)
 3. Push to main
 4. Monitor: https://cloud.digitalocean.com/apps
