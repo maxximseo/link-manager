@@ -143,13 +143,16 @@ const corsOrigins = process.env.CORS_ORIGINS
 
 // Middleware
 app.use(compression()); // Enable gzip compression
-app.use(cors({
+
+// Configure CORS based on environment settings
+const isWildcardCors = process.env.CORS_ORIGINS === '*';
+const corsOptions = {
   origin: function(origin, callback) {
     // Allow requests with no origin (like mobile apps or Postman)
     if (!origin) return callback(null, true);
     
     // Allow all origins if CORS_ORIGINS is set to '*'
-    if (process.env.CORS_ORIGINS === '*') {
+    if (isWildcardCors) {
       return callback(null, true);
     }
     
@@ -160,10 +163,13 @@ app.use(cors({
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true,
+  credentials: !isWildcardCors, // Disable credentials when using wildcard
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Trust proxy for production (needed for rate limiting behind reverse proxy)
