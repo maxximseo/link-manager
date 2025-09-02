@@ -2481,10 +2481,17 @@
                 // Log what we're sending
                 const requestData = {
                     project_id: parseInt(projectId),
-                    site_id: parseInt(siteId),
-                    link_ids: selectedLinks,
-                    article_ids: selectedArticles
+                    site_id: parseInt(siteId)
                 };
+                
+                // Add only non-empty arrays
+                if (selectedLinks.length > 0) {
+                    requestData.link_ids = selectedLinks;
+                }
+                if (selectedArticles.length > 0) {
+                    requestData.article_ids = selectedArticles;
+                }
+                
                 console.log('Sending placement request:', requestData);
                 
                 const response = await fetch(`${API_URL}/api/placements`, {
