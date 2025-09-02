@@ -1626,13 +1626,20 @@ app.post('/api/wordpress/publish-article', authMiddleware, wordpressLimiter, asy
       });
     }
     
-    // Update placement_content with WordPress post ID if available
-    if (wpResult.post_id && placement_id) {
-      await pool.query(
-        'UPDATE placement_content SET wordpress_post_id = $1 WHERE placement_id = $2 AND article_id = $3',
-        [wpResult.post_id, placement_id, article_id]
-      );
+    // Update placement_content with WordPress post ID using site_id + article_id
+    // Commented out: wordpress_post_id column may not exist in production yet
+    /*
+    if (wpResult.post_id) {
+      await pool.query(`
+        UPDATE placement_content pc
+        SET wordpress_post_id = $1
+        FROM placements p
+        WHERE pc.placement_id = p.id
+          AND p.site_id = $2
+          AND pc.article_id = $3
+      `, [wpResult.post_id, site_id, article_id]);
     }
+    */
     
     res.json({
       success: true,
