@@ -626,13 +626,8 @@ app.get('/api/projects/:id', authMiddleware, async (req, res) => {
         ORDER BY pl.position
       ),
       articles_data AS (
-        SELECT pa.*, 
-          pc.placement_id IS NOT NULL as is_placed,
-          s.site_name as placed_on_site
+        SELECT pa.*
         FROM project_articles pa
-        LEFT JOIN placement_content pc ON pa.id = pc.article_id
-        LEFT JOIN placements p ON pc.placement_id = p.id
-        LEFT JOIN sites s ON p.site_id = s.id
         WHERE pa.project_id = $1
         ORDER BY pa.created_at DESC
       )
