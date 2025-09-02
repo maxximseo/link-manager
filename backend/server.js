@@ -1746,11 +1746,11 @@ app.post('/api/wordpress/verify', async (req, res) => {
     let query, params;
     if (site_url && api_key) {
       // Old way - with site_url and api_key
-      query = 'SELECT id, site_name, site_url FROM sites WHERE site_url = $1 AND api_key = $2';
+      query = 'SELECT * FROM sites WHERE site_url = $1 AND api_key = $2';
       params = [site_url, api_key];
     } else if (api_key) {
       // New way - only by api_key (for WordPress plugin Test Connection)
-      query = 'SELECT id, site_name, site_url FROM sites WHERE api_key = $1';
+      query = 'SELECT * FROM sites WHERE api_key = $1';
       params = [api_key];
     } else {
       return res.status(400).json({ 
