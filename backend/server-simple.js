@@ -193,23 +193,28 @@ if (!process.env.JWT_SECRET) {
 }
 
 // Check required environment variables after parsing DATABASE_URL
-const requiredEnvVars = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
-const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+// If DATABASE_URL is provided and parsed successfully, we don't need individual vars
+const hasValidDatabaseUrl = process.env.DATABASE_URL && process.env.DB_HOST && process.env.DB_NAME;
 
-// Only exit if we're missing vars after attempting to parse DATABASE_URL
-if (missingEnvVars.length > 0) {
-  logger.error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
-  logger.error('Please set these variables in your environment or provide DATABASE_URL');
-  logger.error('Current environment:', {
-    DATABASE_URL: process.env.DATABASE_URL ? 'set' : 'not set',
-    DB_HOST: process.env.DB_HOST || 'not set',
-    NODE_ENV: process.env.NODE_ENV
-  });
+if (!hasValidDatabaseUrl) {
+  const requiredEnvVars = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
+  const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
   
-  // Only exit in production if we really have no database config
-  if (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL && missingEnvVars.length === 4) {
-    logger.error('FATAL: No database configuration found in production. Exiting.');
-    process.exit(1);
+  if (missingEnvVars.length > 0) {
+    logger.error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
+    logger.error('Please set these variables in your environment or provide DATABASE_URL');
+    logger.error('Current environment:', {
+      DATABASE_URL: process.env.DATABASE_URL ? 'set' : 'not set',
+      DB_HOST: process.env.DB_HOST || 'not set',
+      DB_NAME: process.env.DB_NAME || 'not set',
+      NODE_ENV: process.env.NODE_ENV
+    });
+    
+    // Only exit in production if we really have no database config
+    if (process.env.NODE_ENV === 'production') {
+      logger.error('FATAL: No database configuration found in production. Exiting.');
+      process.exit(1);
+    }
   }
 }
 
