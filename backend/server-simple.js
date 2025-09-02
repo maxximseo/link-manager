@@ -219,18 +219,28 @@ if (!hasValidDatabaseUrl) {
 }
 
 // PostgreSQL connection with increased pool
+// Handle SSL configuration for DigitalOcean
+let sslConfig = false;
+if (process.env.NODE_ENV === 'production' || process.env.DB_HOST?.includes('ondigitalocean.com')) {
+  // For DigitalOcean, use less strict SSL validation
+  sslConfig = { rejectUnauthorized: false };
+  logger.info('Using DigitalOcean SSL configuration');
+} else if (fs.existsSync(path.join(__dirname, 'ca-certificate.crt'))) {
+  // Use certificate if available
+  sslConfig = {
+    rejectUnauthorized: true,
+    ca: fs.readFileSync(path.join(__dirname, 'ca-certificate.crt')).toString()
+  };
+  logger.info('Using SSL with CA certificate');
+}
+
 const dbConfig = {
   host: process.env.DB_HOST,
   port: process.env.DB_PORT || 5432,
   database: process.env.DB_NAME,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
-  ssl: {
-    rejectUnauthorized: true,
-    ca: fs.existsSync(path.join(__dirname, 'ca-certificate.crt')) 
-      ? fs.readFileSync(path.join(__dirname, 'ca-certificate.crt')).toString()
-      : undefined
-  },
+  ssl: sslConfig,
   max: 25, // Increased from 10
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 30000
