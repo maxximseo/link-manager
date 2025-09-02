@@ -57,5 +57,5 @@ services:
   instance_count: 1
   instance_size_slug: basic-xxs
   name: api
-  run_command: node backend/server-simple.js
+  run_command: npm start
   source_dir: /

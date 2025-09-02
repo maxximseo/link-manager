@@ -9,7 +9,7 @@ const compression = require('compression');
 const winston = require('winston');
 const rateLimit = require('express-rate-limit');
 const crypto = require('crypto');
-require('dotenv').config();
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const app = express();
 const PORT = process.env.PORT || 3000;
