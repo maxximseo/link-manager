@@ -1,0 +1,33 @@
+spec:
+  name: wp-link-manager
+  region: nyc
+  services:
+  - name: web
+    environment_slug: node-js
+    github:
+      branch: main
+      deploy_on_push: true
+    http_port: 8080
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    routes:
+    - path: /
+    build_command: cd backend && npm install
+    run_command: cd backend && npm start
+    source_dir: /
+    envs:
+    - key: NODE_ENV
+      value: production
+    - key: PORT
+      value: "8080"
+    - key: JWT_SECRET
+      type: SECRET
+    - key: DATABASE_URL
+      type: SECRET
+    health_check:
+      http_path: /api/health
+      initial_delay_seconds: 10
+      period_seconds: 30
+      timeout_seconds: 5
+      success_threshold: 1
+      failure_threshold: 3
