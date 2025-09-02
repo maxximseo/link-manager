@@ -1365,8 +1365,8 @@ app.post('/api/placements', authMiddleware, async (req, res) => {
     
     // Create placement
     const placementResult = await client.query(
-      'INSERT INTO placements (site_id, project_id, user_id, status) VALUES ($1, $2, $3, $4) RETURNING *',
-      [site_id, project_id, req.user.id, 'active']
+      'INSERT INTO placements (site_id, project_id, type, status) VALUES ($1, $2, $3, $4) RETURNING *',
+      [site_id, project_id, 'manual', 'active']
     );
     const placement = placementResult.rows[0];
     
