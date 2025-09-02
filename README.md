@@ -45,8 +45,7 @@ npm start    # Production mode
 ```
 link-manager/
 ├── backend/
-│   ├── server-simple.js       # Main server (~1700 lines)
-│   ├── production-start.js    # Production copy (must be identical)
+│   ├── server.js              # Main server (~1700 lines)
 │   ├── build/
 │   │   └── index.html        # Complete UI (~2800 lines)
 │   ├── ca-certificate.crt     # PostgreSQL SSL certificate
@@ -71,12 +70,8 @@ link-manager/
 
 ## 🛠️ Development
 
-### Important Files Synchronization
-After editing server code, **ALWAYS** sync:
-```bash
-# Backend changes  
-cp backend/server-simple.js backend/production-start.js
-```
+### Development Notes
+The main server file `backend/server.js` contains all backend logic in a single file following LEVER optimization principles.
 
 ### Database Schema
 - 7 PostgreSQL tables

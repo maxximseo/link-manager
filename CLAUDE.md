@@ -12,7 +12,7 @@ WordPress Link Manager - A link and content placement system for WordPress sites
 
 ```bash
 # Local Development
-cd backend && PORT=3002 node server-simple.js    # Start server locally
+cd backend && PORT=3002 node server.js           # Start server locally
 npm run dev                                       # With nodemon auto-restart
 
 # Test Authentication  
@@ -37,7 +37,7 @@ zip -r link-manager-widget.zip link-manager-widget.php assets/ README.md
 ├── package.json              # CRITICAL: Never delete from root
 ├── app.yaml                  # DigitalOcean deployment config  
 └── backend/
-    ├── server-simple.js      # Main server (~1700 lines) - SINGLE FILE
+    ├── server.js             # Main server (~1700 lines) - SINGLE FILE
     ├── build/
     │   └── index.html        # Complete UI (~2800 lines) - SINGLE FILE
     ├── ca-certificate.crt    # SSL certificate for PostgreSQL
@@ -115,7 +115,7 @@ LEFT JOIN project_stats ps ON p.id = ps.project_id
 **R**educe complexity
 
 ### Rules
-1. **Never create new files** - Extend server-simple.js or index.html
+1. **Never create new files** - Extend server.js or index.html
 2. **Target >50% code reduction** when refactoring
 3. **Use existing database tables** - Add columns, don't create tables
 4. **Reuse existing API endpoints** - Add fields, don't create endpoints
@@ -145,7 +145,7 @@ LEFT JOIN project_stats ps ON p.id = ps.project_id
 ### Local Testing with Production Database
 1. Add your IP to DigitalOcean database trusted sources
 2. Use .env file with production credentials
-3. Run with `PORT=3002 node backend/server-simple.js`
+3. Run with `PORT=3002 node backend/server.js`
 
 ### Database Connection Debugging
 ```javascript

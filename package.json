@@ -2,11 +2,11 @@
   "name": "wp-link-manager-backend",
   "version": "1.0.0",
   "description": "WordPress Link Manager - SEO-focused link and content placement system",
-  "main": "backend/server-simple.js",
+  "main": "backend/server.js",
   "scripts": {
-    "start": "node backend/server-simple.js",
-    "dev": "nodemon backend/server-simple.js",
-    "production": "NODE_ENV=production node backend/server-simple.js"
+    "start": "node backend/server.js",
+    "dev": "nodemon backend/server.js",
+    "production": "NODE_ENV=production node backend/server.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
