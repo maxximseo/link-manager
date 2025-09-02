@@ -1,6 +1,6 @@
 databases:
 - cluster_name: db-postgresql-nyc3-90526
-  db_name: linkmanager
+  db_name: defaultdb
   db_user: doadmin
   engine: PG
   name: db-postgresql-nyc3-90526
