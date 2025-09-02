@@ -148,6 +148,11 @@ app.use(cors({
     // Allow requests with no origin (like mobile apps or Postman)
     if (!origin) return callback(null, true);
     
+    // Allow all origins if CORS_ORIGINS is set to '*'
+    if (process.env.CORS_ORIGINS === '*') {
+      return callback(null, true);
+    }
+    
     if (corsOrigins.includes(origin)) {
       callback(null, true);
     } else {
