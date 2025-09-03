@@ -1255,24 +1255,35 @@
                     <!-- Articles List -->
                     <div id="articlesList">
                         ${project.articles?.length ? project.articles.map(article => `
-                            <div class="card" style="margin: 10px 0; padding: 15px;">
+                            <div class="card" style="margin: 10px 0; padding: 15px; ${article.is_published ? 'background: #f0fff4; border: 1px solid #48bb78;' : ''}">
                                 <div style="display: flex; justify-content: space-between; align-items: start;">
                                     <div style="flex: 1;">
                                         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
                                             <h5 style="margin: 0;">${article.title}</h5>
-                                            ${article.is_placed ? `
-                                                <span style="padding: 2px 8px; border-radius: 12px; font-size: 11px; background: #48bb78; color: white;">
-                                                    ✓ Placed on: ${article.placed_on_site}
+                                            ${article.is_published ? `
+                                                <span style="padding: 4px 10px; border-radius: 12px; font-size: 12px; background: #48bb78; color: white; display: inline-flex; align-items: center; gap: 4px;">
+                                                    🔒 Published on: ${article.published_on_site || 'WordPress'}
                                                 </span>
                                             ` : ''}
                                         </div>
+                                        ${article.is_published ? `
+                                            <div style="background: #e6fffa; border-left: 3px solid #38b2ac; padding: 6px 10px; margin: 8px 0; font-size: 12px; color: #234e52;">
+                                                <strong>Protected:</strong> This article cannot be deleted or republished
+                                            </div>
+                                        ` : ''}
                                         <p style="color: #4a5568; margin-bottom: 8px;">
                                             ${article.content?.substring(0, 200)}${article.content?.length > 200 ? '...' : ''}
                                         </p>
                                     </div>
                                     <div style="display: flex; gap: 5px;">
                                         <button class="btn-small" onclick="editArticle(${project.id}, ${article.id})" style="background: #4299e1;">Edit</button>
-                                        <button class="btn-small btn-delete" onclick="deleteArticleFromProject(${project.id}, ${article.id})">Delete</button>
+                                        ${article.is_published ? `
+                                            <button class="btn-small" disabled style="background: #cbd5e0; cursor: not-allowed; opacity: 0.6;">
+                                                Cannot Delete
+                                            </button>
+                                        ` : `
+                                            <button class="btn-small btn-delete" onclick="deleteArticleFromProject(${project.id}, ${article.id})">Delete</button>
+                                        `}
                                     </div>
                                 </div>
                             </div>
