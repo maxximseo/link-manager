@@ -764,10 +764,24 @@
         </div>
     </div>
     
+    <!-- Quill.js JavaScript -->
+    <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+    
     <script>
         // Global variables
         let token = localStorage.getItem('token');
-        let user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
+        let user = null;
+        try {
+            const storedUser = localStorage.getItem('user');
+            if (storedUser) {
+                user = JSON.parse(storedUser);
+            }
+        } catch (e) {
+            console.error('Failed to parse stored user:', e);
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            token = null;
+        }
         let API_URL = '';  // Use relative URLs
         
         // Pagination state
@@ -2489,107 +2503,192 @@
             }
             
             try {
-                // Log what we're sending
-                const requestData = {
-                    project_id: parseInt(projectId),
-                    site_id: parseInt(siteId)
-                };
+                // Check if site is WordPress (has API key) and articles are selected
+                const selectedSite = window.allSites ? window.allSites.find(s => s.id === parseInt(siteId)) : null;
+                const isWordPressSite = selectedSite && selectedSite.api_key;
                 
-                // Add only non-empty arrays
-                if (selectedLinks.length > 0) {
-                    requestData.link_ids = selectedLinks;
-                }
-                if (selectedArticles.length > 0) {
-                    requestData.article_ids = selectedArticles;
-                }
-                
-                console.log('Sending placement request:', requestData);
-                
-                const response = await fetch(`${API_URL}/api/placements`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify(requestData)
-                });
-                
-                // Log the response status
-                console.log('Placement response status:', response.status);
-                
-                // Check if response is JSON
-                const contentType = response.headers.get("content-type");
-                if (!contentType || !contentType.includes("application/json")) {
-                    const text = await response.text();
-                    console.error('Non-JSON response:', text);
-                    throw new Error('Server returned non-JSON response. Check console for details.');
-                }
-                
-                const data = await response.json();
-                console.log('Placement response data:', data);
-                
-                if (response.ok) {
-                    // Always publish articles as WordPress posts
-                    if (selectedArticles.length > 0) {
-                        let successCount = 0;
-                        let failCount = 0;
-                        
-                        for (const articleId of selectedArticles) {
-                            try {
-                                const publishResponse = await fetch(`${API_URL}/api/wordpress/publish-article`, {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'Authorization': `Bearer ${token}`
-                                    },
-                                    body: JSON.stringify({
-                                        site_id: parseInt(siteId),
-                                        article_id: articleId
-                                    })
-                                });
-                                
-                                const publishResult = await publishResponse.json();
-                                if (publishResponse.ok) {
-                                    console.log(`Article ${articleId} published as WordPress post:`, publishResult);
-                                    successCount++;
-                                } else {
-                                    console.error(`Failed to publish article ${articleId}:`, publishResult.error);
-                                    failCount++;
-                                }
-                            } catch (error) {
-                                console.error(`Error publishing article ${articleId}:`, error);
+                if (isWordPressSite && selectedArticles.length > 0) {
+                    // For WordPress sites with articles, publish directly to WordPress
+                    let successCount = 0;
+                    let failCount = 0;
+                    
+                    for (const articleId of selectedArticles) {
+                        try {
+                            const publishResponse = await fetch(`${API_URL}/api/wordpress/publish-article`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}`
+                                },
+                                body: JSON.stringify({
+                                    site_id: parseInt(siteId),
+                                    article_id: articleId
+                                })
+                            });
+                            
+                            const publishResult = await publishResponse.json();
+                            if (publishResponse.ok) {
+                                console.log(`Article ${articleId} published to WordPress:`, publishResult);
+                                successCount++;
+                            } else {
+                                console.error(`Failed to publish article ${articleId}:`, publishResult.error);
                                 failCount++;
                             }
+                        } catch (error) {
+                            console.error(`Error publishing article ${articleId}:`, error);
+                            failCount++;
                         }
-                        
-                        if (successCount > 0 && failCount === 0) {
-                            alert(`✅ Placement created and ${successCount} article(s) published as WordPress posts!`);
-                        } else if (successCount > 0 && failCount > 0) {
-                            alert(`⚠️ Placement created. ${successCount} article(s) published, ${failCount} failed. Check console for details.`);
-                        } else if (failCount > 0) {
-                            alert(`❌ Placement created but failed to publish articles. Check console for details.`);
-                        }
-                    } else {
-                        alert('Placement created successfully!');
                     }
+                    
+                    // Handle links separately if there are any
+                    let linksPlacementSuccess = false;
+                    let linksPlacedCount = 0;
+                    
+                    if (selectedLinks.length > 0) {
+                        const placementResponse = await fetch(`${API_URL}/api/placements`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({
+                                project_id: parseInt(projectId),
+                                site_id: parseInt(siteId),
+                                link_ids: selectedLinks
+                            })
+                        });
+                        
+                        if (placementResponse.ok) {
+                            const placementData = await placementResponse.json();
+                            linksPlacementSuccess = true;
+                            linksPlacedCount = placementData.links_placed || selectedLinks.length;
+                            console.log(`Links placement successful:`, placementData);
+                        } else {
+                            const error = await placementResponse.json();
+                            console.error('Failed to place links:', error);
+                        }
+                    }
+                    
+                    // Show combined results
+                    let message = '';
+                    
+                    // Add article results if there were articles to publish
+                    if (selectedArticles.length > 0) {
+                        if (successCount > 0) {
+                            message += `✅ ${successCount} article(s) published to WordPress`;
+                        }
+                        if (failCount > 0) {
+                            if (message) message += '\n';
+                            message += `⚠️ ${failCount} article(s) failed to publish`;
+                        }
+                    }
+                    
+                    // Add link results if there were links to place
+                    if (selectedLinks.length > 0) {
+                        if (message) message += '\n';
+                        if (linksPlacementSuccess) {
+                            message += `🔗 ${linksPlacedCount} link(s) placed successfully`;
+                        } else {
+                            message += `❌ Failed to place links`;
+                        }
+                    }
+                    
+                    // Show message or error
+                    if (message) {
+                        alert(message);
+                    } else if (selectedArticles.length > 0) {
+                        alert('❌ Failed to publish articles to WordPress. Check console for details.');
+                    }
+                    
+                    // Close modal and refresh after WordPress publishing
                     closePlacementModal();
                     
                     // Refresh the current project view if we're viewing one
                     const modalContent = document.getElementById('modalProjectContent');
                     if (modalContent && modalContent.style.display !== 'none') {
-                        const projectId = document.getElementById('placementProjectId').value;
-                        if (projectId) {
-                            viewProject(projectId);
+                        const projectIdToRefresh = document.getElementById('placementProject').value;
+                        if (projectIdToRefresh) {
+                            viewProject(projectIdToRefresh);
                         }
                     }
                     
                     // Also refresh the projects list to update placement counts
                     loadProjects();
+                    return; // Exit after WordPress publishing
                 } else {
-                    // Show specific error from server
-                    const errorMessage = data.error || data.message || 'Failed to create placement';
-                    console.error('Placement creation failed:', errorMessage);
-                    alert(`Failed to create placement: ${errorMessage}\n\nPossible reasons:\n- Link/article quota exceeded\n- Site not found or not active\n- Already placed this content\n- Authentication expired\n\nCheck browser console for details.`);
+                    // For non-WordPress sites or only links, use regular placement
+                    const requestData = {
+                        project_id: parseInt(projectId),
+                        site_id: parseInt(siteId)
+                    };
+                    
+                    // Add only non-empty arrays
+                    if (selectedLinks.length > 0) {
+                        requestData.link_ids = selectedLinks;
+                    }
+                    if (selectedArticles.length > 0) {
+                        requestData.article_ids = selectedArticles;
+                    }
+                    
+                    console.log('Sending placement request:', requestData);
+                    
+                    const response = await fetch(`${API_URL}/api/placements`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify(requestData)
+                    });
+                    
+                    // Log the response status
+                    console.log('Placement response status:', response.status);
+                    
+                    // Check if response is JSON
+                    const contentType = response.headers.get("content-type");
+                    if (!contentType || !contentType.includes("application/json")) {
+                        const text = await response.text();
+                        console.error('Non-JSON response:', text);
+                        throw new Error('Server returned non-JSON response. Check console for details.');
+                    }
+                    
+                    const data = await response.json();
+                    console.log('Placement response data:', data);
+                    
+                    if (response.ok) {
+                        // Show success message with details
+                        const linksPlaced = data.links_placed || 0;
+                        const articlesPlaced = data.articles_placed || 0;
+                        
+                        let message = '✅ Placement created successfully!\n';
+                        if (linksPlaced > 0) {
+                            message += `Links placed: ${linksPlaced}\n`;
+                        }
+                        if (articlesPlaced > 0) {
+                            message += `Articles placed: ${articlesPlaced}`;
+                        }
+                        
+                        alert(message);
+                    } else {
+                        const errorMessage = data.error || data.message || 'Failed to create placement';
+                        alert(`Failed to create placement: ${errorMessage}`);
+                        return;
+                    }
+                    
+                    // Close modal and refresh after regular placement
+                    closePlacementModal();
+                    
+                    // Refresh the current project view if we're viewing one
+                    const modalContent = document.getElementById('modalProjectContent');
+                    if (modalContent && modalContent.style.display !== 'none') {
+                        const projectIdToRefresh = document.getElementById('placementProject').value;
+                        if (projectIdToRefresh) {
+                            viewProject(projectIdToRefresh);
+                        }
+                    }
+                    
+                    // Also refresh the projects list to update placement counts
+                    loadProjects();
                 }
             } catch (error) {
                 console.error('Error creating placement:', error);
@@ -2958,7 +3057,5 @@
             }
         }); // End of DOMContentLoaded
     </script>
-    <!-- Quill.js JavaScript -->
-    <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 </body>
 </html>

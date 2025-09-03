@@ -1474,9 +1474,9 @@ app.get('/api/placements', authMiddleware, async (req, res) => {
         LEFT JOIN placement_content pc ON p.id = pc.placement_id
         LEFT JOIN project_links pl ON pc.link_id = pl.id
         LEFT JOIN project_articles pa ON pc.article_id = pa.id
-        WHERE p.user_id = $1 ${project_id ? 'AND p.project_id = $2' : ''}
+        WHERE pr.user_id = $1 ${project_id ? 'AND p.project_id = $2' : ''}
         GROUP BY p.id, s.site_name, s.site_url, pr.name
-        ORDER BY p.placement_date DESC
+        ORDER BY p.placed_at DESC
       )
       SELECT * FROM placement_data
     `;
@@ -1497,8 +1497,8 @@ app.get('/api/placements', authMiddleware, async (req, res) => {
     if (usePagination) {
       // Get total count
       const countQuery = project_id 
-        ? 'SELECT COUNT(*) FROM placements WHERE user_id = $1 AND project_id = $2'
-        : 'SELECT COUNT(*) FROM placements WHERE user_id = $1';
+        ? 'SELECT COUNT(*) FROM placements p JOIN projects pr ON p.project_id = pr.id WHERE pr.user_id = $1 AND p.project_id = $2'
+        : 'SELECT COUNT(*) FROM placements p JOIN projects pr ON p.project_id = pr.id WHERE pr.user_id = $1';
       const countValues = project_id ? [req.user.id, project_id] : [req.user.id];
       const countResult = await pool.query(countQuery, countValues);
       const total = parseInt(countResult.rows[0].count);
@@ -1532,7 +1532,7 @@ app.delete('/api/placements/:id', authMiddleware, async (req, res) => {
     
     // Get placement info before deletion
     const placementResult = await client.query(
-      'SELECT * FROM placements WHERE id = $1 AND user_id = $2',
+      'SELECT p.* FROM placements p JOIN projects pr ON p.project_id = pr.id WHERE p.id = $1 AND pr.user_id = $2',
       [req.params.id, req.user.id]
     );
     
@@ -1675,6 +1675,62 @@ app.post('/api/wordpress/publish-article', authMiddleware, wordpressLimiter, asy
     }
     */
     
+    // Create a placement record after successful WordPress publishing
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      
+      // Get project_id from the article
+      const projectResult = await client.query(
+        'SELECT project_id FROM project_articles WHERE id = $1',
+        [article_id]
+      );
+      
+      if (projectResult.rows.length > 0) {
+        const project_id = projectResult.rows[0].project_id;
+        
+        // Create placement
+        const placementResult = await client.query(
+          'INSERT INTO placements (site_id, project_id, type, status) VALUES ($1, $2, $3, $4) RETURNING id',
+          [site_id, project_id, 'wordpress', 'active']
+        );
+        
+        // Add to placement_content
+        await client.query(
+          'INSERT INTO placement_content (placement_id, article_id) VALUES ($1, $2)',
+          [placementResult.rows[0].id, article_id]
+        );
+        
+        // Update site statistics
+        await client.query(`
+          WITH counts AS (
+            SELECT 
+              COUNT(DISTINCT pc.link_id) as link_count,
+              COUNT(DISTINCT pc.article_id) as article_count
+            FROM placements p
+            JOIN placement_content pc ON p.id = pc.placement_id
+            WHERE p.site_id = $1
+          )
+          UPDATE sites
+          SET 
+            used_links = counts.link_count,
+            used_articles = counts.article_count
+          FROM counts
+          WHERE id = $1
+        `, [site_id]);
+        
+        await client.query('COMMIT');
+      } else {
+        await client.query('ROLLBACK');
+      }
+    } catch (err) {
+      await client.query('ROLLBACK');
+      logger.error('Failed to create placement record:', err);
+      // Don't fail the request - WordPress publish was successful
+    } finally {
+      client.release();
+    }
+    
     res.json({
       success: true,
       post_id: wpResult.post_id,
@@ -1702,12 +1758,12 @@ app.get('/api/wordpress/get-content/:api_key', async (req, res) => {
         SELECT 
           p.id,
           p.project_id,
-          p.placement_date,
+          p.placed_at as placement_date,
           pr.name as project_name
         FROM placements p
         JOIN projects pr ON p.project_id = pr.id
         WHERE p.site_id = (SELECT id FROM site_info)
-        ORDER BY p.placement_date DESC
+        ORDER BY p.placed_at DESC
         LIMIT 5
       ),
       placement_content_data AS (
