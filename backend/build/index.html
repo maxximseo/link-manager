@@ -1059,11 +1059,13 @@
                                 site_url: p.site_url,
                                 links_count: 0,
                                 articles_count: 0,
-                                placement_id: p.id
+                                placement_ids: []  // Store all placement IDs for this site
                             };
                         }
-                        placementsBySite[p.site_id].links_count = p.links_count || 0;
-                        placementsBySite[p.site_id].articles_count = p.articles_count || 0;
+                        // Sum the counts instead of overwriting
+                        placementsBySite[p.site_id].links_count += parseInt(p.links_count || 0);
+                        placementsBySite[p.site_id].articles_count += parseInt(p.articles_count || 0);
+                        placementsBySite[p.site_id].placement_ids.push(p.id);
                     });
                     
                     window.placementsBySite = placementsBySite;
@@ -1356,8 +1358,11 @@
                             <strong>${site.site_url}</strong>
                             <br>
                             <small style="color: #2d3748;">Links: ${site.links_count} | Articles: ${site.articles_count}</small>
+                            ${site.placement_ids && site.placement_ids.length > 1 ? 
+                                `<br><small style="color: #718096;">(${site.placement_ids.length} placements)</small>` : ''
+                            }
                         </div>
-                        <button class="btn-small btn-delete" onclick="deletePlacement(${site.placement_id}); closeModal();">Remove</button>
+                        <button class="btn-small btn-delete" onclick="deleteMultiplePlacements([${site.placement_ids ? site.placement_ids.join(',') : site.placement_id}]); closeModal();">Remove</button>
                     </div>
                 </div>
             `).join('');
@@ -1399,16 +1404,34 @@
                 
                 const placements = await response.json();
                 
-                // Extract unique site URLs where placements were made
-                const siteUrls = [...new Set(placements.map(p => p.site_url))];
+                // Collect ALL placement URLs (not unique - one per placement)
+                const allPlacementUrls = [];
                 
-                if (siteUrls.length === 0) {
+                placements.forEach(p => {
+                    // For each link placement, add the site URL
+                    if (p.links && p.links.length > 0) {
+                        p.links.forEach(link => {
+                            allPlacementUrls.push(p.site_url);
+                        });
+                    }
+                    
+                    // For each article placement, add the FULL article URL (site + slug)
+                    if (p.articles && p.articles.length > 0) {
+                        p.articles.forEach(article => {
+                            // Create full article URL
+                            const articleUrl = p.site_url.replace(/\/$/, '') + '/' + article.slug;
+                            allPlacementUrls.push(articleUrl);
+                        });
+                    }
+                });
+                
+                if (allPlacementUrls.length === 0) {
                     alert('No placements found for this project');
                     return;
                 }
                 
-                // Format content: one URL per line
-                const content = siteUrls.join('\n');
+                // Format content: one URL per line (WITHOUT removing duplicates)
+                const content = allPlacementUrls.join('\n');
                 
                 // Get project name for filename
                 const projectName = window.currentProject?.name || 'project';
@@ -1424,7 +1447,7 @@
                 document.body.removeChild(a);
                 window.URL.revokeObjectURL(url);
                 
-                console.log(`Exported ${siteUrls.length} placement URLs`);
+                console.log(`Exported ${allPlacementUrls.length} placement URLs`);
             } catch (error) {
                 console.error('Error exporting project:', error);
                 alert('Failed to export project. Please try again.');
@@ -2725,6 +2748,58 @@
             } catch (error) {
                 console.error('Error deleting placement:', error);
                 alert(`Error deleting placement: ${error.message}\n\nPlease refresh the page and try again.`);
+            }
+        }
+        
+        // Delete multiple placements for a site
+        async function deleteMultiplePlacements(placementIds) {
+            const count = placementIds.length;
+            const confirmMsg = count > 1 
+                ? `Are you sure you want to delete all ${count} placements for this site?`
+                : 'Are you sure you want to delete this placement?';
+                
+            if (!confirm(confirmMsg)) return;
+            
+            let successCount = 0;
+            let totalLinks = 0;
+            let totalArticles = 0;
+            
+            for (const id of placementIds) {
+                try {
+                    const response = await fetch(`${API_URL}/api/placements/${id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        successCount++;
+                        if (data.placement) {
+                            totalLinks += data.placement.links_deleted || 0;
+                            totalArticles += data.placement.articles_deleted || 0;
+                        }
+                    }
+                } catch (error) {
+                    console.error(`Error deleting placement ${id}:`, error);
+                }
+            }
+            
+            if (successCount > 0) {
+                const message = count > 1
+                    ? `Deleted ${successCount} of ${count} placements\nLinks removed: ${totalLinks}\nArticles removed: ${totalArticles}`
+                    : `Placement deleted successfully!\nLinks removed: ${totalLinks}\nArticles removed: ${totalArticles}`;
+                alert(message);
+                
+                // Refresh the project view
+                const projectId = document.getElementById('placementProject')?.value;
+                if (projectId) {
+                    viewProject(projectId);
+                }
+                loadProjects();
+            } else {
+                alert('Failed to delete placements. Please try again.');
             }
         }
         
