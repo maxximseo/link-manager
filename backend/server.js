@@ -975,6 +975,18 @@ app.delete('/api/projects/:projectId/articles/:articleId', authMiddleware, async
     if (projectCheck.rows.length === 0) {
       return res.status(404).json({ error: 'Project not found' });
     }
+    
+    // Check if article is published anywhere - if yes, block deletion
+    const placementCheck = await pool.query(
+      'SELECT COUNT(*) as count FROM placement_content WHERE article_id = $1',
+      [req.params.articleId]
+    );
+    
+    if (parseInt(placementCheck.rows[0].count) > 0) {
+      return res.status(400).json({ 
+        error: 'Cannot delete article that has been published. Published articles are protected from deletion.'
+      });
+    }
 
     const result = await pool.query(
       'DELETE FROM project_articles WHERE id = $1 AND project_id = $2 RETURNING *',
@@ -1585,6 +1597,23 @@ app.post('/api/wordpress/publish-article', authMiddleware, wordpressLimiter, asy
     
     const article = articleResult.rows[0];
     const site = siteResult.rows[0];
+    
+    // Check if article is already published anywhere
+    const existingPublishment = await pool.query(`
+      SELECT s.site_name, p.placed_at
+      FROM placement_content pc
+      JOIN placements p ON pc.placement_id = p.id
+      JOIN sites s ON p.site_id = s.id
+      WHERE pc.article_id = $1
+      LIMIT 1
+    `, [article_id]);
+    
+    if (existingPublishment.rows.length > 0) {
+      const existing = existingPublishment.rows[0];
+      return res.status(400).json({ 
+        error: `Article already published on ${existing.site_name}. Each article can only be published once.`
+      });
+    }
     
     // Prepare WordPress API call
     const fetch = require('node-fetch');
