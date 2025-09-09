@@ -533,6 +533,12 @@
             background: white;
             cursor: pointer;
         }
+        
+        /* Spinner animation */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -676,7 +682,7 @@
     <div id="placementModal" class="modal" onclick="if(event.target === this) closePlacementModal()">
         <div class="modal-content" style="max-width: 800px;">
             <div class="modal-header">
-                <h3>Create New Link Placement</h3>
+                <h3 id="placementModalTitle">Create New Link Placement</h3>
                 <button class="close-btn" onclick="closePlacementModal()">&times;</button>
             </div>
             <div id="placementModalContent">
@@ -2290,7 +2296,16 @@
                             </select>
                         </div>
                         
+                        <!-- Batch Mode Toggle -->
                         <div class="form-group">
+                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                <input type="checkbox" id="batchModeToggle" onchange="toggleBatchMode()" style="margin: 0;">
+                                <span>Batch Mode (5+ sites for async processing)</span>
+                            </label>
+                        </div>
+                        
+                        <!-- Single Site Selection -->
+                        <div id="singleSiteSection" class="form-group">
                             <label>Select Site</label>
                             ${sitesArray.length > 20 ? `
                                 <input type="text" id="siteSearch" placeholder="Search sites..." onkeyup="filterSites()" style="width: 100%; margin-bottom: 10px;">
@@ -2308,13 +2323,50 @@
                             ` : ''}
                         </div>
                         
+                        <!-- Batch Site Selection -->
+                        <div id="batchSiteSection" class="form-group" style="display: none;">
+                            <label>Select Multiple Sites (minimum 5 required for batch processing)</label>
+                            <div style="border: 1px solid #d1d5db; border-radius: 5px; padding: 10px; max-height: 300px; overflow-y: auto; background: #f9fafb;">
+                                <div style="margin-bottom: 10px;">
+                                    <button type="button" onclick="selectAllSites()" class="btn-small">Select All</button>
+                                    <button type="button" onclick="deselectAllSites()" class="btn-small" style="background: #6b7280;">Deselect All</button>
+                                    <span id="selectedSiteCount" style="margin-left: 10px; font-weight: bold; color: #059669;">0 sites selected</span>
+                                </div>
+                                <div id="batchSiteList">
+                                    ${sitesArray.map(site => \`
+                                        <label style="display: block; padding: 5px; cursor: pointer; border-radius: 3px;" class="site-checkbox-label" onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='transparent'">
+                                            <input type="checkbox" name="batchSites" value="\${site.id}" onchange="updateSelectedSiteCount()" style="margin-right: 8px;">
+                                            <span>\${site.site_url}</span>
+                                            <small style="color: #6b7280; margin-left: 10px;">Links: \${site.used_links || 0}/\${site.max_links || 10}, Articles: \${site.used_articles || 0}/\${site.max_articles || 5}</small>
+                                        </label>
+                                    \`).join('')}
+                                </div>
+                            </div>
+                            <div id="batchWarning" style="color: #dc2626; font-size: 14px; margin-top: 5px; display: none;">
+                                ⚠️ Select at least 5 sites for batch processing. Redis Queue will handle the operation asynchronously.
+                            </div>
+                        </div>
+                        
                         <div id="projectContentSelection" style="display: none;">
                             <h4>Select Content to Place</h4>
                             <div id="availableLinks"></div>
                             <div id="availableArticles" style="margin-top: 20px;"></div>
                         </div>
                         
-                        <button onclick="createPlacement()" class="btn" style="width: auto; margin-top: 20px;">Create Placement</button>
+                        <div id="placementActions" style="margin-top: 20px;">
+                            <button onclick="createPlacement()" class="btn" id="createPlacementBtn">Create Placement</button>
+                            <div id="batchProgress" style="display: none; margin-top: 15px; padding: 15px; background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 5px;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                    <div class="spinner" style="width: 20px; height: 20px; border: 2px solid #e5e7eb; border-top: 2px solid #0ea5e9; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                                    <span style="font-weight: bold;">Processing batch placement...</span>
+                                </div>
+                                <div id="batchProgressBar" style="width: 100%; background: #e5e7eb; border-radius: 10px; height: 8px; overflow: hidden;">
+                                    <div id="batchProgressFill" style="height: 100%; background: #0ea5e9; width: 0%; transition: width 0.3s;"></div>
+                                </div>
+                                <div id="batchStatus" style="font-size: 14px; color: #374151; margin-top: 5px;">Initializing...</div>
+                                <button type="button" onclick="cancelBatchJob()" class="btn-small" style="background: #dc2626; margin-top: 10px;">Cancel Job</button>
+                            </div>
+                        </div>
                     </div>
                 `;
                 
@@ -2393,6 +2445,60 @@
                 nextBtn.disabled = window.currentSitePage >= totalPages;
             }
         }
+        
+        // Batch Mode Functions
+        function toggleBatchMode() {
+            const batchMode = document.getElementById('batchModeToggle').checked;
+            const singleSection = document.getElementById('singleSiteSection');
+            const batchSection = document.getElementById('batchSiteSection');
+            const modalTitle = document.getElementById('placementModalTitle');
+            const createBtn = document.getElementById('createPlacementBtn');
+            
+            if (batchMode) {
+                singleSection.style.display = 'none';
+                batchSection.style.display = 'block';
+                modalTitle.textContent = 'Create Batch Link Placement';
+                createBtn.textContent = 'Create Batch Placement';
+                updateSelectedSiteCount();
+            } else {
+                singleSection.style.display = 'block';
+                batchSection.style.display = 'none';
+                modalTitle.textContent = 'Create New Link Placement';
+                createBtn.textContent = 'Create Placement';
+            }
+        }
+        
+        function updateSelectedSiteCount() {
+            const checkboxes = document.querySelectorAll('input[name="batchSites"]:checked');
+            const count = checkboxes.length;
+            const countSpan = document.getElementById('selectedSiteCount');
+            const warning = document.getElementById('batchWarning');
+            
+            countSpan.textContent = `${count} sites selected`;
+            countSpan.style.color = count >= 5 ? '#059669' : '#dc2626';
+            
+            if (count > 0 && count < 5) {
+                warning.style.display = 'block';
+            } else {
+                warning.style.display = 'none';
+            }
+        }
+        
+        function selectAllSites() {
+            const checkboxes = document.querySelectorAll('input[name="batchSites"]');
+            checkboxes.forEach(cb => cb.checked = true);
+            updateSelectedSiteCount();
+        }
+        
+        function deselectAllSites() {
+            const checkboxes = document.querySelectorAll('input[name="batchSites"]');
+            checkboxes.forEach(cb => cb.checked = false);
+            updateSelectedSiteCount();
+        }
+        
+        // Job monitoring variables
+        let currentJobId = null;
+        let progressInterval = null;
         
         // Load project content for placement
         async function loadProjectContent() {
@@ -2510,11 +2616,31 @@
         // Create placement
         async function createPlacement() {
             const projectId = document.getElementById('placementProject').value;
-            const siteId = document.getElementById('placementSite').value;
+            const batchMode = document.getElementById('batchModeToggle').checked;
             
-            if (!projectId || !siteId) {
-                alert('Please select both a project and a site');
+            if (!projectId) {
+                alert('Please select a project');
                 return;
+            }
+            
+            let siteIds = [];
+            
+            if (batchMode) {
+                // Batch mode - get selected sites
+                const selectedSites = Array.from(document.querySelectorAll('input[name="batchSites"]:checked')).map(cb => parseInt(cb.value));
+                if (selectedSites.length < 5) {
+                    alert('Please select at least 5 sites for batch processing');
+                    return;
+                }
+                siteIds = selectedSites;
+            } else {
+                // Single mode - get single site
+                const siteId = document.getElementById('placementSite').value;
+                if (!siteId) {
+                    alert('Please select a site');
+                    return;
+                }
+                siteIds = [parseInt(siteId)];
             }
             
             const selectedLinks = Array.from(document.querySelectorAll('input[name="selectedLinks"]:checked:not(:disabled)')).map(cb => parseInt(cb.value));
@@ -2526,9 +2652,24 @@
             }
             
             try {
-                // Check if site is WordPress (has API key) and articles are selected
-                const selectedSite = window.allSites ? window.allSites.find(s => s.id === parseInt(siteId)) : null;
-                const isWordPressSite = selectedSite && selectedSite.api_key;
+                if (batchMode) {
+                    // Batch mode - use batch API endpoint
+                    await createBatchPlacement(projectId, siteIds, selectedLinks, selectedArticles);
+                } else {
+                    // Single mode - existing logic
+                    await createSinglePlacement(projectId, siteIds[0], selectedLinks, selectedArticles);
+                }
+            } catch (error) {
+                console.error('Error creating placement:', error);
+                alert('Error creating placement: ' + error.message);
+            }
+        }
+        
+        // Single placement logic (existing)
+        async function createSinglePlacement(projectId, siteId, selectedLinks, selectedArticles) {
+            // Check if site is WordPress (has API key) and articles are selected
+            const selectedSite = window.allSites ? window.allSites.find(s => s.id === parseInt(siteId)) : null;
+            const isWordPressSite = selectedSite && selectedSite.api_key;
                 
                 if (isWordPressSite && selectedArticles.length > 0) {
                     // For WordPress sites with articles, publish directly to WordPress
@@ -2716,6 +2857,132 @@
             } catch (error) {
                 console.error('Error creating placement:', error);
                 alert(`Error creating placement: ${error.message}\n\nPlease check:\n1. Your authentication is valid (try refreshing and logging in again)\n2. The site exists and is active\n3. You haven't exceeded placement limits\n4. Browser console (F12) for technical details`);
+            }
+        }
+        
+        // Batch placement logic
+        async function createBatchPlacement(projectId, siteIds, selectedLinks, selectedArticles) {
+            // Show progress UI
+            document.getElementById('batchProgress').style.display = 'block';
+            document.getElementById('createPlacementBtn').disabled = true;
+            document.getElementById('batchStatus').textContent = 'Sending batch request...';
+            
+            try {
+                const response = await fetch(`${API_URL}/api/placements/batch/create`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        project_id: parseInt(projectId),
+                        site_ids: siteIds,
+                        link_ids: selectedLinks,
+                        article_ids: selectedArticles
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Batch job started successfully
+                    const { jobId, queueName, priority, details } = data;
+                    currentJobId = jobId;
+                    
+                    document.getElementById('batchStatus').textContent = `Batch job started (ID: ${jobId}) - Processing ${details.siteCount} sites...`;
+                    
+                    // Start monitoring the job
+                    await monitorBatchJob(queueName, jobId);
+                } else {
+                    throw new Error(data.error || 'Failed to start batch operation');
+                }
+            } catch (error) {
+                console.error('Batch placement error:', error);
+                document.getElementById('batchStatus').textContent = `Error: ${error.message}`;
+                document.getElementById('createPlacementBtn').disabled = false;
+                throw error;
+            }
+        }
+        
+        // Monitor batch job progress
+        async function monitorBatchJob(queueName, jobId) {
+            progressInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(`${API_URL}/api/queue/jobs/${queueName}/${jobId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    
+                    const jobData = await response.json();
+                    
+                    if (response.ok) {
+                        const { status, progress, data: jobResults } = jobData;
+                        
+                        // Update progress bar
+                        const progressPercent = progress || 0;
+                        document.getElementById('batchProgressFill').style.width = `${progressPercent}%`;
+                        
+                        // Update status
+                        let statusText = `Status: ${status}`;
+                        if (progressPercent > 0) {
+                            statusText += ` (${progressPercent}% complete)`;
+                        }
+                        document.getElementById('batchStatus').textContent = statusText;
+                        
+                        // Check if job is complete
+                        if (status === 'completed') {
+                            clearInterval(progressInterval);
+                            progressInterval = null;
+                            
+                            // Show results
+                            const results = jobResults || {};
+                            document.getElementById('batchStatus').innerHTML = `
+                                ✅ <strong>Batch placement completed!</strong><br>
+                                Sites processed: ${results.processed || 0}<br>
+                                Successful: ${results.successful || 0}<br>
+                                Failed: ${results.failed || 0}
+                            `;
+                            
+                            setTimeout(() => {
+                                closePlacementModal();
+                                loadProjects(); // Refresh projects list
+                            }, 3000);
+                            
+                        } else if (status === 'failed') {
+                            clearInterval(progressInterval);
+                            progressInterval = null;
+                            document.getElementById('batchStatus').textContent = `❌ Job failed: ${jobResults?.error || 'Unknown error'}`;
+                            document.getElementById('createPlacementBtn').disabled = false;
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error monitoring job:', error);
+                    clearInterval(progressInterval);
+                    progressInterval = null;
+                    document.getElementById('batchStatus').textContent = `Error monitoring job: ${error.message}`;
+                    document.getElementById('createPlacementBtn').disabled = false;
+                }
+            }, 2000); // Check every 2 seconds
+        }
+        
+        // Cancel batch job
+        async function cancelBatchJob() {
+            if (!currentJobId || !progressInterval) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/api/queue/jobs/placement/${currentJobId}/cancel`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (response.ok) {
+                    clearInterval(progressInterval);
+                    progressInterval = null;
+                    currentJobId = null;
+                    document.getElementById('batchStatus').textContent = 'Job cancelled';
+                    document.getElementById('createPlacementBtn').disabled = false;
+                }
+            } catch (error) {
+                console.error('Error cancelling job:', error);
             }
         }
         
