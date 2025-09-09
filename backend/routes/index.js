@@ -9,26 +9,34 @@ const logger = require('../config/logger');
 // Import legacy server for fallback
 const legacyRoutes = require('./legacy');
 
-// Import queue routes (with graceful degradation)
+// Import queue routes (lazy loading for proper initialization timing)
 let queueRoutes;
 try {
-  const { isQueueAvailable } = require('../workers');
-  if (isQueueAvailable()) {
-    queueRoutes = require('./queue.routes');
-  } else {
-    logger.warn('Queue services not available for routes');
-  }
+  queueRoutes = require('./queue.routes');
+  logger.info('Queue routes loaded successfully');
 } catch (error) {
-  logger.warn('Queue routes not available - queue service disabled');
+  logger.warn('Queue routes not available - queue service disabled', { error: error.message });
 }
 
 // Health check
 router.get('/health', (req, res) => {
+  let queueStatus = false;
+  
+  // Check if queue routes are loaded and workers are available
+  if (queueRoutes) {
+    try {
+      const { isQueueAvailable } = require('../workers');
+      queueStatus = isQueueAvailable();
+    } catch (error) {
+      // Queue workers not available
+    }
+  }
+  
   res.json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
     architecture: 'modular',
-    queue: !!queueRoutes
+    queue: queueStatus
   });
 });
 
@@ -37,15 +45,20 @@ if (queueRoutes) {
   router.use('/queue', queueRoutes);
 }
 
-// Debug routes for troubleshooting (remove in production)
+// Debug routes for troubleshooting  
 if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_DEBUG === 'true') {
   try {
     const debugRoutes = require('./debug.routes');
     router.use('/debug', debugRoutes);
-    logger.info('Debug routes enabled');
+    logger.info('Debug routes enabled', { 
+      nodeEnv: process.env.NODE_ENV, 
+      debugEnabled: process.env.ENABLE_DEBUG 
+    });
   } catch (error) {
-    logger.warn('Debug routes not available');
+    logger.warn('Debug routes not available', { error: error.message });
   }
+} else {
+  logger.info('Debug routes disabled for production - set ENABLE_DEBUG=true to enable');
 }
 
 // Fallback to legacy routes for all other endpoints

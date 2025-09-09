@@ -7,12 +7,15 @@ const router = express.Router();
 const { asyncHandler } = require('../middleware/errorHandler');
 const logger = require('../config/logger');
 
-// Import queue service
+// Import queue service and workers
 let queueService;
+let isQueueAvailable;
 try {
   queueService = require('../config/queue');
+  const { isQueueAvailable: checkQueueAvailable } = require('../workers');
+  isQueueAvailable = checkQueueAvailable;
 } catch (error) {
-  logger.error('Queue service not available for routes');
+  logger.error('Queue service not available for routes', { error: error.message });
 }
 
 // Queue health check
@@ -20,7 +23,14 @@ router.get('/health', asyncHandler(async (req, res) => {
   if (!queueService) {
     return res.status(503).json({
       healthy: false,
-      error: 'Queue service not available'
+      error: 'Queue service not available - Redis/Valkey not configured'
+    });
+  }
+  
+  if (isQueueAvailable && !isQueueAvailable()) {
+    return res.status(503).json({
+      healthy: false,
+      error: 'Queue service not yet initialized - workers starting up'
     });
   }
 
