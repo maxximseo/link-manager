@@ -23,7 +23,7 @@ if (!process.env.JWT_SECRET) {
 // Rate limiting (copied from server.js)
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 requests per windowMs
+  max: 50, // Temporary increase from 5 to 50 for login issues
   message: 'Too many login attempts, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
