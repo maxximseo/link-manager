@@ -18,10 +18,21 @@ router.get('/redis-test', async (req, res) => {
       username: process.env.REDIS_USER || undefined,
       password: process.env.REDIS_PASSWORD || undefined,
       db: process.env.REDIS_DB || 0,
-      connectTimeout: 10000,
-      commandTimeout: 5000,
+      connectTimeout: 30000, // Increased from 10000
+      commandTimeout: 15000, // Increased from 5000
       lazyConnect: true,
-      maxRetriesPerRequest: 1
+      maxRetriesPerRequest: 10, // Increased from 1
+      retryDelayOnFailover: 100,
+      enableReadyCheck: false,
+      
+      // TLS/SSL configuration for DigitalOcean Valkey
+      tls: process.env.REDIS_HOST && process.env.REDIS_HOST.includes('digitalocean.com') ? {
+        rejectUnauthorized: false
+      } : undefined,
+      
+      // Connection pooling
+      family: 4,
+      keepAlive: true
     };
     
     logger.info('Testing Redis connection', { 

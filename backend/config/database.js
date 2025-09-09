@@ -18,13 +18,20 @@ if (process.env.DATABASE_URL) {
   }
 }
 
-// SSL configuration
-const sslConfig = process.env.NODE_ENV === 'production' ? {
-  rejectUnauthorized: false,
-  ca: fs.existsSync(path.join(__dirname, '../ca-certificate.crt')) 
-    ? fs.readFileSync(path.join(__dirname, '../ca-certificate.crt')).toString()
-    : undefined
-} : false;
+// SSL configuration - Handle SSL for DigitalOcean and production
+let sslConfig = false;
+if (process.env.NODE_ENV === 'production' || process.env.DB_HOST?.includes('ondigitalocean.com')) {
+  // For DigitalOcean, use less strict SSL validation
+  sslConfig = { rejectUnauthorized: false };
+  logger.info('Using DigitalOcean SSL configuration');
+} else if (fs.existsSync(path.join(__dirname, '../ca-certificate.crt'))) {
+  // Use certificate if available
+  sslConfig = {
+    rejectUnauthorized: true,
+    ca: fs.readFileSync(path.join(__dirname, '../ca-certificate.crt')).toString()
+  };
+  logger.info('Using SSL with CA certificate');
+}
 
 // Database configuration
 const dbConfig = {
@@ -39,6 +46,8 @@ const dbConfig = {
   connectionTimeoutMillis: 10000
 };
 
+logger.info(`Connecting to database: ${dbConfig.database} on port: ${dbConfig.port}`);
+
 // Create connection pool
 const pool = new Pool(dbConfig);
 
@@ -46,6 +55,15 @@ const pool = new Pool(dbConfig);
 if (sslConfig && sslConfig.ca) {
   logger.info('SSL certificate loaded for DigitalOcean database connection');
 }
+
+// Monitor pool events
+pool.on('error', (err) => {
+  logger.error('Unexpected error on idle client', err);
+});
+
+pool.on('connect', () => {
+  logger.debug('New client connected to database');
+});
 
 // Database initialization
 async function initDatabase() {

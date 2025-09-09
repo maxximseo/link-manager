@@ -3,9 +3,23 @@
  * Gracefully degrades to legacy functionality when Redis/Valkey unavailable
  */
 
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+
 const app = require('./app');
 const logger = require('./config/logger');
 const { initDatabase, query } = require('./config/database');
+
+// Debug environment variables
+logger.info('Environment check:', {
+  DATABASE_URL: process.env.DATABASE_URL ? 'provided' : 'missing',
+  DB_HOST: process.env.DB_HOST || 'missing',
+  DB_PORT: process.env.DB_PORT || 'missing',
+  DB_NAME: process.env.DB_NAME || 'missing',
+  DB_USER: process.env.DB_USER || 'missing',
+  DB_PASSWORD: process.env.DB_PASSWORD ? 'provided' : 'missing',
+  NODE_ENV: process.env.NODE_ENV || 'development'
+});
 
 // Queue workers - graceful degradation if not available
 let workerManager;

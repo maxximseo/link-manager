@@ -11,7 +11,7 @@ const redisConfig = {
   db: process.env.REDIS_DB || 0,
   retryDelayOnFailover: 100,
   enableReadyCheck: false,
-  maxRetriesPerRequest: 3,
+  maxRetriesPerRequest: 10, // Increased from 3 for better reliability
   lazyConnect: true,
   
   // TLS/SSL configuration for DigitalOcean Valkey - simplified for compatibility
@@ -23,14 +23,14 @@ const redisConfig = {
   family: 4,
   keepAlive: true,
   
-  // Timeouts
-  connectTimeout: 10000,
-  commandTimeout: 5000,
+  // Timeouts - increased for better reliability
+  connectTimeout: 30000, // Increased from 10000
+  commandTimeout: 15000, // Increased from 5000
   
   // Retry configuration
   retryDelayOnClusterDown: 300,
   retryDelayOnFailover: 100,
-  maxRetriesPerRequest: 3
+  maxRetriesPerRequest: 10 // Consistent with main config
 };
 
 // Queue configurations
@@ -79,17 +79,36 @@ function initializeRedis() {
       logger.error('❌ Redis/Valkey client error', { 
         error: error.message,
         code: error.code,
+        stack: error.stack,
         host: redisConfig.host,
-        port: redisConfig.port
+        port: redisConfig.port,
+        timestamp: new Date().toISOString()
       });
     });
     
     redisClient.on('close', () => {
-      logger.warn('⚠️ Redis/Valkey client disconnected');
+      logger.warn('⚠️ Redis/Valkey client disconnected', {
+        timestamp: new Date().toISOString()
+      });
     });
     
-    redisClient.on('reconnecting', () => {
-      logger.info('🔄 Redis/Valkey client reconnecting...');
+    redisClient.on('reconnecting', (delay) => {
+      logger.info('🔄 Redis/Valkey client reconnecting...', { 
+        delay_ms: delay,
+        timestamp: new Date().toISOString()
+      });
+    });
+    
+    redisClient.on('end', () => {
+      logger.warn('🔌 Redis/Valkey client connection ended', {
+        timestamp: new Date().toISOString()
+      });
+    });
+    
+    redisClient.on('wait', () => {
+      logger.debug('⏳ Redis/Valkey client waiting for connection', {
+        timestamp: new Date().toISOString()
+      });
     });
     
     // Test connection immediately
