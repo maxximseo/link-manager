@@ -14,18 +14,9 @@ const redisConfig = {
   maxRetriesPerRequest: 3,
   lazyConnect: true,
   
-  // TLS/SSL configuration for DigitalOcean Valkey
+  // TLS/SSL configuration for DigitalOcean Valkey - simplified for compatibility
   tls: process.env.REDIS_HOST && process.env.REDIS_HOST.includes('digitalocean.com') ? {
-    servername: process.env.REDIS_HOST, // SNI support
-    rejectUnauthorized: true, // Validate certificates
-    secureProtocol: 'TLSv1_2_method', // Force TLS 1.2
-    ciphers: [
-      'ECDHE-RSA-AES128-GCM-SHA256',
-      'ECDHE-RSA-AES256-GCM-SHA384',
-      'ECDHE-RSA-AES128-SHA256',
-      'ECDHE-RSA-AES256-SHA384'
-    ].join(':'),
-    honorCipherOrder: true
+    rejectUnauthorized: false // Accept all certificates for DigitalOcean compatibility
   } : undefined,
   
   // Connection pooling
