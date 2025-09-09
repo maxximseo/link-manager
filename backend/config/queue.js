@@ -52,23 +52,62 @@ let queues = {};
 
 function initializeRedis() {
   try {
+    logger.info('Initializing Redis/Valkey connection', {
+      host: redisConfig.host,
+      port: redisConfig.port,
+      db: redisConfig.db,
+      hasPassword: !!redisConfig.password
+    });
+    
     redisClient = new Redis(redisConfig);
     
     redisClient.on('connect', () => {
-      logger.info('Redis/Valkey client connected');
+      logger.info('✅ Redis/Valkey client connected successfully');
+    });
+    
+    redisClient.on('ready', () => {
+      logger.info('✅ Redis/Valkey client ready for commands');
     });
     
     redisClient.on('error', (error) => {
-      logger.error('Redis/Valkey client error', { error: error.message });
+      logger.error('❌ Redis/Valkey client error', { 
+        error: error.message,
+        code: error.code,
+        host: redisConfig.host,
+        port: redisConfig.port
+      });
     });
     
     redisClient.on('close', () => {
-      logger.warn('Redis/Valkey client disconnected');
+      logger.warn('⚠️ Redis/Valkey client disconnected');
     });
+    
+    redisClient.on('reconnecting', () => {
+      logger.info('🔄 Redis/Valkey client reconnecting...');
+    });
+    
+    // Test connection immediately
+    redisClient.ping()
+      .then(() => {
+        logger.info('✅ Redis/Valkey PING successful - connection verified');
+      })
+      .catch((error) => {
+        logger.error('❌ Redis/Valkey PING failed', { 
+          error: error.message,
+          config: {
+            host: redisConfig.host,
+            port: redisConfig.port,
+            db: redisConfig.db
+          }
+        });
+      });
     
     return redisClient;
   } catch (error) {
-    logger.error('Failed to initialize Redis/Valkey connections', { error: error.message });
+    logger.error('❌ Failed to initialize Redis/Valkey connections', { 
+      error: error.message,
+      stack: error.stack
+    });
     throw error;
   }
 }
