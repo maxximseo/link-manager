@@ -14,6 +14,11 @@ const redisConfig = {
   maxRetriesPerRequest: 3,
   lazyConnect: true,
   
+  // TLS/SSL configuration for secure connection
+  tls: process.env.REDIS_HOST && process.env.REDIS_HOST.includes('digitalocean.com') ? {
+    rejectUnauthorized: false // Accept self-signed certificates from DigitalOcean
+  } : undefined,
+  
   // Connection pooling
   family: 4,
   keepAlive: true,
