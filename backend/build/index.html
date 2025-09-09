@@ -556,7 +556,9 @@
                     <input type="password" id="password" value="admin123" required>
                 </div>
                 <button type="submit" class="btn">Login</button>
+                <button type="button" onclick="clearCache()" style="background: #f56565; margin-left: 10px; padding: 10px 15px; border: none; border-radius: 5px; color: white; cursor: pointer;">Clear Cache</button>
                 <div id="loginMessage"></div>
+                <div id="debugInfo" style="font-size: 12px; color: #666; margin-top: 10px; background: #f7fafc; padding: 10px; border-radius: 5px; white-space: pre-wrap;"></div>
             </form>
         </div>
     </div>
@@ -3288,9 +3290,29 @@
             }, 100);
         }
         
+        // Clear cache function
+        function clearCache() {
+            localStorage.clear();
+            token = null;
+            user = null;
+            updateDebugInfo('Cache cleared! Try logging in again.');
+        }
+        
+        // Update debug info display
+        function updateDebugInfo(message) {
+            const debugDiv = document.getElementById('debugInfo');
+            if (debugDiv) {
+                const timestamp = new Date().toLocaleTimeString();
+                debugDiv.innerHTML = `[${timestamp}] ${message}`;
+            }
+        }
+
         // Initialize app when DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM loaded, initializing app...');
+            
+            // Initial debug info
+            updateDebugInfo(`API_URL: "${API_URL}", Token exists: ${!!token}, User exists: ${!!user}`);
             
             // Check if already logged in
             if (token && user) {
@@ -3300,15 +3322,26 @@
             // Login form handler
             const loginForm = document.getElementById('loginForm');
             if (loginForm) {
+                console.log('Login form found, adding event listener');
+                updateDebugInfo('Login form initialized');
+                
                 loginForm.addEventListener('submit', async (e) => {
                     e.preventDefault();
+                    console.log('Login form submitted');
                     
                     const username = document.getElementById('username').value;
                     const password = document.getElementById('password').value;
                     const messageDiv = document.getElementById('loginMessage');
                     
+                    console.log('Login attempt:', { username, password: password ? '[HIDDEN]' : 'EMPTY' });
+                    updateDebugInfo(`Attempting login for user: ${username}`);
+                    
                     try {
-                        const response = await fetch(`${API_URL}/api/auth/login`, {
+                        const requestUrl = `${API_URL}/api/auth/login`;
+                        console.log('Making request to:', requestUrl);
+                        updateDebugInfo(`Sending request to: ${requestUrl}`);
+                        
+                        const response = await fetch(requestUrl, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -3316,26 +3349,38 @@
                             body: JSON.stringify({ username, password })
                         });
                         
+                        console.log('Response status:', response.status, response.statusText);
+                        updateDebugInfo(`Response: ${response.status} ${response.statusText}`);
+                        
                         const data = await response.json();
+                        console.log('Response data:', data);
                         
                         if (response.ok && data.token) {
+                            console.log('Login successful, saving to localStorage');
                             token = data.token;
                             user = data.user;
                             localStorage.setItem('token', token);
                             localStorage.setItem('user', JSON.stringify(user));
                             
                             messageDiv.innerHTML = '<div class="success">Login successful!</div>';
+                            updateDebugInfo('Login successful! Redirecting...');
                             setTimeout(() => showApp(), 500);
                         } else {
-                            messageDiv.innerHTML = `<div class="error">Login failed: ${data.error || 'Invalid credentials'}</div>`;
+                            console.log('Login failed:', data.error);
+                            const errorMsg = data.error || 'Invalid credentials';
+                            messageDiv.innerHTML = `<div class="error">Login failed: ${errorMsg}</div>`;
+                            updateDebugInfo(`Login failed: ${errorMsg}`);
                         }
                     } catch (error) {
                         console.error('Login error:', error);
-                        messageDiv.innerHTML = `<div class="error">Connection error: ${error.message}</div>`;
+                        const errorMsg = `Connection error: ${error.message}`;
+                        messageDiv.innerHTML = `<div class="error">${errorMsg}</div>`;
+                        updateDebugInfo(`ERROR: ${error.message}`);
                     }
                 });
             } else {
                 console.error('Login form not found!');
+                updateDebugInfo('ERROR: Login form not found in DOM');
             }
             
             // Add project form handler
