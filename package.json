@@ -1,10 +1,10 @@
 {
   "name": "wp-link-manager-backend",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "WordPress Link Manager - SEO-focused link and content placement system",
   "main": "backend/server-new.js",
   "scripts": {
-    "start": "NODE_ENV=production PORT=3003 node backend/server-new.js",
+    "start": "NODE_ENV=production node backend/server-new.js",
     "start:modular": "NODE_ENV=production PORT=3003 node backend/server-new.js",
     "start:legacy": "NODE_ENV=production PORT=3002 node backend/server.js",
     "dev": "NODE_ENV=development PORT=3003 nodemon backend/server-new.js",
