@@ -37,6 +37,17 @@ if (queueRoutes) {
   router.use('/queue', queueRoutes);
 }
 
+// Debug routes for troubleshooting (remove in production)
+if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_DEBUG === 'true') {
+  try {
+    const debugRoutes = require('./debug.routes');
+    router.use('/debug', debugRoutes);
+    logger.info('Debug routes enabled');
+  } catch (error) {
+    logger.warn('Debug routes not available');
+  }
+}
+
 // Fallback to legacy routes for all other endpoints
 router.use('/', legacyRoutes);
 
