@@ -6,7 +6,11 @@ const express = require('express');
 const router = express.Router();
 const logger = require('../config/logger');
 
-// Import legacy server for fallback
+// Import modular routes
+const authRoutes = require('./auth.routes');
+const projectRoutes = require('./project.routes');
+
+// Import legacy server for fallback (for routes not yet modularized)
 const legacyRoutes = require('./legacy');
 
 // Import queue routes (lazy loading for proper initialization timing)
@@ -40,6 +44,10 @@ router.get('/health', (req, res) => {
   });
 });
 
+// Modular routes
+router.use('/auth', authRoutes);
+router.use('/projects', projectRoutes);
+
 // Queue routes (if available)
 if (queueRoutes) {
   router.use('/queue', queueRoutes);
@@ -61,7 +69,7 @@ if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_DEBUG === 'true'
   logger.info('Debug routes disabled for production - set ENABLE_DEBUG=true to enable');
 }
 
-// Fallback to legacy routes for all other endpoints
+// Fallback to legacy routes for all other endpoints not yet modularized
 router.use('/', legacyRoutes);
 
 module.exports = router;
