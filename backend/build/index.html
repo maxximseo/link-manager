@@ -2617,8 +2617,14 @@
         
         // Create placement
         async function createPlacement() {
-            const projectId = document.getElementById('placementProject').value;
-            const batchMode = document.getElementById('batchModeToggle').checked;
+            const projectElement = document.getElementById('placementProject');
+            if (!projectElement) {
+                alert('Project selection element not found');
+                return;
+            }
+            const projectId = projectElement.value;
+            const batchModeElement = document.getElementById('batchModeToggle');
+            const batchMode = batchModeElement ? batchModeElement.checked : false;
             
             if (!projectId) {
                 alert('Please select a project');
@@ -2637,7 +2643,12 @@
                 siteIds = selectedSites;
             } else {
                 // Single mode - get single site
-                const siteId = document.getElementById('placementSite').value;
+                const siteElement = document.getElementById('placementSite');
+                if (!siteElement) {
+                    alert('Site selection element not found');
+                    return;
+                }
+                const siteId = siteElement.value;
                 if (!siteId) {
                     alert('Please select a site');
                     return;
