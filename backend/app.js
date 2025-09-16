@@ -53,21 +53,16 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Serve frontend for all other routes
+// Error handling for API routes
+app.use('/api', errorHandler);
+
+// Serve frontend for all non-API routes (but not static assets)
 app.get('*', (req, res) => {
+  // Let static middleware handle assets first
+  if (req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg)$/)) {
+    return res.status(404).json({ error: 'Static asset not found' });
+  }
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
-});
-
-// Error handling
-app.use(errorHandler);
-
-// 404 handler
-app.use((req, res) => {
-  logger.warn(`404 Not Found: ${req.method} ${req.path}`);
-  res.status(404).json({ 
-    error: 'API endpoint not found',
-    path: req.path 
-  });
 });
 
 module.exports = app;
