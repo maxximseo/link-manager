@@ -315,16 +315,16 @@ const updateProjectArticle = async (req, res) => {
 
 const deleteProjectArticle = async (req, res) => {
   try {
-    const projectId = req.params.projectId;
+    const projectId = req.params.id;
     const articleId = req.params.articleId;
     const userId = req.user.id;
-    
+
     const deleted = await projectService.deleteProjectArticle(projectId, articleId, userId);
-    
+
     if (!deleted) {
       return res.status(404).json({ error: 'Article not found' });
     }
-    
+
     res.json({ message: 'Project article deleted successfully' });
   } catch (error) {
     logger.error('Delete project article error:', error);
