@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление проектом - Link Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        body {
+            background: #f8f9fa;
+        }
+        .usage-bar {
+            height: 10px;
+            background: #e9ecef;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        .usage-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+        .usage-fill.success { background: #28a745; }
+        .usage-fill.warning { background: #ffc107; }
+        .usage-fill.danger { background: #dc3545; }
+        .usage-fill.exhausted { background: #6c757d; }
+
+        .content-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .content-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .content-card.exhausted {
+            opacity: 0.7;
+            background: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/dashboard.html">🔗 Link Manager</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item"><a class="nav-link" href="/dashboard.html">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="/projects.html">Projects</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/sites.html">Sites</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/placements.html">Placements</a></li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="logout()">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <a href="/projects.html" class="btn btn-sm btn-outline-secondary mb-2">
+                    <i class="bi bi-arrow-left"></i> Назад к проектам
+                </a>
+                <h1 id="projectName">Загрузка...</h1>
+                <p class="text-muted" id="projectDescription"></p>
+            </div>
+            <button class="btn btn-outline-primary" onclick="editProject()">
+                <i class="bi bi-pencil"></i> Редактировать
+            </button>
+        </div>
+
+        <!-- Tabs -->
+        <ul class="nav nav-tabs mb-4" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#linksTab">
+                    <i class="bi bi-link-45deg"></i> Ссылки <span class="badge bg-primary" id="linksCount">0</span>
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#articlesTab">
+                    <i class="bi bi-file-text"></i> Статьи <span class="badge bg-primary" id="articlesCount">0</span>
+                </button>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+            <!-- Links Tab -->
+            <div class="tab-pane fade show active" id="linksTab">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4>Ссылки проекта</h4>
+                    <button class="btn btn-primary" onclick="showAddLinkModal()">
+                        <i class="bi bi-plus-circle"></i> Добавить ссылку
+                    </button>
+                </div>
+                <div id="linksList">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Загрузка...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Articles Tab -->
+            <div class="tab-pane fade" id="articlesTab">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4>Статьи проекта</h4>
+                    <button class="btn btn-primary" onclick="showAddArticleModal()">
+                        <i class="bi bi-plus-circle"></i> Добавить статью
+                    </button>
+                </div>
+                <div id="articlesList">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Загрузка...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Link Modal -->
+    <div class="modal fade" id="linkModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="linkModalTitle">Добавить ссылку</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="linkForm">
+                        <input type="hidden" id="linkId">
+                        <div class="mb-3">
+                            <label for="linkUrl" class="form-label">URL ссылки *</label>
+                            <input type="url" class="form-control" id="linkUrl" required placeholder="https://example.com/page">
+                        </div>
+                        <div class="mb-3">
+                            <label for="linkAnchor" class="form-label">Анкор (текст ссылки) *</label>
+                            <input type="text" class="form-control" id="linkAnchor" required placeholder="Купить продукт">
+                        </div>
+                        <div class="mb-3">
+                            <label for="linkLimit" class="form-label">Лимит использования *</label>
+                            <input type="number" class="form-control" id="linkLimit" value="999" min="1" max="9999" required>
+                            <small class="text-muted">Сколько раз можно использовать эту ссылку (999 = практически безлимитно)</small>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-primary" onclick="saveLink()">Сохранить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Article Modal -->
+    <div class="modal fade" id="articleModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="articleModalTitle">Добавить статью</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="articleForm">
+                        <input type="hidden" id="articleId">
+                        <div class="mb-3">
+                            <label for="articleTitle" class="form-label">Заголовок статьи *</label>
+                            <input type="text" class="form-control" id="articleTitle" required placeholder="Введите заголовок">
+                        </div>
+                        <div class="mb-3">
+                            <label for="articleContent" class="form-label">Содержание статьи *</label>
+                            <textarea class="form-control" id="articleContent" rows="10" required placeholder="Введите текст статьи..."></textarea>
+                            <small class="text-muted">Каждая статья может быть использована только 1 раз</small>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-primary" onclick="saveArticle()">Сохранить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Article Modal -->
+    <div class="modal fade" id="viewArticleModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewArticleTitle">Просмотр статьи</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="viewArticleContent" style="white-space: pre-wrap;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/api.js"></script>
+    <script>
+        requireAuth();
+
+        let projectId = null;
+        let project = null;
+        let links = [];
+        let articles = [];
+
+        // Get project ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        projectId = parseInt(urlParams.get('id'));
+
+        if (!projectId) {
+            showNotification('ID проекта не указан', 'error');
+            setTimeout(() => window.location.href = '/projects.html', 2000);
+        }
+
+        // Load project data
+        async function loadProject() {
+            try {
+                project = await ProjectsAPI.get(projectId);
+                document.getElementById('projectName').textContent = project.name;
+                document.getElementById('projectDescription').textContent = project.description || 'Нет описания';
+            } catch (error) {
+                console.error('Error loading project:', error);
+                showNotification('Ошибка загрузки проекта', 'error');
+            }
+        }
+
+        // Load links
+        async function loadLinks() {
+            try {
+                links = await ProjectsAPI.getLinks(projectId);
+                document.getElementById('linksCount').textContent = links.length;
+                displayLinks();
+            } catch (error) {
+                console.error('Error loading links:', error);
+                document.getElementById('linksList').innerHTML =
+                    '<div class="alert alert-danger">Ошибка загрузки ссылок</div>';
+            }
+        }
+
+        // Display links
+        function displayLinks() {
+            const list = document.getElementById('linksList');
+
+            if (links.length === 0) {
+                list.innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> Нет ссылок. Добавьте первую ссылку!
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = links.map(link => {
+                const percent = (link.usage_count / link.usage_limit) * 100;
+                const isExhausted = link.usage_count >= link.usage_limit;
+                let barClass = 'success';
+                if (percent >= 90 || isExhausted) barClass = 'exhausted';
+                else if (percent >= 70) barClass = 'danger';
+                else if (percent >= 50) barClass = 'warning';
+
+                return `
+                    <div class="content-card ${isExhausted ? 'exhausted' : ''}">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="flex-grow-1">
+                                <h5 class="mb-1">
+                                    <i class="bi bi-link-45deg text-primary"></i> ${escapeHtml(link.anchor_text)}
+                                    ${isExhausted ? '<span class="badge bg-secondary ms-2">Исчерпано</span>' : '<span class="badge bg-success ms-2">Активно</span>'}
+                                </h5>
+                                <div class="text-muted small mb-2">${escapeHtml(link.url)}</div>
+                            </div>
+                            <div class="btn-group btn-group-sm">
+                                ${!isExhausted ? `<button class="btn btn-outline-primary" onclick="editLink(${link.id})" title="Редактировать"><i class="bi bi-pencil"></i></button>` : ''}
+                                <button class="btn btn-outline-danger" onclick="deleteLink(${link.id})" title="Удалить"><i class="bi bi-trash"></i></button>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <small class="text-muted">Использовано:</small>
+                                <strong>${link.usage_count} / ${link.usage_limit}</strong>
+                            </div>
+                            <div class="usage-bar">
+                                <div class="usage-fill ${barClass}" style="width: ${Math.min(percent, 100)}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Load articles
+        async function loadArticles() {
+            try {
+                articles = await ProjectsAPI.getArticles(projectId);
+                document.getElementById('articlesCount').textContent = articles.length;
+                displayArticles();
+            } catch (error) {
+                console.error('Error loading articles:', error);
+                document.getElementById('articlesList').innerHTML =
+                    '<div class="alert alert-danger">Ошибка загрузки статей</div>';
+            }
+        }
+
+        // Display articles
+        function displayArticles() {
+            const list = document.getElementById('articlesList');
+
+            if (articles.length === 0) {
+                list.innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> Нет статей. Добавьте первую статью!
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = articles.map(article => {
+                const isExhausted = article.usage_count >= 1;
+                const wordCount = article.content.split(/\s+/).length;
+
+                return `
+                    <div class="content-card ${isExhausted ? 'exhausted' : ''}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h5 class="mb-2">
+                                    <i class="bi bi-file-text text-success"></i> ${escapeHtml(article.title)}
+                                    ${isExhausted ? '<span class="badge bg-secondary ms-2">Использована</span>' : '<span class="badge bg-success ms-2">Доступна</span>'}
+                                </h5>
+                                <div class="text-muted small">
+                                    <i class="bi bi-fonts"></i> ${wordCount} слов
+                                    ${isExhausted ? ' • <i class="bi bi-lock-fill"></i> Нельзя использовать повторно' : ' • <i class="bi bi-unlock-fill"></i> Можно использовать'}
+                                </div>
+                            </div>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-info" onclick="viewArticle(${article.id})" title="Просмотр"><i class="bi bi-eye"></i></button>
+                                ${!isExhausted ? `<button class="btn btn-outline-primary" onclick="editArticle(${article.id})" title="Редактировать"><i class="bi bi-pencil"></i></button>` : ''}
+                                <button class="btn btn-outline-secondary" onclick="duplicateArticle(${article.id})" title="Дублировать"><i class="bi bi-files"></i></button>
+                                <button class="btn btn-outline-danger" onclick="deleteArticle(${article.id})" title="Удалить"><i class="bi bi-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Modal functions
+        function showAddLinkModal() {
+            document.getElementById('linkModalTitle').textContent = 'Добавить ссылку';
+            document.getElementById('linkForm').reset();
+            document.getElementById('linkId').value = '';
+            document.getElementById('linkLimit').value = '999';
+            new bootstrap.Modal(document.getElementById('linkModal')).show();
+        }
+
+        function editLink(id) {
+            const link = links.find(l => l.id === id);
+            if (!link) return;
+
+            document.getElementById('linkModalTitle').textContent = 'Редактировать ссылку';
+            document.getElementById('linkId').value = link.id;
+            document.getElementById('linkUrl').value = link.url;
+            document.getElementById('linkAnchor').value = link.anchor_text;
+            document.getElementById('linkLimit').value = link.usage_limit;
+            new bootstrap.Modal(document.getElementById('linkModal')).show();
+        }
+
+        async function saveLink() {
+            const id = document.getElementById('linkId').value;
+            const url = document.getElementById('linkUrl').value.trim();
+            const anchor = document.getElementById('linkAnchor').value.trim();
+            const limit = parseInt(document.getElementById('linkLimit').value);
+
+            if (!url || !anchor || !limit) {
+                showNotification('Заполните все поля', 'error');
+                return;
+            }
+
+            try {
+                const data = { url, anchor_text: anchor, usage_limit: limit };
+
+                if (id) {
+                    await ProjectsAPI.updateLink(projectId, id, data);
+                    showNotification('Ссылка обновлена', 'success');
+                } else {
+                    await ProjectsAPI.addLink(projectId, data);
+                    showNotification('Ссылка добавлена', 'success');
+                }
+
+                bootstrap.Modal.getInstance(document.getElementById('linkModal')).hide();
+                loadLinks();
+            } catch (error) {
+                console.error('Error saving link:', error);
+                showNotification('Ошибка сохранения ссылки', 'error');
+            }
+        }
+
+        async function deleteLink(id) {
+            if (!confirm('Удалить эту ссылку?')) return;
+
+            try {
+                await ProjectsAPI.deleteLink(projectId, id);
+                showNotification('Ссылка удалена', 'success');
+                loadLinks();
+            } catch (error) {
+                console.error('Error deleting link:', error);
+                showNotification('Ошибка удаления ссылки', 'error');
+            }
+        }
+
+        function showAddArticleModal() {
+            document.getElementById('articleModalTitle').textContent = 'Добавить статью';
+            document.getElementById('articleForm').reset();
+            document.getElementById('articleId').value = '';
+            new bootstrap.Modal(document.getElementById('articleModal')).show();
+        }
+
+        function editArticle(id) {
+            const article = articles.find(a => a.id === id);
+            if (!article) return;
+
+            document.getElementById('articleModalTitle').textContent = 'Редактировать статью';
+            document.getElementById('articleId').value = article.id;
+            document.getElementById('articleTitle').value = article.title;
+            document.getElementById('articleContent').value = article.content;
+            new bootstrap.Modal(document.getElementById('articleModal')).show();
+        }
+
+        function viewArticle(id) {
+            const article = articles.find(a => a.id === id);
+            if (!article) return;
+
+            document.getElementById('viewArticleTitle').textContent = article.title;
+            document.getElementById('viewArticleContent').textContent = article.content;
+            new bootstrap.Modal(document.getElementById('viewArticleModal')).show();
+        }
+
+        async function saveArticle() {
+            const id = document.getElementById('articleId').value;
+            const title = document.getElementById('articleTitle').value.trim();
+            const content = document.getElementById('articleContent').value.trim();
+
+            if (!title || !content) {
+                showNotification('Заполните все поля', 'error');
+                return;
+            }
+
+            try {
+                const data = { title, content };
+
+                if (id) {
+                    await ProjectsAPI.updateArticle(projectId, id, data);
+                    showNotification('Статья обновлена', 'success');
+                } else {
+                    await ProjectsAPI.addArticle(projectId, data);
+                    showNotification('Статья добавлена', 'success');
+                }
+
+                bootstrap.Modal.getInstance(document.getElementById('articleModal')).hide();
+                loadArticles();
+            } catch (error) {
+                console.error('Error saving article:', error);
+                showNotification('Ошибка сохранения статьи', 'error');
+            }
+        }
+
+        async function duplicateArticle(id) {
+            const article = articles.find(a => a.id === id);
+            if (!article) return;
+
+            try {
+                const data = {
+                    title: article.title + ' (копия)',
+                    content: article.content
+                };
+                await ProjectsAPI.addArticle(projectId, data);
+                showNotification('Статья продублирована', 'success');
+                loadArticles();
+            } catch (error) {
+                console.error('Error duplicating article:', error);
+                showNotification('Ошибка дублирования статьи', 'error');
+            }
+        }
+
+        async function deleteArticle(id) {
+            if (!confirm('Удалить эту статью?')) return;
+
+            try {
+                await ProjectsAPI.deleteArticle(projectId, id);
+                showNotification('Статья удалена', 'success');
+                loadArticles();
+            } catch (error) {
+                console.error('Error deleting article:', error);
+                showNotification('Ошибка удаления статьи', 'error');
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Initialize
+        loadProject();
+        loadLinks();
+        loadArticles();
+    </script>
+</body>
+</html>

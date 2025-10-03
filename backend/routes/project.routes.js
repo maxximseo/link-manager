@@ -26,6 +26,7 @@ router.delete('/:id', authMiddleware, projectController.deleteProject);
 // Project links routes
 router.get('/:id/links', authMiddleware, projectController.getProjectLinks);
 router.post('/:id/links', authMiddleware, createLimiter, projectController.addProjectLink);
+router.put('/:id/links/:linkId', authMiddleware, projectController.updateProjectLink);
 router.post('/:id/links/bulk', authMiddleware, createLimiter, projectController.addProjectLinksBulk);
 router.delete('/:id/links/:linkId', authMiddleware, projectController.deleteProjectLink);
 

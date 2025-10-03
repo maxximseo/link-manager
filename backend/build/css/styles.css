@@ -450,7 +450,8 @@ body {
     animation: fadeIn 0.2s ease;
 }
 
-.modal.active {
+.modal.active,
+.modal.show {
     display: flex;
     align-items: center;
     justify-content: center;

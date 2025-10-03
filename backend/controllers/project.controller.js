@@ -138,26 +138,51 @@ const addProjectLink = async (req, res) => {
   try {
     const projectId = req.params.id;
     const userId = req.user.id;
-    const { url, anchor_text, position } = req.body;
-    
+    const { url, anchor_text, position, usage_limit } = req.body;
+
     if (!url || typeof url !== 'string' || !url.startsWith('http')) {
       return res.status(400).json({ error: 'Valid URL is required' });
     }
-    
+
     const link = await projectService.addProjectLink(projectId, userId, {
       url,
       anchor_text,
-      position
+      position,
+      usage_limit: usage_limit || 999
     });
-    
+
     if (link === null) {
       return res.status(404).json({ error: 'Project not found' });
     }
-    
+
     res.json(link);
   } catch (error) {
     logger.error('Add project link error:', error);
     res.status(500).json({ error: 'Failed to add project link' });
+  }
+};
+
+const updateProjectLink = async (req, res) => {
+  try {
+    const projectId = req.params.id;
+    const linkId = req.params.linkId;
+    const userId = req.user.id;
+    const { url, anchor_text, usage_limit } = req.body;
+
+    const link = await projectService.updateProjectLink(projectId, linkId, userId, {
+      url,
+      anchor_text,
+      usage_limit
+    });
+
+    if (link === null) {
+      return res.status(404).json({ error: 'Project or link not found' });
+    }
+
+    res.json(link);
+  } catch (error) {
+    logger.error('Update project link error:', error);
+    res.status(500).json({ error: 'Failed to update project link' });
   }
 };
 
@@ -315,6 +340,7 @@ module.exports = {
   deleteProject,
   getProjectLinks,
   addProjectLink,
+  updateProjectLink,
   addProjectLinksBulk,
   deleteProjectLink,
   getProjectArticles,

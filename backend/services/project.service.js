@@ -184,26 +184,63 @@ const getProjectLinks = async (projectId, userId) => {
 // Add single project link
 const addProjectLink = async (projectId, userId, linkData) => {
   try {
-    const { url, anchor_text, position } = linkData;
-    
+    const { url, anchor_text, position, usage_limit } = linkData;
+
     // Verify project ownership
     const projectResult = await query(
       'SELECT * FROM projects WHERE id = $1 AND user_id = $2',
       [projectId, userId]
     );
-    
+
     if (projectResult.rows.length === 0) {
       return null;
     }
-    
+
     const result = await query(
-      'INSERT INTO project_links (project_id, url, anchor_text, position) VALUES ($1, $2, $3, $4) RETURNING *',
-      [projectId, url, anchor_text || url, position || 0]
+      'INSERT INTO project_links (project_id, url, anchor_text, position, usage_limit) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [projectId, url, anchor_text || url, position || 0, usage_limit || 999]
     );
-    
+
     return result.rows[0];
   } catch (error) {
     logger.error('Add project link error:', error);
+    throw error;
+  }
+};
+
+// Update project link
+const updateProjectLink = async (projectId, linkId, userId, linkData) => {
+  try {
+    // Verify project ownership
+    const projectResult = await query(
+      'SELECT * FROM projects WHERE id = $1 AND user_id = $2',
+      [projectId, userId]
+    );
+
+    if (projectResult.rows.length === 0) {
+      return null;
+    }
+
+    const { url, anchor_text, usage_limit } = linkData;
+
+    const result = await query(
+      `UPDATE project_links
+       SET url = COALESCE($1, url),
+           anchor_text = COALESCE($2, anchor_text),
+           usage_limit = COALESCE($3, usage_limit),
+           updated_at = NOW()
+       WHERE id = $4 AND project_id = $5
+       RETURNING *`,
+      [url, anchor_text, usage_limit, linkId, projectId]
+    );
+
+    if (result.rows.length === 0) {
+      return null;
+    }
+
+    return result.rows[0];
+  } catch (error) {
+    logger.error('Update project link error:', error);
     throw error;
   }
 };
@@ -392,6 +429,7 @@ module.exports = {
   deleteProject,
   getProjectLinks,
   addProjectLink,
+  updateProjectLink,
   addProjectLinksBulk,
   deleteProjectLink,
   getProjectArticles,

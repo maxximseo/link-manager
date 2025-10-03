@@ -83,10 +83,6 @@
         // Check auth
         requireAuth();
 
-        // Display user info
-        const user = getCurrentUser();
-        document.getElementById('userInfo').textContent = user ? user.username : '';
-
         // Load statistics
         async function loadStatistics() {
             try {
