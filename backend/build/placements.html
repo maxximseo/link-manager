@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Placements - Link Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/dashboard.html">🔗 Link Manager</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item"><a class="nav-link" href="/dashboard.html">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/projects.html">Projects</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/sites.html">Sites</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="/placements.html">Placements</a></li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="logout()">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Placements</h1>
+            <button class="btn btn-primary" onclick="showCreateModal()">
+                <i class="bi bi-plus-circle"></i> Create Placement
+            </button>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <select class="form-select" id="projectFilter">
+                    <option value="">All Projects</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="siteFilter">
+                    <option value="">All Sites</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="statusFilter">
+                    <option value="">All Statuses</option>
+                    <option value="pending">Pending</option>
+                    <option value="placed">Placed</option>
+                    <option value="failed">Failed</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Project</th>
+                        <th>Site</th>
+                        <th>Type</th>
+                        <th>Count</th>
+                        <th>Status</th>
+                        <th>Placed At</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="placementsTable"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Create Placement Modal -->
+    <div class="modal fade" id="placementModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create Placement</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="placementForm">
+                        <div class="mb-3">
+                            <label for="projectSelect" class="form-label">Project *</label>
+                            <select class="form-select" id="projectSelect" required>
+                                <option value="">Select project...</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Sites * (select one or multiple)</label>
+                            <div id="sitesCheckboxes" class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                <!-- Will be populated dynamically -->
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Links (from project)</label>
+                            <div id="linksCheckboxes" class="border rounded p-3" style="max-height: 150px; overflow-y: auto;">
+                                <small class="text-muted">Select a project first</small>
+                            </div>
+                            <small class="text-muted">Max 1 link per site</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Articles (from project)</label>
+                            <div id="articlesCheckboxes" class="border rounded p-3" style="max-height: 150px; overflow-y: auto;">
+                                <small class="text-muted">Select a project first</small>
+                            </div>
+                            <small class="text-muted">Max 1 article per site</small>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Note:</strong> You can place content on multiple sites at once. Each site will get max 1 link and 1 article from this project.
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="createPlacement()">Create Placement</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/api.js"></script>
+    <script>
+        if (!isAuthenticated()) {
+            window.location.href = '/index.html';
+        }
+
+        let placements = [];
+        let projects = [];
+        let sites = [];
+        let projectLinks = [];
+        let projectArticles = [];
+        let modal;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            modal = new bootstrap.Modal(document.getElementById('placementModal'));
+            await Promise.all([loadPlacements(), loadProjects(), loadSites()]);
+
+            document.getElementById('projectFilter').addEventListener('change', displayPlacements);
+            document.getElementById('siteFilter').addEventListener('change', displayPlacements);
+            document.getElementById('statusFilter').addEventListener('change', displayPlacements);
+            document.getElementById('projectSelect').addEventListener('change', onProjectSelected);
+        });
+
+        async function loadPlacements() {
+            try {
+                placements = await PlacementsAPI.getAll();
+                displayPlacements();
+            } catch (error) {
+                showNotification('Failed to load placements: ' + error.message, 'error');
+            }
+        }
+
+        async function loadProjects() {
+            try {
+                projects = await ProjectsAPI.getAll();
+                populateProjectFilter();
+            } catch (error) {
+                showNotification('Failed to load projects: ' + error.message, 'error');
+            }
+        }
+
+        async function loadSites() {
+            try {
+                sites = await SitesAPI.getAll();
+                populateSiteFilter();
+            } catch (error) {
+                showNotification('Failed to load sites: ' + error.message, 'error');
+            }
+        }
+
+        function populateProjectFilter() {
+            const select = document.getElementById('projectFilter');
+            select.innerHTML = '<option value="">All Projects</option>' +
+                projects.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+
+            const modalSelect = document.getElementById('projectSelect');
+            modalSelect.innerHTML = '<option value="">Select project...</option>' +
+                projects.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+        }
+
+        function populateSiteFilter() {
+            const select = document.getElementById('siteFilter');
+            select.innerHTML = '<option value="">All Sites</option>' +
+                sites.map(s => `<option value="${s.id}">${escapeHtml(s.site_name)}</option>`).join('');
+
+            const checkboxes = document.getElementById('sitesCheckboxes');
+            checkboxes.innerHTML = sites.map(s => `
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" value="${s.id}" id="site_${s.id}">
+                    <label class="form-check-label" for="site_${s.id}">
+                        ${escapeHtml(s.site_name)} - ${escapeHtml(s.site_url)}
+                    </label>
+                </div>
+            `).join('');
+        }
+
+        async function onProjectSelected() {
+            const projectId = document.getElementById('projectSelect').value;
+            if (!projectId) {
+                document.getElementById('linksCheckboxes').innerHTML = '<small class="text-muted">Select a project first</small>';
+                document.getElementById('articlesCheckboxes').innerHTML = '<small class="text-muted">Select a project first</small>';
+                return;
+            }
+
+            try {
+                const projectData = await ProjectsAPI.get(projectId);
+                projectLinks = projectData.links || [];
+                projectArticles = projectData.articles || [];
+
+                const linksDiv = document.getElementById('linksCheckboxes');
+                if (projectLinks.length > 0) {
+                    linksDiv.innerHTML = projectLinks.map(link => `
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="${link.id}" id="link_${link.id}">
+                            <label class="form-check-label" for="link_${link.id}">
+                                ${escapeHtml(link.anchor_text)} → ${escapeHtml(link.target_url)}
+                            </label>
+                        </div>
+                    `).join('');
+                } else {
+                    linksDiv.innerHTML = '<small class="text-muted">No links in this project</small>';
+                }
+
+                const articlesDiv = document.getElementById('articlesCheckboxes');
+                if (projectArticles.length > 0) {
+                    articlesDiv.innerHTML = projectArticles.map(article => `
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="${article.id}" id="article_${article.id}">
+                            <label class="form-check-label" for="article_${article.id}">
+                                ${escapeHtml(article.title)}
+                            </label>
+                        </div>
+                    `).join('');
+                } else {
+                    articlesDiv.innerHTML = '<small class="text-muted">No articles in this project</small>';
+                }
+            } catch (error) {
+                showNotification('Failed to load project details: ' + error.message, 'error');
+            }
+        }
+
+        function displayPlacements() {
+            const projectFilter = document.getElementById('projectFilter').value;
+            const siteFilter = document.getElementById('siteFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            const filtered = placements.filter(p => {
+                const matchesProject = !projectFilter || p.project_id == projectFilter;
+                const matchesSite = !siteFilter || p.site_id == siteFilter;
+                const matchesStatus = !statusFilter || p.status === statusFilter;
+                return matchesProject && matchesSite && matchesStatus;
+            });
+
+            const tbody = document.getElementById('placementsTable');
+            tbody.innerHTML = filtered.map(p => `
+                <tr>
+                    <td>${p.id}</td>
+                    <td>${escapeHtml(p.project_name || 'N/A')}</td>
+                    <td>${escapeHtml(p.site_name || 'N/A')}</td>
+                    <td>${escapeHtml(p.type || 'manual')}</td>
+                    <td>${p.count || 0}</td>
+                    <td>
+                        <span class="badge bg-${getStatusColor(p.status)}">
+                            ${escapeHtml(p.status || 'pending')}
+                        </span>
+                    </td>
+                    <td>${new Date(p.placed_at).toLocaleDateString()}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deletePlacement(${p.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function getStatusColor(status) {
+            switch (status) {
+                case 'placed': return 'success';
+                case 'failed': return 'danger';
+                case 'pending': return 'warning';
+                default: return 'secondary';
+            }
+        }
+
+        function showCreateModal() {
+            document.getElementById('placementForm').reset();
+            document.getElementById('linksCheckboxes').innerHTML = '<small class="text-muted">Select a project first</small>';
+            document.getElementById('articlesCheckboxes').innerHTML = '<small class="text-muted">Select a project first</small>';
+            modal.show();
+        }
+
+        async function createPlacement() {
+            const projectId = parseInt(document.getElementById('projectSelect').value);
+            if (!projectId) {
+                showNotification('Please select a project', 'error');
+                return;
+            }
+
+            const siteCheckboxes = document.querySelectorAll('#sitesCheckboxes input[type="checkbox"]:checked');
+            const siteIds = Array.from(siteCheckboxes).map(cb => parseInt(cb.value));
+
+            if (siteIds.length === 0) {
+                showNotification('Please select at least one site', 'error');
+                return;
+            }
+
+            const linkCheckboxes = document.querySelectorAll('#linksCheckboxes input[type="checkbox"]:checked');
+            const linkIds = Array.from(linkCheckboxes).map(cb => parseInt(cb.value));
+
+            const articleCheckboxes = document.querySelectorAll('#articlesCheckboxes input[type="checkbox"]:checked');
+            const articleIds = Array.from(articleCheckboxes).map(cb => parseInt(cb.value));
+
+            if (linkIds.length === 0 && articleIds.length === 0) {
+                showNotification('Please select at least one link or article', 'error');
+                return;
+            }
+
+            if (linkIds.length > 1) {
+                showNotification('You can only select 1 link (will be placed on all selected sites)', 'error');
+                return;
+            }
+
+            if (articleIds.length > 1) {
+                showNotification('You can only select 1 article (will be placed on all selected sites)', 'error');
+                return;
+            }
+
+            const data = {
+                project_id: projectId,
+                site_ids: siteIds,
+                link_ids: linkIds,
+                article_ids: articleIds
+            };
+
+            try {
+                const result = await PlacementsAPI.createBatch(data);
+                showNotification(`Successfully created ${result.successful} placements`);
+                modal.hide();
+                await loadPlacements();
+            } catch (error) {
+                showNotification('Failed to create placement: ' + error.message, 'error');
+            }
+        }
+
+        async function deletePlacement(id) {
+            if (!confirm('Are you sure you want to delete this placement?')) return;
+
+            try {
+                await PlacementsAPI.delete(id);
+                showNotification('Placement deleted successfully');
+                await loadPlacements();
+            } catch (error) {
+                showNotification('Failed to delete placement: ' + error.message, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

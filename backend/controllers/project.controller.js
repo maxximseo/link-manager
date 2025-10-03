@@ -1,0 +1,324 @@
+/**
+ * Project controller
+ * Handles project-related business logic
+ */
+
+const projectService = require('../services/project.service');
+const logger = require('../config/logger');
+
+// Get all projects for user
+const getProjects = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    
+    const result = await projectService.getUserProjects(req.user.userId, page, limit);
+    
+    if (req.query.page || req.query.limit) {
+      // Return paginated response
+      res.json(result);
+    } else {
+      // Return simple array for backward compatibility
+      res.json(result.data || result);
+    }
+  } catch (error) {
+    logger.error('Get projects error:', error);
+    res.status(500).json({ error: 'Failed to fetch projects' });
+  }
+};
+
+// Get single project with details
+const getProject = async (req, res) => {
+  try {
+    const projectId = req.params.id;
+    const userId = req.user.userId;
+    
+    const project = await projectService.getProjectWithDetails(projectId, userId);
+    
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    
+    res.json(project);
+  } catch (error) {
+    logger.error('Get project error:', error);
+    res.status(500).json({ error: 'Failed to fetch project' });
+  }
+};
+
+// Create new project
+const createProject = async (req, res) => {
+  try {
+    const { name, description } = req.body;
+    
+    if (!name || typeof name !== 'string' || name.trim().length === 0) {
+      return res.status(400).json({ error: 'Project name is required' });
+    }
+    
+    if (name.length > 255) {
+      return res.status(400).json({ error: 'Project name must be less than 255 characters' });
+    }
+    
+    if (description && description.length > 1000) {
+      return res.status(400).json({ error: 'Description must be less than 1000 characters' });
+    }
+    
+    const project = await projectService.createProject({
+      name: name.trim(),
+      description: description?.trim() || null,
+      userId: req.user.userId
+    });
+    
+    res.json(project);
+  } catch (error) {
+    logger.error('Create project error:', error);
+    res.status(500).json({ error: 'Failed to create project' });
+  }
+};
+
+// Update project
+const updateProject = async (req, res) => {
+  try {
+    const projectId = req.params.id;
+    const userId = req.user.userId;
+    const { name, description } = req.body;
+    
+    const project = await projectService.updateProject(projectId, userId, { name, description });
+    
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    
+    res.json(project);
+  } catch (error) {
+    logger.error('Update project error:', error);
+    res.status(500).json({ error: 'Failed to update project' });
+  }
+};
+
+// Delete project
+const deleteProject = async (req, res) => {
+  try {
+    const projectId = req.params.id;
+    const userId = req.user.userId;
+    
+    const deleted = await projectService.deleteProject(projectId, userId);
+    
+    if (!deleted) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    
+    res.json({ message: 'Project deleted successfully' });
+  } catch (error) {
+    logger.error('Delete project error:', error);
+    res.status(500).json({ error: 'Failed to delete project' });
+  }
+};
+
+// Project links methods
+const getProjectLinks = async (req, res) => {
+  try {
+    const projectId = req.params.id;
+    const userId = req.user.id;
+    
+    const links = await projectService.getProjectLinks(projectId, userId);
+    
+    if (links === null) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    
+    res.json(links);
+  } catch (error) {
+    logger.error('Get project links error:', error);
+    res.status(500).json({ error: 'Failed to fetch project links' });
+  }
+};
+
+const addProjectLink = async (req, res) => {
+  try {
+    const projectId = req.params.id;
+    const userId = req.user.id;
+    const { url, anchor_text, position } = req.body;
+    
+    if (!url || typeof url !== 'string' || !url.startsWith('http')) {
+      return res.status(400).json({ error: 'Valid URL is required' });
+    }
+    
+    const link = await projectService.addProjectLink(projectId, userId, {
+      url,
+      anchor_text,
+      position
+    });
+    
+    if (link === null) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    
+    res.json(link);
+  } catch (error) {
+    logger.error('Add project link error:', error);
+    res.status(500).json({ error: 'Failed to add project link' });
+  }
+};
+
+const addProjectLinksBulk = async (req, res) => {
+  try {
+    const projectId = req.params.id;
+    const userId = req.user.id;
+    const { links } = req.body;
+    
+    const result = await projectService.addProjectLinksBulk(projectId, userId, links);
+    
+    if (result === null) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    
+    res.json({
+      message: `Successfully imported ${result.length} links`,
+      links: result
+    });
+  } catch (error) {
+    logger.error('Bulk add project links error:', error);
+    res.status(500).json({ error: error.message || 'Failed to bulk import links' });
+  }
+};
+
+const deleteProjectLink = async (req, res) => {
+  try {
+    const projectId = req.params.id;
+    const linkId = req.params.linkId;
+    const userId = req.user.id;
+    
+    const deleted = await projectService.deleteProjectLink(projectId, linkId, userId);
+    
+    if (!deleted) {
+      return res.status(404).json({ error: 'Project link not found' });
+    }
+    
+    res.json({ message: 'Project link deleted successfully' });
+  } catch (error) {
+    logger.error('Delete project link error:', error);
+    res.status(500).json({ error: 'Failed to delete project link' });
+  }
+};
+
+// Project articles methods
+const getProjectArticles = async (req, res) => {
+  try {
+    const projectId = req.params.id;
+    const userId = req.user.id;
+    
+    const articles = await projectService.getProjectArticles(projectId, userId);
+    
+    if (articles === null) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    
+    res.json(articles);
+  } catch (error) {
+    logger.error('Get project articles error:', error);
+    res.status(500).json({ error: 'Failed to fetch project articles' });
+  }
+};
+
+const addProjectArticle = async (req, res) => {
+  try {
+    const projectId = req.params.id;
+    const userId = req.user.id;
+    const { title, content, excerpt, meta_title, meta_description, featured_image, slug, tags, category } = req.body;
+    
+    if (!title || typeof title !== 'string' || title.trim().length === 0) {
+      return res.status(400).json({ error: 'Article title is required' });
+    }
+    
+    if (!content || typeof content !== 'string' || content.trim().length === 0) {
+      return res.status(400).json({ error: 'Article content is required' });
+    }
+    
+    const article = await projectService.addProjectArticle(projectId, userId, {
+      title: title.trim(),
+      content: content.trim(),
+      excerpt,
+      meta_title,
+      meta_description,
+      featured_image,
+      slug,
+      tags,
+      category
+    });
+    
+    if (article === null) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    
+    res.json(article);
+  } catch (error) {
+    logger.error('Add project article error:', error);
+    res.status(500).json({ error: 'Failed to add project article' });
+  }
+};
+
+const updateProjectArticle = async (req, res) => {
+  try {
+    const projectId = req.params.projectId;
+    const articleId = req.params.articleId;
+    const userId = req.user.id;
+    const { title, content, excerpt, meta_title, meta_description, featured_image, slug, tags, category } = req.body;
+    
+    const article = await projectService.updateProjectArticle(projectId, articleId, userId, {
+      title,
+      content,
+      excerpt,
+      meta_title,
+      meta_description,
+      featured_image,
+      slug,
+      tags,
+      category
+    });
+    
+    if (article === null) {
+      return res.status(404).json({ error: 'Article not found' });
+    }
+    
+    res.json(article);
+  } catch (error) {
+    logger.error('Update project article error:', error);
+    res.status(500).json({ error: 'Failed to update project article' });
+  }
+};
+
+const deleteProjectArticle = async (req, res) => {
+  try {
+    const projectId = req.params.projectId;
+    const articleId = req.params.articleId;
+    const userId = req.user.id;
+    
+    const deleted = await projectService.deleteProjectArticle(projectId, articleId, userId);
+    
+    if (!deleted) {
+      return res.status(404).json({ error: 'Article not found' });
+    }
+    
+    res.json({ message: 'Project article deleted successfully' });
+  } catch (error) {
+    logger.error('Delete project article error:', error);
+    res.status(500).json({ error: 'Failed to delete project article' });
+  }
+};
+
+module.exports = {
+  getProjects,
+  getProject,
+  createProject,
+  updateProject,
+  deleteProject,
+  getProjectLinks,
+  addProjectLink,
+  addProjectLinksBulk,
+  deleteProjectLink,
+  getProjectArticles,
+  addProjectArticle,
+  updateProjectArticle,
+  deleteProjectArticle
+};

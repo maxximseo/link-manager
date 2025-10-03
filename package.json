@@ -1,0 +1,32 @@
+{
+  "name": "link-manager",
+  "version": "2.0.0",
+  "description": "WordPress Link Manager - Modular Architecture",
+  "main": "backend/server-new.js",
+  "scripts": {
+    "dev": "nodemon backend/server-new.js",
+    "start": "node backend/server-new.js",
+    "start:modular": "node backend/server-new.js",
+    "start:legacy": "node backend/server.js"
+  },
+  "dependencies": {
+    "axios": "^1.12.2",
+    "bcrypt": "^5.1.0",
+    "bcryptjs": "^3.0.2",
+    "bull": "^4.10.4",
+    "compression": "^1.8.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "express-rate-limit": "^6.7.0",
+    "helmet": "^8.1.0",
+    "ioredis": "^5.3.2",
+    "jsonwebtoken": "^9.0.0",
+    "node-fetch": "^3.3.2",
+    "pg": "^8.11.0",
+    "winston": "^3.8.2"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  }
+}

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sites - Link Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/dashboard.html">= Link Manager</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item"><a class="nav-link" href="/dashboard.html">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/projects.html">Projects</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="/sites.html">Sites</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/placements.html">Placements</a></li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="logout()">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Sites</h1>
+            <button class="btn btn-primary" onclick="showCreateModal()">
+                <i class="bi bi-plus-circle"></i> Add Site
+            </button>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <input type="text" class="form-control" id="searchInput" placeholder="Search sites...">
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="statusFilter">
+                    <option value="">All Statuses</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="sitesList" class="row"></div>
+    </div>
+
+    <!-- Create/Edit Modal -->
+    <div class="modal fade" id="siteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">Add Site</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="siteForm">
+                        <input type="hidden" id="siteId">
+
+                        <div class="mb-3">
+                            <label for="siteName" class="form-label">Site Name *</label>
+                            <input type="text" class="form-control" id="siteName" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="siteUrl" class="form-label">Site URL *</label>
+                            <input type="url" class="form-control" id="siteUrl" required
+                                   placeholder="https://example.com">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="wpUsername" class="form-label">WordPress Username *</label>
+                            <input type="text" class="form-control" id="wpUsername" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="wpPassword" class="form-label">WordPress Password *</label>
+                            <input type="password" class="form-control" id="wpPassword" required>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="maxLinks" class="form-label">Max Links *</label>
+                                <input type="number" class="form-control" id="maxLinks" required min="0" value="10">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="maxArticles" class="form-label">Max Articles *</label>
+                                <input type="number" class="form-control" id="maxArticles" required min="0" value="10">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="siteStatus" class="form-label">Status</label>
+                            <select class="form-select" id="siteStatus">
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" rows="3"></textarea>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <h6><i class="bi bi-info-circle"></i> WordPress Plugin Required</h6>
+                            <p class="mb-2">To enable link placement, install the Link Manager plugin on your WordPress site:</p>
+                            <a href="/wordpress-plugin/link-manager-widget.php" download="link-manager-widget.php" class="btn btn-sm btn-success">
+                                <i class="bi bi-download"></i> Download Plugin
+                            </a>
+                            <small class="d-block mt-2 text-muted">Upload and activate this plugin in your WordPress admin panel</small>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveSite()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/api.js"></script>
+    <script>
+        if (!isAuthenticated()) {
+            window.location.href = '/index.html';
+        }
+
+        let sites = [];
+        let modal;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            modal = new bootstrap.Modal(document.getElementById('siteModal'));
+            await loadSites();
+
+            document.getElementById('searchInput').addEventListener('input', displaySites);
+            document.getElementById('statusFilter').addEventListener('change', displaySites);
+        });
+
+        async function loadSites() {
+            try {
+                sites = await SitesAPI.getAll();
+                displaySites();
+            } catch (error) {
+                showNotification('Failed to load sites: ' + error.message, 'error');
+            }
+        }
+
+        function displaySites() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            const filtered = sites.filter(s => {
+                const matchesSearch = s.site_name.toLowerCase().includes(search) ||
+                                     s.site_url.toLowerCase().includes(search);
+                const matchesStatus = !statusFilter || s.status === statusFilter;
+                return matchesSearch && matchesStatus;
+            });
+
+            const list = document.getElementById('sitesList');
+            list.innerHTML = filtered.map(s => `
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">${escapeHtml(s.site_name)}</h5>
+                            <p class="card-text">
+                                <a href="${escapeHtml(s.site_url)}" target="_blank" class="text-decoration-none">
+                                    <i class="bi bi-globe"></i> ${escapeHtml(s.site_url)}
+                                </a>
+                            </p>
+                            <div class="mb-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-link-45deg"></i> Links: ${s.used_links || 0}/${s.max_links || 0}
+                                </small>
+                            </div>
+                            <div class="mb-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-file-text"></i> Articles: ${s.used_articles || 0}/${s.max_articles || 0}
+                                </small>
+                            </div>
+                            <div class="mb-3">
+                                <span class="badge bg-${s.status === 'active' ? 'success' : 'secondary'}">
+                                    ${s.status || 'active'}
+                                </span>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-outline-primary" onclick="editSite(${s.id})">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteSite(${s.id})">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showCreateModal() {
+            document.getElementById('modalTitle').textContent = 'Add Site';
+            document.getElementById('siteForm').reset();
+            document.getElementById('siteId').value = '';
+            document.getElementById('maxLinks').value = '10';
+            document.getElementById('maxArticles').value = '10';
+            document.getElementById('siteStatus').value = 'active';
+            modal.show();
+        }
+
+        function editSite(id) {
+            const site = sites.find(s => s.id === id);
+            if (!site) return;
+
+            document.getElementById('modalTitle').textContent = 'Edit Site';
+            document.getElementById('siteId').value = site.id;
+            document.getElementById('siteName').value = site.site_name;
+            document.getElementById('siteUrl').value = site.site_url;
+            document.getElementById('wpUsername').value = site.wp_username;
+            document.getElementById('wpPassword').value = site.wp_password;
+            document.getElementById('maxLinks').value = site.max_links || 10;
+            document.getElementById('maxArticles').value = site.max_articles || 10;
+            document.getElementById('siteStatus').value = site.status || 'active';
+            document.getElementById('notes').value = site.notes || '';
+            modal.show();
+        }
+
+        async function saveSite() {
+            const id = document.getElementById('siteId').value;
+            const data = {
+                site_name: document.getElementById('siteName').value,
+                site_url: document.getElementById('siteUrl').value,
+                wp_username: document.getElementById('wpUsername').value,
+                wp_password: document.getElementById('wpPassword').value,
+                max_links: parseInt(document.getElementById('maxLinks').value),
+                max_articles: parseInt(document.getElementById('maxArticles').value),
+                status: document.getElementById('siteStatus').value,
+                notes: document.getElementById('notes').value
+            };
+
+            try {
+                if (id) {
+                    await SitesAPI.update(id, data);
+                    showNotification('Site updated successfully');
+                } else {
+                    await SitesAPI.create(data);
+                    showNotification('Site created successfully');
+                }
+                modal.hide();
+                await loadSites();
+            } catch (error) {
+                showNotification('Failed to save site: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteSite(id) {
+            if (!confirm('Are you sure you want to delete this site?')) return;
+
+            try {
+                await SitesAPI.delete(id);
+                showNotification('Site deleted successfully');
+                await loadSites();
+            } catch (error) {
+                showNotification('Failed to delete site: ' + error.message, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
