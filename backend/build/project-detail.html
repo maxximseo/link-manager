@@ -356,8 +356,8 @@
                             <div class="btn-group btn-group-sm">
                                 <button class="btn btn-outline-info" onclick="viewArticle(${article.id})" title="Просмотр"><i class="bi bi-eye"></i></button>
                                 ${!isExhausted ? `<button class="btn btn-outline-primary" onclick="editArticle(${article.id})" title="Редактировать"><i class="bi bi-pencil"></i></button>` : ''}
-                                <button class="btn btn-outline-secondary" onclick="duplicateArticle(${article.id})" title="Дублировать"><i class="bi bi-files"></i></button>
-                                <button class="btn btn-outline-danger" onclick="deleteArticle(${article.id})" title="Удалить"><i class="bi bi-trash"></i></button>
+                                <button class="btn btn-outline-secondary" onclick="duplicateArticle(${article.id})" title="Создать копию"><i class="bi bi-files"></i></button>
+                                <button class="btn ${isExhausted ? 'btn-outline-secondary disabled' : 'btn-outline-danger'}" onclick="deleteArticle(${article.id})" title="${isExhausted ? 'Нельзя удалить использованную статью' : 'Удалить статью'}"><i class="bi bi-trash"></i></button>
                             </div>
                         </div>
                     </div>
@@ -417,7 +417,18 @@
         }
 
         async function deleteLink(id) {
-            if (!confirm('Удалить эту ссылку?')) return;
+            const link = links.find(l => l.id === id);
+            if (!link) return;
+
+            // Предупреждение если ссылка использована
+            if (link.usage_count > 0) {
+                const confirmMsg = `⚠️ Эта ссылка уже использована ${link.usage_count} раз!\n\n` +
+                                  `Удаление повлияет на размещения где она используется.\n\n` +
+                                  `Вы уверены что хотите удалить?`;
+                if (!confirm(confirmMsg)) return;
+            } else {
+                if (!confirm('Удалить эту ссылку?\n\nВнимание: это действие необратимо!')) return;
+            }
 
             try {
                 await ProjectsAPI.deleteLink(projectId, id);
@@ -504,7 +515,21 @@
         }
 
         async function deleteArticle(id) {
-            if (!confirm('Удалить эту статью?')) return;
+            const article = articles.find(a => a.id === id);
+            if (!article) return;
+
+            // Проверка: если статья использована, запретить удаление
+            if (article.usage_count >= 1) {
+                alert('❌ Нельзя удалить использованную статью!\n\n' +
+                      'Эта статья уже размещена на сайте и используется в размещениях.\n\n' +
+                      'Что можно сделать:\n' +
+                      '• Создать копию статьи через кнопку "Дублировать"\n' +
+                      '• Удалить сначала размещение, где используется статья\n\n' +
+                      'Это защита от случайного удаления контента.');
+                return;
+            }
+
+            if (!confirm('Удалить эту статью?\n\nВнимание: это действие необратимо!')) return;
 
             try {
                 await ProjectsAPI.deleteArticle(projectId, id);
