@@ -172,6 +172,16 @@ async function initDatabase() {
     await pool.query('CREATE INDEX IF NOT EXISTS idx_sites_user_id ON sites(user_id)');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_projects_user_id ON projects(user_id)');
 
+    // Additional indexes for JOIN performance
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_placement_content_link_id ON placement_content(link_id)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_placement_content_article_id ON placement_content(article_id)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_placements_site_id ON placements(site_id)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_placements_project_id ON placements(project_id)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_sites_api_key ON sites(api_key)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_placements_status ON placements(status)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_sites_created_at ON sites(created_at DESC)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_projects_created_at ON projects(created_at DESC)');
+
     logger.info('Database tables initialized successfully');
   } catch (error) {
     logger.error('Database initialization failed:', error);
