@@ -83,13 +83,22 @@ const createSite = async (data) => {
 // Update site
 const updateSite = async (siteId, userId, data) => {
   try {
-    const { site_url, site_name, api_key, max_links, max_articles } = data;
-    
+    const { site_url, site_name, api_key, max_links, max_articles, status, notes } = data;
+
     const result = await query(
-      'UPDATE sites SET site_url = $1, site_name = $2, api_key = $3, max_links = $4, max_articles = $5 WHERE id = $6 AND user_id = $7 RETURNING *',
-      [site_url, site_name, api_key, max_links, max_articles, siteId, userId]
+      `UPDATE sites
+       SET site_url = COALESCE($1, site_url),
+           site_name = COALESCE($2, site_name),
+           api_key = COALESCE($3, api_key),
+           max_links = COALESCE($4, max_links),
+           max_articles = COALESCE($5, max_articles),
+           status = COALESCE($6, status),
+           notes = COALESCE($7, notes)
+       WHERE id = $8 AND user_id = $9
+       RETURNING *`,
+      [site_url, site_name, api_key, max_links, max_articles, status, notes, siteId, userId]
     );
-    
+
     return result.rows.length > 0 ? result.rows[0] : null;
   } catch (error) {
     logger.error('Update site error:', error);

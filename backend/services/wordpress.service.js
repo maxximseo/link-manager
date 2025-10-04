@@ -12,38 +12,30 @@ const getContentByApiKey = async (apiKey) => {
   try {
     // Get all content for sites with this API key
     const result = await query(`
-      SELECT 
-        'link' as type,
+      SELECT
         pl.id,
         pl.url,
-        pl.text,
-        s.site_url
+        pl.anchor_text
       FROM project_links pl
-      JOIN projects p ON pl.project_id = p.id
       JOIN placement_content pc ON pl.id = pc.link_id
       JOIN placements plc ON pc.placement_id = plc.id
       JOIN sites s ON plc.site_id = s.id
       WHERE s.api_key = $1
-      
-      UNION ALL
-      
-      SELECT 
-        'article' as type,
-        pa.id,
-        pa.title as url,
-        pa.content as text,
-        s.site_url
-      FROM project_articles pa
-      JOIN projects p ON pa.project_id = p.id
-      JOIN placement_content pc ON pa.id = pc.article_id
-      JOIN placements plc ON pc.placement_id = plc.id
-      JOIN sites s ON plc.site_id = s.id
-      WHERE s.api_key = $1
-      
-      ORDER BY id DESC
+        AND pc.link_id IS NOT NULL
+      ORDER BY pc.id DESC
     `, [apiKey]);
-    
-    return result.rows;
+
+    // Format response for WordPress plugin
+    const links = result.rows.map(row => ({
+      url: row.url,
+      anchor_text: row.anchor_text,
+      position: '' // Position can be added later if needed
+    }));
+
+    return {
+      links: links,
+      articles: [] // Articles are published separately via REST API
+    };
   } catch (error) {
     logger.error('Get content by API key error:', error);
     throw error;

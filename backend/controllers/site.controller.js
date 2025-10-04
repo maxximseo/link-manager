@@ -86,8 +86,8 @@ const updateSite = async (req, res) => {
   try {
     const siteId = req.params.id;
     const userId = req.user.id;
-    const { site_url, site_name, api_key, max_links, max_articles } = req.body;
-    
+    const { site_url, site_name, api_key, max_links, max_articles, status, notes } = req.body;
+
     // Validate URL format if provided
     if (site_url) {
       const urlPattern = /^https?:\/\/.+/;
@@ -95,28 +95,30 @@ const updateSite = async (req, res) => {
         return res.status(400).json({ error: 'Site URL must be a valid HTTP/HTTPS URL' });
       }
     }
-    
+
     // Validate numeric fields
     if (max_links !== undefined && (typeof max_links !== 'number' || max_links < 0)) {
       return res.status(400).json({ error: 'Max links must be a positive number' });
     }
-    
+
     if (max_articles !== undefined && (typeof max_articles !== 'number' || max_articles < 0)) {
       return res.status(400).json({ error: 'Max articles must be a positive number' });
     }
-    
+
     const site = await siteService.updateSite(siteId, userId, {
       site_url,
       site_name,
       api_key,
       max_links,
-      max_articles
+      max_articles,
+      status,
+      notes
     });
-    
+
     if (!site) {
       return res.status(404).json({ error: 'Site not found' });
     }
-    
+
     res.json(site);
   } catch (error) {
     logger.error('Update site error:', error);

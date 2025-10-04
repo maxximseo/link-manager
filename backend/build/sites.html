@@ -79,13 +79,12 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="wpUsername" class="form-label">WordPress Username *</label>
-                            <input type="text" class="form-control" id="wpUsername" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="wpPassword" class="form-label">WordPress Password *</label>
-                            <input type="password" class="form-control" id="wpPassword" required>
+                            <label for="apiKey" class="form-label">API Token *</label>
+                            <input type="text" class="form-control" id="apiKey" required
+                                   placeholder="Получите токен из плагина на вашем WordPress сайте">
+                            <small class="form-text text-muted">
+                                <i class="bi bi-info-circle"></i> Установите плагин Link Manager на WordPress и скопируйте токен из настроек
+                            </small>
                         </div>
 
                         <div class="row">
@@ -227,8 +226,7 @@
             document.getElementById('siteId').value = site.id;
             document.getElementById('siteName').value = site.site_name;
             document.getElementById('siteUrl').value = site.site_url;
-            document.getElementById('wpUsername').value = site.wp_username;
-            document.getElementById('wpPassword').value = site.wp_password;
+            document.getElementById('apiKey').value = site.api_key || '';
             document.getElementById('maxLinks').value = site.max_links || 10;
             document.getElementById('maxArticles').value = site.max_articles || 10;
             document.getElementById('siteStatus').value = site.status || 'active';
@@ -241,8 +239,7 @@
             const data = {
                 site_name: document.getElementById('siteName').value,
                 site_url: document.getElementById('siteUrl').value,
-                wp_username: document.getElementById('wpUsername').value,
-                wp_password: document.getElementById('wpPassword').value,
+                api_key: document.getElementById('apiKey').value,
                 max_links: parseInt(document.getElementById('maxLinks').value),
                 max_articles: parseInt(document.getElementById('maxArticles').value),
                 status: document.getElementById('siteStatus').value,
