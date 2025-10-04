@@ -25,6 +25,7 @@ class WorkerManager {
 
   async initialize() {
     if (!queueService) {
+      logger.warn('Queue service not available - Redis/Valkey not configured');
       return {
         success: false,
         message: 'Queue service not available - Redis/Valkey not configured'
@@ -32,25 +33,37 @@ class WorkerManager {
     }
 
     try {
-      // Initialize Redis connection
-      const redisClient = queueService.initializeRedis();
-      
-      // Test connection
-      await redisClient.ping();
-      
-      // Initialize queues
-      const queues = queueService.initializeQueues();
-      
-      // Start workers
-      this.startWorkers(queues);
-      
-      this.isHealthy = true;
-      isInitialized = true;
-      
+      // Check if Redis is available
+      if (!queueService.redisAvailable) {
+        logger.warn('Redis not available - queue workers disabled');
+        return {
+          success: false,
+          message: 'Redis not available - queue workers disabled'
+        };
+      }
+
+      // Create queues using the available queueService
+      const queues = {
+        placement: queueService.createQueue('placement'),
+        wordpress: queueService.createQueue('wordpress')
+      };
+
+      // Start workers only if queues were created
+      if (queues.placement || queues.wordpress) {
+        this.startWorkers(queues);
+        this.isHealthy = true;
+        isInitialized = true;
+
+        return {
+          success: true,
+          workers: this.workers.length,
+          queues: Object.keys(queues).filter(k => queues[k])
+        };
+      }
+
       return {
-        success: true,
-        workers: this.workers.length,
-        queues: Object.keys(queues)
+        success: false,
+        message: 'No queues could be created'
       };
     } catch (error) {
       logger.error('Failed to initialize queue workers', { error: error.message });
