@@ -30,7 +30,7 @@ class LinkManagerWidget {
     
     private $api_key;
     private $api_endpoint;
-    private $cache_duration = 3600; // 1 hour cache
+    private $cache_duration = 300; // 5 minutes cache
     
     public function __construct() {
         $this->api_key = get_option('lmw_api_key', '');
@@ -100,7 +100,7 @@ class LinkManagerWidget {
         
         $api_key = get_option('lmw_api_key', '');
         $api_endpoint = get_option('lmw_api_endpoint', LMW_API_ENDPOINT);
-        $cache_duration = get_option('lmw_cache_duration', 3600);
+        $cache_duration = get_option('lmw_cache_duration', 300);
         ?>
         <div class="wrap">
             <h1>Link Manager Widget Settings</h1>
@@ -186,8 +186,12 @@ class LinkManagerWidget {
             <p>Use these shortcodes to display content:</p>
             <ul>
                 <li><code>[link_manager]</code> - Display all placed content</li>
-                <li><code>[lm_links position="header"]</code> - Display links (optional: position="header|footer|sidebar")</li>
+                <li><code>[lm_links]</code> - Display links on any page</li>
+                <li><code>[lm_links home_only="true"]</code> - Display links only on homepage</li>
+                <li><code>[lm_links style="inline"]</code> - Display as inline links (list|inline)</li>
+                <li><code>[lm_links limit="5"]</code> - Limit number of links</li>
             </ul>
+            <p><strong>Default cache:</strong> 5 minutes (300 seconds). You can change it in settings above.</p>
             
             <h2>Widgets</h2>
             <p>You can also add Link Manager widgets through Appearance → Widgets:</p>
@@ -298,14 +302,20 @@ class LinkManagerWidget {
         $atts = shortcode_atts(array(
             'position' => '',
             'limit' => 0,
-            'style' => 'list' // list, inline, grid
+            'style' => 'list', // list, inline, grid
+            'home_only' => 'false' // Only show on homepage
         ), $atts);
-        
+
+        // Check if should only display on homepage
+        if ($atts['home_only'] === 'true' && !is_front_page()) {
+            return '';
+        }
+
         $content = $this->fetch_content_from_api();
         if (!$content || empty($content['links'])) {
             return '';
         }
-        
+
         return $this->render_links($content['links'], $atts);
     }
     
