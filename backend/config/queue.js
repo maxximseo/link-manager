@@ -3,12 +3,42 @@ const logger = require('./logger');
 
 let redisAvailable = false;
 
+// Build Redis config for Bull
+function getRedisConfig() {
+  if (process.env.REDIS_URL) {
+    return process.env.REDIS_URL;
+  }
+
+  const config = {
+    host: process.env.REDIS_HOST || 'localhost',
+    port: parseInt(process.env.REDIS_PORT) || 6379,
+    db: parseInt(process.env.REDIS_DB) || 0
+  };
+
+  if (process.env.REDIS_PASSWORD) {
+    config.password = process.env.REDIS_PASSWORD;
+  }
+
+  if (process.env.REDIS_USER) {
+    config.username = process.env.REDIS_USER;
+  }
+
+  // Enable TLS for DigitalOcean
+  if (process.env.REDIS_HOST && process.env.REDIS_HOST.includes('ondigitalocean.com')) {
+    config.tls = {
+      rejectUnauthorized: false
+    };
+  }
+
+  return config;
+}
+
 const createQueue = (name) => {
   if (!redisAvailable) return null;
 
   try {
     return new Queue(name, {
-      redis: process.env.REDIS_URL || 'redis://127.0.0.1:6379'
+      redis: getRedisConfig()
     });
   } catch (error) {
     logger.warn(`Queue ${name} creation failed: ${error.message}`);
@@ -19,15 +49,16 @@ const createQueue = (name) => {
 // Test Redis connection
 (async () => {
   try {
-    const testQueue = createQueue('test');
-    if (testQueue) {
-      await testQueue.isReady();
-      redisAvailable = true;
-      await testQueue.close();
-      logger.info('Redis available - queues enabled');
-    }
-  } catch {
-    logger.warn('Redis unavailable - queues disabled');
+    const testQueue = new Queue('test', {
+      redis: getRedisConfig()
+    });
+
+    await testQueue.isReady();
+    redisAvailable = true;
+    await testQueue.close();
+    logger.info('Bull Queue available - async workers enabled');
+  } catch (error) {
+    logger.warn('Bull Queue unavailable - async workers disabled:', error.message);
   }
 })();
 
