@@ -6,10 +6,20 @@
 const { query } = require('../config/database');
 const logger = require('../config/logger');
 const axios = require('axios');
+const cache = require('./cache.service');
 
-// Get content by API key
+// Get content by API key (with Redis caching)
 const getContentByApiKey = async (apiKey) => {
   try {
+    // Check cache first (5 minutes TTL)
+    const cacheKey = `wp:content:${apiKey}`;
+    const cached = await cache.get(cacheKey);
+
+    if (cached) {
+      logger.debug('WordPress content served from cache', { apiKey });
+      return cached;
+    }
+
     // Get all content for sites with this API key
     const result = await query(`
       SELECT
@@ -32,10 +42,16 @@ const getContentByApiKey = async (apiKey) => {
       position: '' // Position can be added later if needed
     }));
 
-    return {
+    const response = {
       links: links,
       articles: [] // Articles are published separately via REST API
     };
+
+    // Cache for 5 minutes
+    await cache.set(cacheKey, response, 300);
+    logger.debug('WordPress content cached', { apiKey, linksCount: links.length });
+
+    return response;
   } catch (error) {
     logger.error('Get content by API key error:', error);
     throw error;
