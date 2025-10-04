@@ -220,6 +220,72 @@ POST /api/projects/:id/articles/:articleId/duplicate
 - Seed data: `database/seed.sql`
 - Usage limits migration: `database/migrate_usage_limits.sql`
 
+## Performance & Caching System
+
+### Redis Cache (cache.service.js)
+**Status**: Active with 10-19x performance improvement
+
+Cached endpoints with TTL:
+- **WordPress API** (`/api/wordpress/get-content/:api_key`): 5 minutes
+  - Cache key: `wp:content:{api_key}`
+  - 152ms → 8ms (19x faster)
+- **Placements API** (`/api/placements`): 2 minutes
+  - Cache key: `placements:user:{userId}:p{page}:l{limit}`
+  - 173ms → 9ms (19x faster)
+
+**Cache Invalidation**: Automatic on placement create/delete
+- Clears: `placements:user:*`, `projects:user:*`, `wp:content:*`
+
+### Bull Queue Workers
+**Status**: 3 workers active (placement, wordpress, batch)
+
+Queue processing pattern:
+```javascript
+const queueService = require('../config/queue');
+const queue = queueService.createQueue('placement');
+
+// Add job
+await queue.add('batch-placement', {
+  userId,
+  project_id,
+  site_ids: [1, 2, 3],
+  link_ids: [10],
+  article_ids: [5]
+});
+
+// Worker processes in background (workers/placement.worker.js)
+```
+
+**Workers Location**: `backend/workers/`
+- `placement.worker.js` - Batch placement processing
+- `wordpress.worker.js` - Article publishing
+- `batch.worker.js` - Export operations
+
+**Queue Management**:
+```bash
+# Check Redis queues
+redis-cli keys 'bull:*'
+
+# Monitor queue status
+curl http://localhost:3003/api/queue/status
+```
+
+### Database Performance Indexes
+**15 active indexes** for optimal JOIN performance:
+- `placement_content(link_id, article_id)` - WordPress API queries
+- `placements(site_id, project_id, status)` - Dashboard queries
+- `sites(api_key, created_at)` - Plugin authentication
+- **Result**: 0 slow queries (was 4 queries >1000ms)
+
+**Critical**: Always use indexed columns in WHERE clauses:
+```sql
+-- Good (uses index)
+WHERE s.api_key = $1
+
+-- Bad (table scan)
+WHERE s.site_name LIKE '%keyword%'
+```
+
 ## Environment Variables
 
 Required:
@@ -228,8 +294,14 @@ Required:
 - `NODE_ENV` - development/production
 - `PORT` - Server port (default 3003)
 
+Redis Configuration (optional, graceful degradation):
+- `REDIS_HOST` - Redis host (default: localhost)
+- `REDIS_PORT` - Redis port (default: 6379)
+- `REDIS_DB` - Redis database number (default: 0)
+- `REDIS_PASSWORD` - Redis password (if required)
+- `REDIS_USER` - Redis username (DigitalOcean uses 'default')
+
 Optional:
-- `REDIS_URL` - For queue workers (graceful fallback if absent)
 - `BCRYPT_ROUNDS` - 8 for dev, 10 for prod
 
 ## Git Workflow
@@ -250,11 +322,24 @@ Repository: https://github.com/maxximseo/link-manager.git
 1. Check if port is in use: `lsof -ti:3003`
 2. Check database connectivity via logs
 3. Verify .env file exists with DATABASE_URL
+4. Check Redis connection (optional): `redis-cli ping` should return `PONG`
+
+### Redis/Queue Issues
+1. **Redis not available** warning: System uses graceful degradation, caching disabled but app works
+2. **Bull Queue workers not starting**: Check `redisAvailable` in logs, workers initialize after Redis test
+3. **Cache not working**: Verify Redis running: `brew services start redis`
+4. **Clear cache manually**: `redis-cli FLUSHDB`
+
+### Performance Issues
+1. **Slow queries** (>1000ms): Check if indexes exist in database
+2. **Cache not hitting**: Check TTL expiry, verify cache keys in Redis: `redis-cli keys '*'`
+3. **High memory usage**: Check Redis memory: `redis-cli info memory`
 
 ### Database Errors
 1. Check connection in logs: "Successfully parsed DATABASE_URL"
 2. For DigitalOcean: Ensure SSL config present (`rejectUnauthorized: false`)
 3. Verify tables exist: Run `database/init.sql` if needed
+4. **Slow queries**: Run `EXPLAIN ANALYZE` on problematic queries
 
 ### Frontend Not Loading
 1. Static files served from `backend/build/`
@@ -265,3 +350,8 @@ Repository: https://github.com/maxximseo/link-manager.git
 1. Check token in localStorage: `localStorage.getItem('token')`
 2. Decode JWT: https://jwt.io
 3. Verify token not expired (7-day expiry)
+
+### WordPress Plugin Integration Issues
+1. **Links not showing**: Check cache in plugin (5 min TTL), verify API key in sites table
+2. **API returns empty**: Verify placements exist with `placement_content` records
+3. **403 errors**: Check API key matches between plugin and database
