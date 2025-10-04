@@ -123,9 +123,67 @@ const getSiteByApiKey = async (apiKey) => {
   }
 };
 
+// Get site by ID
+const getSiteById = async (siteId, userId) => {
+  try {
+    const result = await query(
+      'SELECT id, site_url, site_name, api_key FROM sites WHERE id = $1 AND user_id = $2',
+      [siteId, userId]
+    );
+
+    return result.rows.length > 0 ? result.rows[0] : null;
+  } catch (error) {
+    logger.error('Get site by ID error:', error);
+    throw error;
+  }
+};
+
+// Get article by ID
+const getArticleById = async (articleId, userId) => {
+  try {
+    const result = await query(
+      `SELECT pa.id, pa.title, pa.content, pa.slug
+       FROM project_articles pa
+       JOIN projects p ON pa.project_id = p.id
+       WHERE pa.id = $1 AND p.user_id = $2`,
+      [articleId, userId]
+    );
+
+    return result.rows.length > 0 ? result.rows[0] : null;
+  } catch (error) {
+    logger.error('Get article by ID error:', error);
+    throw error;
+  }
+};
+
+// Update placement with WordPress post ID
+const updatePlacementWithPostId = async (siteId, articleId, wordpressPostId) => {
+  try {
+    await query(
+      `UPDATE placements
+       SET wordpress_post_id = $1, status = 'placed'
+       WHERE site_id = $2
+         AND id IN (
+           SELECT placement_id
+           FROM placement_content
+           WHERE article_id = $3
+         )`,
+      [wordpressPostId, siteId, articleId]
+    );
+
+    logger.info('Placement updated with WordPress post ID', { siteId, articleId, wordpressPostId });
+  } catch (error) {
+    logger.error('Update placement with post ID error:', error);
+    throw error;
+  }
+};
+
 module.exports = {
   getContentByApiKey,
   publishArticle,
   verifyWordPressConnection,
-  getSiteByApiKey
+  getSiteByApiKey,
+  getSiteById,
+  getArticleById,
+  updatePlacementWithPostId
 };

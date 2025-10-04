@@ -27,27 +27,40 @@ const getContent = async (req, res) => {
 // Publish article to WordPress
 const publishArticle = async (req, res) => {
   try {
-    const { site_url, api_key, title, content, slug } = req.body;
-    
+    const { site_id, article_id } = req.body;
+    const userId = req.user.id;
+
     // Validate required fields
-    if (!site_url || !api_key || !title || !content) {
-      return res.status(400).json({ 
-        error: 'Site URL, API key, title, and content are required' 
+    if (!site_id || !article_id) {
+      return res.status(400).json({
+        error: 'Site ID and Article ID are required'
       });
     }
-    
-    // Validate URL format
-    const urlPattern = /^https?:\/\/.+/;
-    if (!urlPattern.test(site_url)) {
-      return res.status(400).json({ error: 'Site URL must be a valid HTTP/HTTPS URL' });
+
+    // Get site details
+    const site = await wordpressService.getSiteById(site_id, userId);
+    if (!site) {
+      return res.status(404).json({ error: 'Site not found' });
     }
-    
-    const result = await wordpressService.publishArticle(site_url, api_key, {
-      title,
-      content,
-      slug: slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+
+    // Get article details
+    const article = await wordpressService.getArticleById(article_id, userId);
+    if (!article) {
+      return res.status(404).json({ error: 'Article not found' });
+    }
+
+    // Publish to WordPress via plugin
+    const result = await wordpressService.publishArticle(site.site_url, site.api_key, {
+      title: article.title,
+      content: article.content,
+      slug: article.slug || article.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')
     });
-    
+
+    // Update placement with WordPress post ID if successful
+    if (result.success && result.wordpress_id) {
+      await wordpressService.updatePlacementWithPostId(site_id, article_id, result.wordpress_id);
+    }
+
     res.json(result);
   } catch (error) {
     logger.error('WordPress publish error:', error);
