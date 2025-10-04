@@ -5,10 +5,20 @@
 
 const { query } = require('../config/database');
 const logger = require('../config/logger');
+const cache = require('./cache.service');
 
-// Get user placements with statistics
+// Get user placements with statistics (with caching)
 const getUserPlacements = async (userId, page = 0, limit = 0) => {
   try {
+    // Check cache first (2 minutes TTL for placements list)
+    const cacheKey = `placements:user:${userId}:p${page}:l${limit}`;
+    const cached = await cache.get(cacheKey);
+
+    if (cached) {
+      logger.debug('Placements served from cache', { userId, page, limit });
+      return cached;
+    }
+
     const usePagination = page > 0 && limit > 0;
     
     // Simplified query to get placements without complex JOINs
@@ -54,8 +64,8 @@ const getUserPlacements = async (userId, page = 0, limit = 0) => {
       
       const total = parseInt(countResult.rows[0].count);
       const totalPages = Math.ceil(total / limit);
-      
-      return {
+
+      const response = {
         data: result.rows,
         pagination: {
           page,
@@ -66,9 +76,21 @@ const getUserPlacements = async (userId, page = 0, limit = 0) => {
           hasPrev: page > 1
         }
       };
+
+      // Cache for 2 minutes
+      await cache.set(cacheKey, response, 120);
+      logger.debug('Placements cached', { userId, count: result.rows.length });
+
+      return response;
     }
-    
-    return result.rows;
+
+    const response = result.rows;
+
+    // Cache for 2 minutes
+    await cache.set(cacheKey, response, 120);
+    logger.debug('Placements cached', { userId, count: result.rows.length });
+
+    return response;
   } catch (error) {
     logger.error('Get user placements error:', error);
     throw error;
@@ -206,6 +228,12 @@ const createPlacement = async (data) => {
       );
     }
 
+    // Invalidate cache for placements and projects
+    await cache.delPattern(`placements:user:${userId}:*`);
+    await cache.delPattern(`projects:user:${userId}:*`);
+    await cache.delPattern(`wp:content:*`); // Invalidate WordPress API cache
+    logger.debug('Cache invalidated after placement creation', { userId });
+
     return placement;
   } catch (error) {
     logger.error('Create placement error:', error);
@@ -292,7 +320,12 @@ const deletePlacement = async (placementId, userId) => {
         );
       }
 
-      logger.info('Placement deleted and quotas updated', { placementId, site_id, link_count, article_count });
+      // Invalidate cache for placements and projects
+      await cache.delPattern(`placements:user:${userId}:*`);
+      await cache.delPattern(`projects:user:${userId}:*`);
+      await cache.delPattern(`wp:content:*`); // Invalidate WordPress API cache
+      logger.info('Placement deleted and cache invalidated', { placementId, site_id, userId });
+
       return true;
     }
 

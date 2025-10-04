@@ -33,6 +33,19 @@ function initRedis() {
       config.password = process.env.REDIS_PASSWORD;
     }
 
+    // Add username if provided (DigitalOcean uses 'default')
+    if (process.env.REDIS_USER) {
+      config.username = process.env.REDIS_USER;
+    }
+
+    // Enable TLS for DigitalOcean Managed Redis
+    if (process.env.REDIS_HOST && process.env.REDIS_HOST.includes('ondigitalocean.com')) {
+      config.tls = {
+        rejectUnauthorized: false // Accept self-signed certificates
+      };
+      logger.info('Redis TLS enabled for DigitalOcean');
+    }
+
     redis = new Redis(config);
 
     redis.on('connect', () => {
