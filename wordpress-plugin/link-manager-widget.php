@@ -185,13 +185,12 @@ class LinkManagerWidget {
             <h2>Usage</h2>
             <p>Use these shortcodes to display content:</p>
             <ul>
-                <li><code>[link_manager]</code> - Display all placed content</li>
-                <li><code>[lm_links]</code> - Display links on any page</li>
-                <li><code>[lm_links home_only="true"]</code> - Display links only on homepage</li>
+                <li><code>[lm_links]</code> - <strong>Display links on homepage only (default)</strong></li>
+                <li><code>[lm_links home_only="false"]</code> - Display links on all pages</li>
                 <li><code>[lm_links style="inline"]</code> - Display as inline links (list|inline)</li>
                 <li><code>[lm_links limit="5"]</code> - Limit number of links</li>
             </ul>
-            <p><strong>Default cache:</strong> 5 minutes (300 seconds). You can change it in settings above.</p>
+            <p><strong>Default behavior:</strong> Links show only on homepage with 5 minutes cache.</p>
             
             <h2>Widgets</h2>
             <p>You can also add Link Manager widgets through Appearance → Widgets:</p>
@@ -303,10 +302,10 @@ class LinkManagerWidget {
             'position' => '',
             'limit' => 0,
             'style' => 'list', // list, inline, grid
-            'home_only' => 'false' // Only show on homepage
+            'home_only' => 'true' // Show only on homepage by default
         ), $atts);
 
-        // Check if should only display on homepage
+        // By default, show only on homepage (unless home_only="false")
         if ($atts['home_only'] === 'true' && !is_front_page()) {
             return '';
         }
