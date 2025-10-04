@@ -33,37 +33,38 @@ class WorkerManager {
     }
 
     try {
-      // Check if Redis is available
-      if (!queueService.redisAvailable) {
-        logger.warn('Redis not available - queue workers disabled');
+      // Try to create queues - if Redis is unavailable, createQueue will return null
+      const queues = {
+        placement: queueService.createQueue('placement'),
+        wordpress: queueService.createQueue('wordpress'),
+        batch: queueService.createQueue('batch')
+      };
+
+      // Filter out null queues (failed to create)
+      const availableQueues = Object.keys(queues).filter(k => queues[k] !== null);
+
+      if (availableQueues.length === 0) {
+        logger.warn('Redis not available - no queues could be created');
         return {
           success: false,
           message: 'Redis not available - queue workers disabled'
         };
       }
 
-      // Create queues using the available queueService
-      const queues = {
-        placement: queueService.createQueue('placement'),
-        wordpress: queueService.createQueue('wordpress')
-      };
+      // Start workers for available queues
+      this.startWorkers(queues);
+      this.isHealthy = true;
+      isInitialized = true;
 
-      // Start workers only if queues were created
-      if (queues.placement || queues.wordpress) {
-        this.startWorkers(queues);
-        this.isHealthy = true;
-        isInitialized = true;
-
-        return {
-          success: true,
-          workers: this.workers.length,
-          queues: Object.keys(queues).filter(k => queues[k])
-        };
-      }
+      logger.info(`Queue workers initialized successfully`, {
+        workers: this.workers.length,
+        queues: availableQueues
+      });
 
       return {
-        success: false,
-        message: 'No queues could be created'
+        success: true,
+        workers: this.workers.length,
+        queues: availableQueues
       };
     } catch (error) {
       logger.error('Failed to initialize queue workers', { error: error.message });

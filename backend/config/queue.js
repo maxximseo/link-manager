@@ -34,12 +34,13 @@ function getRedisConfig() {
 }
 
 const createQueue = (name) => {
-  if (!redisAvailable) return null;
-
+  // Don't check redisAvailable - it's set asynchronously
+  // Just try to create queue and handle errors gracefully
   try {
-    return new Queue(name, {
+    const queue = new Queue(name, {
       redis: getRedisConfig()
     });
+    return queue;
   } catch (error) {
     logger.warn(`Queue ${name} creation failed: ${error.message}`);
     return null;
