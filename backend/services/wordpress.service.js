@@ -42,66 +42,68 @@ const getContentByApiKey = async (apiKey) => {
   }
 };
 
-// Publish article to WordPress
+// Publish article to WordPress via Link Manager plugin
 const publishArticle = async (siteUrl, apiKey, articleData) => {
   try {
     const { title, content, slug } = articleData;
-    
-    const wordpressUrl = `${siteUrl}/wp-json/wp/v2/posts`;
-    
-    const response = await axios.post(wordpressUrl, {
+
+    // Use Link Manager plugin REST API endpoint
+    const pluginUrl = `${siteUrl}/wp-json/link-manager/v1/create-article`;
+
+    const response = await axios.post(pluginUrl, {
       title,
       content,
       slug,
-      status: 'publish'
+      api_key: apiKey
     }, {
-      auth: {
-        username: apiKey.split('_')[1] || 'api',
-        password: apiKey
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': apiKey
       },
       timeout: 30000
     });
-    
-    logger.info('Article published to WordPress', {
-      siteUrl,
-      articleId: response.data.id,
-      title
-    });
-    
-    return {
-      success: true,
-      wordpress_id: response.data.id,
-      url: response.data.link
-    };
+
+    if (response.data.success) {
+      logger.info('Article published to WordPress via plugin', {
+        siteUrl,
+        articleId: response.data.post_id,
+        title
+      });
+
+      return {
+        success: true,
+        wordpress_id: response.data.post_id,
+        url: response.data.post_url
+      };
+    } else {
+      throw new Error(response.data.error || 'Failed to publish article');
+    }
   } catch (error) {
     logger.error('WordPress publish error:', error);
-    throw new Error(`Failed to publish to WordPress: ${error.message}`);
+    throw new Error(`Failed to publish to WordPress: ${error.response?.data?.error || error.message}`);
   }
 };
 
-// Verify WordPress connection
+// Verify WordPress connection via Link Manager plugin
 const verifyWordPressConnection = async (siteUrl, apiKey) => {
   try {
-    const testUrl = `${siteUrl}/wp-json/wp/v2/posts?per_page=1`;
+    // Check if Link Manager plugin REST API is available
+    const testUrl = `${siteUrl}/wp-json/link-manager/v1/create-article`;
 
-    const response = await axios.get(testUrl, {
-      auth: {
-        username: apiKey.split('_')[1] || 'api',
-        password: apiKey
-      },
+    const response = await axios.options(testUrl, {
       timeout: 10000
     });
 
     return {
       success: true,
       status: response.status,
-      posts_count: response.data.length
+      message: 'Link Manager plugin is active'
     };
   } catch (error) {
     logger.error('WordPress verification error:', error);
     return {
       success: false,
-      error: error.message
+      error: error.message || 'Link Manager plugin not found or not activated'
     };
   }
 };
