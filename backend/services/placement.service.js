@@ -21,9 +21,9 @@ const getUserPlacements = async (userId, page = 0, limit = 0) => {
 
     const usePagination = page > 0 && limit > 0;
     
-    // Simplified query to get placements without complex JOINs
+    // Query to get placements with content details
     let placementsQuery = `
-      SELECT 
+      SELECT
         p.id,
         p.project_id,
         p.site_id,
@@ -34,7 +34,15 @@ const getUserPlacements = async (userId, page = 0, limit = 0) => {
         p.status,
         s.site_url,
         s.site_name,
-        proj.name as project_name
+        proj.name as project_name,
+        (SELECT COUNT(*) FROM placement_content pc WHERE pc.placement_id = p.id AND pc.link_id IS NOT NULL) as link_count,
+        (SELECT COUNT(*) FROM placement_content pc WHERE pc.placement_id = p.id AND pc.article_id IS NOT NULL) as article_count,
+        (SELECT pl.anchor_text FROM placement_content pc
+         LEFT JOIN project_links pl ON pc.link_id = pl.id
+         WHERE pc.placement_id = p.id AND pc.link_id IS NOT NULL LIMIT 1) as link_title,
+        (SELECT pa.title FROM placement_content pc
+         LEFT JOIN project_articles pa ON pc.article_id = pa.id
+         WHERE pc.placement_id = p.id AND pc.article_id IS NOT NULL LIMIT 1) as article_title
       FROM placements p
       LEFT JOIN sites s ON p.site_id = s.id
       LEFT JOIN projects proj ON p.project_id = proj.id

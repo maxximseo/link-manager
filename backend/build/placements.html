@@ -67,8 +67,7 @@
                         <th>ID</th>
                         <th>Project</th>
                         <th>Site</th>
-                        <th>Type</th>
-                        <th>Count</th>
+                        <th>Content</th>
                         <th>Status</th>
                         <th>Placed At</th>
                         <th>Actions</th>
@@ -269,13 +268,23 @@
             });
 
             const tbody = document.getElementById('placementsTable');
-            tbody.innerHTML = filtered.map(p => `
+            tbody.innerHTML = filtered.map(p => {
+                // Determine content type and title
+                let contentHtml = '<span class="text-muted">Empty</span>';
+                if (p.article_count > 0 && p.link_count > 0) {
+                    contentHtml = `<span class="badge bg-info me-1">📄 Article</span><span class="badge bg-success">🔗 Link</span><br><small class="text-muted">${escapeHtml(p.article_title || '')}</small>`;
+                } else if (p.article_count > 0) {
+                    contentHtml = `<span class="badge bg-info">📄 Article</span><br><small>${escapeHtml(p.article_title || '')}</small>`;
+                } else if (p.link_count > 0) {
+                    contentHtml = `<span class="badge bg-success">🔗 Link</span><br><small>${escapeHtml(p.link_title || '')}</small>`;
+                }
+
+                return `
                 <tr>
                     <td>${p.id}</td>
                     <td>${escapeHtml(p.project_name || 'N/A')}</td>
                     <td>${escapeHtml(p.site_name || 'N/A')}</td>
-                    <td>${escapeHtml(p.type || 'manual')}</td>
-                    <td>${p.count || 0}</td>
+                    <td>${contentHtml}</td>
                     <td>
                         <span class="badge bg-${getStatusColor(p.status)}">
                             ${escapeHtml(p.status || 'pending')}
@@ -288,7 +297,8 @@
                         </button>
                     </td>
                 </tr>
-            `).join('');
+                `;
+            }).join('');
         }
 
         function getStatusColor(status) {
