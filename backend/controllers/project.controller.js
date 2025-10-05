@@ -158,6 +158,12 @@ const addProjectLink = async (req, res) => {
     res.json(link);
   } catch (error) {
     logger.error('Add project link error:', error);
+
+    // Return specific error message for duplicate anchor text
+    if (error.message && error.message.includes('Duplicate anchor text')) {
+      return res.status(400).json({ error: error.message });
+    }
+
     res.status(500).json({ error: 'Failed to add project link' });
   }
 };
@@ -193,14 +199,22 @@ const addProjectLinksBulk = async (req, res) => {
     const { links } = req.body;
     
     const result = await projectService.addProjectLinksBulk(projectId, userId, links);
-    
+
     if (result === null) {
       return res.status(404).json({ error: 'Project not found' });
     }
-    
+
+    // Build message with duplicate info
+    let message = `Successfully imported ${result.summary.imported} links`;
+    if (result.summary.duplicates > 0) {
+      message += `. Skipped ${result.summary.duplicates} duplicate${result.summary.duplicates > 1 ? 's' : ''}`;
+    }
+
     res.json({
-      message: `Successfully imported ${result.length} links`,
-      links: result
+      message,
+      links: result.imported,
+      duplicates: result.duplicates,
+      summary: result.summary
     });
   } catch (error) {
     logger.error('Bulk add project links error:', error);

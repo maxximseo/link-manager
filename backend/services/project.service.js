@@ -196,6 +196,17 @@ const addProjectLink = async (projectId, userId, linkData) => {
       return null;
     }
 
+    // Check for duplicate anchor_text in the same project
+    const duplicateCheck = await query(
+      'SELECT id, anchor_text, url FROM project_links WHERE project_id = $1 AND LOWER(anchor_text) = LOWER($2)',
+      [projectId, anchor_text || url]
+    );
+
+    if (duplicateCheck.rows.length > 0) {
+      const existing = duplicateCheck.rows[0];
+      throw new Error(`Duplicate anchor text "${existing.anchor_text}" already exists in this project (ID: ${existing.id})`);
+    }
+
     const result = await query(
       'INSERT INTO project_links (project_id, url, anchor_text, position, usage_limit) VALUES ($1, $2, $3, $4, $5) RETURNING *',
       [projectId, url, anchor_text || url, position || 0, usage_limit || 999]
@@ -265,31 +276,64 @@ const addProjectLinksBulk = async (projectId, userId, links) => {
     if (links.length > 500) {
       throw new Error('Maximum 500 links at once');
     }
-    
-    // Prepare bulk insert
+
+    // Get existing anchor texts in this project (case-insensitive)
+    const existingLinksResult = await query(
+      'SELECT LOWER(anchor_text) as anchor_text FROM project_links WHERE project_id = $1',
+      [projectId]
+    );
+    const existingAnchors = new Set(existingLinksResult.rows.map(row => row.anchor_text));
+
+    // Track duplicates for reporting
+    const duplicates = [];
+    const batchAnchors = new Set();
+
+    // Prepare bulk insert, filtering out duplicates
     const values = [];
     const placeholders = [];
     let paramIndex = 1;
-    
+
     links.forEach((link) => {
       if (link.url && link.url.startsWith('http')) {
-        placeholders.push(`($${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++})`);
-        values.push(projectId, link.url, link.anchor_text || link.url, link.position || 0);
+        const anchorText = link.anchor_text || link.url;
+        const anchorLower = anchorText.toLowerCase();
+
+        // Check for duplicates against existing links and within batch
+        if (existingAnchors.has(anchorLower) || batchAnchors.has(anchorLower)) {
+          duplicates.push({ anchor_text: anchorText, url: link.url });
+        } else {
+          placeholders.push(`($${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++})`);
+          values.push(projectId, link.url, anchorText, link.position || 0);
+          batchAnchors.add(anchorLower);
+        }
       }
     });
-    
+
     if (placeholders.length === 0) {
+      if (duplicates.length > 0) {
+        throw new Error(`All ${duplicates.length} links are duplicates. No links were added.`);
+      }
       throw new Error('No valid links provided');
     }
-    
+
     const bulkQuery = `
-      INSERT INTO project_links (project_id, url, anchor_text, position) 
-      VALUES ${placeholders.join(', ')} 
+      INSERT INTO project_links (project_id, url, anchor_text, position)
+      VALUES ${placeholders.join(', ')}
       RETURNING *
     `;
-    
+
     const result = await query(bulkQuery, values);
-    return result.rows;
+
+    // Return results with duplicate info
+    return {
+      imported: result.rows,
+      duplicates: duplicates,
+      summary: {
+        total: links.length,
+        imported: result.rows.length,
+        duplicates: duplicates.length
+      }
+    };
   } catch (error) {
     logger.error('Bulk add project links error:', error);
     throw error;
