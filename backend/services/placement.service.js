@@ -281,12 +281,14 @@ const getPlacementById = async (placementId, userId) => {
 // Delete placement
 const deletePlacement = async (placementId, userId) => {
   try {
-    // First get the placement details and content counts
+    // First get the placement details and content IDs
     const placementInfo = await query(`
       SELECT
         p.site_id,
         COUNT(DISTINCT pc.link_id) as link_count,
-        COUNT(DISTINCT pc.article_id) as article_count
+        COUNT(DISTINCT pc.article_id) as article_count,
+        array_agg(DISTINCT pc.link_id) FILTER (WHERE pc.link_id IS NOT NULL) as link_ids,
+        array_agg(DISTINCT pc.article_id) FILTER (WHERE pc.article_id IS NOT NULL) as article_ids
       FROM placements p
       LEFT JOIN placement_content pc ON p.id = pc.placement_id
       LEFT JOIN sites s ON p.site_id = s.id
@@ -299,7 +301,7 @@ const deletePlacement = async (placementId, userId) => {
       return false;
     }
 
-    const { site_id, link_count, article_count } = placementInfo.rows[0];
+    const { site_id, link_count, article_count, link_ids, article_ids } = placementInfo.rows[0];
 
     // Delete the placement
     const result = await query(`
@@ -328,11 +330,47 @@ const deletePlacement = async (placementId, userId) => {
         );
       }
 
+      // Decrement usage_count for links and update status
+      if (link_ids && link_ids.length > 0) {
+        for (const linkId of link_ids) {
+          await query(`
+            UPDATE project_links
+            SET usage_count = GREATEST(0, usage_count - 1),
+                status = CASE
+                  WHEN GREATEST(0, usage_count - 1) < usage_limit THEN 'active'
+                  ELSE status
+                END
+            WHERE id = $1
+          `, [linkId]);
+        }
+      }
+
+      // Decrement usage_count for articles and update status
+      if (article_ids && article_ids.length > 0) {
+        for (const articleId of article_ids) {
+          await query(`
+            UPDATE project_articles
+            SET usage_count = GREATEST(0, usage_count - 1),
+                status = CASE
+                  WHEN GREATEST(0, usage_count - 1) < usage_limit THEN 'published'
+                  ELSE status
+                END
+            WHERE id = $1
+          `, [articleId]);
+        }
+      }
+
       // Invalidate cache for placements and projects
       await cache.delPattern(`placements:user:${userId}:*`);
       await cache.delPattern(`projects:user:${userId}:*`);
       await cache.delPattern(`wp:content:*`); // Invalidate WordPress API cache
-      logger.info('Placement deleted and cache invalidated', { placementId, site_id, userId });
+      logger.info('Placement deleted, usage counts updated, and cache invalidated', {
+        placementId,
+        site_id,
+        userId,
+        links_updated: link_ids?.length || 0,
+        articles_updated: article_ids?.length || 0
+      });
 
       return true;
     }
