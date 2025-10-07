@@ -233,15 +233,14 @@
                         <br><strong>Требования:</strong>
                         <ul class="mb-0 mt-2">
                             <li>Текст должен содержать HTML тег <code>&lt;a href="..."&gt;анкор&lt;/a&gt;</code></li>
-                            <li>Длина текста: от 30 до 120 символов</li>
-                            <li>Каждый блок - отдельная строка (разделяйте двумя Enter)</li>
+                            <li>Длина текста: от 30 до 250 символов</li>
+                            <li>Каждый блок - отдельная строка (одинарный Enter)</li>
+                            <li>Анкоры не должны дублироваться</li>
                         </ul>
                     </div>
-                    <textarea class="form-control" id="bulkImportText" rows="15" placeholder='Пример:
-
+                    <textarea class="form-control" id="bulkImportText" rows="15" placeholder='Пример (каждая строка - отдельная ссылка):
 Discover everything you need to know about online gaming trends when you <a href="https://example.com/casino/">go to website</a> and explore entertainment.
-
-If you want to explore reliable platforms, check out <a href="https://example.com/casinos/">casino sites</a> to see which options offer the most engaging experiences.'></textarea>
+If you want to explore reliable platforms, check out <a href="https://example.com/casinos/">casino sites</a> to see options.'></textarea>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
@@ -619,12 +618,26 @@ If you want to explore reliable platforms, check out <a href="https://example.co
                 return;
             }
 
-            // Split by double newline (paragraph breaks)
-            const blocks = text.split(/\n\s*\n/).filter(b => b.trim());
+            // Split by single newline
+            const blocks = text.split('\n').filter(b => b.trim());
+
+            // Track duplicates
+            const seenAnchors = new Set();
 
             parsedLinks = blocks.map((block, index) => {
                 block = block.trim();
                 const validation = validateLinkBlock(block);
+
+                // Check for duplicate anchor text
+                if (validation.valid && validation.anchor_text) {
+                    const anchorLower = validation.anchor_text.toLowerCase();
+                    if (seenAnchors.has(anchorLower)) {
+                        validation.valid = false;
+                        validation.errors.push('Дубликат анкора (уже есть в списке)');
+                    } else {
+                        seenAnchors.add(anchorLower);
+                    }
+                }
 
                 return {
                     id: index,
@@ -650,8 +663,8 @@ If you want to explore reliable platforms, check out <a href="https://example.co
                 errors.push('Текст слишком короткий (минимум 30 символов)');
                 valid = false;
             }
-            if (block.length > 120) {
-                errors.push('Текст слишком длинный (максимум 120 символов)');
+            if (block.length > 250) {
+                errors.push('Текст слишком длинный (максимум 250 символов)');
                 valid = false;
             }
 

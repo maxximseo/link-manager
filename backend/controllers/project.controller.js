@@ -149,8 +149,8 @@ const addProjectLink = async (req, res) => {
       if (html_context.length < 30) {
         return res.status(400).json({ error: 'HTML context must be at least 30 characters' });
       }
-      if (html_context.length > 120) {
-        return res.status(400).json({ error: 'HTML context must not exceed 120 characters' });
+      if (html_context.length > 250) {
+        return res.status(400).json({ error: 'HTML context must not exceed 250 characters' });
       }
       if (!/<a\s+href=["'][^"']+["'][^>]*>[^<]+<\/a>/i.test(html_context)) {
         return res.status(400).json({ error: 'HTML context must contain an <a> tag' });
@@ -216,9 +216,9 @@ const addProjectLinksBulk = async (req, res) => {
     if (Array.isArray(links)) {
       for (const link of links) {
         if (link.html_context) {
-          if (link.html_context.length < 30 || link.html_context.length > 120) {
+          if (link.html_context.length < 30 || link.html_context.length > 250) {
             return res.status(400).json({
-              error: `HTML context must be 30-120 characters. Got ${link.html_context.length} for: ${link.anchor_text}`
+              error: `HTML context must be 30-250 characters. Got ${link.html_context.length} for: ${link.anchor_text}`
             });
           }
           if (!/<a\s+href=["'][^"']+["'][^>]*>[^<]+<\/a>/i.test(link.html_context)) {
