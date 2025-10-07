@@ -100,9 +100,14 @@
             <div class="tab-pane fade show active" id="linksTab">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h4>Ссылки проекта</h4>
-                    <button class="btn btn-primary" onclick="showAddLinkModal()">
-                        <i class="bi bi-plus-circle"></i> Добавить ссылку
-                    </button>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="showAddLinkModal()">
+                            <i class="bi bi-plus-circle"></i> Добавить ссылку
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="showBulkImportModal()">
+                            <i class="bi bi-file-earmark-text"></i> Массовое добавление
+                        </button>
+                    </div>
                 </div>
                 <div id="linksList">
                     <div class="text-center">
@@ -209,6 +214,59 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Import Modal - Step 1: Input -->
+    <div class="modal fade" id="bulkImportModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Массовое добавление ссылок</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <strong>Формат ввода:</strong> Вставьте текстовые блоки с HTML ссылками (каждый блок с новой строки).
+                        <br><strong>Требования:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Текст должен содержать HTML тег <code>&lt;a href="..."&gt;анкор&lt;/a&gt;</code></li>
+                            <li>Длина текста: от 30 до 120 символов</li>
+                            <li>Каждый блок - отдельная строка (разделяйте двумя Enter)</li>
+                        </ul>
+                    </div>
+                    <textarea class="form-control" id="bulkImportText" rows="15" placeholder='Пример:
+
+Discover everything you need to know about online gaming trends when you <a href="https://example.com/casino/">go to website</a> and explore entertainment.
+
+If you want to explore reliable platforms, check out <a href="https://example.com/casinos/">casino sites</a> to see which options offer the most engaging experiences.'></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-primary" onclick="parseBulkLinks()">Далее →</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Import Modal - Step 2: Preview -->
+    <div class="modal fade" id="bulkPreviewModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Предпросмотр импорта ссылок</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                    <div id="bulkPreviewContent"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="backToBulkInput()">← Назад</button>
+                    <button type="button" class="btn btn-success" id="importLinksBtn" onclick="importBulkLinks()" disabled>
+                        <i class="bi bi-check-circle"></i> Импортировать (<span id="validLinksCount">0</span>)
+                    </button>
                 </div>
             </div>
         </div>
@@ -544,6 +602,198 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        // Bulk import functions
+        let parsedLinks = [];
+
+        function showBulkImportModal() {
+            document.getElementById('bulkImportText').value = '';
+            new bootstrap.Modal(document.getElementById('bulkImportModal')).show();
+        }
+
+        function parseBulkLinks() {
+            const text = document.getElementById('bulkImportText').value.trim();
+            if (!text) {
+                alert('Пожалуйста, введите текст для импорта');
+                return;
+            }
+
+            // Split by double newline (paragraph breaks)
+            const blocks = text.split(/\n\s*\n/).filter(b => b.trim());
+
+            parsedLinks = blocks.map((block, index) => {
+                block = block.trim();
+                const validation = validateLinkBlock(block);
+
+                return {
+                    id: index,
+                    html_context: block,
+                    url: validation.url,
+                    anchor_text: validation.anchor_text,
+                    valid: validation.valid,
+                    errors: validation.errors
+                };
+            });
+
+            showPreview();
+        }
+
+        function validateLinkBlock(block) {
+            const errors = [];
+            let valid = true;
+            let url = null;
+            let anchor_text = null;
+
+            // Check length
+            if (block.length < 30) {
+                errors.push('Текст слишком короткий (минимум 30 символов)');
+                valid = false;
+            }
+            if (block.length > 120) {
+                errors.push('Текст слишком длинный (максимум 120 символов)');
+                valid = false;
+            }
+
+            // Check for <a> tag
+            const linkRegex = /<a\s+href=["']([^"']+)["'][^>]*>([^<]+)<\/a>/i;
+            const match = block.match(linkRegex);
+
+            if (!match) {
+                errors.push('HTML тег <a href="...">анкор</a> не найден');
+                valid = false;
+            } else {
+                url = match[1];
+                anchor_text = match[2];
+
+                // Validate URL
+                if (!url.startsWith('http')) {
+                    errors.push('URL должен начинаться с http:// или https://');
+                    valid = false;
+                }
+
+                // Validate anchor text
+                if (!anchor_text || anchor_text.trim().length === 0) {
+                    errors.push('Анкор не должен быть пустым');
+                    valid = false;
+                }
+            }
+
+            return { valid, errors, url, anchor_text };
+        }
+
+        function showPreview() {
+            const validLinks = parsedLinks.filter(l => l.valid);
+            const invalidLinks = parsedLinks.filter(l => !l.valid);
+
+            let html = '';
+
+            if (validLinks.length > 0) {
+                html += '<div class="alert alert-success"><strong><i class="bi bi-check-circle"></i> Валидные ссылки (' + validLinks.length + '):</strong></div>';
+                validLinks.forEach(link => {
+                    html += `
+                        <div class="card mb-3 border-success">
+                            <div class="card-body">
+                                <div class="d-flex align-items-start">
+                                    <i class="bi bi-check-circle-fill text-success me-2" style="font-size: 1.5rem;"></i>
+                                    <div class="flex-grow-1">
+                                        <p class="mb-2"><strong>URL:</strong> <code>${escapeHtml(link.url)}</code></p>
+                                        <p class="mb-2"><strong>Анкор:</strong> <code>${escapeHtml(link.anchor_text)}</code></p>
+                                        <p class="mb-2"><strong>Контекст:</strong></p>
+                                        <div class="p-2 bg-light rounded"><small>${link.html_context}</small></div>
+                                        <p class="mb-0 mt-2"><small class="text-muted">Длина: ${link.html_context.length} символов</small></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            if (invalidLinks.length > 0) {
+                html += '<div class="alert alert-danger mt-4"><strong><i class="bi bi-x-circle"></i> Невалидные ссылки (' + invalidLinks.length + '):</strong></div>';
+                invalidLinks.forEach(link => {
+                    html += `
+                        <div class="card mb-3 border-danger">
+                            <div class="card-body">
+                                <div class="d-flex align-items-start">
+                                    <i class="bi bi-x-circle-fill text-danger me-2" style="font-size: 1.5rem;"></i>
+                                    <div class="flex-grow-1">
+                                        <p class="mb-2"><strong>Текст:</strong></p>
+                                        <div class="p-2 bg-light rounded"><small>${escapeHtml(link.html_context)}</small></div>
+                                        <p class="mb-0 mt-2"><small class="text-muted">Длина: ${link.html_context.length} символов</small></p>
+                                        <div class="alert alert-danger mt-2 mb-0">
+                                            <strong>Ошибки:</strong>
+                                            <ul class="mb-0">
+                                                ${link.errors.map(e => '<li>' + e + '</li>').join('')}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            document.getElementById('bulkPreviewContent').innerHTML = html;
+            document.getElementById('validLinksCount').textContent = validLinks.length;
+            document.getElementById('importLinksBtn').disabled = validLinks.length === 0;
+
+            // Close first modal, show preview
+            bootstrap.Modal.getInstance(document.getElementById('bulkImportModal')).hide();
+            new bootstrap.Modal(document.getElementById('bulkPreviewModal')).show();
+        }
+
+        function backToBulkInput() {
+            bootstrap.Modal.getInstance(document.getElementById('bulkPreviewModal')).hide();
+            new bootstrap.Modal(document.getElementById('bulkImportModal')).show();
+        }
+
+        async function importBulkLinks() {
+            const validLinks = parsedLinks.filter(l => l.valid);
+
+            if (validLinks.length === 0) {
+                alert('Нет валидных ссылок для импорта');
+                return;
+            }
+
+            const btn = document.getElementById('importLinksBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Импорт...';
+
+            try {
+                const links = validLinks.map(link => ({
+                    url: link.url,
+                    anchor_text: link.anchor_text,
+                    html_context: link.html_context,
+                    usage_limit: 1
+                }));
+
+                const response = await fetch(`/api/projects/${projectId}/links/bulk`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${getToken()}`
+                    },
+                    body: JSON.stringify({ links })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('bulkPreviewModal')).hide();
+                    alert(`Успешно импортировано ${data.summary.imported} ссылок!`);
+                    loadLinks(); // Reload links list
+                } else {
+                    throw new Error(data.error || 'Ошибка импорта');
+                }
+            } catch (error) {
+                alert('Ошибка при импорте: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-check-circle"></i> Импортировать (<span id="validLinksCount">' + validLinks.length + '</span>)';
+            }
         }
 
         // Initialize

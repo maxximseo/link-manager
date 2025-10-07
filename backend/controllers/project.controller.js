@@ -144,6 +144,19 @@ const addProjectLink = async (req, res) => {
       return res.status(400).json({ error: 'Valid URL is required' });
     }
 
+    // Validate html_context if provided
+    if (html_context) {
+      if (html_context.length < 30) {
+        return res.status(400).json({ error: 'HTML context must be at least 30 characters' });
+      }
+      if (html_context.length > 120) {
+        return res.status(400).json({ error: 'HTML context must not exceed 120 characters' });
+      }
+      if (!/<a\s+href=["'][^"']+["'][^>]*>[^<]+<\/a>/i.test(html_context)) {
+        return res.status(400).json({ error: 'HTML context must contain an <a> tag' });
+      }
+    }
+
     const link = await projectService.addProjectLink(projectId, userId, {
       url,
       anchor_text,
@@ -198,7 +211,25 @@ const addProjectLinksBulk = async (req, res) => {
     const projectId = req.params.id;
     const userId = req.user.id;
     const { links } = req.body;
-    
+
+    // Validate each link's html_context if provided
+    if (Array.isArray(links)) {
+      for (const link of links) {
+        if (link.html_context) {
+          if (link.html_context.length < 30 || link.html_context.length > 120) {
+            return res.status(400).json({
+              error: `HTML context must be 30-120 characters. Got ${link.html_context.length} for: ${link.anchor_text}`
+            });
+          }
+          if (!/<a\s+href=["'][^"']+["'][^>]*>[^<]+<\/a>/i.test(link.html_context)) {
+            return res.status(400).json({
+              error: `HTML context must contain an <a> tag for: ${link.anchor_text}`
+            });
+          }
+        }
+      }
+    }
+
     const result = await projectService.addProjectLinksBulk(projectId, userId, links);
 
     if (result === null) {
