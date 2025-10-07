@@ -187,7 +187,7 @@ const getProjectLinks = async (projectId, userId) => {
 // Add single project link
 const addProjectLink = async (projectId, userId, linkData) => {
   try {
-    const { url, anchor_text, position, usage_limit } = linkData;
+    const { url, anchor_text, position, usage_limit, html_context } = linkData;
 
     // Verify project ownership
     const projectResult = await query(
@@ -211,8 +211,8 @@ const addProjectLink = async (projectId, userId, linkData) => {
     }
 
     const result = await query(
-      'INSERT INTO project_links (project_id, url, anchor_text, position, usage_limit) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [projectId, url, anchor_text || url, position || 0, usage_limit || 999]
+      'INSERT INTO project_links (project_id, url, anchor_text, position, usage_limit, html_context) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      [projectId, url, anchor_text || url, position || 0, usage_limit || 1, html_context || null]
     );
 
     return result.rows[0];
@@ -305,8 +305,15 @@ const addProjectLinksBulk = async (projectId, userId, links) => {
         if (existingAnchors.has(anchorLower) || batchAnchors.has(anchorLower)) {
           duplicates.push({ anchor_text: anchorText, url: link.url });
         } else {
-          placeholders.push(`($${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++})`);
-          values.push(projectId, link.url, anchorText, link.position || 0);
+          placeholders.push(`($${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++})`);
+          values.push(
+            projectId,
+            link.url,
+            anchorText,
+            link.position || 0,
+            link.html_context || null,
+            link.usage_limit || 1
+          );
           batchAnchors.add(anchorLower);
         }
       }
@@ -320,7 +327,7 @@ const addProjectLinksBulk = async (projectId, userId, links) => {
     }
 
     const bulkQuery = `
-      INSERT INTO project_links (project_id, url, anchor_text, position)
+      INSERT INTO project_links (project_id, url, anchor_text, position, html_context, usage_limit)
       VALUES ${placeholders.join(', ')}
       RETURNING *
     `;

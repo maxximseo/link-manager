@@ -166,4 +166,51 @@ router.post('/fix-usage-count', async (req, res) => {
   }
 });
 
+// Migrate link changes (usage_limit=1, html_context field)
+router.post('/migrate-link-changes', async (req, res) => {
+  try {
+    const { query } = require('../config/database');
+
+    logger.info('Starting link changes migration');
+
+    // Add html_context field
+    await query(`
+      ALTER TABLE project_links
+      ADD COLUMN IF NOT EXISTS html_context TEXT
+    `);
+
+    // Add position field if not exists
+    await query(`
+      ALTER TABLE project_links
+      ADD COLUMN IF NOT EXISTS position INTEGER DEFAULT 0
+    `);
+
+    // Update existing links to usage_limit=1
+    const updateResult = await query(`
+      UPDATE project_links
+      SET usage_limit = 1
+      WHERE usage_limit = 999
+    `);
+
+    // Alter default for future inserts
+    await query(`
+      ALTER TABLE project_links
+      ALTER COLUMN usage_limit SET DEFAULT 1
+    `);
+
+    logger.info('Link changes migration completed', {
+      updated_links: updateResult.rowCount
+    });
+
+    res.json({
+      success: true,
+      message: 'Link migration completed successfully',
+      updated_links: updateResult.rowCount
+    });
+  } catch (error) {
+    logger.error('Migrate link changes error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

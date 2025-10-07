@@ -138,7 +138,7 @@ const addProjectLink = async (req, res) => {
   try {
     const projectId = req.params.id;
     const userId = req.user.id;
-    const { url, anchor_text, position, usage_limit } = req.body;
+    const { url, anchor_text, position, usage_limit, html_context } = req.body;
 
     if (!url || typeof url !== 'string' || !url.startsWith('http')) {
       return res.status(400).json({ error: 'Valid URL is required' });
@@ -148,7 +148,8 @@ const addProjectLink = async (req, res) => {
       url,
       anchor_text,
       position,
-      usage_limit: usage_limit || 999
+      usage_limit: usage_limit || 1,
+      html_context
     });
 
     if (link === null) {
