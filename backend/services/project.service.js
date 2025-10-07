@@ -33,7 +33,6 @@ const getUserProjects = async (userId, page = 1, limit = 20) => {
         p.user_id,
         p.name,
         p.created_at,
-        p.updated_at,
         COALESCE(ps.links_count, 0) as links_count,
         COALESCE(ps.articles_count, 0) as articles_count,
         COALESCE(ps.placed_links_count, 0) as placed_links_count,
@@ -78,7 +77,7 @@ const getProjectWithDetails = async (projectId, userId) => {
   try {
     // Get project
     const projectResult = await query(
-      'SELECT id, user_id, name, created_at, updated_at FROM projects WHERE id = $1 AND user_id = $2',
+      'SELECT id, user_id, name, created_at FROM projects WHERE id = $1 AND user_id = $2',
       [projectId, userId]
     );
 
@@ -117,7 +116,7 @@ const createProject = async (data) => {
     const { name, userId } = data;
 
     const result = await query(
-      'INSERT INTO projects (name, user_id) VALUES ($1, $2) RETURNING id, user_id, name, created_at, updated_at',
+      'INSERT INTO projects (name, user_id) VALUES ($1, $2) RETURNING id, user_id, name, created_at',
       [name, userId]
     );
 
@@ -134,7 +133,7 @@ const updateProject = async (projectId, userId, data) => {
     const { name } = data;
 
     const result = await query(
-      'UPDATE projects SET name = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND user_id = $3 RETURNING id, user_id, name, created_at, updated_at',
+      'UPDATE projects SET name = $1 WHERE id = $2 AND user_id = $3 RETURNING id, user_id, name, created_at',
       [name, projectId, userId]
     );
 
