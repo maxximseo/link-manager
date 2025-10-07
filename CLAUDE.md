@@ -192,6 +192,15 @@ POST /api/projects/:id/articles/:articleId/duplicate
 - Plugin generates API token (not username/password)
 - Token must be added to site record via `api_key` field
 - Plugin file: `wordpress-plugin/link-manager-widget.php`
+- **Download**: Available as ZIP at `/link-manager-widget.zip` (accessible from sites.html)
+
+### Automatic Article Publication
+When a placement is created with articles, they are **automatically published** to WordPress:
+- `placement.service.js` imports `wordpressService.publishArticle()`
+- After placement creation, each article is published synchronously
+- On success: `placement.status = 'placed'`, `wordpress_post_id` is stored
+- On failure: `placement.status = 'failed'`, error is logged
+- Publication happens in `createPlacement()` function after site quota updates
 
 ## File Locations Reference
 
@@ -209,13 +218,17 @@ POST /api/projects/:id/articles/:articleId/duplicate
 ### Key Services
 - Project: `backend/services/project.service.js`
 - Site: `backend/services/site.service.js`
+- Placement: `backend/services/placement.service.js`
+- WordPress: `backend/services/wordpress.service.js`
 - Auth: `backend/services/auth.service.js`
+- Cache: `backend/services/cache.service.js` (Redis wrapper with graceful degradation)
 
 ### Frontend Pages
 - Dashboard: `backend/build/dashboard.html`
 - Projects list: `backend/build/projects.html`
 - Project detail (links/articles management): `backend/build/project-detail.html`
 - Sites: `backend/build/sites.html`
+- Placements: `backend/build/placements.html`
 
 ### Database
 - Schema: `database/init.sql`
@@ -320,6 +333,17 @@ Repository: https://github.com/maxximseo/link-manager.git
 
 ## Common Debugging
 
+### Type Coercion Issues
+**CRITICAL**: PostgreSQL `COUNT()` returns string `"0"` not number `0`:
+```javascript
+// Wrong - will always fail
+if (count === 0) { ... }
+
+// Correct - convert to number first
+if (parseInt(count) === 0) { ... }
+```
+This affected site availability checks in `placement.service.js:446-447`.
+
 ### Server Won't Start
 1. Check if port is in use: `lsof -ti:3003`
 2. Check database connectivity via logs
@@ -357,3 +381,18 @@ Repository: https://github.com/maxximseo/link-manager.git
 1. **Links not showing**: Check cache in plugin (5 min TTL), verify API key in sites table
 2. **API returns empty**: Verify placements exist with `placement_content` records
 3. **403 errors**: Check API key matches between plugin and database
+4. **Article not publishing**: Check `placements.status` - should be 'placed' not 'pending'
+   - Articles auto-publish during placement creation
+   - Check logs for publication errors
+   - Verify WordPress site URL and API key are correct
+   - Check `wordpress_post_id` column is populated
+
+### Database Column Existence
+Before updating, verify columns exist in schema:
+```sql
+-- Check table columns
+\d sites
+\d projects
+\d placements
+```
+Common issue: Trying to update non-existent columns like `status` or `notes` in `sites` table causes UPDATE failures. Always check [database/init.sql](database/init.sql) for actual schema.
