@@ -115,4 +115,55 @@ router.get('/env-check', (req, res) => {
   });
 });
 
+// Fix usage_count for already placed items
+router.post('/fix-usage-count', async (req, res) => {
+  try {
+    const { query } = require('../config/database');
+
+    logger.info('Starting usage_count fix migration');
+
+    // Update usage_count for project_links
+    await query(`
+      UPDATE project_links pl
+      SET usage_count = (
+        SELECT COUNT(DISTINCT pc.placement_id)
+        FROM placement_content pc
+        WHERE pc.link_id = pl.id
+      )
+    `);
+
+    // Update usage_count for project_articles
+    await query(`
+      UPDATE project_articles pa
+      SET usage_count = (
+        SELECT COUNT(DISTINCT pc.placement_id)
+        FROM placement_content pc
+        WHERE pc.article_id = pa.id
+      )
+    `);
+
+    // Get stats
+    const statsResult = await query(`
+      SELECT 'Links with usage_count > 0' as info, COUNT(*) as count
+      FROM project_links
+      WHERE usage_count > 0
+      UNION ALL
+      SELECT 'Articles with usage_count > 0' as info, COUNT(*) as count
+      FROM project_articles
+      WHERE usage_count > 0
+    `);
+
+    logger.info('Usage_count fix completed', { stats: statsResult.rows });
+
+    res.json({
+      success: true,
+      message: 'Usage counts updated successfully',
+      stats: statsResult.rows
+    });
+  } catch (error) {
+    logger.error('Fix usage_count error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;
