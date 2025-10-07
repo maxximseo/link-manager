@@ -87,15 +87,15 @@ const getProjectWithDetails = async (projectId, userId) => {
 
     const project = projectResult.rows[0];
     
-    // Get links
+    // Get links (only available ones - usage_count < usage_limit)
     const linksResult = await query(
-      'SELECT * FROM project_links WHERE project_id = $1 ORDER BY created_at DESC',
+      'SELECT * FROM project_links WHERE project_id = $1 AND usage_count < usage_limit ORDER BY created_at DESC',
       [projectId]
     );
-    
-    // Get articles
+
+    // Get articles (only available ones - usage_count < usage_limit)
     const articlesResult = await query(
-      'SELECT * FROM project_articles WHERE project_id = $1 ORDER BY created_at DESC',
+      'SELECT * FROM project_articles WHERE project_id = $1 AND usage_count < usage_limit ORDER BY created_at DESC',
       [projectId]
     );
     

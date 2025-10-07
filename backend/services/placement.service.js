@@ -190,18 +190,24 @@ const createPlacement = async (data) => {
           'SELECT id FROM placement_content WHERE placement_id = $1 AND link_id = $2',
           [placement.id, linkId]
         );
-        
+
         if (existingLink.rows.length === 0) {
           await query(
             'INSERT INTO placement_content (placement_id, link_id) VALUES ($1, $2)',
             [placement.id, linkId]
+          );
+
+          // Increment usage_count for the link
+          await query(
+            'UPDATE project_links SET usage_count = usage_count + 1 WHERE id = $1',
+            [linkId]
           );
         }
       } catch (error) {
         logger.warn('Failed to add link to placement', { placementId: placement.id, linkId, error: error.message });
       }
     }
-    
+
     // Add articles to placement_content with duplicate check
     for (const articleId of article_ids) {
       try {
@@ -215,6 +221,12 @@ const createPlacement = async (data) => {
           await query(
             'INSERT INTO placement_content (placement_id, article_id) VALUES ($1, $2)',
             [placement.id, articleId]
+          );
+
+          // Increment usage_count for the article
+          await query(
+            'UPDATE project_articles SET usage_count = usage_count + 1 WHERE id = $1',
+            [articleId]
           );
         }
       } catch (error) {
