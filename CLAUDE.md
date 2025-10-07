@@ -6,15 +6,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Running the Server
 ```bash
-# Development (with hot reload)
-cd backend && PORT=3003 NODE_ENV=development node server-new.js
-
-# Or with nodemon
+# Development with nodemon (auto-reload on file changes) - RECOMMENDED
 npm run dev
+
+# Development without nodemon
+cd backend && PORT=3003 NODE_ENV=development node server-new.js
 
 # Production
 npm start
 ```
+
+**Nodemon**: Installed globally and as devDependency. Watches all `.js`, `.mjs`, `.json` files and auto-restarts server on changes.
 
 ### Database Operations
 ```bash

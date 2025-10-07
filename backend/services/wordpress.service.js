@@ -100,6 +100,53 @@ const publishArticle = async (siteUrl, apiKey, articleData) => {
   }
 };
 
+// Delete article from WordPress via Link Manager plugin
+const deleteArticle = async (siteUrl, apiKey, wordpressPostId) => {
+  try {
+    if (!wordpressPostId) {
+      logger.warn('No WordPress post ID provided for deletion');
+      return { success: false, error: 'No WordPress post ID' };
+    }
+
+    // Use Link Manager plugin REST API endpoint
+    const pluginUrl = `${siteUrl}/wp-json/link-manager/v1/delete-article/${wordpressPostId}`;
+
+    const response = await axios.delete(pluginUrl, {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': apiKey
+      },
+      timeout: 30000
+    });
+
+    if (response.data.success) {
+      logger.info('Article deleted from WordPress via plugin', {
+        siteUrl,
+        postId: wordpressPostId
+      });
+
+      return {
+        success: true,
+        post_id: wordpressPostId
+      };
+    } else {
+      throw new Error(response.data.error || 'Failed to delete article');
+    }
+  } catch (error) {
+    // Don't throw error if post doesn't exist (404) - it's already deleted
+    if (error.response?.status === 404) {
+      logger.info('Article already deleted from WordPress', { wordpressPostId });
+      return { success: true, post_id: wordpressPostId, already_deleted: true };
+    }
+
+    logger.error('WordPress delete error:', error);
+    return {
+      success: false,
+      error: error.response?.data?.error || error.message
+    };
+  }
+};
+
 // Verify WordPress connection via Link Manager plugin
 const verifyWordPressConnection = async (siteUrl, apiKey) => {
   try {
@@ -197,6 +244,7 @@ const updatePlacementWithPostId = async (siteId, articleId, wordpressPostId) => 
 module.exports = {
   getContentByApiKey,
   publishArticle,
+  deleteArticle,
   verifyWordPressConnection,
   getSiteByApiKey,
   getSiteById,
