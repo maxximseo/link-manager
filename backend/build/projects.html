@@ -61,10 +61,6 @@
                             <label for="projectName" class="form-label">Название проекта</label>
                             <input type="text" class="form-control" id="projectName" required placeholder="Введите название">
                         </div>
-                        <div class="mb-3">
-                            <label for="projectDescription" class="form-label">Описание (опционально)</label>
-                            <textarea class="form-control" id="projectDescription" rows="3" placeholder="Краткое описание проекта"></textarea>
-                        </div>
                     </form>
                 </div>
                 <div class="modal-footer">
@@ -118,7 +114,6 @@
                     <div class="card h-100">
                         <div class="card-body">
                             <h5 class="card-title">${escapeHtml(p.name)}</h5>
-                            <p class="card-text text-muted">${escapeHtml(p.description || 'Нет описания')}</p>
                             <div class="d-flex justify-content-between small text-muted mb-3">
                                 <span><i class="bi bi-link-45deg"></i> ${p.links_count || 0} ссылок</span>
                                 <span><i class="bi bi-file-text"></i> ${p.articles_count || 0} статей</span>
@@ -167,7 +162,6 @@
             document.getElementById('modalTitle').textContent = 'Редактировать проект';
             document.getElementById('projectId').value = project.id;
             document.getElementById('projectName').value = project.name;
-            document.getElementById('projectDescription').value = project.description || '';
             document.getElementById('projectModal').classList.add('show');
         }
 
@@ -186,8 +180,7 @@
             }
 
             const data = {
-                name: name,
-                description: document.getElementById('projectDescription').value.trim()
+                name: name
             };
 
             const saveBtn = document.getElementById('saveBtn');
