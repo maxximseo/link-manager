@@ -6,6 +6,7 @@
 const { query } = require('../config/database');
 const logger = require('../config/logger');
 const cache = require('./cache.service');
+const wordpressService = require('./wordpress.service');
 
 // Get user placements with statistics (with caching)
 const getUserPlacements = async (userId, page = 0, limit = 0) => {
@@ -234,6 +235,75 @@ const createPlacement = async (data) => {
         'UPDATE sites SET used_articles = used_articles + $1 WHERE id = $2',
         [article_ids.length, site_id]
       );
+    }
+
+    // Publish articles to WordPress if any
+    if (article_ids.length > 0) {
+      try {
+        // Get site details including API key and URL
+        const siteDetailsResult = await query(
+          'SELECT site_url, api_key FROM sites WHERE id = $1',
+          [site_id]
+        );
+
+        if (siteDetailsResult.rows.length > 0) {
+          const siteDetails = siteDetailsResult.rows[0];
+
+          // Get article details for each article_id
+          for (const articleId of article_ids) {
+            try {
+              const articleResult = await query(
+                'SELECT id, title, content, slug FROM project_articles WHERE id = $1',
+                [articleId]
+              );
+
+              if (articleResult.rows.length > 0) {
+                const article = articleResult.rows[0];
+
+                // Publish article to WordPress
+                const wpResult = await wordpressService.publishArticle(
+                  siteDetails.site_url,
+                  siteDetails.api_key,
+                  {
+                    title: article.title,
+                    content: article.content,
+                    slug: article.slug
+                  }
+                );
+
+                // Update placement with WordPress post ID and status
+                await query(
+                  'UPDATE placements SET wordpress_post_id = $1, status = $2 WHERE id = $3',
+                  [wpResult.post_id, 'placed', placement.id]
+                );
+
+                logger.info('Article published to WordPress', {
+                  placementId: placement.id,
+                  articleId,
+                  wpPostId: wpResult.post_id
+                });
+              }
+            } catch (articleError) {
+              logger.error('Failed to publish article to WordPress', {
+                placementId: placement.id,
+                articleId,
+                error: articleError.message
+              });
+
+              // Update placement status to failed
+              await query(
+                'UPDATE placements SET status = $1 WHERE id = $2',
+                ['failed', placement.id]
+              );
+            }
+          }
+        }
+      } catch (publishError) {
+        logger.error('Error during article publication', {
+          placementId: placement.id,
+          error: publishError.message
+        });
+      }
     }
 
     // Invalidate cache for placements and projects
