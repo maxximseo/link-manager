@@ -278,7 +278,7 @@
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" value="${link.id}" id="link_${link.id}">
                             <label class="form-check-label" for="link_${link.id}">
-                                ${escapeHtml(link.anchor_text)} → ${escapeHtml(link.target_url)}
+                                ${escapeHtml(link.anchor_text)} → ${escapeHtml(link.url)}
                             </label>
                         </div>
                     `).join('');

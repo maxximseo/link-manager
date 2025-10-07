@@ -443,8 +443,8 @@ const getAvailableSites = async (projectId, userId) => {
     // Add availability flags
     const sitesWithAvailability = result.rows.map(site => ({
       ...site,
-      can_place_link: site.project_links_on_site === 0 && site.used_links < site.max_links,
-      can_place_article: site.project_articles_on_site === 0 && site.used_articles < site.max_articles
+      can_place_link: parseInt(site.project_links_on_site) === 0 && site.used_links < site.max_links,
+      can_place_article: parseInt(site.project_articles_on_site) === 0 && site.used_articles < site.max_articles
     }));
 
     return sitesWithAvailability;
