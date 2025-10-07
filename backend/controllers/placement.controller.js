@@ -92,17 +92,44 @@ const createBatchPlacement = async (req, res) => {
       });
     }
     
-    // Create placements for each site (works for 1+ sites)
+    // Distribute links and articles across sites
+    // Strategy: Round-robin distribution
+    // Example: 2 sites, 2 links -> Site1 gets Link1, Site2 gets Link2
     const results = [];
     const errors = [];
-    
-    for (const site_id of site_ids) {
+
+    const numSites = site_ids.length;
+    let linkIndex = 0;
+    let articleIndex = 0;
+
+    for (let i = 0; i < numSites; i++) {
+      const site_id = site_ids[i];
+
+      // Assign 1 link per site (round-robin)
+      const assignedLinks = [];
+      if (linkIndex < link_ids.length) {
+        assignedLinks.push(link_ids[linkIndex]);
+        linkIndex++;
+      }
+
+      // Assign 1 article per site (round-robin)
+      const assignedArticles = [];
+      if (articleIndex < article_ids.length) {
+        assignedArticles.push(article_ids[articleIndex]);
+        articleIndex++;
+      }
+
+      // Skip if nothing to place on this site
+      if (assignedLinks.length === 0 && assignedArticles.length === 0) {
+        continue;
+      }
+
       try {
         const placement = await placementService.createPlacement({
           site_id,
           project_id,
-          link_ids,
-          article_ids,
+          link_ids: assignedLinks,
+          article_ids: assignedArticles,
           userId: req.user.id
         });
         results.push(placement);
@@ -111,13 +138,17 @@ const createBatchPlacement = async (req, res) => {
         logger.warn('Failed to create placement for site', { site_id, error: error.message });
       }
     }
-    
+
     res.json({
       message: `Successfully created ${results.length} placements for ${site_ids.length} sites`,
       placements: results,
       total_sites: site_ids.length,
       successful: results.length,
       failed: errors.length,
+      distribution: {
+        links_distributed: linkIndex,
+        articles_distributed: articleIndex
+      },
       errors: errors.length > 0 ? errors : undefined
     });
   } catch (error) {
