@@ -28,8 +28,12 @@ const getUserProjects = async (userId, page = 1, limit = 20) => {
         WHERE p.user_id = $1
         GROUP BY p.id
       )
-      SELECT 
-        p.*,
+      SELECT
+        p.id,
+        p.user_id,
+        p.name,
+        p.created_at,
+        p.updated_at,
         COALESCE(ps.links_count, 0) as links_count,
         COALESCE(ps.articles_count, 0) as articles_count,
         COALESCE(ps.placed_links_count, 0) as placed_links_count,
@@ -74,14 +78,14 @@ const getProjectWithDetails = async (projectId, userId) => {
   try {
     // Get project
     const projectResult = await query(
-      'SELECT * FROM projects WHERE id = $1 AND user_id = $2',
+      'SELECT id, user_id, name, created_at, updated_at FROM projects WHERE id = $1 AND user_id = $2',
       [projectId, userId]
     );
-    
+
     if (projectResult.rows.length === 0) {
       return null;
     }
-    
+
     const project = projectResult.rows[0];
     
     // Get links
@@ -110,13 +114,13 @@ const getProjectWithDetails = async (projectId, userId) => {
 // Create new project
 const createProject = async (data) => {
   try {
-    const { name, description, userId } = data;
-    
+    const { name, userId } = data;
+
     const result = await query(
-      'INSERT INTO projects (name, description, user_id) VALUES ($1, $2, $3) RETURNING *',
-      [name, description, userId]
+      'INSERT INTO projects (name, user_id) VALUES ($1, $2) RETURNING id, user_id, name, created_at, updated_at',
+      [name, userId]
     );
-    
+
     return result.rows[0];
   } catch (error) {
     logger.error('Create project error:', error);
@@ -127,13 +131,13 @@ const createProject = async (data) => {
 // Update project
 const updateProject = async (projectId, userId, data) => {
   try {
-    const { name, description } = data;
-    
+    const { name } = data;
+
     const result = await query(
-      'UPDATE projects SET name = $1, description = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 AND user_id = $4 RETURNING *',
-      [name, description, projectId, userId]
+      'UPDATE projects SET name = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND user_id = $3 RETURNING id, user_id, name, created_at, updated_at',
+      [name, projectId, userId]
     );
-    
+
     return result.rows.length > 0 ? result.rows[0] : null;
   } catch (error) {
     logger.error('Update project error:', error);
@@ -161,10 +165,10 @@ const getProjectLinks = async (projectId, userId) => {
   try {
     // Verify project ownership
     const projectResult = await query(
-      'SELECT * FROM projects WHERE id = $1 AND user_id = $2',
+      'SELECT id FROM projects WHERE id = $1 AND user_id = $2',
       [projectId, userId]
     );
-    
+
     if (projectResult.rows.length === 0) {
       return null;
     }
@@ -188,7 +192,7 @@ const addProjectLink = async (projectId, userId, linkData) => {
 
     // Verify project ownership
     const projectResult = await query(
-      'SELECT * FROM projects WHERE id = $1 AND user_id = $2',
+      'SELECT id FROM projects WHERE id = $1 AND user_id = $2',
       [projectId, userId]
     );
 
@@ -224,7 +228,7 @@ const updateProjectLink = async (projectId, linkId, userId, linkData) => {
   try {
     // Verify project ownership
     const projectResult = await query(
-      'SELECT * FROM projects WHERE id = $1 AND user_id = $2',
+      'SELECT id FROM projects WHERE id = $1 AND user_id = $2',
       [projectId, userId]
     );
 
@@ -261,10 +265,10 @@ const addProjectLinksBulk = async (projectId, userId, links) => {
   try {
     // Verify project ownership
     const projectResult = await query(
-      'SELECT * FROM projects WHERE id = $1 AND user_id = $2',
+      'SELECT id FROM projects WHERE id = $1 AND user_id = $2',
       [projectId, userId]
     );
-    
+
     if (projectResult.rows.length === 0) {
       return null;
     }
@@ -365,10 +369,10 @@ const getProjectArticles = async (projectId, userId) => {
   try {
     // Verify project ownership
     const projectResult = await query(
-      'SELECT * FROM projects WHERE id = $1 AND user_id = $2',
+      'SELECT id FROM projects WHERE id = $1 AND user_id = $2',
       [projectId, userId]
     );
-    
+
     if (projectResult.rows.length === 0) {
       return null;
     }
@@ -388,17 +392,17 @@ const getProjectArticles = async (projectId, userId) => {
 // Add project article
 const addProjectArticle = async (projectId, userId, articleData) => {
   try {
-    const { 
-      title, content, excerpt, meta_title, meta_description, 
-      featured_image, slug, tags, category 
+    const {
+      title, content, excerpt, meta_title, meta_description,
+      featured_image, slug, tags, category
     } = articleData;
-    
+
     // Verify project ownership
     const projectResult = await query(
-      'SELECT * FROM projects WHERE id = $1 AND user_id = $2',
+      'SELECT id FROM projects WHERE id = $1 AND user_id = $2',
       [projectId, userId]
     );
-    
+
     if (projectResult.rows.length === 0) {
       return null;
     }
