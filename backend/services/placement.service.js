@@ -410,10 +410,55 @@ const getStatistics = async (userId) => {
   }
 };
 
+// Get available sites for placement (checks which sites already have content from this project)
+const getAvailableSites = async (projectId, userId) => {
+  try {
+    const result = await query(`
+      SELECT
+        s.id,
+        s.site_name,
+        s.site_url,
+        s.max_links,
+        s.used_links,
+        s.max_articles,
+        s.used_articles,
+        COALESCE(
+          (SELECT COUNT(DISTINCT pc.link_id)
+           FROM placements p
+           JOIN placement_content pc ON p.id = pc.placement_id
+           WHERE p.project_id = $1 AND p.site_id = s.id AND pc.link_id IS NOT NULL),
+          0
+        ) as project_links_on_site,
+        COALESCE(
+          (SELECT COUNT(DISTINCT pc.article_id)
+           FROM placements p
+           JOIN placement_content pc ON p.id = pc.placement_id
+           WHERE p.project_id = $1 AND p.site_id = s.id AND pc.article_id IS NOT NULL),
+          0
+        ) as project_articles_on_site
+      FROM sites s
+      WHERE s.user_id = $2
+    `, [projectId, userId]);
+
+    // Add availability flags
+    const sitesWithAvailability = result.rows.map(site => ({
+      ...site,
+      can_place_link: site.project_links_on_site === 0 && site.used_links < site.max_links,
+      can_place_article: site.project_articles_on_site === 0 && site.used_articles < site.max_articles
+    }));
+
+    return sitesWithAvailability;
+  } catch (error) {
+    logger.error('Get available sites error:', error);
+    throw error;
+  }
+};
+
 module.exports = {
   getUserPlacements,
   createPlacement,
   getPlacementById,
   deletePlacement,
-  getStatistics
+  getStatistics,
+  getAvailableSites
 };

@@ -28,6 +28,7 @@ router.use(authMiddleware);
 // Placement routes - batch-only approach
 router.get('/', generalLimiter, placementController.getPlacements);
 router.get('/statistics', generalLimiter, placementController.getStatistics); // Must be before /:id
+router.get('/available-sites/:projectId', generalLimiter, placementController.getAvailableSites); // Must be before /:id
 router.get('/:id', generalLimiter, placementController.getPlacement);
 router.post('/batch/create', createLimiter, placementController.createBatchPlacement);
 router.delete('/:id', generalLimiter, placementController.deletePlacement);

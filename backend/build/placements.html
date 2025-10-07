@@ -198,16 +198,59 @@
             const select = document.getElementById('siteFilter');
             select.innerHTML = '<option value="">All Sites</option>' +
                 sites.map(s => `<option value="${s.id}">${escapeHtml(s.site_name)}</option>`).join('');
+        }
 
-            const checkboxes = document.getElementById('sitesCheckboxes');
-            checkboxes.innerHTML = sites.map(s => `
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="${s.id}" id="site_${s.id}">
-                    <label class="form-check-label" for="site_${s.id}">
-                        ${escapeHtml(s.site_name)} - ${escapeHtml(s.site_url)}
-                    </label>
-                </div>
-            `).join('');
+        // Populate available sites for current project (will be called after project selection)
+        async function populateAvailableSites(projectId) {
+            if (!projectId) {
+                const checkboxes = document.getElementById('sitesCheckboxes');
+                checkboxes.innerHTML = '<small class="text-muted">Select a project first</small>';
+                return;
+            }
+
+            try {
+                const availableSites = await PlacementsAPI.getAvailableSites(projectId);
+                const checkboxes = document.getElementById('sitesCheckboxes');
+
+                if (availableSites.length === 0) {
+                    checkboxes.innerHTML = '<small class="text-muted">No sites available</small>';
+                    return;
+                }
+
+                checkboxes.innerHTML = availableSites.map(s => {
+                    const canPlaceLink = s.can_place_link;
+                    const canPlaceArticle = s.can_place_article;
+                    const hasLink = s.project_links_on_site > 0;
+                    const hasArticle = s.project_articles_on_site > 0;
+
+                    let statusBadge = '';
+                    if (hasLink && hasArticle) {
+                        statusBadge = '<span class="badge bg-secondary ms-2">Full</span>';
+                    } else if (hasLink) {
+                        statusBadge = '<span class="badge bg-info ms-2">Has Link</span>';
+                    } else if (hasArticle) {
+                        statusBadge = '<span class="badge bg-warning ms-2">Has Article</span>';
+                    }
+
+                    const isAvailable = canPlaceLink || canPlaceArticle;
+                    const disabled = !isAvailable ? 'disabled' : '';
+                    const labelClass = !isAvailable ? 'text-muted' : '';
+
+                    return `
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="${s.id}" id="site_${s.id}"
+                                   ${disabled} data-can-link="${canPlaceLink}" data-can-article="${canPlaceArticle}">
+                            <label class="form-check-label ${labelClass}" for="site_${s.id}">
+                                ${escapeHtml(s.site_name)} - ${escapeHtml(s.site_url)}
+                                ${statusBadge}
+                                <br><small class="text-muted">Links: ${s.used_links}/${s.max_links}, Articles: ${s.used_articles}/${s.max_articles}</small>
+                            </label>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                showNotification('Failed to load available sites: ' + error.message, 'error');
+            }
         }
 
         async function onProjectSelected() {
@@ -215,11 +258,17 @@
             if (!projectId) {
                 document.getElementById('linksCheckboxes').innerHTML = '<small class="text-muted">Select a project first</small>';
                 document.getElementById('articlesCheckboxes').innerHTML = '<small class="text-muted">Select a project first</small>';
+                document.getElementById('sitesCheckboxes').innerHTML = '<small class="text-muted">Select a project first</small>';
                 return;
             }
 
             try {
-                const projectData = await ProjectsAPI.get(projectId);
+                // Load project data and available sites in parallel
+                const [projectData] = await Promise.all([
+                    ProjectsAPI.get(projectId),
+                    populateAvailableSites(projectId)
+                ]);
+
                 projectLinks = projectData.links || [];
                 projectArticles = projectData.articles || [];
 

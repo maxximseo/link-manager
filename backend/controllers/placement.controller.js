@@ -157,10 +157,29 @@ const getStatistics = async (req, res) => {
   }
 };
 
+// Get available sites for placement (with project filter)
+const getAvailableSites = async (req, res) => {
+  try {
+    const projectId = req.params.projectId;
+    const userId = req.user.id;
+
+    if (!projectId) {
+      return res.status(400).json({ error: 'Project ID is required' });
+    }
+
+    const sites = await placementService.getAvailableSites(projectId, userId);
+    res.json(sites);
+  } catch (error) {
+    logger.error('Get available sites error:', error);
+    res.status(500).json({ error: 'Failed to fetch available sites' });
+  }
+};
+
 module.exports = {
   getPlacements,
   getPlacement,
   createBatchPlacement,
   deletePlacement,
-  getStatistics
+  getStatistics,
+  getAvailableSites
 };

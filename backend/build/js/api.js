@@ -76,5 +76,6 @@ const PlacementsAPI = {
     createBatch: (data) => apiCall('/placements/batch/create', { method: 'POST', body: JSON.stringify(data) }),
     update: (id, data) => apiCall(`/placements/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id) => apiCall(`/placements/${id}`, { method: 'DELETE' }),
-    getStatistics: () => apiCall('/placements/statistics')
+    getStatistics: () => apiCall('/placements/statistics'),
+    getAvailableSites: (projectId) => apiCall(`/placements/available-sites/${projectId}`)
 };
