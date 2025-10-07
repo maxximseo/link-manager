@@ -787,7 +787,7 @@ If you want to explore reliable platforms, check out <a href="https://example.co
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${getToken()}`
+                        'Authorization': `Bearer ${getAuthToken()}`
                     },
                     body: JSON.stringify({ links })
                 });
