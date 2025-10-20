@@ -31,102 +31,242 @@
         </div>
     </nav>
 
-    <div class="container mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>Placements</h1>
-            <button class="btn btn-primary" onclick="showCreateModal()">
-                <i class="bi bi-plus-circle"></i> Create Placement
-            </button>
+    <div class="container-fluid mt-4">
+        <h1 class="mb-4">Create Placements</h1>
+
+        <!-- Step 1 & 2: Project and Content Type Selection -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <label for="projectSelect" class="form-label fw-bold">Select Project</label>
+                <select class="form-select" id="projectSelect">
+                    <option value="">Select project...</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Content Type</label>
+                <div class="d-flex gap-3 align-items-center" style="height: 38px;">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="contentType" id="typeLinks" value="links">
+                        <label class="form-check-label" for="typeLinks">
+                            <i class="bi bi-link-45deg"></i> Links
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="contentType" id="typeArticles" value="articles">
+                        <label class="form-check-label" for="typeArticles">
+                            <i class="bi bi-file-text"></i> Articles
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="button" class="btn btn-primary w-100" onclick="createPlacement()" id="createPlacementBtn" disabled>
+                    <i class="bi bi-plus-circle"></i> Create Placement
+                </button>
+            </div>
         </div>
 
-        <div class="row mb-3">
-            <div class="col-md-3">
-                <select class="form-select" id="projectFilter">
-                    <option value="">All Projects</option>
-                </select>
+        <!-- Step 3: Sites Table -->
+        <div id="sitesTableDiv" style="display: none;">
+            <div class="alert alert-info mb-3">
+                <i class="bi bi-info-circle"></i>
+                <strong>How to create placements:</strong> Check a site to show the dropdown, then select which link/article to place.
+                <span class="badge bg-success ms-2">Green = Available</span>
+                <span class="badge bg-warning text-dark ms-2">Yellow = Partial (can add other type)</span>
+                <span class="badge bg-danger ms-2">Red = Full (both placed)</span>
+                <span id="activeFiltersInfo" class="ms-3"></span>
             </div>
-            <div class="col-md-3">
-                <select class="form-select" id="siteFilter">
-                    <option value="">All Sites</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <select class="form-select" id="statusFilter">
-                    <option value="">All Statuses</option>
-                    <option value="pending">Pending</option>
-                    <option value="placed">Placed</option>
-                    <option value="failed">Failed</option>
-                </select>
-            </div>
-        </div>
 
-        <div class="table-responsive">
-            <table class="table table-striped table-hover">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Project</th>
-                        <th>Site</th>
-                        <th>Content</th>
-                        <th>Status</th>
-                        <th>Placed At</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="placementsTable"></tbody>
-            </table>
+            <!-- Pagination Controls -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <strong>Sites per page:</strong>
+                    <div class="btn-group ms-2" role="group">
+                        <input type="radio" class="btn-check" name="sitesPerPage" id="sites100" value="100" checked>
+                        <label class="btn btn-outline-primary btn-sm" for="sites100">100</label>
+
+                        <input type="radio" class="btn-check" name="sitesPerPage" id="sites300" value="300">
+                        <label class="btn btn-outline-primary btn-sm" for="sites300">300</label>
+
+                        <input type="radio" class="btn-check" name="sitesPerPage" id="sites500" value="500">
+                        <label class="btn btn-outline-primary btn-sm" for="sites500">500</label>
+                    </div>
+                    <span class="ms-2 text-muted" id="sitesCountInfo"></span>
+                </div>
+                <div id="paginationControls">
+                    <!-- Pagination buttons will be inserted here -->
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-sm table-hover table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 50px;">
+                                <input type="checkbox" id="selectAllSites" onclick="toggleAllSites()">
+                            </th>
+                            <th>Site Name</th>
+                            <th>Site URL</th>
+                            <th>Status</th>
+                            <th>Assigned Content</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sitesTableBody">
+                        <tr>
+                            <td colspan="5" class="text-center text-muted">
+                                Select a project and content type above
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Whitelist/Blacklist Actions -->
+            <div class="row mt-4" id="listActionsDiv" style="display: none;">
+                <div class="col-md-12 mb-3">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <i class="bi bi-cart-plus"></i> Actions with Selected Sites
+                        </div>
+                        <div class="card-body">
+                            <button type="button" class="btn btn-primary" id="buyLinksBtn" onclick="buyLinks()" disabled>
+                                <i class="bi bi-cart-plus"></i> Купить ссылку (<span id="buyLinksCount">0</span>)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <i class="bi bi-check-circle"></i> Whitelist
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex gap-2 mb-3 flex-wrap">
+                                <button type="button" class="btn btn-success btn-sm" id="addToWhitelistBtn" onclick="addSelectedToWhitelist()" disabled>
+                                    <i class="bi bi-plus-circle"></i> Add to Whitelist (<span id="whitelistCount">0</span>)
+                                </button>
+                                <button type="button" class="btn btn-outline-success btn-sm" onclick="importWhitelist()">
+                                    <i class="bi bi-upload"></i> Import List
+                                </button>
+                                <button type="button" class="btn btn-outline-success btn-sm" onclick="toggleWhitelistView()">
+                                    <i class="bi bi-eye"></i> Show (<span id="whitelistTotal">0</span>)
+                                </button>
+                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="clearWhitelist()">
+                                    <i class="bi bi-trash"></i> Clear All
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-danger text-white">
+                            <i class="bi bi-x-circle"></i> Blacklist
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex gap-2 mb-3 flex-wrap">
+                                <button type="button" class="btn btn-danger btn-sm" id="addToBlacklistBtn" onclick="addSelectedToBlacklist()" disabled>
+                                    <i class="bi bi-plus-circle"></i> Add to Blacklist (<span id="blacklistCount">0</span>)
+                                </button>
+                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="importBlacklist()">
+                                    <i class="bi bi-upload"></i> Import List
+                                </button>
+                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="toggleBlacklistView()">
+                                    <i class="bi bi-eye"></i> Show (<span id="blacklistTotal">0</span>)
+                                </button>
+                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="clearBlacklist()">
+                                    <i class="bi bi-trash"></i> Clear All
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Create Placement Modal -->
-    <div class="modal fade" id="placementModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+    <!-- Import List Modal -->
+    <div class="modal fade" id="importListModal" tabindex="-1">
+        <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Create Placement</h5>
+                    <h5 class="modal-title" id="importListModalTitle">Import Domains</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="placementForm">
-                        <div class="mb-3">
-                            <label for="projectSelect" class="form-label">Project *</label>
-                            <select class="form-select" id="projectSelect" required>
-                                <option value="">Select project...</option>
-                            </select>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Sites * (select one or multiple)</label>
-                            <div id="sitesCheckboxes" class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
-                                <!-- Will be populated dynamically -->
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Links (from project)</label>
-                            <div id="linksCheckboxes" class="border rounded p-3" style="max-height: 150px; overflow-y: auto;">
-                                <small class="text-muted">Select a project first</small>
-                            </div>
-                            <small class="text-muted">Max 1 link per site</small>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Articles (from project)</label>
-                            <div id="articlesCheckboxes" class="border rounded p-3" style="max-height: 150px; overflow-y: auto;">
-                                <small class="text-muted">Select a project first</small>
-                            </div>
-                            <small class="text-muted">Max 1 article per site</small>
-                        </div>
-
-                        <div class="alert alert-info">
-                            <i class="bi bi-info-circle"></i>
-                            <strong>Note:</strong> You can place content on multiple sites at once. Each site will get max 1 link and 1 article from this project.
-                        </div>
-                    </form>
+                    <p class="text-muted">Enter domains (one per line). Format: <code>site.com</code> or <code>https://site.com</code></p>
+                    <textarea class="form-control" id="importDomainsText" rows="10" placeholder="example.com&#10;https://another-site.com&#10;third-site.org"></textarea>
+                    <div class="mt-2">
+                        <small class="text-muted">Only domains that exist in the system will be added.</small>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="createPlacement()">Create Placement</button>
+                    <button type="button" class="btn btn-primary" onclick="processImportedDomains()">Import</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Modal for Async Batch Placements -->
+    <div class="modal fade" id="progressModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-hourglass-split"></i> Processing Batch Placement
+                    </h5>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span id="progressStatus" class="fw-bold">Initializing...</span>
+                            <span id="progressPercent" class="badge bg-primary">0%</span>
+                        </div>
+                        <div class="progress" style="height: 25px;">
+                            <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated"
+                                 role="progressbar" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="row text-center mb-3">
+                        <div class="col-4">
+                            <div class="border rounded p-2">
+                                <div class="fs-4 fw-bold text-primary" id="progressTotal">0</div>
+                                <small class="text-muted">Total Sites</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="border rounded p-2">
+                                <div class="fs-4 fw-bold text-success" id="progressSuccessful">0</div>
+                                <small class="text-muted">Successful</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="border rounded p-2">
+                                <div class="fs-4 fw-bold text-danger" id="progressFailed">0</div>
+                                <small class="text-muted">Failed</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="progressResults" class="mt-3" style="max-height: 300px; overflow-y: auto; display: none;">
+                        <h6 class="fw-bold">Results:</h6>
+                        <div id="progressResultsList"></div>
+                    </div>
+
+                    <div id="progressErrors" class="mt-3 alert alert-danger" style="display: none;">
+                        <h6 class="fw-bold">Errors:</h6>
+                        <ul id="progressErrorsList" class="mb-0"></ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" id="cancelJobBtn" onclick="cancelCurrentJob()">
+                        <i class="bi bi-x-circle"></i> Cancel Job
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="closeProgressBtn" onclick="closeProgressModal()" style="display: none;">
+                        Close
+                    </button>
                 </div>
             </div>
         </div>
@@ -140,36 +280,76 @@
             window.location.href = '/index.html';
         }
 
-        let placements = [];
         let projects = [];
         let sites = [];
         let projectLinks = [];
         let projectArticles = [];
-        let modal;
+        let progressModal;
+        let currentJobId = null;
+        let pollInterval = null;
+        let selectedContentType = null;
+        let siteAssignments = {}; // { siteId: { contentId, contentName } }
+        let nextContentIndex = 0; // Round-robin index for auto-assignment
+        let sitesPerPage = 100; // Default sites per page
+        let currentPage = 1;
+        let filteredSites = []; // Sites after filtering by project placements
+        let whitelist = new Set(); // Set of site IDs in whitelist (stored but not auto-applied)
+        let blacklist = new Set(); // Set of site IDs in blacklist (stored but not auto-applied)
+        let whitelistActive = false; // Whether to apply whitelist filter
+        let blacklistActive = false; // Whether to apply blacklist filter
+        let selectedSitesForList = new Set(); // Track selected sites (not for placement, but for list operations)
+        let currentImportTarget = 'whitelist'; // 'whitelist' or 'blacklist'
+        let importListModal;
 
         document.addEventListener('DOMContentLoaded', async () => {
-            modal = new bootstrap.Modal(document.getElementById('placementModal'));
-            await Promise.all([loadPlacements(), loadProjects(), loadSites()]);
+            progressModal = new bootstrap.Modal(document.getElementById('progressModal'));
+            importListModal = new bootstrap.Modal(document.getElementById('importListModal'));
 
-            document.getElementById('projectFilter').addEventListener('change', displayPlacements);
-            document.getElementById('siteFilter').addEventListener('change', displayPlacements);
-            document.getElementById('statusFilter').addEventListener('change', displayPlacements);
-            document.getElementById('projectSelect').addEventListener('change', onProjectSelected);
+            document.getElementById('projectSelect').addEventListener('change', onProjectSelectedNew);
+            document.getElementById('typeLinks').addEventListener('change', onContentTypeSelected);
+            document.getElementById('typeArticles').addEventListener('change', onContentTypeSelected);
+
+            // Add event listeners for sites per page radio buttons
+            document.querySelectorAll('input[name="sitesPerPage"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    sitesPerPage = parseInt(e.target.value);
+                    currentPage = 1; // Reset to first page
+                    renderSitesTable(); // Re-render with new page size
+                });
+            });
+
+            // Load projects and sites - auto-selection happens in loadProjects()
+            await Promise.all([loadProjects(), loadSites()]);
+
+            // Load whitelist/blacklist from localStorage but DON'T apply filters
+            loadListsFromStorage();
         });
 
-        async function loadPlacements() {
-            try {
-                placements = await PlacementsAPI.getAll();
-                displayPlacements();
-            } catch (error) {
-                showNotification('Failed to load placements: ' + error.message, 'error');
-            }
-        }
 
         async function loadProjects() {
             try {
                 projects = await ProjectsAPI.getAll();
                 populateProjectFilter();
+
+                // Auto-select first project and Links type after projects loaded
+                if (projects.length > 0) {
+                    setTimeout(async () => {
+                        const projectSelect = document.getElementById('projectSelect');
+                        const typeLinks = document.getElementById('typeLinks');
+
+                        projectSelect.value = projects[0].id;
+                        typeLinks.checked = true;
+                        selectedContentType = 'links';
+
+                        // Load project data first
+                        const projectData = await ProjectsAPI.get(projects[0].id);
+                        projectLinks = projectData.links || [];
+                        projectArticles = projectData.articles || [];
+
+                        // Then load sites table
+                        await loadSitesForPlacement(projects[0].id, 'links');
+                    }, 100);
+                }
             } catch (error) {
                 showNotification('Failed to load projects: ' + error.message, 'error');
             }
@@ -178,192 +358,427 @@
         async function loadSites() {
             try {
                 sites = await SitesAPI.getAll();
-                populateSiteFilter();
             } catch (error) {
                 showNotification('Failed to load sites: ' + error.message, 'error');
             }
         }
 
         function populateProjectFilter() {
-            const select = document.getElementById('projectFilter');
-            select.innerHTML = '<option value="">All Projects</option>' +
-                projects.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
-
-            const modalSelect = document.getElementById('projectSelect');
-            modalSelect.innerHTML = '<option value="">Select project...</option>' +
+            const select = document.getElementById('projectSelect');
+            select.innerHTML = '<option value="">Select project...</option>' +
                 projects.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
         }
 
-        function populateSiteFilter() {
-            const select = document.getElementById('siteFilter');
-            select.innerHTML = '<option value="">All Sites</option>' +
-                sites.map(s => `<option value="${s.id}">${escapeHtml(s.site_name)}</option>`).join('');
-        }
 
-        // Populate available sites for current project (will be called after project selection)
-        async function populateAvailableSites(projectId) {
-            if (!projectId) {
-                const checkboxes = document.getElementById('sitesCheckboxes');
-                checkboxes.innerHTML = '<small class="text-muted">Select a project first</small>';
-                return;
-            }
-
-            try {
-                const availableSites = await PlacementsAPI.getAvailableSites(projectId);
-                const checkboxes = document.getElementById('sitesCheckboxes');
-
-                if (availableSites.length === 0) {
-                    checkboxes.innerHTML = '<small class="text-muted">No sites available</small>';
-                    return;
-                }
-
-                checkboxes.innerHTML = availableSites.map(s => {
-                    const canPlaceLink = s.can_place_link;
-                    const canPlaceArticle = s.can_place_article;
-                    const hasLink = s.project_links_on_site > 0;
-                    const hasArticle = s.project_articles_on_site > 0;
-
-                    let statusBadge = '';
-                    if (hasLink && hasArticle) {
-                        statusBadge = '<span class="badge bg-secondary ms-2">Full</span>';
-                    } else if (hasLink) {
-                        statusBadge = '<span class="badge bg-info ms-2">Has Link</span>';
-                    } else if (hasArticle) {
-                        statusBadge = '<span class="badge bg-warning ms-2">Has Article</span>';
-                    }
-
-                    const isAvailable = canPlaceLink || canPlaceArticle;
-                    const disabled = !isAvailable ? 'disabled' : '';
-                    const labelClass = !isAvailable ? 'text-muted' : '';
-
-                    return `
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="${s.id}" id="site_${s.id}"
-                                   ${disabled} data-can-link="${canPlaceLink}" data-can-article="${canPlaceArticle}">
-                            <label class="form-check-label ${labelClass}" for="site_${s.id}">
-                                ${escapeHtml(s.site_name)} - ${escapeHtml(s.site_url)}
-                                ${statusBadge}
-                                <br><small class="text-muted">Links: ${s.used_links}/${s.max_links}, Articles: ${s.used_articles}/${s.max_articles}</small>
-                            </label>
-                        </div>
-                    `;
-                }).join('');
-            } catch (error) {
-                showNotification('Failed to load available sites: ' + error.message, 'error');
-            }
-        }
-
-        async function onProjectSelected() {
+        async function onProjectSelectedNew() {
             const projectId = document.getElementById('projectSelect').value;
+
             if (!projectId) {
-                document.getElementById('linksCheckboxes').innerHTML = '<small class="text-muted">Select a project first</small>';
-                document.getElementById('articlesCheckboxes').innerHTML = '<small class="text-muted">Select a project first</small>';
-                document.getElementById('sitesCheckboxes').innerHTML = '<small class="text-muted">Select a project first</small>';
+                document.getElementById('sitesTableDiv').style.display = 'none';
                 return;
             }
 
             try {
-                // Load project data and available sites in parallel
-                const [projectData] = await Promise.all([
-                    ProjectsAPI.get(projectId),
-                    populateAvailableSites(projectId)
-                ]);
-
+                // Load project data
+                const projectData = await ProjectsAPI.get(projectId);
                 projectLinks = projectData.links || [];
                 projectArticles = projectData.articles || [];
 
-                const linksDiv = document.getElementById('linksCheckboxes');
-                if (projectLinks.length > 0) {
-                    linksDiv.innerHTML = projectLinks.map(link => `
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="${link.id}" id="link_${link.id}">
-                            <label class="form-check-label" for="link_${link.id}">
-                                ${escapeHtml(link.anchor_text)} → ${escapeHtml(link.url)}
-                            </label>
-                        </div>
-                    `).join('');
-                } else {
-                    linksDiv.innerHTML = '<small class="text-muted">No links in this project</small>';
-                }
+                // Auto-select Links and load sites
+                document.getElementById('typeLinks').checked = true;
+                selectedContentType = 'links';
 
-                const articlesDiv = document.getElementById('articlesCheckboxes');
-                if (projectArticles.length > 0) {
-                    articlesDiv.innerHTML = projectArticles.map(article => `
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="${article.id}" id="article_${article.id}">
-                            <label class="form-check-label" for="article_${article.id}">
-                                ${escapeHtml(article.title)}
-                            </label>
-                        </div>
-                    `).join('');
-                } else {
-                    articlesDiv.innerHTML = '<small class="text-muted">No articles in this project</small>';
-                }
+                // Reset round-robin index
+                nextContentIndex = 0;
+
+                // Load sites table
+                await loadSitesForPlacement(projectId, 'links');
+
+                // Show sites table
+                document.getElementById('sitesTableDiv').style.display = 'block';
             } catch (error) {
-                showNotification('Failed to load project details: ' + error.message, 'error');
+                showNotification('Failed to load project: ' + error.message, 'error');
             }
         }
 
-        function displayPlacements() {
-            const projectFilter = document.getElementById('projectFilter').value;
-            const siteFilter = document.getElementById('siteFilter').value;
-            const statusFilter = document.getElementById('statusFilter').value;
+        async function onContentTypeSelected() {
+            selectedContentType = document.querySelector('input[name="contentType"]:checked')?.value;
 
-            const filtered = placements.filter(p => {
-                const matchesProject = !projectFilter || p.project_id == projectFilter;
-                const matchesSite = !siteFilter || p.site_id == siteFilter;
-                const matchesStatus = !statusFilter || p.status === statusFilter;
-                return matchesProject && matchesSite && matchesStatus;
-            });
+            if (!selectedContentType) {
+                document.getElementById('sitesTableDiv').style.display = 'none';
+                return;
+            }
 
-            const tbody = document.getElementById('placementsTable');
-            tbody.innerHTML = filtered.map(p => {
-                // Determine content type and title
-                let contentHtml = '<span class="text-muted">Empty</span>';
-                if (p.article_count > 0 && p.link_count > 0) {
-                    contentHtml = `<span class="badge bg-info me-1">📄 Article</span><span class="badge bg-success">🔗 Link</span><br><small class="text-muted">${escapeHtml(p.article_title || '')}</small>`;
-                } else if (p.article_count > 0) {
-                    contentHtml = `<span class="badge bg-info">📄 Article</span><br><small>${escapeHtml(p.article_title || '')}</small>`;
-                } else if (p.link_count > 0) {
-                    contentHtml = `<span class="badge bg-success">🔗 Link</span><br><small>${escapeHtml(p.link_title || '')}</small>`;
+            const projectId = document.getElementById('projectSelect').value;
+            if (!projectId) return;
+
+            // Reset round-robin index when content type changes
+            nextContentIndex = 0;
+
+            // Show sites table and load data
+            document.getElementById('sitesTableDiv').style.display = 'block';
+            await loadSitesForPlacement(projectId, selectedContentType);
+        }
+
+        async function loadSitesForPlacement(projectId, contentType) {
+            try {
+                // Get all placements and filter by project
+                const placementsResponse = await fetch(`/api/placements`, {
+                    headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+                });
+                const allPlacements = await placementsResponse.json();
+
+                console.log('All placements:', allPlacements);
+                console.log('Looking for project_id:', projectId);
+
+                // Filter placements for this project
+                const projectPlacements = allPlacements.filter(p => p.project_id == projectId);
+
+                console.log('Project placements:', projectPlacements);
+
+                // Build map of sites with their content status (links and articles)
+                const sitesStatus = new Map();
+                for (const placement of projectPlacements) {
+                    if (!sitesStatus.has(placement.site_id)) {
+                        sitesStatus.set(placement.site_id, { hasLinks: false, hasArticles: false });
+                    }
+                    const status = sitesStatus.get(placement.site_id);
+                    if (placement.link_count > 0) status.hasLinks = true;
+                    if (placement.article_count > 0) status.hasArticles = true;
                 }
+
+                // Get available content
+                const availableContent = contentType === 'links' ? projectLinks : projectArticles;
+
+                if (availableContent.length === 0) {
+                    document.getElementById('sitesTableBody').innerHTML = `
+                        <tr><td colspan="5" class="text-center text-danger">
+                            No available ${contentType} in this project
+                        </td></tr>
+                    `;
+                    return;
+                }
+
+                // Apply whitelist/blacklist filtering ONLY if activated
+                let sitesToShow = sites;
+
+                // If whitelist is ACTIVE and not empty, show ONLY whitelist sites
+                if (whitelistActive && whitelist.size > 0) {
+                    sitesToShow = sitesToShow.filter(site => whitelist.has(site.id));
+                }
+
+                // If blacklist is ACTIVE and not empty, exclude blacklist sites
+                if (blacklistActive && blacklist.size > 0) {
+                    sitesToShow = sitesToShow.filter(site => !blacklist.has(site.id));
+                }
+
+                // Prepare filtered sites with their status
+                filteredSites = sitesToShow.map(site => {
+                    const status = sitesStatus.get(site.id) || { hasLinks: false, hasArticles: false };
+                    const hasCurrentType = (contentType === 'links' && status.hasLinks) ||
+                                          (contentType === 'articles' && status.hasArticles);
+
+                    // Determine status class and badge
+                    let statusClass, statusBadge, isDisabled;
+
+                    if (status.hasLinks && status.hasArticles) {
+                        statusClass = 'table-danger';
+                        statusBadge = '<span class="badge bg-danger">Full (Link + Article)</span>';
+                        isDisabled = true;
+                    } else if (status.hasLinks || status.hasArticles) {
+                        if (hasCurrentType) {
+                            statusClass = 'table-warning';
+                            statusBadge = status.hasLinks
+                                ? '<span class="badge bg-warning text-dark">Has Link</span>'
+                                : '<span class="badge bg-warning text-dark">Has Article</span>';
+                            isDisabled = true;
+                        } else {
+                            statusClass = 'table-warning';
+                            statusBadge = status.hasLinks
+                                ? '<span class="badge bg-warning text-dark">Has Link (can add Article)</span>'
+                                : '<span class="badge bg-warning text-dark">Has Article (can add Link)</span>';
+                            isDisabled = false;
+                        }
+                    } else {
+                        statusClass = 'table-success';
+                        statusBadge = '<span class="badge bg-success">Available</span>';
+                        isDisabled = false;
+                    }
+
+                    return { ...site, statusClass, statusBadge, isDisabled };
+                });
+
+                // Reset assignments and round-robin index
+                siteAssignments = {};
+                nextContentIndex = 0;
+                document.getElementById('createPlacementBtn').disabled = true;
+
+                // Reset to first page and render
+                currentPage = 1;
+                renderSitesTable();
+
+                // Show the table
+                document.getElementById('sitesTableDiv').style.display = 'block';
+
+            } catch (error) {
+                console.error('Error loading sites for placement:', error);
+                showNotification('Failed to load sites: ' + error.message, 'error');
+            }
+        }
+
+        function renderSitesTable() {
+            // Update active filters info
+            updateActiveFiltersInfo();
+
+            if (filteredSites.length === 0) {
+                document.getElementById('sitesTableBody').innerHTML = `
+                    <tr><td colspan="5" class="text-center text-warning">
+                        No sites match current filters. Try clearing whitelist/blacklist.
+                    </td></tr>
+                `;
+                return;
+            }
+
+            const contentType = selectedContentType;
+            const availableContent = contentType === 'links' ? projectLinks : projectArticles;
+
+            // Calculate pagination
+            const totalSites = filteredSites.length;
+            const totalPages = Math.ceil(totalSites / sitesPerPage);
+            const startIndex = (currentPage - 1) * sitesPerPage;
+            const endIndex = Math.min(startIndex + sitesPerPage, totalSites);
+            const pageSites = filteredSites.slice(startIndex, endIndex);
+
+            // Update sites count info
+            document.getElementById('sitesCountInfo').textContent =
+                `Showing ${startIndex + 1}-${endIndex} of ${totalSites} sites`;
+
+            // Build dropdown options for available content with usage counters
+            const contentOptions = availableContent.map(item => {
+                const displayName = contentType === 'links'
+                    ? escapeHtml(item.anchor_text)
+                    : escapeHtml(item.title);
+                const usageCount = item.usage_count || 0;
+                const usageLimit = item.usage_limit || (contentType === 'articles' ? 1 : 999);
+                const counter = `${usageCount}/${usageLimit}`;
+                return `<option value="${item.id}">${displayName} (${counter})</option>`;
+            }).join('');
+
+            // Render table rows for current page
+            const tbody = document.getElementById('sitesTableBody');
+            tbody.innerHTML = pageSites.map(site => {
+                const dropdownHtml = site.isDisabled
+                    ? '-'
+                    : `<select class="form-select form-select-sm" id="content_${site.id}" style="display: none;">
+                           <option value="">Select ${contentType === 'links' ? 'link' : 'article'}...</option>
+                           ${contentOptions}
+                       </select>`;
 
                 return `
-                <tr>
-                    <td>${p.id}</td>
-                    <td>${escapeHtml(p.project_name || 'N/A')}</td>
-                    <td>${escapeHtml(p.site_name || 'N/A')}</td>
-                    <td>${contentHtml}</td>
-                    <td>
-                        <span class="badge bg-${getStatusColor(p.status)}">
-                            ${escapeHtml(p.status || 'pending')}
-                        </span>
-                    </td>
-                    <td>${new Date(p.placed_at).toLocaleDateString()}</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deletePlacement(${p.id})">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </td>
-                </tr>
+                    <tr class="${site.statusClass}">
+                        <td>
+                            <input type="checkbox" class="site-checkbox"
+                                   data-site-id="${site.id}"
+                                   onchange="onSiteCheckboxChange(${site.id}, this.checked)"
+                                   ${site.isDisabled ? 'disabled' : ''}>
+                        </td>
+                        <td>${escapeHtml(site.site_name)}</td>
+                        <td>${escapeHtml(site.site_url)}</td>
+                        <td>${site.statusBadge}</td>
+                        <td id="assigned_${site.id}">${dropdownHtml}</td>
+                    </tr>
                 `;
             }).join('');
+
+            // Render pagination controls
+            renderPagination(totalPages);
         }
 
-        function getStatusColor(status) {
-            switch (status) {
-                case 'placed': return 'success';
-                case 'failed': return 'danger';
-                case 'pending': return 'warning';
-                default: return 'secondary';
+        function renderPagination(totalPages) {
+            const paginationDiv = document.getElementById('paginationControls');
+
+            if (totalPages <= 1) {
+                paginationDiv.innerHTML = '';
+                return;
+            }
+
+            let paginationHTML = '<nav><ul class="pagination pagination-sm mb-0">';
+
+            // Previous button
+            paginationHTML += `
+                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage - 1}); return false;">Previous</a>
+                </li>
+            `;
+
+            // Page numbers (show max 5 pages around current)
+            const maxVisible = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+
+            if (endPage - startPage < maxVisible - 1) {
+                startPage = Math.max(1, endPage - maxVisible + 1);
+            }
+
+            if (startPage > 1) {
+                paginationHTML += `<li class="page-item"><a class="page-link" href="#" onclick="changePage(1); return false;">1</a></li>`;
+                if (startPage > 2) {
+                    paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                }
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                paginationHTML += `
+                    <li class="page-item ${i === currentPage ? 'active' : ''}">
+                        <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
+                    </li>
+                `;
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                }
+                paginationHTML += `<li class="page-item"><a class="page-link" href="#" onclick="changePage(${totalPages}); return false;">${totalPages}</a></li>`;
+            }
+
+            // Next button
+            paginationHTML += `
+                <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage + 1}); return false;">Next</a>
+                </li>
+            `;
+
+            paginationHTML += '</ul></nav>';
+            paginationDiv.innerHTML = paginationHTML;
+        }
+
+        function changePage(page) {
+            if (page < 1 || page > Math.ceil(filteredSites.length / sitesPerPage)) {
+                return;
+            }
+            currentPage = page;
+            renderSitesTable();
+        }
+
+        function onSiteCheckboxChange(siteId, isChecked) {
+            const dropdown = document.getElementById(`content_${siteId}`);
+
+            if (isChecked) {
+                // Track selected site for list operations
+                selectedSitesForList.add(siteId);
+
+                // Show dropdown
+                dropdown.style.display = 'block';
+
+                // Auto-select next available content using round-robin
+                const availableContent = selectedContentType === 'links' ? projectLinks : projectArticles;
+
+                if (availableContent.length > 0) {
+                    // Get next content using round-robin (cycle through available content)
+                    const selectedContent = availableContent[nextContentIndex % availableContent.length];
+                    nextContentIndex++;
+
+                    // Set dropdown value
+                    dropdown.value = selectedContent.id;
+
+                    // Store assignment
+                    const contentName = selectedContentType === 'links'
+                        ? selectedContent.anchor_text
+                        : selectedContent.title;
+
+                    siteAssignments[siteId] = {
+                        contentId: selectedContent.id,
+                        contentName: contentName
+                    };
+                }
+
+                // Add change listener to track manual selection changes
+                dropdown.onchange = function() {
+                    const contentId = parseInt(this.value);
+                    if (contentId) {
+                        const availableContent = selectedContentType === 'links' ? projectLinks : projectArticles;
+                        const selectedContent = availableContent.find(c => c.id === contentId);
+
+                        if (selectedContent) {
+                            const contentName = selectedContentType === 'links'
+                                ? selectedContent.anchor_text
+                                : selectedContent.title;
+
+                            siteAssignments[siteId] = {
+                                contentId: contentId,
+                                contentName: contentName
+                            };
+                        }
+                    } else {
+                        delete siteAssignments[siteId];
+                    }
+
+                    // Update create button state
+                    updateCreateButtonState();
+                };
+            } else {
+                // Remove from selected sites for list operations
+                selectedSitesForList.delete(siteId);
+
+                // Hide dropdown and remove assignment
+                dropdown.style.display = 'none';
+                dropdown.value = '';
+                delete siteAssignments[siteId];
+            }
+
+            // Update create button state and list button counts
+            updateCreateButtonState();
+            updateListButtonCounts();
+        }
+
+        function updateCreateButtonState() {
+            // Enable button only if all checked sites have content selected
+            const checkedSites = document.querySelectorAll('.site-checkbox:checked');
+            let allHaveContent = checkedSites.length > 0;
+
+            checkedSites.forEach(checkbox => {
+                const siteId = parseInt(checkbox.dataset.siteId);
+                if (!siteAssignments[siteId]) {
+                    allHaveContent = false;
+                }
+            });
+
+            document.getElementById('createPlacementBtn').disabled = !allHaveContent;
+        }
+
+        function updateListButtonCounts() {
+            const count = selectedSitesForList.size;
+            document.getElementById('whitelistCount').textContent = count;
+            document.getElementById('blacklistCount').textContent = count;
+            document.getElementById('buyLinksCount').textContent = count;
+
+            const addToWhitelistBtn = document.getElementById('addToWhitelistBtn');
+            const addToBlacklistBtn = document.getElementById('addToBlacklistBtn');
+            const buyLinksBtn = document.getElementById('buyLinksBtn');
+
+            if (count > 0) {
+                addToWhitelistBtn.disabled = false;
+                addToBlacklistBtn.disabled = false;
+                buyLinksBtn.disabled = false;
+                document.getElementById('listActionsDiv').style.display = 'block';
+            } else {
+                addToWhitelistBtn.disabled = true;
+                addToBlacklistBtn.disabled = true;
+                buyLinksBtn.disabled = true;
             }
         }
 
-        function showCreateModal() {
-            document.getElementById('placementForm').reset();
-            document.getElementById('linksCheckboxes').innerHTML = '<small class="text-muted">Select a project first</small>';
-            document.getElementById('articlesCheckboxes').innerHTML = '<small class="text-muted">Select a project first</small>';
-            modal.show();
+        function toggleAllSites() {
+            const selectAll = document.getElementById('selectAllSites').checked;
+            const checkboxes = document.querySelectorAll('.site-checkbox:not(:disabled)');
+
+            checkboxes.forEach(cb => {
+                if (cb.checked !== selectAll) {
+                    cb.checked = selectAll;
+                    onSiteCheckboxChange(parseInt(cb.dataset.siteId), selectAll);
+                }
+            });
         }
 
         async function createPlacement() {
@@ -373,63 +788,564 @@
                 return;
             }
 
-            const siteCheckboxes = document.querySelectorAll('#sitesCheckboxes input[type="checkbox"]:checked');
-            const siteIds = Array.from(siteCheckboxes).map(cb => parseInt(cb.value));
+            if (!selectedContentType) {
+                showNotification('Please select content type (Links or Articles)', 'error');
+                return;
+            }
 
-            if (siteIds.length === 0) {
+            if (Object.keys(siteAssignments).length === 0) {
                 showNotification('Please select at least one site', 'error');
                 return;
             }
 
-            const linkCheckboxes = document.querySelectorAll('#linksCheckboxes input[type="checkbox"]:checked');
-            const linkIds = Array.from(linkCheckboxes).map(cb => parseInt(cb.value));
-
-            const articleCheckboxes = document.querySelectorAll('#articlesCheckboxes input[type="checkbox"]:checked');
-            const articleIds = Array.from(articleCheckboxes).map(cb => parseInt(cb.value));
-
-            if (linkIds.length === 0 && articleIds.length === 0) {
-                showNotification('Please select at least one link or article', 'error');
-                return;
+            // Build placement data with specific assignments
+            const placements = [];
+            for (const [siteId, assignment] of Object.entries(siteAssignments)) {
+                const placementData = {
+                    project_id: projectId,
+                    site_ids: [parseInt(siteId)],
+                    link_ids: selectedContentType === 'links' ? [assignment.contentId] : [],
+                    article_ids: selectedContentType === 'articles' ? [assignment.contentId] : []
+                };
+                placements.push(placementData);
             }
-
-            if (linkIds.length > 1) {
-                showNotification('You can only select 1 link (will be placed on all selected sites)', 'error');
-                return;
-            }
-
-            if (articleIds.length > 1) {
-                showNotification('You can only select 1 article (will be placed on all selected sites)', 'error');
-                return;
-            }
-
-            const data = {
-                project_id: projectId,
-                site_ids: siteIds,
-                link_ids: linkIds,
-                article_ids: articleIds
-            };
 
             try {
-                const result = await PlacementsAPI.createBatch(data);
-                showNotification(`Successfully created ${result.successful} placements`);
+                // Process each placement
+                let successful = 0;
+                let failed = 0;
+
+                for (const data of placements) {
+                    try {
+                        await PlacementsAPI.createBatch(data);
+                        successful++;
+                    } catch (error) {
+                        failed++;
+                        console.error('Failed placement:', error);
+                    }
+                }
+
+                showNotification(`Placements created: ${successful} successful, ${failed} failed`);
+
+                // Reset form
+                document.getElementById('projectSelect').value = '';
+                document.getElementById('typeLinks').checked = false;
+                document.getElementById('typeArticles').checked = false;
+                document.getElementById('sitesTableDiv').style.display = 'none';
+                selectedContentType = null;
+                siteAssignments = {};
+            } catch (error) {
+                showNotification('Failed to create placements: ' + error.message, 'error');
+            }
+        }
+
+        async function createPlacementAsync(data) {
+            try {
+                // Start async job
+                const response = await fetch('/api/placements/batch/async', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${getAuthToken()}`
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to start async placement');
+                }
+
+                const job = await response.json();
+                currentJobId = job.job_id;
+
+                // Hide placement modal and show progress modal
                 modal.hide();
-                await loadPlacements();
+                showProgressModal(job);
+
+                // Start polling for job status
+                startJobPolling(job.job_id);
             } catch (error) {
-                showNotification('Failed to create placement: ' + error.message, 'error');
+                showNotification('Failed to create async placement: ' + error.message, 'error');
             }
         }
 
-        async function deletePlacement(id) {
-            if (!confirm('Are you sure you want to delete this placement?')) return;
+        function showProgressModal(job) {
+            // Reset progress UI
+            document.getElementById('progressStatus').textContent = 'Queued...';
+            document.getElementById('progressPercent').textContent = '0%';
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('progressTotal').textContent = job.total_sites || 0;
+            document.getElementById('progressSuccessful').textContent = '0';
+            document.getElementById('progressFailed').textContent = '0';
+            document.getElementById('progressResults').style.display = 'none';
+            document.getElementById('progressErrors').style.display = 'none';
+            document.getElementById('cancelJobBtn').style.display = 'block';
+            document.getElementById('closeProgressBtn').style.display = 'none';
+
+            progressModal.show();
+        }
+
+        function startJobPolling(jobId) {
+            // Clear any existing poll
+            if (pollInterval) {
+                clearInterval(pollInterval);
+            }
+
+            // Poll every 2 seconds
+            pollInterval = setInterval(async () => {
+                await updateJobStatus(jobId);
+            }, 2000);
+
+            // Initial check
+            updateJobStatus(jobId);
+        }
+
+        async function updateJobStatus(jobId) {
+            try {
+                const response = await fetch(`/api/placements/job/${jobId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${getAuthToken()}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch job status');
+                }
+
+                const status = await response.json();
+
+                // Update progress bar
+                const percent = status.progress?.percent || 0;
+                document.getElementById('progressPercent').textContent = `${Math.round(percent)}%`;
+                document.getElementById('progressBar').style.width = `${percent}%`;
+
+                // Update status text
+                const stage = status.progress?.stage || status.status;
+                document.getElementById('progressStatus').textContent = stage;
+
+                // Update counts
+                document.getElementById('progressTotal').textContent = status.total_sites || 0;
+                document.getElementById('progressSuccessful').textContent = status.successful || 0;
+                document.getElementById('progressFailed').textContent = status.failed || 0;
+
+                // Handle completion
+                if (status.status === 'completed' || status.status === 'failed') {
+                    clearInterval(pollInterval);
+                    pollInterval = null;
+
+                    // Show results
+                    if (status.results && status.results.length > 0) {
+                        displayResults(status.results);
+                    }
+
+                    // Show errors
+                    if (status.errors && status.errors.length > 0) {
+                        displayErrors(status.errors);
+                    }
+
+                    // Update button
+                    document.getElementById('cancelJobBtn').style.display = 'none';
+                    document.getElementById('closeProgressBtn').style.display = 'block';
+
+                    // Change progress bar color
+                    const progressBar = document.getElementById('progressBar');
+                    progressBar.classList.remove('progress-bar-animated', 'progress-bar-striped');
+                    if (status.status === 'completed') {
+                        progressBar.classList.add('bg-success');
+                        showNotification(`Batch placement completed: ${status.successful} successful, ${status.failed} failed`);
+                    } else {
+                        progressBar.classList.add('bg-danger');
+                        showNotification('Batch placement failed', 'error');
+                    }
+
+                    // Just notify completion
+                }
+            } catch (error) {
+                console.error('Error polling job status:', error);
+            }
+        }
+
+        function displayResults(results) {
+            const resultsList = document.getElementById('progressResultsList');
+            resultsList.innerHTML = results.map(r => {
+                const icon = r.success ? '✅' : '❌';
+                const className = r.success ? 'text-success' : 'text-danger';
+                return `
+                    <div class="border-bottom pb-2 mb-2">
+                        <span class="${className}">${icon}</span>
+                        <strong>Site ID ${r.site_id}</strong>
+                        ${r.site_name ? `(${escapeHtml(r.site_name)})` : ''}
+                        - ${r.links_placed || 0} links, ${r.articles_placed || 0} articles
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('progressResults').style.display = 'block';
+        }
+
+        function displayErrors(errors) {
+            const errorsList = document.getElementById('progressErrorsList');
+            errorsList.innerHTML = errors.map(e => `
+                <li>Site ID ${e.site_id}: ${escapeHtml(e.error)}</li>
+            `).join('');
+            document.getElementById('progressErrors').style.display = 'block';
+        }
+
+        async function cancelCurrentJob() {
+            if (!currentJobId) return;
+
+            if (!confirm('Are you sure you want to cancel this job?')) return;
 
             try {
-                await PlacementsAPI.delete(id);
-                showNotification('Placement deleted successfully');
-                await loadPlacements();
+                const response = await fetch(`/api/placements/job/${currentJobId}/cancel`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${getAuthToken()}`
+                    }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to cancel job');
+                }
+
+                clearInterval(pollInterval);
+                pollInterval = null;
+                progressModal.hide();
+                showNotification('Job cancelled successfully');
             } catch (error) {
-                showNotification('Failed to delete placement: ' + error.message, 'error');
+                showNotification('Failed to cancel job: ' + error.message, 'error');
             }
         }
+
+        function closeProgressModal() {
+            clearInterval(pollInterval);
+            pollInterval = null;
+            currentJobId = null;
+            progressModal.hide();
+        }
+
+        // Whitelist/Blacklist Functions
+
+        function loadListsFromStorage() {
+            const storedWhitelist = localStorage.getItem('sitesWhitelist');
+            const storedBlacklist = localStorage.getItem('sitesBlacklist');
+
+            if (storedWhitelist) {
+                whitelist = new Set(JSON.parse(storedWhitelist));
+            }
+            if (storedBlacklist) {
+                blacklist = new Set(JSON.parse(storedBlacklist));
+            }
+
+            // Load but DON'T activate filters
+            whitelistActive = false;
+            blacklistActive = false;
+
+            updateListTotals();
+        }
+
+        function saveListsToStorage() {
+            localStorage.setItem('sitesWhitelist', JSON.stringify([...whitelist]));
+            localStorage.setItem('sitesBlacklist', JSON.stringify([...blacklist]));
+            updateListTotals();
+        }
+
+        function updateListTotals() {
+            document.getElementById('whitelistTotal').textContent = whitelist.size;
+            document.getElementById('blacklistTotal').textContent = blacklist.size;
+        }
+
+        function addSelectedToWhitelist() {
+            selectedSitesForList.forEach(siteId => {
+                whitelist.add(siteId);
+                blacklist.delete(siteId); // Remove from blacklist if exists
+            });
+            saveListsToStorage();
+            showNotification(`Added ${selectedSitesForList.size} sites to whitelist`, 'success');
+            renderWhitelistView();
+
+            // Refresh sites table to apply filter
+            const projectId = document.getElementById('projectSelect').value;
+            if (projectId && selectedContentType) {
+                loadSitesForPlacement(projectId, selectedContentType);
+            }
+        }
+
+        function addSelectedToBlacklist() {
+            selectedSitesForList.forEach(siteId => {
+                blacklist.add(siteId);
+                whitelist.delete(siteId); // Remove from whitelist if exists
+            });
+            saveListsToStorage();
+            showNotification(`Added ${selectedSitesForList.size} sites to blacklist`, 'success');
+            renderBlacklistView();
+
+            // Refresh sites table to apply filter
+            const projectId = document.getElementById('projectSelect').value;
+            if (projectId && selectedContentType) {
+                loadSitesForPlacement(projectId, selectedContentType);
+            }
+        }
+
+        function importWhitelist() {
+            currentImportTarget = 'whitelist';
+            document.getElementById('importListModalTitle').textContent = 'Import Whitelist Domains';
+            document.getElementById('importDomainsText').value = '';
+            importListModal.show();
+        }
+
+        function importBlacklist() {
+            currentImportTarget = 'blacklist';
+            document.getElementById('importListModalTitle').textContent = 'Import Blacklist Domains';
+            document.getElementById('importDomainsText').value = '';
+            importListModal.show();
+        }
+
+        function processImportedDomains() {
+            const text = document.getElementById('importDomainsText').value;
+            const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+
+            // Extract domains from URLs or use as-is
+            const domains = lines.map(line => {
+                try {
+                    const url = new URL(line.startsWith('http') ? line : `https://${line}`);
+                    return url.hostname;
+                } catch {
+                    return line.replace(/^https?:\/\//, '').replace(/\/$/, '');
+                }
+            });
+
+            // Find matching sites in our system
+            const matchedSiteIds = [];
+            domains.forEach(domain => {
+                const matchedSite = sites.find(site => {
+                    const siteUrl = site.site_url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+                    return siteUrl === domain || siteUrl.includes(domain) || domain.includes(siteUrl);
+                });
+                if (matchedSite) {
+                    matchedSiteIds.push(matchedSite.id);
+                }
+            });
+
+            if (matchedSiteIds.length === 0) {
+                showNotification('No matching sites found in the system', 'error');
+                return;
+            }
+
+            // Add to appropriate list
+            if (currentImportTarget === 'whitelist') {
+                matchedSiteIds.forEach(id => {
+                    whitelist.add(id);
+                    blacklist.delete(id);
+                });
+                renderWhitelistView();
+            } else {
+                matchedSiteIds.forEach(id => {
+                    blacklist.add(id);
+                    whitelist.delete(id);
+                });
+                renderBlacklistView();
+            }
+
+            saveListsToStorage();
+            showNotification(`Imported ${matchedSiteIds.length} sites to ${currentImportTarget}`, 'success');
+            importListModal.hide();
+
+            // Refresh sites table to apply filter
+            const projectId = document.getElementById('projectSelect').value;
+            if (projectId && selectedContentType) {
+                loadSitesForPlacement(projectId, selectedContentType);
+            }
+        }
+
+        function toggleWhitelistView() {
+            // Toggle filter activation (don't show/hide the list below)
+            whitelistActive = !whitelistActive;
+
+            // Update button text
+            const btn = event.target.closest('button');
+            if (whitelistActive) {
+                btn.innerHTML = '<i class="bi bi-eye-slash"></i> Hide (' + whitelist.size + ')';
+                btn.classList.remove('btn-outline-success');
+                btn.classList.add('btn-success');
+            } else {
+                btn.innerHTML = '<i class="bi bi-eye"></i> Show (' + whitelist.size + ')';
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-outline-success');
+            }
+
+            // Refresh sites table
+            const projectId = document.getElementById('projectSelect').value;
+            if (projectId && selectedContentType) {
+                loadSitesForPlacement(projectId, selectedContentType);
+            }
+        }
+
+        function toggleBlacklistView() {
+            // Toggle filter activation (don't show/hide the list below)
+            blacklistActive = !blacklistActive;
+
+            // Update button text
+            const btn = event.target.closest('button');
+            if (blacklistActive) {
+                btn.innerHTML = '<i class="bi bi-eye-slash"></i> Hide (' + blacklist.size + ')';
+                btn.classList.remove('btn-outline-danger');
+                btn.classList.add('btn-danger');
+            } else {
+                btn.innerHTML = '<i class="bi bi-eye"></i> Show (' + blacklist.size + ')';
+                btn.classList.remove('btn-danger');
+                btn.classList.add('btn-outline-danger');
+            }
+
+            // Refresh sites table
+            const projectId = document.getElementById('projectSelect').value;
+            if (projectId && selectedContentType) {
+                loadSitesForPlacement(projectId, selectedContentType);
+            }
+        }
+
+        function renderWhitelistView() {
+            const container = document.getElementById('whitelistItems');
+            if (whitelist.size === 0) {
+                container.innerHTML = '<p class="text-muted text-center p-3">No sites in whitelist</p>';
+                return;
+            }
+
+            const whitelistSites = sites.filter(site => whitelist.has(site.id));
+            container.innerHTML = whitelistSites.map(site => `
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>${escapeHtml(site.site_name)}</strong><br>
+                        <small class="text-muted">${escapeHtml(site.site_url)}</small>
+                    </div>
+                    <button class="btn btn-sm btn-danger" onclick="removeFromWhitelist(${site.id})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function renderBlacklistView() {
+            const container = document.getElementById('blacklistItems');
+            if (blacklist.size === 0) {
+                container.innerHTML = '<p class="text-muted text-center p-3">No sites in blacklist</p>';
+                return;
+            }
+
+            const blacklistSites = sites.filter(site => blacklist.has(site.id));
+            container.innerHTML = blacklistSites.map(site => `
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>${escapeHtml(site.site_name)}</strong><br>
+                        <small class="text-muted">${escapeHtml(site.site_url)}</small>
+                    </div>
+                    <button class="btn btn-sm btn-danger" onclick="removeFromBlacklist(${site.id})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function removeFromWhitelist(siteId) {
+            whitelist.delete(siteId);
+            saveListsToStorage();
+            renderWhitelistView();
+            showNotification('Removed from whitelist', 'success');
+
+            // Refresh sites table to apply filter
+            const projectId = document.getElementById('projectSelect').value;
+            if (projectId && selectedContentType) {
+                loadSitesForPlacement(projectId, selectedContentType);
+            }
+        }
+
+        function removeFromBlacklist(siteId) {
+            blacklist.delete(siteId);
+            saveListsToStorage();
+            renderBlacklistView();
+            showNotification('Removed from blacklist', 'success');
+
+            // Refresh sites table to apply filter
+            const projectId = document.getElementById('projectSelect').value;
+            if (projectId && selectedContentType) {
+                loadSitesForPlacement(projectId, selectedContentType);
+            }
+        }
+
+        function clearWhitelist() {
+            if (whitelist.size === 0) {
+                showNotification('Whitelist is already empty', 'info');
+                return;
+            }
+
+            if (confirm(`Clear all ${whitelist.size} sites from whitelist?`)) {
+                whitelist.clear();
+                saveListsToStorage();
+                renderWhitelistView();
+                showNotification('Whitelist cleared', 'success');
+
+                // Refresh sites table to apply filter
+                const projectId = document.getElementById('projectSelect').value;
+                if (projectId && selectedContentType) {
+                    loadSitesForPlacement(projectId, selectedContentType);
+                }
+            }
+        }
+
+        function clearBlacklist() {
+            if (blacklist.size === 0) {
+                showNotification('Blacklist is already empty', 'info');
+                return;
+            }
+
+            if (confirm(`Clear all ${blacklist.size} sites from blacklist?`)) {
+                blacklist.clear();
+                saveListsToStorage();
+                renderBlacklistView();
+                showNotification('Blacklist cleared', 'success');
+
+                // Refresh sites table to apply filter
+                const projectId = document.getElementById('projectSelect').value;
+                if (projectId && selectedContentType) {
+                    loadSitesForPlacement(projectId, selectedContentType);
+                }
+            }
+        }
+
+        function updateActiveFiltersInfo() {
+            const infoSpan = document.getElementById('activeFiltersInfo');
+            const filters = [];
+
+            if (whitelistActive && whitelist.size > 0) {
+                filters.push(`<span class="badge bg-success">Whitelist Active: ${whitelist.size} sites</span>`);
+            }
+            if (blacklistActive && blacklist.size > 0) {
+                filters.push(`<span class="badge bg-danger">Blacklist Active: ${blacklist.size} sites</span>`);
+            }
+
+            if (filters.length > 0) {
+                infoSpan.innerHTML = '<br>' + filters.join(' ');
+            } else {
+                infoSpan.innerHTML = '';
+            }
+        }
+
+        function buyLinks() {
+            if (selectedSitesForList.size === 0) {
+                showNotification('Please select sites first', 'error');
+                return;
+            }
+
+            const selectedSites = sites.filter(s => selectedSitesForList.has(s.id));
+            const siteNames = selectedSites.map(s => s.site_name).join(', ');
+
+            showNotification(`Функция "Купить ссылку" для сайтов: ${siteNames}. Эта функция будет реализована позже.`, 'info');
+
+            // TODO: Implement link buying functionality
+            // This could open a modal, redirect to external service, or create an order
+        }
+
     </script>
 </body>
 </html>

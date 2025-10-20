@@ -31,6 +31,9 @@ router.get('/statistics', generalLimiter, placementController.getStatistics); //
 router.get('/available-sites/:projectId', generalLimiter, placementController.getAvailableSites); // Must be before /:id
 router.get('/:id', generalLimiter, placementController.getPlacement);
 router.post('/batch/create', createLimiter, placementController.createBatchPlacement);
+router.post('/batch/async', createLimiter, placementController.createBatchPlacementAsync);
+router.get('/job/:jobId', generalLimiter, placementController.getJobStatus);
+router.post('/job/:jobId/cancel', generalLimiter, placementController.cancelJob);
 router.delete('/:id', generalLimiter, placementController.deletePlacement);
 
 module.exports = router;

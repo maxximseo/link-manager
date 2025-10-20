@@ -1,217 +1,207 @@
 /**
- * Placement worker for batch operations
- * Handles creation of placements across multiple sites with retry logic
+ * Placement worker for async batch operations
+ * Handles creation of placements across multiple sites with round-robin distribution
  */
 
 const logger = require('../config/logger');
-const { query } = require('../config/database');
+const placementService = require('../services/placement.service');
 
 module.exports = async function placementWorker(job) {
-  const { project_id, site_ids, link_ids = [], article_ids = [], user_id, priority } = job.data;
-  
-  logger.info('Starting batch placement job', { 
-    jobId: job.id, 
+  const { jobId, userId, project_id, site_ids, link_ids = [], article_ids = [] } = job.data;
+
+  logger.info('Starting async batch placement job', {
+    jobId,
+    userId,
     projectId: project_id,
     siteCount: site_ids.length,
     linkCount: link_ids.length,
-    articleCount: article_ids.length,
-    priority
+    articleCount: article_ids.length
   });
-  
+
   // Initialize progress
-  await job.progress(0);
-  
+  await job.progress({
+    percent: 0,
+    processed: 0,
+    total: site_ids.length,
+    successful: 0,
+    failed: 0
+  });
+
   const results = [];
-  let successful = 0;
-  let failed = 0;
-  
+  const errors = [];
+
   try {
-    // Pre-flight validation
-    await job.progress(5);
-    
-    // Validate project exists
-    const projectCheck = await query('SELECT id FROM projects WHERE id = $1 AND user_id = $2', [project_id, user_id]);
+    // Pre-flight validation (5% progress)
+    const { query } = require('../config/database');
+    const projectCheck = await query(
+      'SELECT id FROM projects WHERE id = $1 AND user_id = $2',
+      [project_id, userId]
+    );
+
     if (projectCheck.rows.length === 0) {
       throw new Error('Project not found or access denied');
     }
-    
-    // Process each site
-    const totalOperations = site_ids.length;
-    
-    for (let i = 0; i < site_ids.length; i++) {
-      const siteId = site_ids[i];
-      const siteResult = {
-        siteId,
-        success: false,
-        error: null,
-        placements: [],
-        skipped: []
-      };
-      
-      try {
-        // Get site info for logging
-        const siteInfo = await query('SELECT site_name, site_url FROM sites WHERE id = $1', [siteId]);
-        const siteName = siteInfo.rows[0]?.site_name || `Site ${siteId}`;
-        
-        logger.debug('Processing site', { siteId, siteName, jobId: job.id });
-        
-        // Create placement record
-        const placementResult = await query(`
-          INSERT INTO placements (site_id, project_id, type, status, placed_at)
-          VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
-          RETURNING id
-        `, [siteId, project_id, 'manual', 'active']);
-        
-        const placementId = placementResult.rows[0].id;
-        siteResult.placementId = placementId;
-        
-        // Add links to placement
-        if (link_ids.length > 0) {
-          for (const linkId of link_ids) {
-            try {
-              await query(`
-                INSERT INTO placement_content (placement_id, link_id)
-                VALUES ($1, $2)
-                ON CONFLICT (placement_id, link_id) DO NOTHING
-              `, [placementId, linkId]);
-              
-              siteResult.placements.push({ type: 'link', id: linkId });
-            } catch (linkError) {
-              if (linkError.code === '23503') { // Foreign key constraint
-                siteResult.skipped.push({ type: 'link', id: linkId, reason: 'Link not found' });
-              } else {
-                throw linkError;
-              }
-            }
-          }
-        }
-        
-        // Add articles to placement
-        if (article_ids.length > 0) {
-          for (const articleId of article_ids) {
-            try {
-              await query(`
-                INSERT INTO placement_content (placement_id, article_id)
-                VALUES ($1, $2)
-                ON CONFLICT (placement_id, article_id) DO NOTHING
-              `, [placementId, articleId]);
-              
-              siteResult.placements.push({ type: 'article', id: articleId });
-            } catch (articleError) {
-              if (articleError.code === '23503') { // Foreign key constraint
-                siteResult.skipped.push({ type: 'article', id: articleId, reason: 'Article not found' });
-              } else {
-                throw articleError;
-              }
-            }
-          }
-        }
-        
-        siteResult.success = true;
-        successful++;
-        
-        logger.debug('Site processed successfully', { 
-          siteId, 
-          siteName, 
-          placementId,
-          linksAdded: siteResult.placements.filter(p => p.type === 'link').length,
-          articlesAdded: siteResult.placements.filter(p => p.type === 'article').length,
-          skipped: siteResult.skipped.length
-        });
-        
-      } catch (siteError) {
-        siteResult.error = siteError.message;
-        failed++;
-        
-        logger.error('Site processing failed', { 
-          siteId, 
-          error: siteError.message,
-          jobId: job.id
-        });
-        
-        // Check if we should continue or fail the job
-        if (siteError.message.includes('access denied') || siteError.message.includes('not found')) {
-          // Critical error - fail the entire job
-          throw new Error(`Critical error processing site ${siteId}: ${siteError.message}`);
-        }
-        
-        // Non-critical error - continue with other sites
+
+    await job.progress({
+      percent: 5,
+      processed: 0,
+      total: site_ids.length,
+      successful: 0,
+      failed: 0,
+      stage: 'Validating project...'
+    });
+
+    // Distribute links and articles across sites (round-robin)
+    const numSites = site_ids.length;
+    let linkIndex = 0;
+    let articleIndex = 0;
+
+    for (let i = 0; i < numSites; i++) {
+      const site_id = site_ids[i];
+
+      // Assign 1 link per site (round-robin)
+      const assignedLinks = [];
+      if (linkIndex < link_ids.length) {
+        assignedLinks.push(link_ids[linkIndex]);
+        linkIndex++;
       }
-      
-      results.push(siteResult);
-      
+
+      // Assign 1 article per site (round-robin)
+      const assignedArticles = [];
+      if (articleIndex < article_ids.length) {
+        assignedArticles.push(article_ids[articleIndex]);
+        articleIndex++;
+      }
+
+      // Skip if nothing to place on this site
+      if (assignedLinks.length === 0 && assignedArticles.length === 0) {
+        continue;
+      }
+
+      try {
+        // Get site name for logging
+        const siteInfo = await query(
+          'SELECT site_name FROM sites WHERE id = $1',
+          [site_id]
+        );
+        const siteName = siteInfo.rows[0]?.site_name || `Site ${site_id}`;
+
+        // Create placement using existing service
+        const placement = await placementService.createPlacement({
+          site_id,
+          project_id,
+          link_ids: assignedLinks,
+          article_ids: assignedArticles,
+          userId
+        });
+
+        results.push({
+          site_id,
+          site_name: siteName,
+          placement_id: placement.id,
+          links_placed: assignedLinks.length,
+          articles_placed: assignedArticles.length,
+          success: true
+        });
+
+        logger.debug('Placement created in worker', {
+          jobId,
+          site_id,
+          siteName,
+          placementId: placement.id,
+          links: assignedLinks.length,
+          articles: assignedArticles.length
+        });
+
+      } catch (error) {
+        errors.push({
+          site_id,
+          error: error.message
+        });
+
+        logger.warn('Failed to create placement in worker', {
+          jobId,
+          site_id,
+          error: error.message
+        });
+      }
+
       // Update progress
-      const progress = Math.floor(((i + 1) / totalOperations) * 90) + 10;
-      await job.progress(progress);
-      
-      // Add small delay to prevent overwhelming the database
-      if (i < site_ids.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, priority === 'high' ? 100 : 300));
+      const percent = Math.floor(((i + 1) / numSites) * 90) + 10;
+      await job.progress({
+        percent,
+        processed: i + 1,
+        total: numSites,
+        successful: results.length,
+        failed: errors.length,
+        stage: `Processing site ${i + 1}/${numSites}...`
+      });
+
+      // Small delay to prevent overwhelming system (300ms per site)
+      if (i < numSites - 1) {
+        await new Promise(resolve => setTimeout(resolve, 300));
       }
     }
-    
+
     // Final progress update
-    await job.progress(100);
-    
+    await job.progress({
+      percent: 100,
+      processed: numSites,
+      total: numSites,
+      successful: results.length,
+      failed: errors.length,
+      stage: 'Completed'
+    });
+
     const summary = {
       success: true,
-      processed: results.length,
-      successful,
-      failed,
-      details: {
-        totalSites: site_ids.length,
-        successRate: `${Math.round((successful / site_ids.length) * 100)}%`,
-        linksPlaced: results.reduce((sum, r) => sum + r.placements.filter(p => p.type === 'link').length, 0),
-        articlesPlaced: results.reduce((sum, r) => sum + r.placements.filter(p => p.type === 'article').length, 0),
-        totalSkipped: results.reduce((sum, r) => sum + r.skipped.length, 0)
+      total_sites: numSites,
+      successful: results.length,
+      failed: errors.length,
+      distribution: {
+        links_distributed: linkIndex,
+        articles_distributed: articleIndex
       },
-      results: results.map(r => ({
-        siteId: r.siteId,
-        success: r.success,
-        placementId: r.placementId,
-        placements: r.placements.length,
-        skipped: r.skipped.length,
-        error: r.error
-      }))
+      results,
+      errors: errors.length > 0 ? errors : undefined
     };
-    
-    logger.info('Batch placement job completed', {
-      jobId: job.id,
+
+    logger.info('Async batch placement job completed', {
+      jobId,
+      userId,
       projectId: project_id,
-      ...summary.details,
-      duration: Date.now() - job.timestamp
+      totalSites: numSites,
+      successful: results.length,
+      failed: errors.length,
+      linksDistributed: linkIndex,
+      articlesDistributed: articleIndex
     });
-    
+
     return summary;
-    
+
   } catch (error) {
-    failed = site_ids.length - successful;
-    
-    logger.error('Batch placement job failed', { 
-      jobId: job.id, 
+    logger.error('Async batch placement job failed', {
+      jobId,
+      userId,
       error: error.message,
       stack: error.stack,
-      processed: successful,
-      failed
+      successful: results.length,
+      failed: errors.length
     });
-    
+
     // Return partial results if some sites were processed
-    if (successful > 0) {
+    if (results.length > 0) {
       return {
         success: false,
-        processed: results.length,
-        successful,
-        failed,
         error: error.message,
-        partialResults: results.map(r => ({
-          siteId: r.siteId,
-          success: r.success,
-          placementId: r.placementId,
-          error: r.error
-        }))
+        total_sites: site_ids.length,
+        successful: results.length,
+        failed: errors.length,
+        results,
+        errors: errors.length > 0 ? errors : undefined
       };
     }
-    
+
     throw error;
   }
 };

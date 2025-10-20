@@ -188,11 +188,29 @@ Articles can be duplicated to reuse content with a new usage count:
 POST /api/projects/:id/articles/:articleId/duplicate
 ```
 
-### WordPress Plugin Integration
+### WordPress Plugin Integration (v2.2.2)
 - Plugin generates API token (not username/password)
 - Token must be added to site record via `api_key` field
-- Plugin file: `wordpress-plugin/link-manager-widget.php`
-- **Download**: Available as ZIP at `/link-manager-widget.zip` (accessible from sites.html)
+- **Plugin structure**:
+  - `wordpress-plugin/link-manager-widget.php` - Main plugin file
+  - `wordpress-plugin/assets/styles.css` - Frontend styles for links and articles
+- **Download**: Available as ZIP at `backend/build/link-manager-widget.zip`
+- **Security**: CSRF-protected settings form with WordPress nonce verification
+- **Repository**: https://github.com/maxximseo/link-manager (unified repo, no separate plugin repo)
+
+### WordPress Plugin Development
+When updating the plugin:
+1. Edit `wordpress-plugin/link-manager-widget.php`
+2. Update version in both header comment and `LMW_VERSION` constant
+3. Add/edit styles in `wordpress-plugin/assets/styles.css`
+4. Copy to build: `cp -r wordpress-plugin/* backend/build/wordpress-plugin/`
+5. Create ZIP: `cd /path/to/project && zip -r backend/build/link-manager-widget.zip wordpress-plugin/ -x "*.DS_Store"`
+6. Test plugin on WordPress site before committing
+
+**Security requirements**:
+- All forms must use `wp_nonce_field()` and `wp_verify_nonce()`
+- Sanitize all user inputs: `sanitize_text_field()`, `esc_url_raw()`, `esc_attr()`
+- Escape all outputs: `esc_html()`, `esc_url()`, `wp_kses_post()`
 
 ### Automatic Article Publication
 When a placement is created with articles, they are **automatically published** to WordPress:
@@ -201,6 +219,30 @@ When a placement is created with articles, they are **automatically published** 
 - On success: `placement.status = 'placed'`, `wordpress_post_id` is stored
 - On failure: `placement.status = 'failed'`, error is logged
 - Publication happens in `createPlacement()` function after site quota updates
+
+### Placements UI Logic
+The placements creation interface (`placements.html`) uses a streamlined 3-step flow:
+
+**Step 1 - Project Selection**: Auto-selects first project on page load
+
+**Step 2 - Content Type Selection**: Radio buttons for Links OR Articles (auto-selects Links)
+
+**Step 3 - Site Selection with Round-Robin Assignment**:
+- Sites table shows color-coded availability:
+  - 🟢 **Green (table-success)**: Site available for both links and articles
+  - 🟡 **Yellow (table-warning)**: Partial - has either link OR article (can add other type)
+  - 🔴 **Red (table-danger)**: Full - has both link AND article for this project
+- When user checks a site, dropdown appears with available content
+- **Auto-assignment**: First available content is auto-selected using round-robin
+- **Round-robin cycling**: Each subsequent site gets next content item (cycles back to start if needed)
+- **Usage counters**: Dropdown shows `(0/1)` for articles, `(0/999)` for links
+- User can manually change auto-selected content via dropdown
+- `nextContentIndex` variable tracks round-robin position, resets on project/type change
+
+**Placement Restrictions** (enforced in `placement.service.js`):
+- Maximum 1 link per site per project
+- Maximum 1 article per site per project
+- Site quota limits checked: `used_links < max_links`, `used_articles < max_articles`
 
 ## File Locations Reference
 

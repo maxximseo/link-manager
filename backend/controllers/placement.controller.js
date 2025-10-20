@@ -5,6 +5,8 @@
 
 const placementService = require('../services/placement.service');
 const logger = require('../config/logger');
+const queueService = require('../config/queue');
+const crypto = require('crypto');
 
 // Get all placements for user
 const getPlacements = async (req, res) => {
@@ -206,10 +208,201 @@ const getAvailableSites = async (req, res) => {
   }
 };
 
+// Create batch placement asynchronously (for large batches)
+const createBatchPlacementAsync = async (req, res) => {
+  try {
+    const { project_id, site_ids = [], link_ids = [], article_ids = [] } = req.body;
+
+    // Input validation
+    if (!project_id || !site_ids || !Array.isArray(site_ids) || site_ids.length === 0) {
+      return res.status(400).json({
+        error: 'Invalid input: project_id and non-empty site_ids array are required'
+      });
+    }
+
+    if (!Array.isArray(link_ids) || !Array.isArray(article_ids)) {
+      return res.status(400).json({
+        error: 'Invalid input: link_ids and article_ids must be arrays'
+      });
+    }
+
+    if (link_ids.length === 0 && article_ids.length === 0) {
+      return res.status(400).json({
+        error: 'At least one link or article must be specified'
+      });
+    }
+
+    // Check if Bull Queue is available
+    const placementQueue = queueService.createQueue('placement');
+    if (!placementQueue) {
+      return res.status(503).json({
+        error: 'Background job processing unavailable. Please use /api/placements/batch/create instead.',
+        fallback_endpoint: '/api/placements/batch/create'
+      });
+    }
+
+    // Generate job ID
+    const jobId = crypto.randomBytes(16).toString('hex');
+
+    // Add job to queue
+    const job = await placementQueue.add('batch-placement', {
+      jobId,
+      userId: req.user.id,
+      project_id,
+      site_ids,
+      link_ids,
+      article_ids,
+      createdAt: new Date().toISOString()
+    }, {
+      jobId,
+      attempts: 3,
+      backoff: {
+        type: 'exponential',
+        delay: 5000
+      },
+      removeOnComplete: false, // Keep completed jobs for status checks
+      removeOnFail: false
+    });
+
+    // Estimate time (conservative: 2-5 seconds per site)
+    const estimatedSeconds = site_ids.length * 3;
+    const estimatedMinutes = Math.ceil(estimatedSeconds / 60);
+
+    logger.info('Async batch placement job created', {
+      jobId,
+      userId: req.user.id,
+      sites: site_ids.length,
+      links: link_ids.length,
+      articles: article_ids.length
+    });
+
+    res.json({
+      job_id: jobId,
+      status: 'queued',
+      total_sites: site_ids.length,
+      estimated_time: estimatedMinutes > 1 ? `${estimatedMinutes} minutes` : `${estimatedSeconds} seconds`,
+      status_endpoint: `/api/placements/job/${jobId}`,
+      cancel_endpoint: `/api/placements/job/${jobId}/cancel`
+    });
+  } catch (error) {
+    logger.error('Create async batch placement error:', error);
+    res.status(500).json({ error: 'Failed to queue batch placement' });
+  }
+};
+
+// Get job status
+const getJobStatus = async (req, res) => {
+  try {
+    const { jobId } = req.params;
+
+    const placementQueue = queueService.createQueue('placement');
+    if (!placementQueue) {
+      return res.status(503).json({ error: 'Background job processing unavailable' });
+    }
+
+    const job = await placementQueue.getJob(jobId);
+
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
+    // Verify job belongs to current user
+    if (job.data.userId !== req.user.id) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const state = await job.getState();
+    const progress = job.progress();
+    const failedReason = job.failedReason;
+    const returnValue = job.returnvalue;
+
+    let status = state;
+    let results = null;
+    let errors = null;
+
+    if (state === 'completed') {
+      status = 'completed';
+      results = returnValue?.results || [];
+      errors = returnValue?.errors || [];
+    } else if (state === 'failed') {
+      status = 'failed';
+      errors = [{ error: failedReason }];
+    } else if (state === 'active') {
+      status = 'processing';
+    } else if (state === 'waiting' || state === 'delayed') {
+      status = 'queued';
+    }
+
+    res.json({
+      job_id: jobId,
+      status,
+      progress: typeof progress === 'object' ? progress : { percent: 0 },
+      total_sites: job.data.site_ids?.length || 0,
+      successful: results?.length || 0,
+      failed: errors?.length || 0,
+      results,
+      errors,
+      created_at: job.data.createdAt
+    });
+  } catch (error) {
+    logger.error('Get job status error:', error);
+    res.status(500).json({ error: 'Failed to fetch job status' });
+  }
+};
+
+// Cancel job
+const cancelJob = async (req, res) => {
+  try {
+    const { jobId } = req.params;
+
+    const placementQueue = queueService.createQueue('placement');
+    if (!placementQueue) {
+      return res.status(503).json({ error: 'Background job processing unavailable' });
+    }
+
+    const job = await placementQueue.getJob(jobId);
+
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
+    // Verify job belongs to current user
+    if (job.data.userId !== req.user.id) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const state = await job.getState();
+
+    if (state === 'completed') {
+      return res.status(400).json({ error: 'Cannot cancel completed job' });
+    }
+
+    if (state === 'failed') {
+      return res.status(400).json({ error: 'Cannot cancel failed job' });
+    }
+
+    // Remove the job
+    await job.remove();
+
+    logger.info('Job cancelled', { jobId, userId: req.user.id });
+
+    res.json({
+      message: 'Job cancelled successfully',
+      job_id: jobId
+    });
+  } catch (error) {
+    logger.error('Cancel job error:', error);
+    res.status(500).json({ error: 'Failed to cancel job' });
+  }
+};
+
 module.exports = {
   getPlacements,
   getPlacement,
   createBatchPlacement,
+  createBatchPlacementAsync,
+  getJobStatus,
+  cancelJob,
   deletePlacement,
   getStatistics,
   getAvailableSites
