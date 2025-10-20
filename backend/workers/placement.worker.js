@@ -42,13 +42,25 @@ module.exports = async function placementWorker(job) {
       throw new Error('Project not found or access denied');
     }
 
+    // Validate site ownership
+    const sitesCheck = await query(
+      'SELECT id FROM sites WHERE id = ANY($1) AND user_id = $2',
+      [site_ids, userId]
+    );
+
+    if (sitesCheck.rows.length !== site_ids.length) {
+      const validSiteIds = sitesCheck.rows.map(row => row.id);
+      const invalidSiteIds = site_ids.filter(id => !validSiteIds.includes(id));
+      throw new Error(`Access denied to sites: ${invalidSiteIds.join(', ')}`);
+    }
+
     await job.progress({
       percent: 5,
       processed: 0,
       total: site_ids.length,
       successful: 0,
       failed: 0,
-      stage: 'Validating project...'
+      stage: 'Validating project and sites...'
     });
 
     // Distribute links and articles across sites (round-robin)

@@ -59,10 +59,33 @@ const createBatchPlacement = async (req, res) => {
         error: 'Invalid input: link_ids and article_ids must be arrays'
       });
     }
-    
+
     if (link_ids.length === 0 && article_ids.length === 0) {
       return res.status(400).json({
         error: 'At least one link or article must be specified'
+      });
+    }
+
+    // Validate array length limits to prevent DoS
+    const MAX_SITES_PER_BATCH = 100;
+    const MAX_LINKS_PER_BATCH = 500;
+    const MAX_ARTICLES_PER_BATCH = 100;
+
+    if (site_ids.length > MAX_SITES_PER_BATCH) {
+      return res.status(400).json({
+        error: `Maximum ${MAX_SITES_PER_BATCH} sites per batch operation`
+      });
+    }
+
+    if (link_ids.length > MAX_LINKS_PER_BATCH) {
+      return res.status(400).json({
+        error: `Maximum ${MAX_LINKS_PER_BATCH} links per batch operation`
+      });
+    }
+
+    if (article_ids.length > MAX_ARTICLES_PER_BATCH) {
+      return res.status(400).json({
+        error: `Maximum ${MAX_ARTICLES_PER_BATCH} articles per batch operation`
       });
     }
     

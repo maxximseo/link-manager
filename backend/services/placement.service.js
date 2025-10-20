@@ -189,53 +189,49 @@ const createPlacement = async (data) => {
     
     // Add links to placement_content with duplicate check
     for (const linkId of link_ids) {
-      try {
-        // Check if link already in placement
-        const existingLink = await client.query(
-          'SELECT id FROM placement_content WHERE placement_id = $1 AND link_id = $2',
+      // Check if link already in placement
+      const existingLink = await client.query(
+        'SELECT id FROM placement_content WHERE placement_id = $1 AND link_id = $2',
+        [placement.id, linkId]
+      );
+
+      if (existingLink.rows.length === 0) {
+        await client.query(
+          'INSERT INTO placement_content (placement_id, link_id) VALUES ($1, $2)',
           [placement.id, linkId]
         );
 
-        if (existingLink.rows.length === 0) {
-          await client.query(
-            'INSERT INTO placement_content (placement_id, link_id) VALUES ($1, $2)',
-            [placement.id, linkId]
-          );
-
-          // Increment usage_count for the link
-          await client.query(
-            'UPDATE project_links SET usage_count = usage_count + 1 WHERE id = $1',
-            [linkId]
-          );
-        }
-      } catch (error) {
-        logger.warn('Failed to add link to placement', { placementId: placement.id, linkId, error: error.message });
+        // Increment usage_count for the link
+        await client.query(
+          'UPDATE project_links SET usage_count = usage_count + 1 WHERE id = $1',
+          [linkId]
+        );
+      } else {
+        logger.debug('Link already in placement, skipping', { placementId: placement.id, linkId });
       }
     }
 
     // Add articles to placement_content with duplicate check
     for (const articleId of article_ids) {
-      try {
-        // Check if article already in placement
-        const existingArticle = await client.query(
-          'SELECT id FROM placement_content WHERE placement_id = $1 AND article_id = $2',
+      // Check if article already in placement
+      const existingArticle = await client.query(
+        'SELECT id FROM placement_content WHERE placement_id = $1 AND article_id = $2',
+        [placement.id, articleId]
+      );
+
+      if (existingArticle.rows.length === 0) {
+        await client.query(
+          'INSERT INTO placement_content (placement_id, article_id) VALUES ($1, $2)',
           [placement.id, articleId]
         );
 
-        if (existingArticle.rows.length === 0) {
-          await client.query(
-            'INSERT INTO placement_content (placement_id, article_id) VALUES ($1, $2)',
-            [placement.id, articleId]
-          );
-
-          // Increment usage_count for the article
-          await client.query(
-            'UPDATE project_articles SET usage_count = usage_count + 1 WHERE id = $1',
-            [articleId]
-          );
-        }
-      } catch (error) {
-        logger.warn('Failed to add article to placement', { placementId: placement.id, articleId, error: error.message });
+        // Increment usage_count for the article
+        await client.query(
+          'UPDATE project_articles SET usage_count = usage_count + 1 WHERE id = $1',
+          [articleId]
+        );
+      } else {
+        logger.debug('Article already in placement, skipping', { placementId: placement.id, articleId });
       }
     }
 

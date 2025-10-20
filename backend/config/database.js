@@ -132,7 +132,7 @@ async function initDatabase() {
         meta_description TEXT,
         featured_image VARCHAR(512),
         slug VARCHAR(255),
-        status VARCHAR(50) DEFAULT 'published',
+        status VARCHAR(50) DEFAULT 'active',
         tags TEXT,
         category VARCHAR(255),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -99,7 +99,9 @@ window.BulkLinksModule = {
                     try {
                         const urlObj = new URL(url);
                         anchor_text = urlObj.hostname.replace('www.', '');
-                    } catch (e) {}
+                    } catch (e) {
+                        // Invalid URL format - use full URL as anchor text (intentional fallback)
+                    }
                     links.push({ url, anchor_text, position: 0 });
                 }
             }
@@ -173,7 +175,9 @@ window.BulkLinksModule = {
                     try {
                         const urlObj = new URL(url);
                         anchor_text = urlObj.hostname.replace('www.', '');
-                    } catch (e) {}
+                    } catch (e) {
+                        // Invalid URL format - use full URL as anchor text (intentional fallback)
+                    }
                     links.push({ url, anchor_text, position: 0 });
                 }
             }

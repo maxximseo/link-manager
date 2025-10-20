@@ -3,7 +3,7 @@
  * Handles site database operations
  */
 
-const { query } = require('../config/database');
+const { pool, query } = require('../config/database');
 const logger = require('../config/logger');
 
 // Get user sites with pagination and statistics
@@ -121,11 +121,15 @@ const deleteSite = async (siteId, userId) => {
 
 // Recalculate site statistics
 const recalculateSiteStats = async (userId) => {
+  const client = await pool.connect();
+
   try {
-    // Batch recalculate all user's sites in single query
-    await query(`
+    await client.query('BEGIN');
+
+    // Batch recalculate all user's sites in single query with explicit transaction
+    await client.query(`
       WITH site_stats AS (
-        SELECT 
+        SELECT
           s.id,
           COUNT(DISTINCT CASE WHEN pc.link_id IS NOT NULL THEN pc.id END) as link_count,
           COUNT(DISTINCT CASE WHEN pc.article_id IS NOT NULL THEN pc.id END) as article_count
@@ -136,17 +140,21 @@ const recalculateSiteStats = async (userId) => {
         GROUP BY s.id
       )
       UPDATE sites s
-      SET 
+      SET
         used_links = COALESCE(ss.link_count, 0),
         used_articles = COALESCE(ss.article_count, 0)
       FROM site_stats ss
       WHERE s.id = ss.id AND s.user_id = $1
     `, [userId]);
-    
-    logger.info('Site statistics recalculated', { userId });
+
+    await client.query('COMMIT');
+    logger.info('Site statistics recalculated successfully', { userId });
   } catch (error) {
-    logger.error('Recalculate site stats error:', error);
+    await client.query('ROLLBACK');
+    logger.error('Site statistics recalculation failed:', error);
     throw error;
+  } finally {
+    client.release();
   }
 };
 
