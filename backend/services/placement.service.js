@@ -3,7 +3,7 @@
  * Handles placement database operations
  */
 
-const { query } = require('../config/database');
+const { pool, query } = require('../config/database');
 const logger = require('../config/logger');
 const cache = require('./cache.service');
 const wordpressService = require('./wordpress.service');
@@ -108,11 +108,17 @@ const getUserPlacements = async (userId, page = 0, limit = 0) => {
 
 // Create placement with duplicate handling (UPSERT approach)
 const createPlacement = async (data) => {
+  // Get database client for transaction
+  const client = await pool.connect();
+
   try {
     const { site_id, project_id, link_ids = [], article_ids = [], userId } = data;
 
+    // Begin transaction
+    await client.query('BEGIN');
+
     // Check existing placements for this project on this site
-    const existingContentResult = await query(`
+    const existingContentResult = await client.query(`
       SELECT
         COUNT(DISTINCT pc.link_id) as existing_links,
         COUNT(DISTINCT pc.article_id) as existing_articles
@@ -122,8 +128,8 @@ const createPlacement = async (data) => {
     `, [project_id, site_id]);
 
     const existing = existingContentResult.rows[0];
-    const hasExistingLinks = existing.existing_links > 0;
-    const hasExistingArticles = existing.existing_articles > 0;
+    const hasExistingLinks = parseInt(existing.existing_links) > 0;
+    const hasExistingArticles = parseInt(existing.existing_articles) > 0;
 
     // Check restrictions: max 1 link and 1 article per site per project
     if (link_ids.length > 0 && hasExistingLinks) {
@@ -143,7 +149,7 @@ const createPlacement = async (data) => {
     }
 
     // Check site quotas
-    const siteResult = await query(
+    const siteResult = await client.query(
       'SELECT max_links, used_links, max_articles, used_articles FROM sites WHERE id = $1',
       [site_id]
     );
@@ -163,7 +169,7 @@ const createPlacement = async (data) => {
     }
 
     // Check if placement already exists
-    const existingResult = await query(
+    const existingResult = await client.query(
       'SELECT * FROM placements WHERE project_id = $1 AND site_id = $2 AND type = $3',
       [project_id, site_id, 'manual']
     );
@@ -175,7 +181,7 @@ const createPlacement = async (data) => {
       logger.info('Using existing placement', { placementId: placement.id, project_id, site_id });
     } else {
       // Create new placement
-      const placementResult = await query(
+      const placementResult = await client.query(
         'INSERT INTO placements (project_id, site_id, type, count, placed_at) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP) RETURNING *',
         [project_id, site_id, 'manual', link_ids.length + article_ids.length]
       );
@@ -186,19 +192,19 @@ const createPlacement = async (data) => {
     for (const linkId of link_ids) {
       try {
         // Check if link already in placement
-        const existingLink = await query(
+        const existingLink = await client.query(
           'SELECT id FROM placement_content WHERE placement_id = $1 AND link_id = $2',
           [placement.id, linkId]
         );
 
         if (existingLink.rows.length === 0) {
-          await query(
+          await client.query(
             'INSERT INTO placement_content (placement_id, link_id) VALUES ($1, $2)',
             [placement.id, linkId]
           );
 
           // Increment usage_count for the link
-          await query(
+          await client.query(
             'UPDATE project_links SET usage_count = usage_count + 1 WHERE id = $1',
             [linkId]
           );
@@ -212,19 +218,19 @@ const createPlacement = async (data) => {
     for (const articleId of article_ids) {
       try {
         // Check if article already in placement
-        const existingArticle = await query(
+        const existingArticle = await client.query(
           'SELECT id FROM placement_content WHERE placement_id = $1 AND article_id = $2',
           [placement.id, articleId]
         );
 
         if (existingArticle.rows.length === 0) {
-          await query(
+          await client.query(
             'INSERT INTO placement_content (placement_id, article_id) VALUES ($1, $2)',
             [placement.id, articleId]
           );
 
           // Increment usage_count for the article
-          await query(
+          await client.query(
             'UPDATE project_articles SET usage_count = usage_count + 1 WHERE id = $1',
             [articleId]
           );
@@ -236,14 +242,14 @@ const createPlacement = async (data) => {
 
     // Update site quotas
     if (link_ids.length > 0) {
-      await query(
+      await client.query(
         'UPDATE sites SET used_links = used_links + $1 WHERE id = $2',
         [link_ids.length, site_id]
       );
     }
 
     if (article_ids.length > 0) {
-      await query(
+      await client.query(
         'UPDATE sites SET used_articles = used_articles + $1 WHERE id = $2',
         [article_ids.length, site_id]
       );
@@ -253,7 +259,7 @@ const createPlacement = async (data) => {
     if (article_ids.length > 0) {
       try {
         // Get site details including API key and URL
-        const siteDetailsResult = await query(
+        const siteDetailsResult = await client.query(
           'SELECT site_url, api_key FROM sites WHERE id = $1',
           [site_id]
         );
@@ -264,7 +270,7 @@ const createPlacement = async (data) => {
           // Get article details for each article_id
           for (const articleId of article_ids) {
             try {
-              const articleResult = await query(
+              const articleResult = await client.query(
                 'SELECT id, title, content, slug FROM project_articles WHERE id = $1',
                 [articleId]
               );
@@ -284,7 +290,7 @@ const createPlacement = async (data) => {
                 );
 
                 // Update placement with WordPress post ID and status
-                await query(
+                await client.query(
                   'UPDATE placements SET wordpress_post_id = $1, status = $2 WHERE id = $3',
                   [wpResult.post_id, 'placed', placement.id]
                 );
@@ -303,7 +309,7 @@ const createPlacement = async (data) => {
               });
 
               // Update placement status to failed
-              await query(
+              await client.query(
                 'UPDATE placements SET status = $1 WHERE id = $2',
                 ['failed', placement.id]
               );
@@ -318,7 +324,11 @@ const createPlacement = async (data) => {
       }
     }
 
-    // Invalidate cache for placements and projects
+    // Commit transaction - all database operations successful
+    await client.query('COMMIT');
+    logger.info('Placement transaction committed successfully', { placementId: placement.id });
+
+    // Invalidate cache for placements and projects (after commit)
     await cache.delPattern(`placements:user:${userId}:*`);
     await cache.delPattern(`projects:user:${userId}:*`);
     await cache.delPattern(`wp:content:*`); // Invalidate WordPress API cache
@@ -326,8 +336,13 @@ const createPlacement = async (data) => {
 
     return placement;
   } catch (error) {
-    logger.error('Create placement error:', error);
+    // Rollback transaction on any error
+    await client.query('ROLLBACK');
+    logger.error('Placement transaction rolled back due to error:', error);
     throw error;
+  } finally {
+    // Always release client back to pool
+    client.release();
   }
 };
 
@@ -362,9 +377,15 @@ const getPlacementById = async (placementId, userId) => {
 
 // Delete placement
 const deletePlacement = async (placementId, userId) => {
+  // Get database client for transaction
+  const client = await pool.connect();
+
   try {
-    // First get the placement details and content IDs
-    const placementInfo = await query(`
+    // Begin transaction
+    await client.query('BEGIN');
+
+    // First get the placement details and content IDs with row-level lock
+    const placementInfo = await client.query(`
       SELECT
         p.site_id,
         COUNT(DISTINCT pc.link_id) as link_count,
@@ -377,16 +398,18 @@ const deletePlacement = async (placementId, userId) => {
       LEFT JOIN projects proj ON p.project_id = proj.id
       WHERE p.id = $1 AND (s.user_id = $2 OR proj.user_id = $2)
       GROUP BY p.site_id
+      FOR UPDATE OF p
     `, [placementId, userId]);
 
     if (placementInfo.rows.length === 0) {
+      await client.query('ROLLBACK');
       return false;
     }
 
     const { site_id, link_count, article_count, link_ids, article_ids } = placementInfo.rows[0];
 
     // Delete the placement
-    const result = await query(`
+    const result = await client.query(`
       DELETE FROM placements p
       USING sites s, projects proj
       WHERE p.site_id = s.id
@@ -399,14 +422,14 @@ const deletePlacement = async (placementId, userId) => {
     if (result.rows.length > 0) {
       // Update site quotas
       if (link_count > 0) {
-        await query(
+        await client.query(
           'UPDATE sites SET used_links = GREATEST(0, used_links - $1) WHERE id = $2',
           [link_count, site_id]
         );
       }
 
       if (article_count > 0) {
-        await query(
+        await client.query(
           'UPDATE sites SET used_articles = GREATEST(0, used_articles - $1) WHERE id = $2',
           [article_count, site_id]
         );
@@ -415,7 +438,7 @@ const deletePlacement = async (placementId, userId) => {
       // Decrement usage_count for links and update status
       if (link_ids && link_ids.length > 0) {
         for (const linkId of link_ids) {
-          await query(`
+          await client.query(`
             UPDATE project_links
             SET usage_count = GREATEST(0, usage_count - 1),
                 status = CASE
@@ -430,7 +453,7 @@ const deletePlacement = async (placementId, userId) => {
       // Decrement usage_count for articles and update status
       if (article_ids && article_ids.length > 0) {
         for (const articleId of article_ids) {
-          await query(`
+          await client.query(`
             UPDATE project_articles
             SET usage_count = GREATEST(0, usage_count - 1),
                 status = CASE
@@ -442,7 +465,11 @@ const deletePlacement = async (placementId, userId) => {
         }
       }
 
-      // Invalidate cache for placements and projects
+      // Commit transaction - all deletions successful
+      await client.query('COMMIT');
+      logger.info('Placement deletion transaction committed successfully', { placementId });
+
+      // Invalidate cache after commit
       await cache.delPattern(`placements:user:${userId}:*`);
       await cache.delPattern(`projects:user:${userId}:*`);
       await cache.delPattern(`wp:content:*`); // Invalidate WordPress API cache
@@ -457,10 +484,17 @@ const deletePlacement = async (placementId, userId) => {
       return true;
     }
 
+    // No rows deleted
+    await client.query('ROLLBACK');
     return false;
   } catch (error) {
-    logger.error('Delete placement error:', error);
+    // Rollback transaction on error
+    await client.query('ROLLBACK');
+    logger.error('Placement deletion transaction rolled back due to error:', error);
     throw error;
+  } finally {
+    // Always release client back to pool
+    client.release();
   }
 };
 

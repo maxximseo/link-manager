@@ -88,7 +88,7 @@ const publishArticle = async (siteUrl, apiKey, articleData) => {
 
       return {
         success: true,
-        wordpress_id: response.data.post_id,
+        post_id: response.data.post_id,
         url: response.data.post_url
       };
     } else {

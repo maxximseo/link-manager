@@ -146,7 +146,8 @@ async function initDatabase() {
         site_id INTEGER REFERENCES sites(id) ON DELETE CASCADE,
         project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
         type VARCHAR(50) NOT NULL,
-        status VARCHAR(50) DEFAULT 'active',
+        status VARCHAR(50) DEFAULT 'pending',
+        wordpress_post_id INTEGER,
         placed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         notes TEXT
       )

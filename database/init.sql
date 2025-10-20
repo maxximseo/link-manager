@@ -61,6 +61,8 @@ CREATE TABLE placements (
     project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
     site_id INTEGER REFERENCES sites(id) ON DELETE CASCADE,
     type VARCHAR(50) NOT NULL,
+    status VARCHAR(50) DEFAULT 'pending',
+    wordpress_post_id INTEGER,
     placed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
