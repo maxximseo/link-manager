@@ -90,6 +90,13 @@ const getSomething = async (id, userId) => {
 **Sites Table** uses `api_key` NOT `wp_username`/`wp_password`:
 - `api_key VARCHAR(100)` - API token from WordPress plugin
 - Frontend must send `api_key` field, not credentials
+- **Schema**: `name`, `url`, `api_key`, `max_links`, `used_links`, `max_articles`, `used_articles`
+- **Do NOT use**: `status`, `notes` - these columns do not exist
+
+**Placements Table** critical columns:
+- `status VARCHAR(50) DEFAULT 'pending'` - Placement status (pending/placed/failed)
+- `wordpress_post_id INTEGER` - WordPress post ID after publication
+- Must be included in all CREATE TABLE and migrations
 
 **Usage Tracking System** (added via migration):
 - `project_links`: `usage_limit` (default 999), `usage_count`, `status`
@@ -130,6 +137,41 @@ Vanilla JavaScript with modular structure:
 Bootstrap 5.3.0 for UI with custom styles in `backend/build/css/styles.css`.
 
 ## Important Patterns & Conventions
+
+### Database Transactions (CRITICAL)
+**Always use transactions** for multi-step database operations to ensure data consistency:
+
+```javascript
+const { pool } = require('../config/database');
+
+const client = await pool.connect();
+try {
+  await client.query('BEGIN');
+
+  // Multiple operations
+  await client.query('INSERT INTO table1...');
+  await client.query('UPDATE table2...');
+
+  await client.query('COMMIT');
+  return result;
+} catch (error) {
+  await client.query('ROLLBACK');
+  throw error;
+} finally {
+  client.release();
+}
+```
+
+**When to use transactions:**
+- Creating placements (insert placement + placement_content + update usage_count)
+- Deleting placements (delete placement + decrement usage_count + update quotas)
+- Any operation that modifies multiple related tables
+- Operations where partial failure would leave database in inconsistent state
+
+**Row-level locking** with `FOR UPDATE` to prevent race conditions:
+```sql
+SELECT * FROM placements WHERE id = $1 FOR UPDATE OF p
+```
 
 ### Partial Updates with COALESCE
 All UPDATE queries should use COALESCE for partial updates:
@@ -197,6 +239,17 @@ POST /api/projects/:id/articles/:articleId/duplicate
 - **Download**: Available as ZIP at `backend/build/link-manager-widget.zip`
 - **Security**: CSRF-protected settings form with WordPress nonce verification
 - **Repository**: https://github.com/maxximseo/link-manager (unified repo, no separate plugin repo)
+
+**API Response Format:**
+WordPress service `publishArticle()` returns:
+```javascript
+{
+  success: true,
+  post_id: 123,  // CRITICAL: Use post_id not wordpress_id
+  url: 'https://...'
+}
+```
+This `post_id` is saved to `placements.wordpress_post_id` column.
 
 ### WordPress Plugin Development
 When updating the plugin:
@@ -275,7 +328,10 @@ The placements creation interface (`placements.html`) uses a streamlined 3-step 
 ### Database
 - Schema: `database/init.sql`
 - Seed data: `database/seed.sql`
-- Usage limits migration: `database/migrate_usage_limits.sql`
+- Migrations:
+  - `database/migrate_usage_limits.sql` - Usage tracking system
+  - `database/migrate_add_wordpress_post_id.sql` - Add status and wordpress_post_id to placements
+- Migration runner: `database/run_migration.js`
 
 ## Performance & Caching System
 
@@ -361,6 +417,35 @@ Redis Configuration (optional, graceful degradation):
 Optional:
 - `BCRYPT_ROUNDS` - 8 for dev, 10 for prod
 
+## Recent Critical Fixes (2025-01)
+
+### Transaction Implementation
+All multi-step database operations now use transactions:
+- **createPlacement**: Wrapped in BEGIN/COMMIT/ROLLBACK (15+ operations)
+- **deletePlacement**: Uses SELECT FOR UPDATE to prevent race conditions
+- All operations atomic - either all succeed or all rollback
+
+### Type Safety Improvements
+- Fixed parseInt() usage for PostgreSQL COUNT() results
+- COUNT() returns string "0" not number 0 - always use parseInt()
+- Consistent type handling across placement.service.js
+
+### Redis Performance
+- Replaced `redis.keys()` with `redis.scan()` cursor-based iteration
+- Prevents blocking Redis server in production
+- Implemented in cache.service.js:delPattern()
+
+### Schema Corrections
+- Added `status` and `wordpress_post_id` columns to placements table
+- Removed non-existent `status`/`notes` from sites controller
+- WordPress service now returns `post_id` (not wordpress_id)
+
+### Migration Required
+If upgrading existing database, run:
+```bash
+PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f database/migrate_add_wordpress_post_id.sql
+```
+
 ## Git Workflow
 
 Repository: https://github.com/maxximseo/link-manager.git
@@ -384,7 +469,24 @@ if (count === 0) { ... }
 // Correct - convert to number first
 if (parseInt(count) === 0) { ... }
 ```
-This affected site availability checks in `placement.service.js:446-447`.
+**Always use parseInt()** for COUNT results throughout codebase. Fixed in `placement.service.js:131-132`.
+
+### Redis Production Patterns
+**NEVER use `redis.keys(pattern)` in production** - it blocks entire Redis server:
+```javascript
+// Wrong - blocks Redis
+const keys = await redis.keys(pattern);
+
+// Correct - use SCAN with cursor
+let cursor = '0';
+do {
+  const result = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+  cursor = result[0];
+  const keys = result[1];
+  // Process keys
+} while (cursor !== '0');
+```
+Implemented in `cache.service.js:delPattern()`.
 
 ### Server Won't Start
 1. Check if port is in use: `lsof -ti:3003`
