@@ -29,7 +29,6 @@ const getUserPlacements = async (userId, page = 0, limit = 0) => {
         p.project_id,
         p.site_id,
         p.type,
-        p.count,
         p.placed_at,
         p.wordpress_post_id,
         p.status,
@@ -182,8 +181,8 @@ const createPlacement = async (data) => {
     } else {
       // Create new placement
       const placementResult = await client.query(
-        'INSERT INTO placements (project_id, site_id, type, count, placed_at) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP) RETURNING *',
-        [project_id, site_id, 'manual', link_ids.length + article_ids.length]
+        'INSERT INTO placements (project_id, site_id, type, placed_at) VALUES ($1, $2, $3, CURRENT_TIMESTAMP) RETURNING *',
+        [project_id, site_id, 'manual']
       );
       placement = placementResult.rows[0];
     }
@@ -355,7 +354,6 @@ const getPlacementById = async (placementId, userId) => {
         p.project_id,
         p.site_id,
         p.type,
-        p.count,
         p.placed_at,
         p.wordpress_post_id,
         p.status,

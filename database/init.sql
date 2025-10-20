@@ -23,8 +23,8 @@ CREATE TABLE projects (
 CREATE TABLE sites (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    name VARCHAR(255) NOT NULL,
-    url VARCHAR(500) NOT NULL,
+    site_name VARCHAR(255) NOT NULL,
+    site_url VARCHAR(500) NOT NULL,
     api_key VARCHAR(100),
     max_links INTEGER DEFAULT 10,
     used_links INTEGER DEFAULT 0,

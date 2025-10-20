@@ -12,7 +12,7 @@ const getProjects = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     
-    const result = await projectService.getUserProjects(req.user.userId, page, limit);
+    const result = await projectService.getUserProjects(req.user.id, page, limit);
     
     if (req.query.page || req.query.limit) {
       // Return paginated response
@@ -31,7 +31,7 @@ const getProjects = async (req, res) => {
 const getProject = async (req, res) => {
   try {
     const projectId = req.params.id;
-    const userId = req.user.userId;
+    const userId = req.user.id;
     
     const project = await projectService.getProjectWithDetails(projectId, userId);
     
@@ -66,7 +66,7 @@ const createProject = async (req, res) => {
     const project = await projectService.createProject({
       name: name.trim(),
       description: description?.trim() || null,
-      userId: req.user.userId
+      userId: req.user.id
     });
     
     res.json(project);
@@ -80,7 +80,7 @@ const createProject = async (req, res) => {
 const updateProject = async (req, res) => {
   try {
     const projectId = req.params.id;
-    const userId = req.user.userId;
+    const userId = req.user.id;
     const { name, description } = req.body;
     
     const project = await projectService.updateProject(projectId, userId, { name, description });
@@ -100,7 +100,7 @@ const updateProject = async (req, res) => {
 const deleteProject = async (req, res) => {
   try {
     const projectId = req.params.id;
-    const userId = req.user.userId;
+    const userId = req.user.id;
     
     const deleted = await projectService.deleteProject(projectId, userId);
     
@@ -331,7 +331,7 @@ const addProjectArticle = async (req, res) => {
 
 const updateProjectArticle = async (req, res) => {
   try {
-    const projectId = req.params.projectId;
+    const projectId = req.params.id;  // Route uses /:id not /:projectId
     const articleId = req.params.articleId;
     const userId = req.user.id;
     const { title, content, excerpt, meta_title, meta_description, featured_image, slug, tags, category } = req.body;
