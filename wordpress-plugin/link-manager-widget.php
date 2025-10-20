@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Link Manager Widget Pro
- * Plugin URI: https://github.com/maxximseo/wp-link-manager
+ * Plugin URI: https://github.com/maxximseo/link-manager
  * Description: Display placed links and articles from Link Manager system
  * Version: 2.2.2
  * Author: Link Manager Team
@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('LMW_VERSION', '2.2.0');
+define('LMW_VERSION', '2.2.2');
 define('LMW_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('LMW_PLUGIN_PATH', plugin_dir_path(__FILE__));
 
@@ -92,10 +92,15 @@ class LinkManagerWidget {
      */
     public function admin_page() {
         if (isset($_POST['submit'])) {
-            update_option('lmw_api_key', sanitize_text_field($_POST['api_key']));
-            update_option('lmw_api_endpoint', esc_url_raw($_POST['api_endpoint']));
-            update_option('lmw_cache_duration', intval($_POST['cache_duration']));
-            echo '<div class="notice notice-success"><p>Settings saved!</p></div>';
+            // Verify nonce for CSRF protection
+            if (!isset($_POST['lmw_settings_nonce']) || !wp_verify_nonce($_POST['lmw_settings_nonce'], 'lmw_save_settings')) {
+                echo '<div class="notice notice-error"><p>Security check failed. Please try again.</p></div>';
+            } else {
+                update_option('lmw_api_key', sanitize_text_field($_POST['api_key']));
+                update_option('lmw_api_endpoint', esc_url_raw($_POST['api_endpoint']));
+                update_option('lmw_cache_duration', intval($_POST['cache_duration']));
+                echo '<div class="notice notice-success"><p>Settings saved!</p></div>';
+            }
         }
         
         $api_key = get_option('lmw_api_key', '');
@@ -106,6 +111,7 @@ class LinkManagerWidget {
             <h1>Link Manager Widget Settings</h1>
             
             <form method="post" action="">
+                <?php wp_nonce_field('lmw_save_settings', 'lmw_settings_nonce'); ?>
                 <table class="form-table">
                     <tr>
                         <th scope="row">API Key</th>
@@ -198,9 +204,7 @@ class LinkManagerWidget {
                 <li><strong>Link Manager Links</strong> - Display placed links in widget areas</li>
             </ul>
             <p><strong>Note:</strong> Articles are now published as full WordPress posts, not as widgets.</p>
-            <ul style="display:none;">
-            </ul>
-            
+
             <h2>Status</h2>
             <?php
             $content = $this->fetch_content_from_api();

@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Link Manager Widget Pro
- * Plugin URI: https://github.com/maxximseo/wp-link-manager
+ * Plugin URI: https://github.com/maxximseo/link-manager
  * Description: Display placed links and articles from Link Manager system
  * Version: 2.2.2
  * Author: Link Manager Team
@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('LMW_VERSION', '2.2.0');
+define('LMW_VERSION', '2.2.2');
 define('LMW_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('LMW_PLUGIN_PATH', plugin_dir_path(__FILE__));
 
@@ -30,7 +30,7 @@ class LinkManagerWidget {
     
     private $api_key;
     private $api_endpoint;
-    private $cache_duration = 3600; // 1 hour cache
+    private $cache_duration = 300; // 5 minutes cache
     
     public function __construct() {
         $this->api_key = get_option('lmw_api_key', '');
@@ -92,20 +92,26 @@ class LinkManagerWidget {
      */
     public function admin_page() {
         if (isset($_POST['submit'])) {
-            update_option('lmw_api_key', sanitize_text_field($_POST['api_key']));
-            update_option('lmw_api_endpoint', esc_url_raw($_POST['api_endpoint']));
-            update_option('lmw_cache_duration', intval($_POST['cache_duration']));
-            echo '<div class="notice notice-success"><p>Settings saved!</p></div>';
+            // Verify nonce for CSRF protection
+            if (!isset($_POST['lmw_settings_nonce']) || !wp_verify_nonce($_POST['lmw_settings_nonce'], 'lmw_save_settings')) {
+                echo '<div class="notice notice-error"><p>Security check failed. Please try again.</p></div>';
+            } else {
+                update_option('lmw_api_key', sanitize_text_field($_POST['api_key']));
+                update_option('lmw_api_endpoint', esc_url_raw($_POST['api_endpoint']));
+                update_option('lmw_cache_duration', intval($_POST['cache_duration']));
+                echo '<div class="notice notice-success"><p>Settings saved!</p></div>';
+            }
         }
         
         $api_key = get_option('lmw_api_key', '');
         $api_endpoint = get_option('lmw_api_endpoint', LMW_API_ENDPOINT);
-        $cache_duration = get_option('lmw_cache_duration', 3600);
+        $cache_duration = get_option('lmw_cache_duration', 300);
         ?>
         <div class="wrap">
             <h1>Link Manager Widget Settings</h1>
             
             <form method="post" action="">
+                <?php wp_nonce_field('lmw_save_settings', 'lmw_settings_nonce'); ?>
                 <table class="form-table">
                     <tr>
                         <th scope="row">API Key</th>
@@ -185,9 +191,12 @@ class LinkManagerWidget {
             <h2>Usage</h2>
             <p>Use these shortcodes to display content:</p>
             <ul>
-                <li><code>[link_manager]</code> - Display all placed content</li>
-                <li><code>[lm_links position="header"]</code> - Display links (optional: position="header|footer|sidebar")</li>
+                <li><code>[lm_links]</code> - <strong>Display links on homepage only (default)</strong></li>
+                <li><code>[lm_links home_only="false"]</code> - Display links on all pages</li>
+                <li><code>[lm_links style="inline"]</code> - Display as inline links (list|inline)</li>
+                <li><code>[lm_links limit="5"]</code> - Limit number of links</li>
             </ul>
+            <p><strong>Default behavior:</strong> Links show only on homepage with 5 minutes cache.</p>
             
             <h2>Widgets</h2>
             <p>You can also add Link Manager widgets through Appearance → Widgets:</p>
@@ -195,9 +204,7 @@ class LinkManagerWidget {
                 <li><strong>Link Manager Links</strong> - Display placed links in widget areas</li>
             </ul>
             <p><strong>Note:</strong> Articles are now published as full WordPress posts, not as widgets.</p>
-            <ul style="display:none;">
-            </ul>
-            
+
             <h2>Status</h2>
             <?php
             $content = $this->fetch_content_from_api();
@@ -298,14 +305,20 @@ class LinkManagerWidget {
         $atts = shortcode_atts(array(
             'position' => '',
             'limit' => 0,
-            'style' => 'list' // list, inline, grid
+            'style' => 'list', // list, inline, grid
+            'home_only' => 'true' // Show only on homepage by default
         ), $atts);
-        
+
+        // By default, show only on homepage (unless home_only="false")
+        if ($atts['home_only'] === 'true' && !is_front_page()) {
+            return '';
+        }
+
         $content = $this->fetch_content_from_api();
         if (!$content || empty($content['links'])) {
             return '';
         }
-        
+
         return $this->render_links($content['links'], $atts);
     }
     
