@@ -5,15 +5,19 @@
 
 const projectService = require('../services/project.service');
 const logger = require('../config/logger');
+const { validatePagination } = require('../utils/validators');
 
 // Get all projects for user
 const getProjects = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    
+    const { page, limit } = validatePagination(req.query, {
+      maxLimit: 100,
+      defaultLimit: 20,
+      defaultPage: 1
+    });
+
     const result = await projectService.getUserProjects(req.user.id, page, limit);
-    
+
     if (req.query.page || req.query.limit) {
       // Return paginated response
       res.json(result);
@@ -23,6 +27,11 @@ const getProjects = async (req, res) => {
     }
   } catch (error) {
     logger.error('Get projects error:', error);
+
+    if (error.message.includes('Page number') || error.message.includes('Limit cannot')) {
+      return res.status(400).json({ error: error.message });
+    }
+
     res.status(500).json({ error: 'Failed to fetch projects' });
   }
 };

@@ -59,20 +59,17 @@ if (queueRoutes) {
   router.use('/queue', queueRoutes);
 }
 
-// Debug routes for troubleshooting  
-if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_DEBUG === 'true') {
+// Debug routes for troubleshooting (ONLY in development)
+if (process.env.NODE_ENV === 'development') {
   try {
     const debugRoutes = require('./debug.routes');
     router.use('/debug', debugRoutes);
-    logger.info('Debug routes enabled', { 
-      nodeEnv: process.env.NODE_ENV, 
-      debugEnabled: process.env.ENABLE_DEBUG 
-    });
+    logger.info('Debug routes enabled in development mode');
   } catch (error) {
     logger.warn('Debug routes not available', { error: error.message });
   }
 } else {
-  logger.info('Debug routes disabled for production - set ENABLE_DEBUG=true to enable');
+  logger.info('Debug routes disabled in production for security');
 }
 
 // Fallback to legacy routes for all other endpoints not yet modularized

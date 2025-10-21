@@ -5,19 +5,28 @@
 
 const siteService = require('../services/site.service');
 const logger = require('../config/logger');
+const { validatePagination } = require('../utils/validators');
 
 // Get all sites for user
 const getSites = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 0;
-    const limit = parseInt(req.query.limit) || 0;
+    const { page, limit } = validatePagination(req.query, {
+      maxLimit: 100,
+      defaultLimit: 20,
+      defaultPage: 1
+    });
     const recalculate = req.query.recalculate === 'true';
-    
+
     const result = await siteService.getUserSites(req.user.id, page, limit, recalculate);
-    
+
     res.json(result);
   } catch (error) {
     logger.error('Get sites error:', error);
+
+    if (error.message.includes('Page number') || error.message.includes('Limit cannot')) {
+      return res.status(400).json({ error: error.message });
+    }
+
     res.status(500).json({ error: 'Failed to fetch sites' });
   }
 };

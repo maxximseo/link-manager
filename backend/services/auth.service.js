@@ -9,28 +9,26 @@ const crypto = require('crypto');
 const { query } = require('../config/database');
 const logger = require('../config/logger');
 
-// Generate JWT secret if not provided
+// Validate JWT secret is provided in environment
 if (!process.env.JWT_SECRET) {
-  process.env.JWT_SECRET = crypto.randomBytes(32).toString('hex');
-  logger.info('Generated JWT secret');
+  logger.error('JWT_SECRET is not set in environment variables. This is a security risk.');
+  throw new Error('JWT_SECRET environment variable is required for security. Please set it in .env file.');
 }
 
 // Authenticate user with username and password
 const authenticateUser = async (username, password) => {
   try {
     const result = await query('SELECT * FROM users WHERE username = $1', [username]);
-    
-    if (result.rows.length === 0) {
-      return {
-        success: false,
-        error: 'Invalid credentials'
-      };
-    }
-    
     const user = result.rows[0];
-    const isMatch = await bcrypt.compare(password, user.password);
-    
-    if (!isMatch) {
+
+    // Protection against timing attacks: always run bcrypt.compare
+    // Use dummy hash if user doesn't exist to maintain constant time
+    const dummyHash = '$2a$10$aaaaaaaaaaaaaaaaaaaaaeOHyXMO/lUEyXfRF6lQAoF5q3D3vQFOO'; // Dummy bcrypt hash
+    const hash = user?.password || dummyHash;
+    const isMatch = await bcrypt.compare(password, hash);
+
+    // Check both user existence and password match
+    if (!user || !isMatch) {
       return {
         success: false,
         error: 'Invalid credentials'

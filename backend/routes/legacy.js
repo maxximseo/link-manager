@@ -14,10 +14,10 @@ const logger = require('../config/logger');
 // Import existing middleware and utilities from server.js
 const crypto = require('crypto');
 
-// Generate JWT secret if not provided
+// Validate JWT secret is provided in environment
 if (!process.env.JWT_SECRET) {
-  process.env.JWT_SECRET = crypto.randomBytes(32).toString('hex');
-  logger.info('Generated JWT secret');
+  logger.error('JWT_SECRET is not set in environment variables. This is a security risk.');
+  throw new Error('JWT_SECRET environment variable is required for security. Please set it in .env file.');
 }
 
 // Rate limiting (copied from server.js)

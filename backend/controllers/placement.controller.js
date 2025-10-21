@@ -7,18 +7,27 @@ const placementService = require('../services/placement.service');
 const logger = require('../config/logger');
 const queueService = require('../config/queue');
 const crypto = require('crypto');
+const { validatePagination } = require('../utils/validators');
 
 // Get all placements for user
 const getPlacements = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 0;
-    const limit = parseInt(req.query.limit) || 0;
-    
+    const { page, limit } = validatePagination(req.query, {
+      maxLimit: 100,
+      defaultLimit: 20,
+      defaultPage: 1
+    });
+
     const result = await placementService.getUserPlacements(req.user.id, page, limit);
-    
+
     res.json(result);
   } catch (error) {
     logger.error('Get placements error:', error);
+
+    if (error.message.includes('Page number') || error.message.includes('Limit cannot')) {
+      return res.status(400).json({ error: error.message });
+    }
+
     res.status(500).json({ error: 'Failed to fetch placements' });
   }
 };
