@@ -39,7 +39,10 @@ async function apiCall(endpoint, options = {}) {
 
 // Projects API
 const ProjectsAPI = {
-    getAll: () => apiCall('/projects'),
+    getAll: async () => {
+        const response = await apiCall('/projects');
+        return response.data || response; // Extract data array if paginated
+    },
     get: (id) => apiCall(`/projects/${id}`),
     create: (data) => apiCall('/projects', { method: 'POST', body: JSON.stringify(data) }),
     update: (id, data) => apiCall(`/projects/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
@@ -56,7 +59,10 @@ const ProjectsAPI = {
 
 // Sites API
 const SitesAPI = {
-    getAll: () => apiCall('/sites'),
+    getAll: async () => {
+        const response = await apiCall('/sites');
+        return response.data || response; // Extract data array if paginated
+    },
     get: (id) => apiCall(`/sites/${id}`),
     create: (data) => apiCall('/sites', { method: 'POST', body: JSON.stringify(data) }),
     update: (id, data) => apiCall(`/sites/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
