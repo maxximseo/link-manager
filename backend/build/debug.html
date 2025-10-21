@@ -83,10 +83,10 @@
         <h3>Login Form Test:</h3>
         <form id="simpleLoginForm">
             <div>
-                <input type="text" id="testUsername" placeholder="Username" value="admin" style="width: 200px; padding: 8px; margin: 5px;">
+                <input type="text" id="testUsername" placeholder="Username" style="width: 200px; padding: 8px; margin: 5px;">
             </div>
             <div>
-                <input type="password" id="testPassword" placeholder="Password" value="admin123" style="width: 200px; padding: 8px; margin: 5px;">
+                <input type="password" id="testPassword" placeholder="Password" style="width: 200px; padding: 8px; margin: 5px;">
             </div>
             <div>
                 <button type="submit">Test Login</button>
@@ -176,7 +176,7 @@
                 const response = await fetch('/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: 'admin', password: 'admin123' })
+                    body: JSON.stringify({ username: 'test', password: 'test' })
                 });
                 
                 log(`API Response: ${response.status} ${response.statusText}`, response.ok ? 'success' : 'error');

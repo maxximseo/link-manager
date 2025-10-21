@@ -64,7 +64,7 @@ npm install
 createdb linkmanager
 
 # Generate admin password hash
-node -e "const bcrypt = require('bcrypt'); bcrypt.hash('admin123', 10).then(h => console.log(h))"
+node -e "const bcrypt = require('bcryptjs'); bcrypt.hash('admin123', 10).then(h => console.log(h))"
 
 # Update database/seed.sql with the hash, then:
 psql -d linkmanager -f database/init.sql
@@ -225,7 +225,7 @@ lsof -ti:3003 | xargs kill -9
 ### Login fails
 ```bash
 # Regenerate admin hash
-node -e "const bcrypt = require('bcrypt'); bcrypt.hash('admin123', 10).then(h => console.log(h))"
+node -e "const bcrypt = require('bcryptjs'); bcrypt.hash('admin123', 10).then(h => console.log(h))"
 
 # Update database
 psql -d linkmanager -c "UPDATE users SET password_hash='<new_hash>' WHERE username='admin';"

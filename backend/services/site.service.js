@@ -17,7 +17,7 @@ const getUserSites = async (userId, page = 0, limit = 0, recalculate = false) =>
     }
     
     // Fetch sites data
-    let sitesQuery = 'SELECT * FROM sites WHERE user_id = $1 ORDER BY created_at DESC';
+    let sitesQuery = 'SELECT id, user_id, site_name, site_url, api_key, max_links, max_articles, used_links, used_articles, created_at FROM sites WHERE user_id = $1 ORDER BY created_at DESC';
     const queryParams = [userId];
     
     if (usePagination) {
@@ -162,7 +162,7 @@ const recalculateSiteStats = async (userId) => {
 const getSiteById = async (siteId, userId) => {
   try {
     const result = await query(
-      'SELECT * FROM sites WHERE id = $1 AND user_id = $2',
+      'SELECT id, user_id, site_name, site_url, api_key, max_links, max_articles, used_links, used_articles, created_at FROM sites WHERE id = $1 AND user_id = $2',
       [siteId, userId]
     );
     

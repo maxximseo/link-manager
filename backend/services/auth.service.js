@@ -18,7 +18,10 @@ if (!process.env.JWT_SECRET) {
 // Authenticate user with username and password
 const authenticateUser = async (username, password) => {
   try {
-    const result = await query('SELECT * FROM users WHERE username = $1', [username]);
+    const result = await query(
+      'SELECT id, username, password_hash, role FROM users WHERE username = $1',
+      [username]
+    );
     const user = result.rows[0];
 
     // Protection against timing attacks: always run bcrypt.compare

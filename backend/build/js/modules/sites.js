@@ -101,12 +101,17 @@ window.SitesModule = {
             }
             
             const siteUrl = siteUrlEl.value.trim();
-            let apiKey = apiKeyEl.value.trim() || 'api_af44aafbca44';
+            const apiKey = apiKeyEl.value.trim();
             const maxLinks = parseInt(maxLinksEl.value) || 10;
             const maxArticles = parseInt(maxArticlesEl.value) || 5;
-            
+
             if (!siteUrl) {
                 AppUtils.showNotification('Введите URL сайта', 'warning');
+                return;
+            }
+
+            if (!apiKey) {
+                AppUtils.showNotification('Введите API ключ от WordPress плагина', 'warning');
                 return;
             }
             
