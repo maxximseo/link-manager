@@ -19,7 +19,7 @@ if (!process.env.JWT_SECRET) {
 const authenticateUser = async (username, password) => {
   try {
     const result = await query(
-      'SELECT id, username, password_hash, role FROM users WHERE username = $1',
+      'SELECT id, username, password, role FROM users WHERE username = $1',
       [username]
     );
     const user = result.rows[0];
@@ -27,7 +27,7 @@ const authenticateUser = async (username, password) => {
     // Protection against timing attacks: always run bcrypt.compare
     // Use dummy hash if user doesn't exist to maintain constant time
     const dummyHash = '$2a$10$aaaaaaaaaaaaaaaaaaaaaeOHyXMO/lUEyXfRF6lQAoF5q3D3vQFOO'; // Dummy bcrypt hash
-    const hash = user?.password_hash || dummyHash;
+    const hash = user?.password || dummyHash;
     const isMatch = await bcrypt.compare(password, hash);
 
     // Check both user existence and password match
