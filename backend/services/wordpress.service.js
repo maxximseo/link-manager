@@ -80,8 +80,8 @@ const getContentByApiKey = async (apiKey) => {
       return cached;
     }
 
-    // Get all content for sites with this API key
-    const result = await query(`
+    // Get all links for sites with this API key
+    const linksResult = await query(`
       SELECT
         pl.id,
         pl.url,
@@ -95,21 +95,46 @@ const getContentByApiKey = async (apiKey) => {
       ORDER BY pc.id DESC
     `, [apiKey]);
 
+    // Get all articles for sites with this API key
+    const articlesResult = await query(`
+      SELECT
+        pa.id,
+        pa.title,
+        pa.content,
+        pa.slug,
+        plc.wordpress_post_id
+      FROM project_articles pa
+      JOIN placement_content pc ON pa.id = pc.article_id
+      JOIN placements plc ON pc.placement_id = plc.id
+      JOIN sites s ON plc.site_id = s.id
+      WHERE s.api_key = $1
+        AND pc.article_id IS NOT NULL
+      ORDER BY pc.id DESC
+    `, [apiKey]);
+
     // Format response for WordPress plugin
-    const links = result.rows.map(row => ({
+    const links = linksResult.rows.map(row => ({
       url: row.url,
       anchor_text: row.anchor_text,
       position: '' // Position can be added later if needed
     }));
 
+    const articles = articlesResult.rows.map(row => ({
+      id: row.id,
+      title: row.title,
+      content: row.content,
+      slug: row.slug,
+      wordpress_post_id: row.wordpress_post_id
+    }));
+
     const response = {
       links: links,
-      articles: [] // Articles are published separately via REST API
+      articles: articles
     };
 
     // Cache for 5 minutes
     await cache.set(cacheKey, response, 300);
-    logger.debug('WordPress content cached', { apiKey, linksCount: links.length });
+    logger.debug('WordPress content cached', { apiKey, linksCount: links.length, articlesCount: articles.length });
 
     return response;
   } catch (error) {
