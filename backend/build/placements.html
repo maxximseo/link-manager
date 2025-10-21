@@ -426,7 +426,8 @@
                 const placementsResponse = await fetch(`/api/placements`, {
                     headers: { 'Authorization': `Bearer ${getAuthToken()}` }
                 });
-                const allPlacements = await placementsResponse.json();
+                const placementsData = await placementsResponse.json();
+                const allPlacements = placementsData.data || placementsData; // Extract data array if paginated
 
                 console.log('All placements:', allPlacements);
                 console.log('Looking for project_id:', projectId);
