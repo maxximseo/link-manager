@@ -17,6 +17,9 @@ const routes = require('./routes');
 
 const app = express();
 
+// Trust proxy for load balancer (enables req.ip to work correctly)
+app.set('trust proxy', 1);
+
 // Security middleware
 app.use(helmet({
   contentSecurityPolicy: false, // Disable for development

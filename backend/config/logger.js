@@ -1,5 +1,6 @@
 const winston = require('winston');
 const path = require('path');
+const DailyRotateFile = require('winston-daily-rotate-file');
 
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
@@ -15,10 +16,14 @@ const logger = winston.createLogger({
         winston.format.simple()
       )
     }),
-    new winston.transports.File({
-      filename: path.join(__dirname, '..', 'dev.log'),
-      maxsize: 5242880, // 5MB
-      maxFiles: 5
+    new DailyRotateFile({
+      filename: path.join(__dirname, '..', 'logs', 'application-%DATE%.log'),
+      datePattern: 'YYYY-MM-DD',
+      zippedArchive: true,
+      maxSize: '20m',
+      maxFiles: '30d', // Keep logs for 30 days
+      createSymlink: true,
+      symlinkName: 'current.log'
     })
   ]
 });

@@ -137,8 +137,8 @@ const createPlacement = async (data) => {
     `, [project_id, site_id]);
 
     const existing = existingContentResult.rows[0];
-    const hasExistingLinks = parseInt(existing.existing_links) > 0;
-    const hasExistingArticles = parseInt(existing.existing_articles) > 0;
+    const hasExistingLinks = parseInt(existing.existing_links || 0) > 0;
+    const hasExistingArticles = parseInt(existing.existing_articles || 0) > 0;
 
     // Check restrictions: max 1 link and 1 article per site per project
     if (link_ids.length > 0 && hasExistingLinks) {
@@ -612,8 +612,8 @@ const getAvailableSites = async (projectId, userId) => {
     // Add availability flags
     const sitesWithAvailability = result.rows.map(site => ({
       ...site,
-      can_place_link: parseInt(site.project_links_on_site) === 0 && site.used_links < site.max_links,
-      can_place_article: parseInt(site.project_articles_on_site) === 0 && site.used_articles < site.max_articles
+      can_place_link: parseInt(site.project_links_on_site || 0) === 0 && site.used_links < site.max_links,
+      can_place_article: parseInt(site.project_articles_on_site || 0) === 0 && site.used_articles < site.max_articles
     }));
 
     return sitesWithAvailability;

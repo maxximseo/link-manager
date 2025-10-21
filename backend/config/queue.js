@@ -38,7 +38,16 @@ const createQueue = (name) => {
   // Just try to create queue and handle errors gracefully
   try {
     const queue = new Queue(name, {
-      redis: getRedisConfig()
+      redis: getRedisConfig(),
+      defaultJobOptions: {
+        attempts: 3, // Retry failed jobs up to 3 times
+        backoff: {
+          type: 'exponential', // Exponential backoff
+          delay: 2000 // Start with 2 second delay, doubles each retry
+        },
+        removeOnComplete: 100, // Keep last 100 completed jobs
+        removeOnFail: 500 // Keep last 500 failed jobs for debugging
+      }
     });
     return queue;
   } catch (error) {
