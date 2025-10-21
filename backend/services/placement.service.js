@@ -179,7 +179,7 @@ const createPlacement = async (data) => {
 
     // Check if placement already exists
     const existingResult = await client.query(
-      'SELECT * FROM placements WHERE project_id = $1 AND site_id = $2 AND type = $3',
+      'SELECT id, project_id, site_id, type, status, wordpress_post_id, placed_at FROM placements WHERE project_id = $1 AND site_id = $2 AND type = $3',
       [project_id, site_id, 'manual']
     );
 

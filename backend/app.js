@@ -44,14 +44,9 @@ app.use(express.static(path.join(__dirname, 'build')));
 // API routes
 app.use('/api', routes);
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
-    timestamp: new Date().toISOString(),
-    architecture: 'modular'
-  });
-});
+// Comprehensive health check endpoint (monitoring)
+const healthRoutes = require('./routes/health.routes');
+app.use('/health', healthRoutes);
 
 // Error handling for API routes
 app.use('/api', errorHandler);
