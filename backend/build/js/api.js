@@ -73,9 +73,10 @@ const SitesAPI = {
 
 // Placements API
 const PlacementsAPI = {
-    getAll: (filters = {}) => {
+    getAll: async (filters = {}) => {
         const params = new URLSearchParams(filters);
-        return apiCall(`/placements?${params}`);
+        const response = await apiCall(`/placements?${params}`);
+        return response.data || response; // Extract data array if paginated
     },
     get: (id) => apiCall(`/placements/${id}`),
     create: (data) => apiCall('/placements', { method: 'POST', body: JSON.stringify(data) }),
