@@ -562,7 +562,15 @@
                 const usageCount = item.usage_count || 0;
                 const usageLimit = item.usage_limit || (contentType === 'articles' ? 1 : 999);
                 const counter = `${usageCount}/${usageLimit}`;
-                return `<option value="${item.id}">${displayName} (${counter})</option>`;
+
+                // Validate ID is integer to prevent XSS
+                const safeId = parseInt(item.id);
+                if (isNaN(safeId)) {
+                    console.error('Invalid item ID:', item.id);
+                    return '';
+                }
+
+                return `<option value="${safeId}">${displayName} (${escapeHtml(counter)})</option>`;
             }).join('');
 
             // Render table rows for current page

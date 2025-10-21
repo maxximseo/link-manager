@@ -9,10 +9,23 @@ const crypto = require('crypto');
 const { query } = require('../config/database');
 const logger = require('../config/logger');
 
-// Validate JWT secret is provided in environment
+// Validate JWT secret is provided and strong enough
 if (!process.env.JWT_SECRET) {
   logger.error('JWT_SECRET is not set in environment variables. This is a security risk.');
   throw new Error('JWT_SECRET environment variable is required for security. Please set it in .env file.');
+}
+
+// Check secret strength (minimum 32 characters)
+if (process.env.JWT_SECRET.length < 32) {
+  logger.error('JWT_SECRET is too short. Must be at least 32 characters for security.');
+  throw new Error('JWT_SECRET must be at least 32 characters long. Please use a stronger secret in .env file.');
+}
+
+// Warn about weak common secrets
+const weakSecrets = ['your-secret-key', 'secret', 'changeme', 'password', '12345', 'test'];
+if (weakSecrets.some(weak => process.env.JWT_SECRET.toLowerCase().includes(weak))) {
+  logger.error('JWT_SECRET appears to be a common/weak value. This is a security risk.');
+  throw new Error('JWT_SECRET appears to be weak. Please use a cryptographically random secret.');
 }
 
 // Authenticate user with username and password

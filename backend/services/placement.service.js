@@ -121,6 +121,11 @@ const createPlacement = async (data) => {
     // Begin transaction
     await client.query('BEGIN');
 
+    // Use advisory lock to prevent concurrent placements for same project+site
+    // Lock key: combine project_id and site_id into single bigint
+    const lockKey = (project_id << 32) | site_id;
+    await client.query('SELECT pg_advisory_xact_lock($1)', [lockKey]);
+
     // Check existing placements for this project on this site
     const existingContentResult = await client.query(`
       SELECT

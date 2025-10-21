@@ -44,11 +44,11 @@ const errorHandler = (err, req, res, next) => {
     error.statusCode = 401;
   }
 
-  // Default error response
+  // Default error response (NEVER expose stack traces to clients)
   res.status(error.statusCode || 500).json({
     success: false,
-    error: error.message || 'Server Error',
-    ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
+    error: error.message || 'Server Error'
+    // Stack traces are logged server-side only (line 14-21)
   });
 };
 

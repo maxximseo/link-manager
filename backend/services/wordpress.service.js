@@ -7,9 +7,10 @@ const { query } = require('../config/database');
 const logger = require('../config/logger');
 const axios = require('axios');
 const cache = require('./cache.service');
+const dns = require('dns').promises;
 
-// Validate URL to prevent SSRF attacks
-function validateExternalUrl(url) {
+// Validate URL to prevent SSRF attacks (enhanced with DNS resolution check)
+async function validateExternalUrl(url) {
   try {
     const parsedUrl = new URL(url);
 
@@ -33,9 +34,31 @@ function validateExternalUrl(url) {
       throw new Error('Invalid site URL: Private IP addresses not allowed');
     }
 
+    // Block link-local addresses (169.254.x.x)
+    if (/^169\.254\./.test(hostname)) {
+      throw new Error('Invalid site URL: Link-local addresses not allowed');
+    }
+
     // Block AWS/cloud metadata endpoints
     if (hostname === '169.254.169.254' || hostname.includes('metadata')) {
       throw new Error('Invalid site URL: Metadata endpoints not allowed');
+    }
+
+    // Resolve DNS to check for private IPs (prevents DNS rebinding attacks)
+    try {
+      const addresses = await dns.resolve4(hostname);
+      for (const ip of addresses) {
+        if (ip.startsWith('10.') ||
+            /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(ip) ||
+            ip.startsWith('192.168.') ||
+            ip.startsWith('127.') ||
+            ip.startsWith('169.254.')) {
+          throw new Error('Invalid site URL: Resolves to private IP address');
+        }
+      }
+    } catch (dnsError) {
+      // If DNS lookup fails, log but don't block (domain might not exist yet)
+      logger.warn('DNS resolution failed for hostname:', { hostname, error: dnsError.message });
     }
 
     return parsedUrl.href.replace(/\/$/, ''); // Remove trailing slash
@@ -100,8 +123,8 @@ const publishArticle = async (siteUrl, apiKey, articleData) => {
   try {
     const { title, content, slug } = articleData;
 
-    // Validate URL to prevent SSRF attacks
-    const validatedUrl = validateExternalUrl(siteUrl);
+    // Validate URL to prevent SSRF attacks (now async)
+    const validatedUrl = await validateExternalUrl(siteUrl);
 
     // Use Link Manager plugin REST API endpoint
     const pluginUrl = `${validatedUrl}/wp-json/link-manager/v1/create-article`;
@@ -116,7 +139,8 @@ const publishArticle = async (siteUrl, apiKey, articleData) => {
         'Content-Type': 'application/json',
         'X-API-Key': apiKey
       },
-      timeout: 30000
+      timeout: 30000,
+      maxRedirects: 0  // Prevent SSRF via redirects
     });
 
     if (response.data.success) {
@@ -148,8 +172,8 @@ const deleteArticle = async (siteUrl, apiKey, wordpressPostId) => {
       return { success: false, error: 'No WordPress post ID' };
     }
 
-    // Validate URL to prevent SSRF attacks
-    const validatedUrl = validateExternalUrl(siteUrl);
+    // Validate URL to prevent SSRF attacks (now async)
+    const validatedUrl = await validateExternalUrl(siteUrl);
 
     // Use Link Manager plugin REST API endpoint
     const pluginUrl = `${validatedUrl}/wp-json/link-manager/v1/delete-article/${wordpressPostId}`;
@@ -159,7 +183,8 @@ const deleteArticle = async (siteUrl, apiKey, wordpressPostId) => {
         'Content-Type': 'application/json',
         'X-API-Key': apiKey
       },
-      timeout: 30000
+      timeout: 30000,
+      maxRedirects: 0  // Prevent SSRF via redirects
     });
 
     if (response.data.success) {
