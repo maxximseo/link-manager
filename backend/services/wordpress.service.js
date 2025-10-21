@@ -8,6 +8,43 @@ const logger = require('../config/logger');
 const axios = require('axios');
 const cache = require('./cache.service');
 
+// Validate URL to prevent SSRF attacks
+function validateExternalUrl(url) {
+  try {
+    const parsedUrl = new URL(url);
+
+    // Only allow http/https
+    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+      throw new Error('Invalid protocol: Only HTTP/HTTPS allowed');
+    }
+
+    // Block localhost, private IPs, and cloud metadata
+    const hostname = parsedUrl.hostname.toLowerCase();
+
+    // Block localhost variants
+    if (['localhost', '127.0.0.1', '0.0.0.0', '::1'].includes(hostname)) {
+      throw new Error('Invalid site URL: Localhost not allowed');
+    }
+
+    // Block private IP ranges (10.x.x.x, 172.16-31.x.x, 192.168.x.x)
+    if (/^10\./.test(hostname) ||
+        /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname) ||
+        /^192\.168\./.test(hostname)) {
+      throw new Error('Invalid site URL: Private IP addresses not allowed');
+    }
+
+    // Block AWS/cloud metadata endpoints
+    if (hostname === '169.254.169.254' || hostname.includes('metadata')) {
+      throw new Error('Invalid site URL: Metadata endpoints not allowed');
+    }
+
+    return parsedUrl.href.replace(/\/$/, ''); // Remove trailing slash
+  } catch (error) {
+    if (error.message.includes('Invalid')) throw error;
+    throw new Error('Invalid site URL format');
+  }
+}
+
 // Get content by API key (with Redis caching)
 const getContentByApiKey = async (apiKey) => {
   try {
@@ -63,8 +100,11 @@ const publishArticle = async (siteUrl, apiKey, articleData) => {
   try {
     const { title, content, slug } = articleData;
 
+    // Validate URL to prevent SSRF attacks
+    const validatedUrl = validateExternalUrl(siteUrl);
+
     // Use Link Manager plugin REST API endpoint
-    const pluginUrl = `${siteUrl}/wp-json/link-manager/v1/create-article`;
+    const pluginUrl = `${validatedUrl}/wp-json/link-manager/v1/create-article`;
 
     const response = await axios.post(pluginUrl, {
       title,
@@ -108,8 +148,11 @@ const deleteArticle = async (siteUrl, apiKey, wordpressPostId) => {
       return { success: false, error: 'No WordPress post ID' };
     }
 
+    // Validate URL to prevent SSRF attacks
+    const validatedUrl = validateExternalUrl(siteUrl);
+
     // Use Link Manager plugin REST API endpoint
-    const pluginUrl = `${siteUrl}/wp-json/link-manager/v1/delete-article/${wordpressPostId}`;
+    const pluginUrl = `${validatedUrl}/wp-json/link-manager/v1/delete-article/${wordpressPostId}`;
 
     const response = await axios.delete(pluginUrl, {
       headers: {

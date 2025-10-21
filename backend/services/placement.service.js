@@ -276,6 +276,14 @@ const createPlacement = async (data) => {
       );
     }
 
+    // Set default status for placements without articles (links only)
+    if (article_ids.length === 0) {
+      await client.query(
+        'UPDATE placements SET status = $1 WHERE id = $2',
+        ['placed', placement.id]
+      );
+    }
+
     // Publish articles to WordPress if any
     if (article_ids.length > 0) {
       let publishedCount = 0;

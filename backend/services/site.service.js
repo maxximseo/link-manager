@@ -5,6 +5,7 @@
 
 const { pool, query } = require('../config/database');
 const logger = require('../config/logger');
+const crypto = require('crypto');
 
 // Get user sites with pagination and statistics
 const getUserSites = async (userId, page = 0, limit = 0, recalculate = false) => {
@@ -65,7 +66,8 @@ const createSite = async (data) => {
   try {
     const { site_url, api_key, max_links, max_articles, userId } = data;
     
-    const finalApiKey = api_key || `api_${Math.random().toString(36).substring(2, 15)}`;
+    // Generate cryptographically secure API key if not provided
+    const finalApiKey = api_key || `api_${crypto.randomBytes(12).toString('hex')}`;
     const site_name = site_url;
     
     const result = await query(

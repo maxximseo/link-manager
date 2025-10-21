@@ -132,7 +132,21 @@ process.on('uncaughtException', (error) => {
 
 process.on('unhandledRejection', (reason, promise) => {
   logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  process.exit(1);
+
+  // Only exit on critical database/system failures
+  // Log and continue for application-level errors
+  const isCritical =
+    reason?.code === 'ECONNREFUSED' ||
+    reason?.message?.includes('FATAL') ||
+    reason?.message?.includes('database connection');
+
+  if (isCritical) {
+    logger.error('Critical system failure detected - initiating shutdown');
+    gracefulShutdown('CRITICAL_ERROR');
+  } else {
+    // Log but don't crash - let error handling middleware deal with it
+    logger.warn('Unhandled rejection logged - service continues');
+  }
 });
 
 module.exports = serverPromise;
