@@ -51,13 +51,18 @@ const getUserPlacements = async (userId, page = 0, limit = 0) => {
     `;
     
     const queryParams = [userId];
-    
+    const DEFAULT_MAX_RESULTS = 1000; // Prevent unbounded queries
+
     if (usePagination) {
       const offset = (page - 1) * limit;
       placementsQuery += ' LIMIT $2 OFFSET $3';
       queryParams.push(limit, offset);
+    } else {
+      // Always add LIMIT for safety even without pagination
+      placementsQuery += ' LIMIT $2';
+      queryParams.push(DEFAULT_MAX_RESULTS);
     }
-    
+
     const result = await query(placementsQuery, queryParams);
     
     if (usePagination) {
@@ -147,9 +152,9 @@ const createPlacement = async (data) => {
       throw new Error('You can only place 1 article per site.');
     }
 
-    // Check site quotas
+    // Check site quotas with row-level lock to prevent race conditions
     const siteResult = await client.query(
-      'SELECT max_links, used_links, max_articles, used_articles FROM sites WHERE id = $1',
+      'SELECT max_links, used_links, max_articles, used_articles FROM sites WHERE id = $1 FOR UPDATE',
       [site_id]
     );
 

@@ -334,13 +334,9 @@ const getJobStatus = async (req, res) => {
 
     const job = await placementQueue.getJob(jobId);
 
-    if (!job) {
+    // Return 404 for both non-existent AND unauthorized jobs (prevent enumeration)
+    if (!job || job.data.userId !== req.user.id) {
       return res.status(404).json({ error: 'Job not found' });
-    }
-
-    // Verify job belongs to current user
-    if (job.data.userId !== req.user.id) {
-      return res.status(403).json({ error: 'Access denied' });
     }
 
     const state = await job.getState();
@@ -394,13 +390,9 @@ const cancelJob = async (req, res) => {
 
     const job = await placementQueue.getJob(jobId);
 
-    if (!job) {
+    // Return 404 for both non-existent AND unauthorized jobs (prevent enumeration)
+    if (!job || job.data.userId !== req.user.id) {
       return res.status(404).json({ error: 'Job not found' });
-    }
-
-    // Verify job belongs to current user
-    if (job.data.userId !== req.user.id) {
-      return res.status(403).json({ error: 'Access denied' });
     }
 
     const state = await job.getState();

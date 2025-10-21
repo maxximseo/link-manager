@@ -86,3 +86,5 @@ CREATE INDEX idx_placements_site ON placements(site_id);
 CREATE INDEX idx_project_links_project ON project_links(project_id);
 CREATE INDEX idx_project_articles_project ON project_articles(project_id);
 CREATE INDEX idx_placement_content_placement ON placement_content(placement_id);
+CREATE INDEX idx_placement_content_link_id ON placement_content(link_id) WHERE link_id IS NOT NULL;
+CREATE INDEX idx_placement_content_article_id ON placement_content(article_id) WHERE article_id IS NOT NULL;

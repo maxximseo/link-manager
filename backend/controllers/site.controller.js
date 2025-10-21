@@ -66,11 +66,16 @@ const createSite = async (req, res) => {
       return res.status(400).json({ error: 'Site URL must be a valid HTTP/HTTPS URL' });
     }
     
+    // Validate API key length (VARCHAR(100) in database)
+    if (api_key && (typeof api_key !== 'string' || api_key.length > 100)) {
+      return res.status(400).json({ error: 'API key must be less than 100 characters' });
+    }
+
     // Validate numeric fields
     if (max_links !== undefined && (typeof max_links !== 'number' || max_links < 0)) {
       return res.status(400).json({ error: 'Max links must be a positive number' });
     }
-    
+
     if (max_articles !== undefined && (typeof max_articles !== 'number' || max_articles < 0)) {
       return res.status(400).json({ error: 'Max articles must be a positive number' });
     }

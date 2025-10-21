@@ -172,9 +172,11 @@ const getProjectLinks = async (projectId, userId) => {
       return null;
     }
     
+    // Add LIMIT to prevent unbounded result sets
+    const MAX_LINKS_PER_QUERY = 1000;
     const linksResult = await query(
-      'SELECT * FROM project_links WHERE project_id = $1 ORDER BY created_at DESC',
-      [projectId]
+      'SELECT * FROM project_links WHERE project_id = $1 ORDER BY created_at DESC LIMIT $2',
+      [projectId, MAX_LINKS_PER_QUERY]
     );
     
     return linksResult.rows;
@@ -281,9 +283,14 @@ const addProjectLinksBulk = async (projectId, userId, links) => {
     }
 
     // Get existing anchor texts in this project (case-insensitive)
+    // Use efficient batch check with ANY instead of fetching all
+    const anchorTextsToCheck = links
+      .filter(l => l.url && l.url.startsWith('http'))
+      .map(l => (l.anchor_text || l.url).toLowerCase());
+
     const existingLinksResult = await query(
-      'SELECT LOWER(anchor_text) as anchor_text FROM project_links WHERE project_id = $1',
-      [projectId]
+      'SELECT LOWER(anchor_text) as anchor_text FROM project_links WHERE project_id = $1 AND LOWER(anchor_text) = ANY($2)',
+      [projectId, anchorTextsToCheck]
     );
     const existingAnchors = new Set(existingLinksResult.rows.map(row => row.anchor_text));
 
@@ -383,9 +390,11 @@ const getProjectArticles = async (projectId, userId) => {
       return null;
     }
     
+    // Add LIMIT to prevent unbounded result sets
+    const MAX_ARTICLES_PER_QUERY = 500;
     const articlesResult = await query(
-      'SELECT * FROM project_articles WHERE project_id = $1 ORDER BY created_at DESC',
-      [projectId]
+      'SELECT * FROM project_articles WHERE project_id = $1 ORDER BY created_at DESC LIMIT $2',
+      [projectId, MAX_ARTICLES_PER_QUERY]
     );
     
     return articlesResult.rows;
