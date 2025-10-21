@@ -196,16 +196,29 @@ const createPlacement = async (data) => {
       );
 
       if (existingLink.rows.length === 0) {
-        await client.query(
-          'INSERT INTO placement_content (placement_id, link_id) VALUES ($1, $2)',
-          [placement.id, linkId]
-        );
+        try {
+          await client.query(
+            'INSERT INTO placement_content (placement_id, link_id) VALUES ($1, $2)',
+            [placement.id, linkId]
+          );
 
-        // Increment usage_count for the link
-        await client.query(
-          'UPDATE project_links SET usage_count = usage_count + 1 WHERE id = $1',
-          [linkId]
-        );
+          // Increment usage_count for the link
+          await client.query(
+            'UPDATE project_links SET usage_count = usage_count + 1 WHERE id = $1',
+            [linkId]
+          );
+        } catch (insertError) {
+          // Handle unique constraint violation (race condition)
+          if (insertError.code === '23505') {
+            logger.warn('Link already placed (race condition detected)', {
+              placementId: placement.id,
+              linkId,
+              constraint: insertError.constraint
+            });
+          } else {
+            throw insertError;
+          }
+        }
       } else {
         logger.debug('Link already in placement, skipping', { placementId: placement.id, linkId });
       }
@@ -220,16 +233,29 @@ const createPlacement = async (data) => {
       );
 
       if (existingArticle.rows.length === 0) {
-        await client.query(
-          'INSERT INTO placement_content (placement_id, article_id) VALUES ($1, $2)',
-          [placement.id, articleId]
-        );
+        try {
+          await client.query(
+            'INSERT INTO placement_content (placement_id, article_id) VALUES ($1, $2)',
+            [placement.id, articleId]
+          );
 
-        // Increment usage_count for the article
-        await client.query(
-          'UPDATE project_articles SET usage_count = usage_count + 1 WHERE id = $1',
-          [articleId]
-        );
+          // Increment usage_count for the article
+          await client.query(
+            'UPDATE project_articles SET usage_count = usage_count + 1 WHERE id = $1',
+            [articleId]
+          );
+        } catch (insertError) {
+          // Handle unique constraint violation (race condition)
+          if (insertError.code === '23505') {
+            logger.warn('Article already placed (race condition detected)', {
+              placementId: placement.id,
+              articleId,
+              constraint: insertError.constraint
+            });
+          } else {
+            throw insertError;
+          }
+        }
       } else {
         logger.debug('Article already in placement, skipping', { placementId: placement.id, articleId });
       }
@@ -252,69 +278,84 @@ const createPlacement = async (data) => {
 
     // Publish articles to WordPress if any
     if (article_ids.length > 0) {
-      try {
-        // Get site details including API key and URL
-        const siteDetailsResult = await client.query(
-          'SELECT site_url, api_key FROM sites WHERE id = $1',
-          [site_id]
-        );
+      let publishedCount = 0;
+      let failedCount = 0;
+      const publishErrors = [];
 
-        if (siteDetailsResult.rows.length > 0) {
-          const siteDetails = siteDetailsResult.rows[0];
+      // Get site details including API key and URL
+      const siteDetailsResult = await client.query(
+        'SELECT site_url, api_key FROM sites WHERE id = $1',
+        [site_id]
+      );
 
-          // Get article details for each article_id
-          for (const articleId of article_ids) {
-            try {
-              const articleResult = await client.query(
-                'SELECT id, title, content, slug FROM project_articles WHERE id = $1',
-                [articleId]
+      if (siteDetailsResult.rows.length > 0) {
+        const siteDetails = siteDetailsResult.rows[0];
+
+        // Get article details for each article_id
+        for (const articleId of article_ids) {
+          try {
+            const articleResult = await client.query(
+              'SELECT id, title, content, slug FROM project_articles WHERE id = $1',
+              [articleId]
+            );
+
+            if (articleResult.rows.length > 0) {
+              const article = articleResult.rows[0];
+
+              // Publish article to WordPress
+              const wpResult = await wordpressService.publishArticle(
+                siteDetails.site_url,
+                siteDetails.api_key,
+                {
+                  title: article.title,
+                  content: article.content,
+                  slug: article.slug
+                }
               );
 
-              if (articleResult.rows.length > 0) {
-                const article = articleResult.rows[0];
+              // Update placement with WordPress post ID and status
+              await client.query(
+                'UPDATE placements SET wordpress_post_id = $1, status = $2 WHERE id = $3',
+                [wpResult.post_id, 'placed', placement.id]
+              );
 
-                // Publish article to WordPress
-                const wpResult = await wordpressService.publishArticle(
-                  siteDetails.site_url,
-                  siteDetails.api_key,
-                  {
-                    title: article.title,
-                    content: article.content,
-                    slug: article.slug
-                  }
-                );
-
-                // Update placement with WordPress post ID and status
-                await client.query(
-                  'UPDATE placements SET wordpress_post_id = $1, status = $2 WHERE id = $3',
-                  [wpResult.post_id, 'placed', placement.id]
-                );
-
-                logger.info('Article published to WordPress', {
-                  placementId: placement.id,
-                  articleId,
-                  wpPostId: wpResult.post_id
-                });
-              }
-            } catch (articleError) {
-              logger.error('Failed to publish article to WordPress', {
+              publishedCount++;
+              logger.info('Article published to WordPress', {
                 placementId: placement.id,
                 articleId,
-                error: articleError.message
+                wpPostId: wpResult.post_id
               });
-
-              // Update placement status to failed
-              await client.query(
-                'UPDATE placements SET status = $1 WHERE id = $2',
-                ['failed', placement.id]
-              );
             }
+          } catch (articleError) {
+            failedCount++;
+            publishErrors.push({ articleId, error: articleError.message });
+
+            logger.error('Failed to publish article to WordPress', {
+              placementId: placement.id,
+              articleId,
+              error: articleError.message
+            });
           }
         }
-      } catch (publishError) {
-        logger.error('Error during article publication', {
+      }
+
+      // If ALL articles failed to publish, rollback transaction
+      if (failedCount > 0 && publishedCount === 0) {
+        await client.query('ROLLBACK');
+        throw new Error(`All ${failedCount} article(s) failed to publish to WordPress: ${publishErrors.map(e => e.error).join('; ')}`);
+      }
+
+      // If some failed but some succeeded, mark placement as partially failed
+      if (failedCount > 0 && publishedCount > 0) {
+        await client.query(
+          'UPDATE placements SET status = $1 WHERE id = $2',
+          ['partial_fail', placement.id]
+        );
+        logger.warn('Some articles failed to publish', {
           placementId: placement.id,
-          error: publishError.message
+          published: publishedCount,
+          failed: failedCount,
+          errors: publishErrors
         });
       }
     }

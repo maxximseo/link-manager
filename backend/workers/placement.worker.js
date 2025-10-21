@@ -54,13 +54,20 @@ module.exports = async function placementWorker(job) {
       throw new Error(`Access denied to sites: ${invalidSiteIds.join(', ')}`);
     }
 
+    // Fetch all sites info in one query to prevent N+1
+    const sitesInfo = await query(
+      'SELECT id, site_name, site_url, api_key FROM sites WHERE id = ANY($1) AND user_id = $2',
+      [site_ids, userId]
+    );
+    const sitesMap = new Map(sitesInfo.rows.map(s => [s.id, s]));
+
     await job.progress({
-      percent: 5,
+      percent: 10,
       processed: 0,
       total: site_ids.length,
       successful: 0,
       failed: 0,
-      stage: 'Validating project and sites...'
+      stage: 'Sites loaded, starting distribution...'
     });
 
     // Distribute links and articles across sites (round-robin)
@@ -91,12 +98,9 @@ module.exports = async function placementWorker(job) {
       }
 
       try {
-        // Get site name for logging
-        const siteInfo = await query(
-          'SELECT site_name FROM sites WHERE id = $1',
-          [site_id]
-        );
-        const siteName = siteInfo.rows[0]?.site_name || `Site ${site_id}`;
+        // Get site info from pre-loaded map (no N+1 query)
+        const siteInfo = sitesMap.get(site_id);
+        const siteName = siteInfo?.site_name || `Site ${site_id}`;
 
         // Create placement using existing service
         const placement = await placementService.createPlacement({

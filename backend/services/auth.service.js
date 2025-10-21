@@ -24,7 +24,7 @@ const authenticateUser = async (username, password) => {
     // Protection against timing attacks: always run bcrypt.compare
     // Use dummy hash if user doesn't exist to maintain constant time
     const dummyHash = '$2a$10$aaaaaaaaaaaaaaaaaaaaaeOHyXMO/lUEyXfRF6lQAoF5q3D3vQFOO'; // Dummy bcrypt hash
-    const hash = user?.password || dummyHash;
+    const hash = user?.password_hash || dummyHash;
     const isMatch = await bcrypt.compare(password, hash);
 
     // Check both user existence and password match
