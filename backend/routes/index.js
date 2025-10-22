@@ -12,6 +12,9 @@ const projectRoutes = require('./project.routes');
 const siteRoutes = require('./site.routes');
 const placementRoutes = require('./placement.routes');
 const wordpressRoutes = require('./wordpress.routes');
+const billingRoutes = require('./billing.routes');
+const adminRoutes = require('./admin.routes');
+const notificationRoutes = require('./notification.routes');
 
 // Import legacy server for fallback (for routes not yet modularized)
 const legacyRoutes = require('./legacy');
@@ -53,6 +56,9 @@ router.use('/projects', projectRoutes);
 router.use('/sites', siteRoutes);
 router.use('/placements', placementRoutes);
 router.use('/wordpress', wordpressRoutes);
+router.use('/billing', billingRoutes);
+router.use('/admin', adminRoutes);
+router.use('/notifications', notificationRoutes);
 
 // Queue routes (if available)
 if (queueRoutes) {
