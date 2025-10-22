@@ -81,4 +81,9 @@ if (process.env.NODE_ENV === 'development') {
 // Fallback to legacy routes for all other endpoints not yet modularized
 router.use('/', legacyRoutes);
 
+// CSRF token endpoint (optional, primarily for form-based authentication)
+// Note: JWT in Authorization headers already provides CSRF protection
+const { getCsrfToken } = require('../middleware/csrf.middleware');
+router.get('/csrf-token', getCsrfToken);
+
 module.exports = router;
