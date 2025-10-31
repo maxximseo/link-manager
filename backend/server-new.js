@@ -4,7 +4,7 @@
  */
 
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '.env'), override: true });
+require('dotenv').config({ path: path.join(__dirname, '..', '.env'), override: true });
 
 const app = require('./app');
 const logger = require('./config/logger');
@@ -29,6 +29,9 @@ try {
 } catch (error) {
   logger.warn('Queue workers not available - running without queue support');
 }
+
+// Cron jobs
+const { initCronJobs } = require('./cron');
 
 const PORT = process.env.PORT || 3000;
 
@@ -66,7 +69,16 @@ async function startServer() {
         // Continue without workers - graceful degradation
       }
     }
-    
+
+    // Initialize cron jobs
+    try {
+      initCronJobs();
+      logger.info('Cron jobs initialized successfully');
+    } catch (error) {
+      logger.error('Failed to initialize cron jobs', { error: error.message });
+      // Continue without cron jobs - they can be run manually if needed
+    }
+
     logger.info('Application initialized successfully');
     
     // Start server
