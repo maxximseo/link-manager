@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление пользователями - Link Manager Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/admin-dashboard.html">🔗 Link Manager Admin</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item"><a class="nav-link" href="/admin-dashboard.html">Админ Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="/admin-users.html">Пользователи</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/sites.html">Мои сайты</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/admin-placements.html">Размещения</a></li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <span class="navbar-text me-3">
+                            <i class="bi bi-person-badge"></i> Администратор
+                        </span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="logout()">Выход</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>👥 Управление пользователями</h1>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card border-primary">
+                    <div class="card-body text-center">
+                        <h6 class="card-subtitle mb-2 text-muted">Всего пользователей</h6>
+                        <h2 class="text-primary mb-0" id="totalUsers">0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-success">
+                    <div class="card-body text-center">
+                        <h6 class="card-subtitle mb-2 text-muted">С балансом > 0</h6>
+                        <h2 class="text-success mb-0" id="activeUsers">0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-warning">
+                    <div class="card-body text-center">
+                        <h6 class="card-subtitle mb-2 text-muted">Общий баланс</h6>
+                        <h2 class="text-warning mb-0">$<span id="totalBalance">0.00</span></h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-info">
+                    <div class="card-body text-center">
+                        <h6 class="card-subtitle mb-2 text-muted">Всего потрачено</h6>
+                        <h2 class="text-info mb-0">$<span id="totalSpent">0.00</span></h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Поиск по username/email</label>
+                        <input type="text" class="form-control" id="searchInput" placeholder="Введите username или email">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Роль</label>
+                        <select class="form-select" id="roleFilter">
+                            <option value="">Все</option>
+                            <option value="admin">Администратор</option>
+                            <option value="user">Пользователь</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Уровень скидки</label>
+                        <select class="form-select" id="discountFilter">
+                            <option value="">Все</option>
+                            <option value="0">0% (Стандарт)</option>
+                            <option value="10">10% (Bronze)</option>
+                            <option value="15">15% (Silver)</option>
+                            <option value="20">20% (Gold)</option>
+                            <option value="25">25% (Platinum)</option>
+                            <option value="30">30% (Diamond)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">&nbsp;</label>
+                        <button class="btn btn-primary w-100" onclick="applyFilters()">
+                            <i class="bi bi-funnel"></i> Применить
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users Table -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-people"></i> Список пользователей</span>
+                <span class="badge bg-primary" id="usersCount">0</span>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Роль</th>
+                                <th>Баланс</th>
+                                <th>Потрачено</th>
+                                <th>Скидка</th>
+                                <th>Последний вход</th>
+                                <th>Регистрация</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <tr>
+                                <td colspan="10" class="text-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Загрузка...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <nav>
+                    <ul class="pagination justify-content-center" id="pagination">
+                        <!-- Pagination will be generated by JS -->
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- Adjust Balance Modal -->
+    <div class="modal fade" id="adjustBalanceModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Корректировка баланса</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="adjustUserId">
+
+                    <div class="mb-3">
+                        <label class="form-label">Пользователь</label>
+                        <input type="text" class="form-control" id="adjustUsername" readonly>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Текущий баланс</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="text" class="form-control" id="adjustCurrentBalance" readonly>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Сумма корректировки</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="adjustAmount" step="0.01" placeholder="0.00" required>
+                        </div>
+                        <div class="form-text">
+                            Положительное значение = пополнение<br>
+                            Отрицательное значение = списание
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Причина</label>
+                        <textarea class="form-control" id="adjustReason" rows="3" placeholder="Опишите причину корректировки баланса" required></textarea>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <strong>Новый баланс:</strong> $<span id="adjustNewBalance">0.00</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmAdjustBalance()">
+                        <i class="bi bi-check-circle"></i> Применить
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Transactions Modal -->
+    <div class="modal fade" id="userTransactionsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">История транзакций - <span id="transactionsUsername"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Тип</th>
+                                    <th>Сумма</th>
+                                    <th>Баланс до</th>
+                                    <th>Баланс после</th>
+                                    <th>Описание</th>
+                                    <th>Дата</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userTransactionsBody">
+                                <tr>
+                                    <td colspan="7" class="text-center">Загрузка...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/admin-users.js"></script>
+</body>
+</html>

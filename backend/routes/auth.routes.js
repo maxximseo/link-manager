@@ -17,7 +17,22 @@ const loginLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Rate limiting for registration
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5, // Max 5 registration attempts per hour
+  message: 'Too many registration attempts, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Login endpoint
 router.post('/login', loginLimiter, authController.login);
+
+// Register endpoint
+router.post('/register', registerLimiter, authController.register);
+
+// Verify email endpoint
+router.get('/verify-email/:token', authController.verifyEmail);
 
 module.exports = router;

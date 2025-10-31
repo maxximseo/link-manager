@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ Dashboard - Link Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/admin-dashboard.html">🔗 Link Manager Admin</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item"><a class="nav-link active" href="/admin-dashboard.html">Админ Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/admin-users.html">Пользователи</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/sites.html">Мои сайты</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/admin-placements.html">Размещения</a></li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <span class="navbar-text me-3">
+                            <i class="bi bi-person-badge"></i> Администратор
+                        </span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="logout()">Выход</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>📊 Админ Dashboard</h1>
+            <div class="btn-group" role="group">
+                <input type="radio" class="btn-check" name="period" id="periodDay" value="day">
+                <label class="btn btn-outline-primary" for="periodDay">День</label>
+
+                <input type="radio" class="btn-check" name="period" id="periodWeek" value="week" checked>
+                <label class="btn btn-outline-primary" for="periodWeek">Неделя</label>
+
+                <input type="radio" class="btn-check" name="period" id="periodMonth" value="month">
+                <label class="btn btn-outline-primary" for="periodMonth">Месяц</label>
+
+                <input type="radio" class="btn-check" name="period" id="periodYear" value="year">
+                <label class="btn btn-outline-primary" for="periodYear">Год</label>
+            </div>
+        </div>
+
+        <!-- Revenue Stats -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card border-success">
+                    <div class="card-body text-center">
+                        <h6 class="card-subtitle mb-2 text-muted">Доход за день</h6>
+                        <h2 class="text-success mb-0">$<span id="revenueDay">0.00</span></h2>
+                        <small class="text-muted">Транзакций: <span id="transactionsDay">0</span></small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-primary">
+                    <div class="card-body text-center">
+                        <h6 class="card-subtitle mb-2 text-muted">Доход за неделю</h6>
+                        <h2 class="text-primary mb-0">$<span id="revenueWeek">0.00</span></h2>
+                        <small class="text-muted">Транзакций: <span id="transactionsWeek">0</span></small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-warning">
+                    <div class="card-body text-center">
+                        <h6 class="card-subtitle mb-2 text-muted">Доход за месяц</h6>
+                        <h2 class="text-warning mb-0">$<span id="revenueMonth">0.00</span></h2>
+                        <small class="text-muted">Транзакций: <span id="transactionsMonth">0</span></small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-info">
+                    <div class="card-body text-center">
+                        <h6 class="card-subtitle mb-2 text-muted">Доход за год</h6>
+                        <h2 class="text-info mb-0">$<span id="revenueYear">0.00</span></h2>
+                        <small class="text-muted">Транзакций: <span id="transactionsYear">0</span></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Доходы по типам</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="revenueByTypeChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Динамика доходов (7 дней)</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="revenueTimelineChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Placements Stats -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Статистика размещений</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="stat-card">
+                                    <h3 id="totalPlacements">0</h3>
+                                    <p>Всего размещений</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card primary">
+                                    <h3 id="linkPlacements">0</h3>
+                                    <p>Ссылок на главной</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card success">
+                                    <h3 id="articlePlacements">0</h3>
+                                    <p>Гест-постов</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card warning">
+                                    <h3 id="scheduledPlacements">0</h3>
+                                    <p>Запланированных</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Purchases -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Последние покупки</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Дата</th>
+                                        <th>Пользователь</th>
+                                        <th>Проект</th>
+                                        <th>Тип</th>
+                                        <th>Сайт</th>
+                                        <th>Цена</th>
+                                        <th>Скидка</th>
+                                        <th>Статус</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentPurchasesTable">
+                                    <tr>
+                                        <td colspan="8" class="text-center text-muted">Загрузка...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Stats -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Пользователи</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="stat-card">
+                                    <h3 id="newUsers">0</h3>
+                                    <p>Новых за период</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="stat-card info">
+                                    <h3>$<span id="totalUserBalance">0.00</span></h3>
+                                    <p>Общий баланс пользователей</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="stat-card success">
+                                    <h3>$<span id="totalUserSpending">0.00</span></h3>
+                                    <p>Всего потрачено пользователями</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/admin-dashboard.js"></script>
+</body>
+</html>

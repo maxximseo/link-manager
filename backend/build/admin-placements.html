@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Все размещения - Link Manager Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/admin-dashboard.html">🔗 Link Manager Admin</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item"><a class="nav-link" href="/admin-dashboard.html">Админ Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/admin-users.html">Пользователи</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/sites.html">Мои сайты</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="/admin-placements.html">Размещения</a></li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <span class="navbar-text me-3">
+                            <i class="bi bi-person-badge"></i> Администратор
+                        </span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="logout()">Выход</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>📦 Все размещения</h1>
+            <div class="btn-group">
+                <button class="btn btn-success" onclick="exportPlacements('csv')">
+                    <i class="bi bi-file-earmark-spreadsheet"></i> CSV
+                </button>
+                <button class="btn btn-primary" onclick="exportPlacements('json')">
+                    <i class="bi bi-filetype-json"></i> JSON
+                </button>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card border-primary">
+                    <div class="card-body text-center">
+                        <h6 class="card-subtitle mb-2 text-muted">Всего размещений</h6>
+                        <h2 class="text-primary mb-0" id="totalPlacements">0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-success">
+                    <div class="card-body text-center">
+                        <h6 class="card-subtitle mb-2 text-muted">Активных</h6>
+                        <h2 class="text-success mb-0" id="activePlacements">0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-warning">
+                    <div class="card-body text-center">
+                        <h6 class="card-subtitle mb-2 text-muted">С автопродлением</h6>
+                        <h2 class="text-warning mb-0" id="autoRenewalPlacements">0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-info">
+                    <div class="card-body text-center">
+                        <h6 class="card-subtitle mb-2 text-muted">Запланированных</h6>
+                        <h2 class="text-info mb-0" id="scheduledPlacements">0</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-2">
+                        <label class="form-label">Тип</label>
+                        <select class="form-select" id="typeFilter">
+                            <option value="">Все</option>
+                            <option value="link">Ссылки</option>
+                            <option value="article">Статьи</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Статус</label>
+                        <select class="form-select" id="statusFilter">
+                            <option value="">Все</option>
+                            <option value="placed">Размещено</option>
+                            <option value="scheduled">Запланировано</option>
+                            <option value="expired">Истекло</option>
+                            <option value="pending">Ожидание</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Пользователь</label>
+                        <input type="text" class="form-control" id="userFilter" placeholder="Username">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Сайт</label>
+                        <input type="text" class="form-control" id="siteFilter" placeholder="URL сайта">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Дата от</label>
+                        <input type="date" class="form-control" id="dateFrom">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Дата до</label>
+                        <input type="date" class="form-control" id="dateTo">
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <button class="btn btn-primary" onclick="applyFilters()">
+                            <i class="bi bi-funnel"></i> Применить фильтры
+                        </button>
+                        <button class="btn btn-secondary" onclick="resetFilters()">
+                            <i class="bi bi-x-circle"></i> Сбросить
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Placements Table -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-list-ul"></i> Список размещений</span>
+                <span class="badge bg-primary" id="placementsCount">0</span>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Пользователь</th>
+                                <th>Проект</th>
+                                <th>Сайт</th>
+                                <th>Тип</th>
+                                <th>Цена</th>
+                                <th>Скидка</th>
+                                <th>Итого</th>
+                                <th>Дата покупки</th>
+                                <th>Истекает</th>
+                                <th>Автопродление</th>
+                                <th>Статус</th>
+                            </tr>
+                        </thead>
+                        <tbody id="placementsTableBody">
+                            <tr>
+                                <td colspan="12" class="text-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Загрузка...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <nav>
+                    <ul class="pagination justify-content-center" id="pagination">
+                        <!-- Pagination will be generated by JS -->
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- Placement Details Modal -->
+    <div class="modal fade" id="placementDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Детали размещения #<span id="detailsId"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="detailsBody">
+                    <!-- Details will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/admin-placements.js"></script>
+</body>
+</html>
