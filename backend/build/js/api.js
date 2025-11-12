@@ -79,7 +79,7 @@ const PlacementsAPI = {
         return response.data || response; // Extract data array if paginated
     },
     get: (id) => apiCall(`/placements/${id}`),
-    create: (data) => apiCall('/placements', { method: 'POST', body: JSON.stringify(data) }),
+    // REMOVED: create - endpoint deprecated (410 Gone), use BillingAPI.purchase instead
     // REMOVED: createBatch - use BillingAPI.purchase instead
     update: (id, data) => apiCall(`/placements/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id) => apiCall(`/placements/${id}`, { method: 'DELETE' }),
