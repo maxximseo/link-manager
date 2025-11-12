@@ -191,9 +191,9 @@ const purchasePlacement = async ({
       throw new Error('Project not found or unauthorized');
     }
 
-    // 3. Validate site exists
+    // 3. Validate site exists AND lock for quota check (prevent race condition)
     const siteResult = await client.query(
-      'SELECT * FROM sites WHERE id = $1',
+      'SELECT * FROM sites WHERE id = $1 FOR UPDATE',
       [siteId]
     );
 
@@ -203,7 +203,7 @@ const purchasePlacement = async ({
 
     const site = siteResult.rows[0];
 
-    // 4. CRITICAL FIX (BUG #5): Check site quotas BEFORE creating placement
+    // 4. CRITICAL FIX (BUG #5): Check site quotas BEFORE creating placement (with lock to prevent race condition)
     if (type === 'link' && site.used_links >= site.max_links) {
       throw new Error(
         `Site "${site.site_name}" has reached its link limit (${site.used_links}/${site.max_links} used). ` +
@@ -246,11 +246,12 @@ const purchasePlacement = async ({
     const tableName = type === 'link' ? 'project_links' : 'project_articles';
 
     for (const contentId of contentIds) {
-      // Check if content exists AND belongs to user AND is not exhausted
+      // Check if content exists AND belongs to user AND is not exhausted (lock to prevent race condition)
       const contentResult = await client.query(`
         SELECT id, project_id, usage_count, usage_limit, status
         FROM ${tableName}
         WHERE id = $1
+        FOR UPDATE
       `, [contentId]);
 
       // TEST 1: Non-existent contentId
