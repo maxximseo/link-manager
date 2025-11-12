@@ -19,7 +19,7 @@
                 <ul class="navbar-nav">
                     <li class="nav-item"><a class="nav-link" href="/dashboard.html">Dashboard</a></li>
                     <li class="nav-item"><a class="nav-link active" href="/projects.html">Проекты</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/my-placements.html">Размещения</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/placements.html">Размещения</a></li>
                     <li class="nav-item"><a class="nav-link" href="/balance.html">Баланс</a></li>
                     <li class="nav-item"><a class="nav-link" href="/sites.html">Сайты</a></li>
                 </ul>
@@ -66,6 +66,11 @@
                         <div class="mb-3">
                             <label for="projectName" class="form-label">Название проекта</label>
                             <input type="text" class="form-control" id="projectName" required placeholder="Введите название">
+                        </div>
+                        <div class="mb-3">
+                            <label for="projectUrl" class="form-label">URL главного сайта</label>
+                            <input type="url" class="form-control" id="projectUrl" placeholder="https://example.com">
+                            <small class="text-muted">Опционально</small>
                         </div>
                     </form>
                 </div>
@@ -168,6 +173,7 @@
             document.getElementById('modalTitle').textContent = 'Редактировать проект';
             document.getElementById('projectId').value = project.id;
             document.getElementById('projectName').value = project.name;
+            document.getElementById('projectUrl').value = project.main_site_url || '';
             document.getElementById('projectModal').classList.add('show');
         }
 
@@ -179,6 +185,7 @@
         async function saveProject() {
             const id = document.getElementById('projectId').value;
             const name = document.getElementById('projectName').value.trim();
+            const url = document.getElementById('projectUrl').value.trim();
 
             if (!name) {
                 showNotification('Введите название проекта', 'error');
@@ -186,7 +193,8 @@
             }
 
             const data = {
-                name: name
+                name: name,
+                main_site_url: url || null
             };
 
             const saveBtn = document.getElementById('saveBtn');
