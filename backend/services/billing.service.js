@@ -213,17 +213,53 @@ const purchasePlacement = async ({
       throw new Error(`A ${type} placement already exists for this project on this site`);
     }
 
-    // 5. Calculate price
+    // 5. CRITICAL FIX: Validate contentIds BEFORE charging money
+    if (!contentIds || contentIds.length === 0) {
+      throw new Error('At least one content ID is required');
+    }
+
+    for (const contentId of contentIds) {
+      const tableName = type === 'link' ? 'project_links' : 'project_articles';
+
+      const contentResult = await client.query(`
+        SELECT id, project_id, usage_count, usage_limit, status
+        FROM ${tableName}
+        WHERE id = $1
+      `, [contentId]);
+
+      if (contentResult.rows.length === 0) {
+        throw new Error(`${type} with ID ${contentId} not found`);
+      }
+
+      const content = contentResult.rows[0];
+
+      // Check ownership
+      if (content.project_id !== projectId) {
+        throw new Error(`${type} ${contentId} does not belong to project ${projectId}`);
+      }
+
+      // Check availability
+      if (content.usage_count >= content.usage_limit) {
+        throw new Error(`${type} ${contentId} is exhausted (used ${content.usage_count}/${content.usage_limit} times)`);
+      }
+
+      // Check status
+      if (content.status === 'deleted' || content.status === 'exhausted') {
+        throw new Error(`${type} ${contentId} is not available (status: ${content.status})`);
+      }
+    }
+
+    // 6. Calculate price
     const basePrice = type === 'link' ? PRICING.LINK_HOMEPAGE : PRICING.ARTICLE_GUEST_POST;
     const discount = user.current_discount || 0;
     const finalPrice = basePrice * (1 - discount / 100);
 
-    // 6. Check balance
+    // 7. Check balance
     if (parseFloat(user.balance) < finalPrice) {
       throw new Error(`Insufficient balance. Required: $${finalPrice.toFixed(2)}, Available: $${user.balance}`);
     }
 
-    // 7. Deduct from balance
+    // 8. Deduct from balance
     const newBalance = parseFloat(user.balance) - finalPrice;
     const newTotalSpent = parseFloat(user.total_spent) + finalPrice;
 
@@ -232,7 +268,7 @@ const purchasePlacement = async ({
       [newBalance, newTotalSpent, userId]
     );
 
-    // 8. Create transaction
+    // 9. Create transaction
     const transactionResult = await client.query(`
       INSERT INTO transactions (
         user_id, type, amount, balance_before, balance_after, description, metadata
@@ -250,7 +286,7 @@ const purchasePlacement = async ({
 
     const transactionId = transactionResult.rows[0].id;
 
-    // 9. Calculate expiry date (only for links)
+    // 10. Calculate expiry date (only for links)
     let expiresAt = null;
     let renewalPrice = null;
 
@@ -263,7 +299,7 @@ const purchasePlacement = async ({
       renewalPrice = basePrice * (1 - PRICING.BASE_RENEWAL_DISCOUNT / 100) * (1 - discount / 100);
     }
 
-    // 10. Parse scheduled date
+    // 11. Parse scheduled date
     let scheduledPublishDate = null;
     let status = 'pending';
 
@@ -283,7 +319,7 @@ const purchasePlacement = async ({
       }
     }
 
-    // 11. Create placement
+    // 12. Create placement
     const placementResult = await client.query(`
       INSERT INTO placements (
         user_id, project_id, site_id, type,
@@ -304,7 +340,7 @@ const purchasePlacement = async ({
 
     const placement = placementResult.rows[0];
 
-    // 12. Link content (links or articles)
+    // 13. Link content (links or articles)
     for (const contentId of contentIds) {
       const columnName = type === 'link' ? 'link_id' : 'article_id';
       await client.query(`
@@ -322,7 +358,7 @@ const purchasePlacement = async ({
       `, [contentId]);
     }
 
-    // 13. Update site quotas
+    // 14. Update site quotas
     if (type === 'link') {
       await client.query(
         'UPDATE sites SET used_links = used_links + 1 WHERE id = $1',
@@ -335,7 +371,7 @@ const purchasePlacement = async ({
       );
     }
 
-    // 14. Update discount tier if needed
+    // 15. Update discount tier if needed
     const newTier = await calculateDiscountTier(newTotalSpent);
     if (newTier.discount !== user.current_discount) {
       await client.query(
@@ -354,21 +390,24 @@ const purchasePlacement = async ({
       ]);
     }
 
-    // 15. If not scheduled, publish immediately
+    // 16. If not scheduled, publish immediately
     if (status === 'pending') {
       try {
         await publishPlacement(client, placement.id);
       } catch (publishError) {
-        logger.error('Failed to publish placement immediately', { placementId: placement.id, error: publishError.message });
-        // Don't rollback transaction, just mark as failed
-        await client.query(
-          'UPDATE placements SET status = $1 WHERE id = $2',
-          ['failed', placement.id]
-        );
+        logger.error('Failed to publish placement - ROLLING BACK transaction', {
+          placementId: placement.id,
+          userId,
+          error: publishError.message
+        });
+
+        // CRITICAL FIX: ROLLBACK transaction to refund user's money
+        await client.query('ROLLBACK');
+        throw new Error(`Failed to publish placement: ${publishError.message}. Your balance has not been charged.`);
       }
     }
 
-    // 16. Create audit log
+    // 17. Create audit log
     await client.query(`
       INSERT INTO audit_log (user_id, action, details)
       VALUES ($1, 'purchase_placement', $2)
