@@ -25,6 +25,18 @@ const generalLimiter = rateLimit({
 // Apply auth middleware to all routes
 router.use(authMiddleware);
 
+// TEST 6: Legacy endpoint - 410 Gone
+// Old placement creation endpoint is deprecated in favor of billing system
+router.post('/', (req, res) => {
+  res.status(410).json({
+    error: 'This endpoint is deprecated and no longer available',
+    message: 'Placement creation has been moved to the billing system',
+    newEndpoint: 'POST /api/billing/purchase',
+    migration: 'Please use the new billing API to purchase placements',
+    documentation: 'See API docs for migration guide'
+  });
+});
+
 // Placement routes - batch-only approach
 router.get('/', generalLimiter, placementController.getPlacements);
 router.get('/statistics', generalLimiter, placementController.getStatistics); // Must be before /:id

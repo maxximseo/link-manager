@@ -437,9 +437,9 @@ const deletePlacement = async (placementId, userId) => {
     // Begin transaction
     await client.query('BEGIN');
 
-    // First lock the placement row, then get details
+    // First lock the placement row, then get details including price for refund
     const lockResult = await client.query(`
-      SELECT p.id, p.site_id, p.project_id
+      SELECT p.id, p.site_id, p.project_id, p.user_id, p.final_price, p.purchased_at
       FROM placements p
       LEFT JOIN sites s ON p.site_id = s.id
       LEFT JOIN projects proj ON p.project_id = proj.id
@@ -451,6 +451,9 @@ const deletePlacement = async (placementId, userId) => {
       await client.query('ROLLBACK');
       return false;
     }
+
+    const placementData = lockResult.rows[0];
+    const refundAmount = parseFloat(placementData.final_price) || 0;
 
     // Now get the placement content details (no lock needed, it's protected by placement lock)
     const placementInfo = await client.query(`
@@ -525,6 +528,48 @@ const deletePlacement = async (placementId, userId) => {
                 END
             WHERE id = $1
           `, [articleId]);
+        }
+      }
+
+      // TEST 5: Refund money on placement deletion
+      if (refundAmount > 0) {
+        // Get user balance with lock
+        const userResult = await client.query(
+          'SELECT balance, total_spent FROM users WHERE id = $1 FOR UPDATE',
+          [placementData.user_id]
+        );
+
+        if (userResult.rows.length > 0) {
+          const currentBalance = parseFloat(userResult.rows[0].balance);
+          const newBalance = currentBalance + refundAmount;
+
+          // Update user balance
+          await client.query(
+            'UPDATE users SET balance = $1, updated_at = NOW() WHERE id = $2',
+            [newBalance, placementData.user_id]
+          );
+
+          // Create refund transaction record
+          await client.query(`
+            INSERT INTO transactions (
+              user_id, type, amount, balance_before, balance_after, description, metadata
+            )
+            VALUES ($1, 'refund', $2, $3, $4, $5, $6)
+          `, [
+            placementData.user_id,
+            refundAmount,
+            currentBalance,
+            newBalance,
+            `Refund for deleted placement #${placementId}`,
+            JSON.stringify({ placementId, refundAmount, deletedAt: new Date().toISOString() })
+          ]);
+
+          logger.info('Refund processed for deleted placement', {
+            placementId,
+            userId: placementData.user_id,
+            refundAmount,
+            newBalance
+          });
         }
       }
 
