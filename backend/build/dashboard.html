@@ -141,9 +141,12 @@
                 // Fetch all placements
                 const allPlacements = await PlacementsAPI.getAll();
 
+                // Ensure allPlacements is an array
+                const placementsArray = Array.isArray(allPlacements) ? allPlacements : [];
+
                 // Calculate statistics per project
                 const projectStats = projects.map(project => {
-                    const projectPlacements = allPlacements.data.filter(p => p.project_id === project.id);
+                    const projectPlacements = placementsArray.filter(p => p.project_id === project.id);
 
                     const totalSpent = projectPlacements.reduce((sum, p) => sum + parseFloat(p.final_price || 0), 0);
                     const activePlacements = projectPlacements.filter(p => p.status === 'placed' && !p.scheduled_date).length;
