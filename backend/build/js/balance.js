@@ -397,8 +397,8 @@ function showAlert(message, type = 'info') {
 }
 
 /**
- * Get auth token
+ * Get auth token (with fallback for old key)
  */
 function getToken() {
-    return localStorage.getItem('token');
+    return localStorage.getItem('token') || localStorage.getItem('authToken');
 }
