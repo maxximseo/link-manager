@@ -80,9 +80,35 @@ const PlacementsAPI = {
     },
     get: (id) => apiCall(`/placements/${id}`),
     create: (data) => apiCall('/placements', { method: 'POST', body: JSON.stringify(data) }),
-    createBatch: (data) => apiCall('/placements/batch/create', { method: 'POST', body: JSON.stringify(data) }),
+    // REMOVED: createBatch - use BillingAPI.purchase instead
     update: (id, data) => apiCall(`/placements/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id) => apiCall(`/placements/${id}`, { method: 'DELETE' }),
     getStatistics: () => apiCall('/placements/statistics'),
     getAvailableSites: (projectId) => apiCall(`/placements/available-sites/${projectId}`)
+};
+
+// Billing API
+const BillingAPI = {
+    getBalance: () => apiCall('/billing/balance'),
+    deposit: (amount, description) => apiCall('/billing/deposit', {
+        method: 'POST',
+        body: JSON.stringify({ amount, description })
+    }),
+    getTransactions: (filters = {}) => {
+        const params = new URLSearchParams(filters);
+        return apiCall(`/billing/transactions?${params}`);
+    },
+    getPricing: () => apiCall('/billing/pricing'),
+    getDiscountTiers: () => apiCall('/billing/discount-tiers'),
+    purchase: (data) => apiCall('/billing/purchase', {
+        method: 'POST',
+        body: JSON.stringify(data)
+    }),
+    renewPlacement: (placementId) => apiCall(`/billing/renew/${placementId}`, {
+        method: 'POST'
+    }),
+    toggleAutoRenewal: (placementId, enabled) => apiCall(`/billing/auto-renewal/${placementId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ enabled })
+    })
 };

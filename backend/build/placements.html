@@ -807,34 +807,44 @@
                 return;
             }
 
-            // Build placement data with specific assignments
-            const placements = [];
+            // Build placement purchases with specific assignments
+            const purchases = [];
             for (const [siteId, assignment] of Object.entries(siteAssignments)) {
-                const placementData = {
-                    project_id: projectId,
-                    site_ids: [parseInt(siteId)],
-                    link_ids: selectedContentType === 'links' ? [assignment.contentId] : [],
-                    article_ids: selectedContentType === 'articles' ? [assignment.contentId] : []
+                const purchaseData = {
+                    projectId: projectId,
+                    siteId: parseInt(siteId),
+                    type: selectedContentType === 'links' ? 'link' : 'article',
+                    contentIds: [assignment.contentId]
                 };
-                placements.push(placementData);
+                purchases.push(purchaseData);
             }
 
             try {
-                // Process each placement
+                // Process each purchase through billing API
                 let successful = 0;
                 let failed = 0;
+                const errors = [];
 
-                for (const data of placements) {
+                for (const data of purchases) {
                     try {
-                        await PlacementsAPI.createBatch(data);
+                        await BillingAPI.purchase(data);
                         successful++;
                     } catch (error) {
                         failed++;
-                        console.error('Failed placement:', error);
+                        errors.push({ siteId: data.siteId, error: error.message });
+                        console.error('Failed placement purchase:', error);
                     }
                 }
 
-                showNotification(`Placements created: ${successful} successful, ${failed} failed`);
+                // Show results
+                if (errors.length > 0) {
+                    const errorMessages = errors.map(e => `Site ID ${e.siteId}: ${e.error}`).join('\n');
+                    showNotification(`Placements: ${successful} successful, ${failed} failed. Check console for details.`,
+                        failed > 0 ? 'error' : 'success');
+                    console.error('Placement errors:', errorMessages);
+                } else {
+                    showNotification(`Successfully created ${successful} placements!`, 'success');
+                }
 
                 // Reset form
                 document.getElementById('projectSelect').value = '';
@@ -848,36 +858,8 @@
             }
         }
 
-        async function createPlacementAsync(data) {
-            try {
-                // Start async job
-                const response = await fetch('/api/placements/batch/async', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${getAuthToken()}`
-                    },
-                    body: JSON.stringify(data)
-                });
-
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Failed to start async placement');
-                }
-
-                const job = await response.json();
-                currentJobId = job.job_id;
-
-                // Hide placement modal and show progress modal
-                modal.hide();
-                showProgressModal(job);
-
-                // Start polling for job status
-                startJobPolling(job.job_id);
-            } catch (error) {
-                showNotification('Failed to create async placement: ' + error.message, 'error');
-            }
-        }
+        // REMOVED: createPlacementAsync - Old batch async system no longer supported
+        // Billing system processes purchases individually through BillingAPI.purchase
 
         function showProgressModal(job) {
             // Reset progress UI

@@ -737,6 +737,143 @@ const getPricingForUser = async (userId) => {
   }
 };
 
+/**
+ * Refund a placement deletion
+ * Called when a paid placement is deleted
+ */
+const refundPlacement = async (placementId, userId) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    // Get placement with billing data and lock it
+    const placementResult = await client.query(`
+      SELECT
+        p.id,
+        p.user_id,
+        p.project_id,
+        p.site_id,
+        p.type,
+        p.final_price,
+        p.original_price,
+        p.discount_applied,
+        p.purchase_transaction_id,
+        p.placed_at,
+        s.site_name,
+        proj.name as project_name
+      FROM placements p
+      LEFT JOIN sites s ON p.site_id = s.id
+      LEFT JOIN projects proj ON p.project_id = proj.id
+      WHERE p.id = $1 AND p.user_id = $2
+      FOR UPDATE OF p
+    `, [placementId, userId]);
+
+    if (placementResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      throw new Error('Placement not found or unauthorized');
+    }
+
+    const placement = placementResult.rows[0];
+
+    // Check if it's a paid placement
+    const finalPrice = parseFloat(placement.final_price || 0);
+
+    if (finalPrice <= 0) {
+      // Free placement, no refund needed
+      await client.query('ROLLBACK');
+      return { refunded: false, amount: 0, reason: 'No payment made for this placement' };
+    }
+
+    // Get user balance with lock
+    const userResult = await client.query(
+      'SELECT id, balance FROM users WHERE id = $1 FOR UPDATE',
+      [userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      throw new Error('User not found');
+    }
+
+    const user = userResult.rows[0];
+    const balanceBefore = parseFloat(user.balance);
+    const balanceAfter = balanceBefore + finalPrice;
+
+    // Refund the amount
+    await client.query(
+      'UPDATE users SET balance = $1 WHERE id = $2',
+      [balanceAfter, userId]
+    );
+
+    // Create refund transaction
+    const transactionResult = await client.query(`
+      INSERT INTO transactions (
+        user_id, type, amount, balance_before, balance_after,
+        description, related_placement_id
+      ) VALUES ($1, 'refund', $2, $3, $4, $5, $6)
+      RETURNING id, created_at
+    `, [
+      userId,
+      finalPrice, // Positive amount for refund
+      balanceBefore,
+      balanceAfter,
+      `Refund for ${placement.type} placement on ${placement.site_name} (${placement.project_name})`,
+      placementId
+    ]);
+
+    const transaction = transactionResult.rows[0];
+
+    // Add audit log
+    await client.query(`
+      INSERT INTO audit_log (
+        user_id, action, entity_type, entity_id, details
+      ) VALUES ($1, 'placement_refund', 'placement', $2, $3)
+    `, [
+      userId,
+      placementId,
+      JSON.stringify({
+        refund_amount: finalPrice,
+        original_price: placement.original_price,
+        discount_applied: placement.discount_applied,
+        transaction_id: transaction.id,
+        site_name: placement.site_name,
+        project_name: placement.project_name,
+        type: placement.type
+      })
+    ]);
+
+    await client.query('COMMIT');
+
+    logger.info('Placement refunded successfully', {
+      placementId,
+      userId,
+      refundAmount: finalPrice,
+      newBalance: balanceAfter,
+      transactionId: transaction.id
+    });
+
+    return {
+      refunded: true,
+      amount: finalPrice,
+      newBalance: balanceAfter,
+      transactionId: transaction.id,
+      transactionDate: transaction.created_at
+    };
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    logger.error('Failed to refund placement', {
+      placementId,
+      userId,
+      error: error.message
+    });
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
 module.exports = {
   PRICING,
   getUserBalance,
@@ -747,5 +884,6 @@ module.exports = {
   renewPlacement,
   toggleAutoRenewal,
   getUserTransactions,
-  getPricingForUser
+  getPricingForUser,
+  refundPlacement
 };
