@@ -132,31 +132,84 @@ async function processScheduledPlacements() {
           stack: error.stack
         });
 
-        // Update placement status to failed
+        // CRITICAL FIX (BUG #6): Refund money on scheduled placement failure
         try {
-          await query(`
-            UPDATE placements
-            SET status = 'failed',
-                updated_at = NOW()
+          // Get placement details for refund
+          const placementResult = await query(`
+            SELECT final_price, user_id
+            FROM placements
             WHERE id = $1
           `, [placement.id]);
 
-          // Send notification about failure
-          await query(`
-            INSERT INTO notifications (user_id, type, title, message)
-            VALUES ($1, 'placement_failed', $2, $3)
-          `, [
-            placement.user_id,
-            'Ошибка публикации',
-            `Не удалось опубликовать запланированное размещение #${placement.id}. ` +
-            `Причина: ${error.message}. Пожалуйста, свяжитесь с поддержкой.`
-          ]);
+          const placementData = placementResult.rows[0];
+          const refundAmount = parseFloat(placementData.final_price || 0);
 
-        } catch (notifyError) {
-          logger.error('Failed to send notification about failed placement', {
+          if (refundAmount > 0) {
+            // Use atomic delete and refund operation from billing service
+            const billingService = require('../services/billing.service');
+            await billingService.deleteAndRefundPlacement(placement.id, placementData.user_id);
+
+            logger.info('Scheduled placement failed - automatic refund issued', {
+              placementId: placement.id,
+              userId: placementData.user_id,
+              refundAmount
+            });
+
+            // Send notification about failure WITH refund
+            await query(`
+              INSERT INTO notifications (user_id, type, title, message)
+              VALUES ($1, 'placement_failed_refund', $2, $3)
+            `, [
+              placement.user_id,
+              'Возврат средств за неудавшееся размещение',
+              `Запланированное размещение #${placement.id} не удалось опубликовать. ` +
+              `Причина: ${error.message}. ` +
+              `Сумма $${refundAmount.toFixed(2)} автоматически возвращена на ваш баланс.`
+            ]);
+
+          } else {
+            // No refund needed (free placement or already refunded)
+            await query(`
+              UPDATE placements
+              SET status = 'failed',
+                  updated_at = NOW()
+              WHERE id = $1
+            `, [placement.id]);
+
+            // Send notification about failure (no refund)
+            await query(`
+              INSERT INTO notifications (user_id, type, title, message)
+              VALUES ($1, 'placement_failed', $2, $3)
+            `, [
+              placement.user_id,
+              'Ошибка публикации',
+              `Не удалось опубликовать запланированное размещение #${placement.id}. ` +
+              `Причина: ${error.message}.`
+            ]);
+          }
+
+        } catch (refundError) {
+          logger.error('Failed to refund scheduled placement', {
             placementId: placement.id,
-            error: notifyError.message
+            userId: placement.user_id,
+            error: refundError.message,
+            stack: refundError.stack
           });
+
+          // Fallback: at least mark as failed
+          try {
+            await query(`
+              UPDATE placements
+              SET status = 'failed',
+                  updated_at = NOW()
+              WHERE id = $1
+            `, [placement.id]);
+          } catch (updateError) {
+            logger.error('Failed to update placement status to failed', {
+              placementId: placement.id,
+              error: updateError.message
+            });
+          }
         }
 
         failCount++;
