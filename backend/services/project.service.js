@@ -32,6 +32,7 @@ const getUserProjects = async (userId, page = 1, limit = 20) => {
         p.id,
         p.user_id,
         p.name,
+        p.main_site_url,
         p.created_at,
         COALESCE(ps.links_count, 0) as links_count,
         COALESCE(ps.articles_count, 0) as articles_count,
@@ -77,7 +78,7 @@ const getProjectWithDetails = async (projectId, userId) => {
   try {
     // Get project
     const projectResult = await query(
-      'SELECT id, user_id, name, created_at FROM projects WHERE id = $1 AND user_id = $2',
+      'SELECT id, user_id, name, main_site_url, created_at FROM projects WHERE id = $1 AND user_id = $2',
       [projectId, userId]
     );
 
@@ -113,11 +114,11 @@ const getProjectWithDetails = async (projectId, userId) => {
 // Create new project
 const createProject = async (data) => {
   try {
-    const { name, userId } = data;
+    const { name, userId, main_site_url } = data;
 
     const result = await query(
-      'INSERT INTO projects (name, user_id) VALUES ($1, $2) RETURNING id, user_id, name, created_at',
-      [name, userId]
+      'INSERT INTO projects (name, user_id, main_site_url) VALUES ($1, $2, $3) RETURNING id, user_id, name, main_site_url, created_at',
+      [name, userId, main_site_url || null]
     );
 
     return result.rows[0];
@@ -130,11 +131,15 @@ const createProject = async (data) => {
 // Update project
 const updateProject = async (projectId, userId, data) => {
   try {
-    const { name } = data;
+    const { name, main_site_url } = data;
 
     const result = await query(
-      'UPDATE projects SET name = $1 WHERE id = $2 AND user_id = $3 RETURNING id, user_id, name, created_at',
-      [name, projectId, userId]
+      `UPDATE projects
+       SET name = COALESCE($1, name),
+           main_site_url = COALESCE($2, main_site_url)
+       WHERE id = $3 AND user_id = $4
+       RETURNING id, user_id, name, main_site_url, created_at`,
+      [name, main_site_url, projectId, userId]
     );
 
     return result.rows.length > 0 ? result.rows[0] : null;
