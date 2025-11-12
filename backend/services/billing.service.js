@@ -579,6 +579,34 @@ const renewPlacement = async (placementId, userId, isAutoRenewal = false) => {
       [newBalance, newTotalSpent, userId]
     );
 
+    // CRITICAL FIX (BUG #12): Recalculate discount tier after renewal
+    // User may qualify for higher tier after total_spent increase from renewal
+    const newTier = await calculateDiscountTier(newTotalSpent);
+    if (newTier.discount !== personalDiscount) {
+      await client.query(
+        'UPDATE users SET current_discount = $1 WHERE id = $2',
+        [newTier.discount, userId]
+      );
+
+      logger.info('Discount tier upgraded after renewal', {
+        userId,
+        oldDiscount: personalDiscount,
+        newDiscount: newTier.discount,
+        newTier: newTier.tier,
+        totalSpent: newTotalSpent
+      });
+
+      // Notify user about tier upgrade
+      await client.query(`
+        INSERT INTO notifications (user_id, type, title, message)
+        VALUES ($1, 'discount_tier_achieved', $2, $3)
+      `, [
+        userId,
+        'Новый уровень скидки!',
+        `Поздравляем! Вы достигли уровня "${newTier.tier}" со скидкой ${newTier.discount}%`
+      ]);
+    }
+
     // 6. Create transaction
     const transactionType = isAutoRenewal ? 'auto_renewal' : 'renewal';
     const transactionResult = await client.query(`
@@ -991,7 +1019,7 @@ const deleteAndRefundPlacement = async (placementId, userId) => {
     if (finalPrice > 0) {
       // Get user with lock
       const userResult = await client.query(
-        'SELECT id, balance FROM users WHERE id = $1 FOR UPDATE',
+        'SELECT id, balance, total_spent, current_discount FROM users WHERE id = $1 FOR UPDATE',
         [userId]
       );
 
@@ -1004,11 +1032,44 @@ const deleteAndRefundPlacement = async (placementId, userId) => {
       const balanceBefore = parseFloat(user.balance);
       const balanceAfter = balanceBefore + finalPrice;
 
-      // Refund money
+      // CRITICAL FIX (BUG #10): Decrement total_spent on refund to prevent discount tier exploitation
+      // Scenario: User buys $500 → gets 10% discount → deletes all → without this fix keeps 10% discount
+      const totalSpentBefore = parseFloat(user.total_spent || 0);
+      const totalSpentAfter = Math.max(0, totalSpentBefore - finalPrice);
+
+      // Refund money and decrement total_spent
       await client.query(
-        'UPDATE users SET balance = $1 WHERE id = $2',
-        [balanceAfter, userId]
+        'UPDATE users SET balance = $1, total_spent = $2 WHERE id = $3',
+        [balanceAfter, totalSpentAfter, userId]
       );
+
+      // CRITICAL FIX (BUG #11): Recalculate discount tier after refund
+      // User may no longer qualify for their current tier after total_spent decrease
+      const newTier = await calculateDiscountTier(totalSpentAfter);
+      if (newTier.discount !== user.current_discount) {
+        await client.query(
+          'UPDATE users SET current_discount = $1 WHERE id = $2',
+          [newTier.discount, userId]
+        );
+
+        logger.info('Discount tier downgraded after refund', {
+          userId,
+          oldDiscount: user.current_discount,
+          newDiscount: newTier.discount,
+          newTier: newTier.tier,
+          totalSpentAfter
+        });
+
+        // Notify user about tier downgrade
+        await client.query(`
+          INSERT INTO notifications (user_id, type, title, message)
+          VALUES ($1, 'discount_tier_changed', $2, $3)
+        `, [
+          userId,
+          'Изменение уровня скидки',
+          `Ваш уровень скидки изменён на "${newTier.tier}" (${newTier.discount}%) после возврата средств.`
+        ]);
+      }
 
       // Create refund transaction
       await client.query(`
@@ -1110,7 +1171,7 @@ const deleteAndRefundPlacement = async (placementId, userId) => {
           UPDATE project_articles
           SET usage_count = GREATEST(0, usage_count - 1),
               status = CASE
-                WHEN GREATEST(0, usage_count - 1) < usage_limit THEN 'published'
+                WHEN GREATEST(0, usage_count - 1) < usage_limit THEN 'active'
                 ELSE status
               END
           WHERE id = $1

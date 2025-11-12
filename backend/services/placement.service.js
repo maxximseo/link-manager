@@ -523,7 +523,7 @@ const deletePlacement = async (placementId, userId) => {
             UPDATE project_articles
             SET usage_count = GREATEST(0, usage_count - 1),
                 status = CASE
-                  WHEN GREATEST(0, usage_count - 1) < usage_limit THEN 'published'
+                  WHEN GREATEST(0, usage_count - 1) < usage_limit THEN 'active'
                   ELSE status
                 END
             WHERE id = $1
