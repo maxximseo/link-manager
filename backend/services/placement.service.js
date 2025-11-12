@@ -450,8 +450,8 @@ const deletePlacement = async (placementId, userId) => {
       LEFT JOIN sites s ON p.site_id = s.id
       LEFT JOIN projects proj ON p.project_id = proj.id
       WHERE p.id = $1 AND (s.user_id = $2 OR proj.user_id = $2)
-      GROUP BY p.site_id
-      FOR UPDATE OF p
+      GROUP BY p.site_id, p.id
+      FOR UPDATE OF p NOWAIT
     `, [placementId, userId]);
 
     if (placementInfo.rows.length === 0) {
