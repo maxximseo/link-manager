@@ -138,11 +138,20 @@
             tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Загрузка статистики по проектам...</td></tr>';
 
             try {
-                // Fetch all placements
-                const allPlacements = await PlacementsAPI.getAll();
+                // Fetch all placements (without pagination to get all)
+                const response = await PlacementsAPI.getAll();
+                console.log('PlacementsAPI.getAll() response:', response);
 
-                // Ensure allPlacements is an array
-                const placementsArray = Array.isArray(allPlacements) ? allPlacements : [];
+                // Extract array from response (handles both paginated and non-paginated responses)
+                let placementsArray = [];
+                if (Array.isArray(response)) {
+                    placementsArray = response;
+                } else if (response && Array.isArray(response.data)) {
+                    placementsArray = response.data;
+                } else if (response && response.data === null) {
+                    placementsArray = [];
+                }
+                console.log('Placements array:', placementsArray);
 
                 // Calculate statistics per project
                 const projectStats = projects.map(project => {
