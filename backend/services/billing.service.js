@@ -115,7 +115,7 @@ const addBalance = async (userId, amount, description = 'Balance deposit', admin
     // Update balance
     const newBalance = parseFloat(user.balance) + parseFloat(amount);
     await client.query(
-      'UPDATE users SET balance = $1, updated_at = NOW() WHERE id = $2',
+      'UPDATE users SET balance = $1 WHERE id = $2',
       [newBalance, userId]
     );
 
@@ -287,7 +287,7 @@ const purchasePlacement = async ({
     const newTotalSpent = parseFloat(user.total_spent) + finalPrice;
 
     await client.query(
-      'UPDATE users SET balance = $1, total_spent = $2, updated_at = NOW() WHERE id = $3',
+      'UPDATE users SET balance = $1, total_spent = $2 WHERE id = $3',
       [newBalance, newTotalSpent, userId]
     );
 
@@ -575,7 +575,7 @@ const renewPlacement = async (placementId, userId, isAutoRenewal = false) => {
     const newTotalSpent = parseFloat(placement.total_spent || 0) + finalRenewalPrice;
 
     await client.query(
-      'UPDATE users SET balance = $1, total_spent = $2, updated_at = NOW() WHERE id = $3',
+      'UPDATE users SET balance = $1, total_spent = $2 WHERE id = $3',
       [newBalance, newTotalSpent, userId]
     );
 
