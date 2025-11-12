@@ -97,14 +97,7 @@
 
         <!-- Step 3: Sites Table -->
         <div id="sitesTableDiv" style="display: none;">
-            <div class="alert alert-info mb-3">
-                <i class="bi bi-info-circle"></i>
-                <strong>How to create placements:</strong> Check a site to show the dropdown, then select which link/article to place.
-                <span class="badge bg-success ms-2">Green = Available</span>
-                <span class="badge bg-warning text-dark ms-2">Yellow = Partial (can add other type)</span>
-                <span class="badge bg-danger ms-2">Red = Full (both placed)</span>
-                <span id="activeFiltersInfo" class="ms-3"></span>
-            </div>
+            <!-- Info message removed - new logic: red = already purchased for this project -->
 
             <!-- Pagination Controls -->
             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -511,35 +504,25 @@
                 }
 
                 // Prepare filtered sites with their status
+                // NEW LOGIC: Red = already purchased (link OR article), cannot buy again
                 filteredSites = sitesToShow.map(site => {
                     const status = sitesStatus.get(site.id) || { hasLinks: false, hasArticles: false };
-                    const hasCurrentType = (contentType === 'links' && status.hasLinks) ||
-                                          (contentType === 'articles' && status.hasArticles);
+
+                    // Check if this site already has ANY placement for this project
+                    const alreadyPurchased = status.hasLinks || status.hasArticles;
 
                     // Determine status class and badge
                     let statusClass, statusBadge, isDisabled;
 
-                    if (status.hasLinks && status.hasArticles) {
+                    if (alreadyPurchased) {
+                        // Site already has placement for this project - mark red and disable
                         statusClass = 'table-danger';
-                        statusBadge = '<span class="badge bg-danger">Full (Link + Article)</span>';
+                        statusBadge = '<span class="badge bg-danger">Уже куплено</span>';
                         isDisabled = true;
-                    } else if (status.hasLinks || status.hasArticles) {
-                        if (hasCurrentType) {
-                            statusClass = 'table-warning';
-                            statusBadge = status.hasLinks
-                                ? '<span class="badge bg-warning text-dark">Has Link</span>'
-                                : '<span class="badge bg-warning text-dark">Has Article</span>';
-                            isDisabled = true;
-                        } else {
-                            statusClass = 'table-warning';
-                            statusBadge = status.hasLinks
-                                ? '<span class="badge bg-warning text-dark">Has Link (can add Article)</span>'
-                                : '<span class="badge bg-warning text-dark">Has Article (can add Link)</span>';
-                            isDisabled = false;
-                        }
                     } else {
+                        // Site available for purchase
                         statusClass = 'table-success';
-                        statusBadge = '<span class="badge bg-success">Available</span>';
+                        statusBadge = '<span class="badge bg-success">Доступно</span>';
                         isDisabled = false;
                     }
 
