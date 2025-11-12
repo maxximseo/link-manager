@@ -412,25 +412,12 @@ const purchasePlacement = async ({
       ]);
     }
 
-<<<<<<< HEAD
     // 15. If not scheduled, publish immediately
     // TEST 3: WordPress failure must ROLLBACK entire transaction
-=======
-    // 16. If not scheduled, publish immediately
->>>>>>> claude/fix-billing-bypass-011CUMcXNR44qVdLu3NNwmyQ
     if (status === 'pending') {
       try {
         await publishPlacement(client, placement.id);
       } catch (publishError) {
-<<<<<<< HEAD
-        logger.error('Failed to publish placement to WordPress - ROLLING BACK transaction', {
-          placementId: placement.id,
-          error: publishError.message
-        });
-        // CRITICAL: ROLLBACK entire transaction on WordPress failure
-        // This ensures no money is charged if placement cannot be published
-        throw new Error(`Failed to publish placement to WordPress: ${publishError.message}`);
-=======
         logger.error('Failed to publish placement - ROLLING BACK transaction', {
           placementId: placement.id,
           userId,
@@ -440,7 +427,6 @@ const purchasePlacement = async ({
         // CRITICAL FIX: ROLLBACK transaction to refund user's money
         await client.query('ROLLBACK');
         throw new Error(`Failed to publish placement: ${publishError.message}. Your balance has not been charged.`);
->>>>>>> claude/fix-billing-bypass-011CUMcXNR44qVdLu3NNwmyQ
       }
     }
 
