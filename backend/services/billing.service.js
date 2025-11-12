@@ -968,15 +968,23 @@ const refundPlacement = async (placementId, userId) => {
 /**
  * CRITICAL FIX: Atomic delete with refund (single transaction)
  * Prevents race conditions and ensures money safety
+ *
+ * @param {number} placementId - ID of placement to delete
+ * @param {number} userId - ID of user requesting deletion (for refund target)
+ * @param {string} userRole - Role of user ('admin' or 'user')
+ *
+ * ADMIN-ONLY: Only administrators can delete placements
+ * - Admins can delete ANY placement (no ownership check)
+ * - Refund always goes to the placement owner, not the admin
  */
-const deleteAndRefundPlacement = async (placementId, userId) => {
+const deleteAndRefundPlacement = async (placementId, userId, userRole = 'user') => {
   const client = await pool.connect();
   const placementService = require('./placement.service');
 
   try {
     await client.query('BEGIN');
 
-    // 1. Get placement with lock and verify ownership
+    // 1. Get placement with lock
     const placementResult = await client.query(`
       SELECT
         p.id,
@@ -1006,26 +1014,31 @@ const deleteAndRefundPlacement = async (placementId, userId) => {
 
     const placement = placementResult.rows[0];
 
-    // 2. Verify ownership
-    if (placement.user_id !== userId) {
+    // 2. ADMIN-ONLY: Verify authorization
+    // Only admins can delete placements (enforced by adminMiddleware at route level)
+    // This is a safety check in case service is called directly
+    if (userRole !== 'admin') {
       await client.query('ROLLBACK');
-      throw new Error('Unauthorized to delete this placement');
+      throw new Error('Unauthorized: Only administrators can delete placements');
     }
+
+    // Note: Refund will go to placement.user_id (the owner), not the admin who deleted it
+    const refundUserId = placement.user_id;
 
     // 3. Process refund if paid
     let refundResult = { refunded: false, amount: 0 };
     const finalPrice = parseFloat(placement.final_price || 0);
 
     if (finalPrice > 0) {
-      // Get user with lock
+      // Get placement owner (refund recipient) with lock
       const userResult = await client.query(
         'SELECT id, balance, total_spent, current_discount FROM users WHERE id = $1 FOR UPDATE',
-        [userId]
+        [refundUserId]
       );
 
       if (userResult.rows.length === 0) {
         await client.query('ROLLBACK');
-        throw new Error('User not found');
+        throw new Error('Placement owner not found');
       }
 
       const user = userResult.rows[0];
@@ -1040,7 +1053,7 @@ const deleteAndRefundPlacement = async (placementId, userId) => {
       // Refund money and decrement total_spent
       await client.query(
         'UPDATE users SET balance = $1, total_spent = $2 WHERE id = $3',
-        [balanceAfter, totalSpentAfter, userId]
+        [balanceAfter, totalSpentAfter, refundUserId]
       );
 
       // CRITICAL FIX (BUG #11): Recalculate discount tier after refund
@@ -1049,36 +1062,36 @@ const deleteAndRefundPlacement = async (placementId, userId) => {
       if (newTier.discount !== user.current_discount) {
         await client.query(
           'UPDATE users SET current_discount = $1 WHERE id = $2',
-          [newTier.discount, userId]
+          [newTier.discount, refundUserId]
         );
 
         logger.info('Discount tier downgraded after refund', {
-          userId,
+          userId: refundUserId,
           oldDiscount: user.current_discount,
           newDiscount: newTier.discount,
           newTier: newTier.tier,
           totalSpentAfter
         });
 
-        // Notify user about tier downgrade
+        // Notify placement owner about tier downgrade
         await client.query(`
           INSERT INTO notifications (user_id, type, title, message)
           VALUES ($1, 'discount_tier_changed', $2, $3)
         `, [
-          userId,
+          refundUserId,
           'Изменение уровня скидки',
           `Ваш уровень скидки изменён на "${newTier.tier}" (${newTier.discount}%) после возврата средств.`
         ]);
       }
 
-      // Create refund transaction
+      // Create refund transaction (for placement owner)
       await client.query(`
         INSERT INTO transactions (
           user_id, type, amount, balance_before, balance_after,
           description, related_placement_id
         ) VALUES ($1, 'refund', $2, $3, $4, $5, $6)
       `, [
-        userId,
+        refundUserId,
         finalPrice,
         balanceBefore,
         balanceAfter,
@@ -1086,13 +1099,13 @@ const deleteAndRefundPlacement = async (placementId, userId) => {
         placementId
       ]);
 
-      // Audit log for refund
+      // Audit log for refund (for placement owner)
       await client.query(`
         INSERT INTO audit_log (
           user_id, action, entity_type, entity_id, details
         ) VALUES ($1, 'placement_refund', 'placement', $2, $3)
       `, [
-        userId,
+        refundUserId,
         placementId,
         JSON.stringify({
           refund_amount: finalPrice,
@@ -1100,7 +1113,8 @@ const deleteAndRefundPlacement = async (placementId, userId) => {
           discount_applied: placement.discount_applied,
           site_name: placement.site_name,
           project_name: placement.project_name,
-          type: placement.type
+          type: placement.type,
+          deleted_by_admin: userId // Track which admin deleted it
         })
       ]);
 
@@ -1112,7 +1126,8 @@ const deleteAndRefundPlacement = async (placementId, userId) => {
 
       logger.info('Refund processed within delete transaction', {
         placementId,
-        userId,
+        ownerId: refundUserId,
+        adminId: userId,
         refundAmount: finalPrice,
         newBalance: balanceAfter
       });
@@ -1179,15 +1194,16 @@ const deleteAndRefundPlacement = async (placementId, userId) => {
       }
     }
 
-    // 5. Audit log for deletion
+    // 5. Audit log for deletion (track admin who deleted)
     await client.query(`
       INSERT INTO audit_log (
         user_id, action, entity_type, entity_id, details
       ) VALUES ($1, 'placement_delete', 'placement', $2, $3)
     `, [
-      userId,
+      userId, // Admin who performed the deletion
       placementId,
       JSON.stringify({
+        placement_owner_id: refundUserId,
         placement_type: placement.type,
         site_name: placement.site_name,
         project_name: placement.project_name,
@@ -1199,15 +1215,16 @@ const deleteAndRefundPlacement = async (placementId, userId) => {
     // 6. COMMIT everything atomically
     await client.query('COMMIT');
 
-    // Clear cache
+    // Clear cache for both placement owner and admin
     const cache = require('./cache.service');
-    await cache.delPattern(`placements:user:${userId}:*`);
-    await cache.delPattern(`projects:user:${userId}:*`);
+    await cache.delPattern(`placements:user:${refundUserId}:*`); // Owner's cache
+    await cache.delPattern(`projects:user:${refundUserId}:*`); // Owner's cache
     await cache.delPattern(`wp:content:*`);
 
-    logger.info('Placement deleted atomically with refund', {
+    logger.info('Placement deleted atomically with refund by admin', {
       placementId,
-      userId,
+      ownerId: refundUserId,
+      adminId: userId,
       refunded: refundResult.refunded,
       refundAmount: refundResult.amount
     });
@@ -1221,7 +1238,7 @@ const deleteAndRefundPlacement = async (placementId, userId) => {
     await client.query('ROLLBACK');
     logger.error('Atomic delete with refund failed - transaction rolled back', {
       placementId,
-      userId,
+      adminId: userId,
       error: error.message
     });
     throw error;

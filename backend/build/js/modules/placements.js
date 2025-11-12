@@ -33,7 +33,7 @@ window.PlacementsModule = {
     displayPlacements(placements) {
         const container = AppUtils.checkElement('placementsList');
         if (!container) return;
-        
+
         if (placements.length === 0) {
             container.innerHTML = `
                 <div class="text-center" style="color: #718096; padding: 40px;">
@@ -42,14 +42,29 @@ window.PlacementsModule = {
             `;
             return;
         }
-        
+
+        // ADMIN-ONLY: Check if current user is admin
+        const currentUser = getCurrentUser();
+        const isAdmin = currentUser && currentUser.role === 'admin';
+
         const placementsHTML = placements.map(placement => {
             const createdDate = AppUtils.formatDate(placement.created_at);
             const siteName = placement.site_url || 'Unknown Site';
             const projectName = placement.project_name || 'Unknown Project';
             const linksCount = placement.links_count || 0;
             const articlesCount = placement.articles_count || 0;
-            
+
+            // ADMIN-ONLY: Only show delete button for administrators
+            const deleteButton = isAdmin ? `
+                <div class="project-actions">
+                    <button onclick="PlacementsModule.deletePlacement(${placement.id})"
+                            class="btn btn-danger btn-small"
+                            title="Только администраторы могут удалять размещения">
+                        Удалить
+                    </button>
+                </div>
+            ` : '';
+
             return `
                 <div class="project-card">
                     <div class="project-header">
@@ -60,12 +75,7 @@ window.PlacementsModule = {
                                 Создано: ${createdDate}
                             </p>
                         </div>
-                        <div class="project-actions">
-                            <button onclick="PlacementsModule.deletePlacement(${placement.id})" 
-                                    class="btn btn-danger btn-small">
-                                Удалить
-                            </button>
-                        </div>
+                        ${deleteButton}
                     </div>
                     <div class="project-stats">
                         <span>📎 Ссылок: ${linksCount}</span>
@@ -75,7 +85,7 @@ window.PlacementsModule = {
                 </div>
             `;
         }).join('');
-        
+
         container.innerHTML = placementsHTML;
     },
 
