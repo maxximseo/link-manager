@@ -213,6 +213,40 @@ const purchasePlacement = async ({
       throw new Error(`A ${type} placement already exists for this project on this site`);
     }
 
+    // 4.5. CRITICAL: Validate content IDs BEFORE charging money
+    const tableName = type === 'link' ? 'project_links' : 'project_articles';
+
+    for (const contentId of contentIds) {
+      // Check if content exists AND belongs to user AND is not exhausted
+      const contentResult = await client.query(`
+        SELECT id, usage_count, usage_limit, status
+        FROM ${tableName}
+        WHERE id = $1
+      `, [contentId]);
+
+      // TEST 1: Non-existent contentId
+      if (contentResult.rows.length === 0) {
+        throw new Error(`${type === 'link' ? 'Link' : 'Article'} with ID ${contentId} not found`);
+      }
+
+      const content = contentResult.rows[0];
+
+      // TEST 4: Exhausted content
+      if (content.status === 'exhausted' || content.usage_count >= content.usage_limit) {
+        throw new Error(`${type === 'link' ? 'Link' : 'Article'} with ID ${contentId} is exhausted (${content.usage_count}/${content.usage_limit} uses)`);
+      }
+
+      // TEST 2: Ownership validation - content must belong to the same project
+      const ownershipResult = await client.query(`
+        SELECT id FROM ${tableName}
+        WHERE id = $1 AND project_id = $2
+      `, [contentId, projectId]);
+
+      if (ownershipResult.rows.length === 0) {
+        throw new Error(`${type === 'link' ? 'Link' : 'Article'} with ID ${contentId} does not belong to project ${projectId} (ownership violation)`);
+      }
+    }
+
     // 5. Calculate price
     const basePrice = type === 'link' ? PRICING.LINK_HOMEPAGE : PRICING.ARTICLE_GUEST_POST;
     const discount = user.current_discount || 0;
@@ -355,16 +389,18 @@ const purchasePlacement = async ({
     }
 
     // 15. If not scheduled, publish immediately
+    // TEST 3: WordPress failure must ROLLBACK entire transaction
     if (status === 'pending') {
       try {
         await publishPlacement(client, placement.id);
       } catch (publishError) {
-        logger.error('Failed to publish placement immediately', { placementId: placement.id, error: publishError.message });
-        // Don't rollback transaction, just mark as failed
-        await client.query(
-          'UPDATE placements SET status = $1 WHERE id = $2',
-          ['failed', placement.id]
-        );
+        logger.error('Failed to publish placement to WordPress - ROLLING BACK transaction', {
+          placementId: placement.id,
+          error: publishError.message
+        });
+        // CRITICAL: ROLLBACK entire transaction on WordPress failure
+        // This ensures no money is charged if placement cannot be published
+        throw new Error(`Failed to publish placement to WordPress: ${publishError.message}`);
       }
     }
 
