@@ -203,7 +203,22 @@ const purchasePlacement = async ({
 
     const site = siteResult.rows[0];
 
-    // 4. Check if placement already exists for this project/site combination
+    // 4. CRITICAL FIX (BUG #5): Check site quotas BEFORE creating placement
+    if (type === 'link' && site.used_links >= site.max_links) {
+      throw new Error(
+        `Site "${site.site_name}" has reached its link limit (${site.used_links}/${site.max_links} used). ` +
+        `Cannot create new link placement.`
+      );
+    }
+
+    if (type === 'article' && site.used_articles >= site.max_articles) {
+      throw new Error(
+        `Site "${site.site_name}" has reached its article limit (${site.used_articles}/${site.max_articles} used). ` +
+        `Cannot create new article placement.`
+      );
+    }
+
+    // 5. Check if placement already exists for this project/site combination
     const existingPlacement = await client.query(`
       SELECT id FROM placements
       WHERE project_id = $1 AND site_id = $2 AND type = $3 AND status NOT IN ('cancelled', 'expired')
@@ -213,7 +228,20 @@ const purchasePlacement = async ({
       throw new Error(`A ${type} placement already exists for this project on this site`);
     }
 
-    // 4.5. CRITICAL: Validate content IDs BEFORE charging money
+    // 6. CRITICAL FIX (BUG #7): Enforce single contentId per placement
+    if (!contentIds || contentIds.length === 0) {
+      throw new Error('At least one content ID is required');
+    }
+
+    if (contentIds.length > 1) {
+      throw new Error(
+        `You can only place 1 ${type} per site per project. ` +
+        `You provided ${contentIds.length} ${type}s. ` +
+        `Please create separate placements for each ${type}.`
+      );
+    }
+
+    // 7. CRITICAL: Validate content IDs BEFORE charging money
     const tableName = type === 'link' ? 'project_links' : 'project_articles';
 
     for (const contentId of contentIds) {
@@ -773,6 +801,179 @@ const getPricingForUser = async (userId) => {
   }
 };
 
+/**
+ * Delete placement and refund money (atomic operation)
+ * Used by scheduled placement cron when publication fails
+ */
+const deleteAndRefundPlacement = async (placementId, userId) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    // 1. Get placement with lock and verify ownership
+    const placementResult = await client.query(`
+      SELECT
+        p.id,
+        p.user_id,
+        p.project_id,
+        p.site_id,
+        p.type,
+        p.final_price,
+        p.status
+      FROM placements p
+      WHERE p.id = $1
+      FOR UPDATE OF p
+    `, [placementId]);
+
+    if (placementResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      throw new Error('Placement not found');
+    }
+
+    const placement = placementResult.rows[0];
+
+    // 2. Verify ownership
+    if (placement.user_id !== userId) {
+      await client.query('ROLLBACK');
+      throw new Error('Unauthorized to delete this placement');
+    }
+
+    // 3. Process refund if paid
+    const finalPrice = parseFloat(placement.final_price || 0);
+
+    if (finalPrice > 0) {
+      // Get user with lock
+      const userResult = await client.query(
+        'SELECT id, balance FROM users WHERE id = $1 FOR UPDATE',
+        [userId]
+      );
+
+      if (userResult.rows.length === 0) {
+        await client.query('ROLLBACK');
+        throw new Error('User not found');
+      }
+
+      const user = userResult.rows[0];
+      const balanceBefore = parseFloat(user.balance);
+      const balanceAfter = balanceBefore + finalPrice;
+
+      // Refund money
+      await client.query(
+        'UPDATE users SET balance = $1, updated_at = NOW() WHERE id = $2',
+        [balanceAfter, userId]
+      );
+
+      // Create refund transaction
+      await client.query(`
+        INSERT INTO transactions (
+          user_id, type, amount, balance_before, balance_after,
+          description, metadata
+        ) VALUES ($1, 'refund', $2, $3, $4, $5, $6)
+      `, [
+        userId,
+        finalPrice,
+        balanceBefore,
+        balanceAfter,
+        `Refund for failed scheduled placement #${placementId}`,
+        JSON.stringify({ placementId, refundAmount: finalPrice, reason: 'scheduled_publication_failed' })
+      ]);
+
+      logger.info('Refund processed for failed scheduled placement', {
+        placementId,
+        userId,
+        refundAmount: finalPrice,
+        newBalance: balanceAfter
+      });
+    }
+
+    // 4. Get placement content for quota decrement
+    const contentResult = await client.query(`
+      SELECT link_id, article_id
+      FROM placement_content
+      WHERE placement_id = $1
+    `, [placementId]);
+
+    const linkIds = contentResult.rows.filter(r => r.link_id).map(r => r.link_id);
+    const articleIds = contentResult.rows.filter(r => r.article_id).map(r => r.article_id);
+
+    // 5. Delete placement (CASCADE will delete placement_content)
+    await client.query('DELETE FROM placements WHERE id = $1', [placementId]);
+
+    // 6. Decrement site quotas
+    if (placement.type === 'link' && linkIds.length > 0) {
+      await client.query(
+        'UPDATE sites SET used_links = GREATEST(0, used_links - $1) WHERE id = $2',
+        [linkIds.length, placement.site_id]
+      );
+    } else if (placement.type === 'article' && articleIds.length > 0) {
+      await client.query(
+        'UPDATE sites SET used_articles = GREATEST(0, used_articles - $1) WHERE id = $2',
+        [articleIds.length, placement.site_id]
+      );
+    }
+
+    // 7. Decrement usage counts
+    if (linkIds.length > 0) {
+      for (const linkId of linkIds) {
+        await client.query(`
+          UPDATE project_links
+          SET usage_count = GREATEST(0, usage_count - 1),
+              status = CASE
+                WHEN GREATEST(0, usage_count - 1) < usage_limit THEN 'active'
+                ELSE status
+              END
+          WHERE id = $1
+        `, [linkId]);
+      }
+    }
+
+    if (articleIds.length > 0) {
+      for (const articleId of articleIds) {
+        await client.query(`
+          UPDATE project_articles
+          SET usage_count = GREATEST(0, usage_count - 1),
+              status = CASE
+                WHEN GREATEST(0, usage_count - 1) < usage_limit THEN 'published'
+                ELSE status
+              END
+          WHERE id = $1
+        `, [articleId]);
+      }
+    }
+
+    await client.query('COMMIT');
+
+    logger.info('Placement deleted and refunded successfully', {
+      placementId,
+      userId,
+      refundAmount: finalPrice
+    });
+
+    // Clear cache
+    await cache.delPattern(`placements:user:${userId}:*`);
+    await cache.delPattern(`projects:user:${userId}:*`);
+
+    return {
+      success: true,
+      refunded: finalPrice > 0,
+      refundAmount: finalPrice
+    };
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    logger.error('Failed to delete and refund placement', {
+      placementId,
+      userId,
+      error: error.message,
+      stack: error.stack
+    });
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
 module.exports = {
   PRICING,
   getUserBalance,
@@ -783,5 +984,6 @@ module.exports = {
   renewPlacement,
   toggleAutoRenewal,
   getUserTransactions,
-  getPricingForUser
+  getPricingForUser,
+  deleteAndRefundPlacement
 };
