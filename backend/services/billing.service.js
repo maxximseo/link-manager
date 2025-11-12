@@ -203,7 +203,22 @@ const purchasePlacement = async ({
 
     const site = siteResult.rows[0];
 
-    // 4. Check if placement already exists for this project/site combination
+    // 4. CRITICAL FIX (BUG #5): Check site quotas BEFORE creating placement
+    if (type === 'link' && site.used_links >= site.max_links) {
+      throw new Error(
+        `Site "${site.site_name}" has reached its link limit (${site.used_links}/${site.max_links} used). ` +
+        `Cannot create new link placement.`
+      );
+    }
+
+    if (type === 'article' && site.used_articles >= site.max_articles) {
+      throw new Error(
+        `Site "${site.site_name}" has reached its article limit (${site.used_articles}/${site.max_articles} used). ` +
+        `Cannot create new article placement.`
+      );
+    }
+
+    // 5. Check if placement already exists for this project/site combination
     const existingPlacement = await client.query(`
       SELECT id FROM placements
       WHERE project_id = $1 AND site_id = $2 AND type = $3 AND status NOT IN ('cancelled', 'expired')
@@ -213,9 +228,18 @@ const purchasePlacement = async ({
       throw new Error(`A ${type} placement already exists for this project on this site`);
     }
 
-    // 5. CRITICAL FIX: Validate contentIds BEFORE charging money
+    // 6. CRITICAL FIX: Validate contentIds BEFORE charging money
     if (!contentIds || contentIds.length === 0) {
       throw new Error('At least one content ID is required');
+    }
+
+    // CRITICAL FIX (BUG #7): Enforce single contentId per placement (business logic: 1 link/article per site)
+    if (contentIds.length > 1) {
+      throw new Error(
+        `You can only place 1 ${type} per site per project. ` +
+        `You provided ${contentIds.length} ${type}s. ` +
+        `Please create separate placements for each ${type}.`
+      );
     }
 
     for (const contentId of contentIds) {
