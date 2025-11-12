@@ -68,14 +68,30 @@
             </div>
         </div>
 
-        <!-- Recent Activity -->
+        <!-- Projects Table -->
         <div class="row mt-4">
             <div class="col-12">
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="card-title">Последняя активность</h5>
-                        <div id="recentActivity">
-                            <p class="text-muted">Загрузка...</p>
+                        <h5 class="card-title">Проекты</h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Название проекта</th>
+                                        <th>URL сайта</th>
+                                        <th>Потрачено ($)</th>
+                                        <th>Активных</th>
+                                        <th>Запланировано</th>
+                                        <th>Всего размещений</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="projectsTableBody">
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted">Загрузка...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -103,48 +119,82 @@
                 document.getElementById('totalPlacements').textContent = placements.total_placements || 0;
                 document.getElementById('totalLinks').textContent = placements.total_links_placed || 0;
 
-                // Show recent activity
-                showRecentActivity(projects, sites);
+                // Load projects table
+                await loadProjectsTable(projects);
             } catch (error) {
                 console.error('Error loading statistics:', error);
                 showNotification('Ошибка загрузки статистики', 'error');
             }
         }
 
-        function showRecentActivity(projects, sites) {
-            const activity = document.getElementById('recentActivity');
-            
-            if (projects.length === 0 && sites.length === 0) {
-                activity.innerHTML = '<p class="text-muted">Нет активности</p>';
+        async function loadProjectsTable(projects) {
+            const tbody = document.getElementById('projectsTableBody');
+
+            if (projects.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Нет проектов</td></tr>';
                 return;
             }
 
-            let html = '<ul class="list-group list-group-flush">';
-            
-            // Show recent projects
-            projects.slice(0, 3).forEach(project => {
-                html += `
-                    <li class="list-group-item">
-                        <i class="bi bi-folder text-primary"></i>
-                        Проект: <strong>${project.name}</strong>
-                        <span class="text-muted ms-2">${new Date(project.created_at).toLocaleDateString()}</span>
-                    </li>
-                `;
-            });
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Загрузка статистики по проектам...</td></tr>';
 
-            // Show recent sites
-            sites.slice(0, 3).forEach(site => {
-                html += `
-                    <li class="list-group-item">
-                        <i class="bi bi-globe text-success"></i>
-                        Сайт: <strong>${site.site_name}</strong>
-                        <span class="text-muted ms-2">${new Date(site.created_at).toLocaleDateString()}</span>
-                    </li>
-                `;
-            });
+            try {
+                // Fetch all placements
+                const allPlacements = await PlacementsAPI.getAll();
 
-            html += '</ul>';
-            activity.innerHTML = html;
+                // Calculate statistics per project
+                const projectStats = projects.map(project => {
+                    const projectPlacements = allPlacements.data.filter(p => p.project_id === project.id);
+
+                    const totalSpent = projectPlacements.reduce((sum, p) => sum + parseFloat(p.final_price || 0), 0);
+                    const activePlacements = projectPlacements.filter(p => p.status === 'placed' && !p.scheduled_date).length;
+                    const scheduledPlacements = projectPlacements.filter(p => p.scheduled_date).length;
+                    const totalPlacements = projectPlacements.length;
+
+                    return {
+                        id: project.id,
+                        name: project.name,
+                        main_site_url: project.main_site_url,
+                        totalSpent,
+                        activePlacements,
+                        scheduledPlacements,
+                        totalPlacements
+                    };
+                });
+
+                // Render table rows
+                let html = '';
+                projectStats.forEach(stat => {
+                    const projectUrl = stat.main_site_url
+                        ? `<a href="${stat.main_site_url}" target="_blank" class="text-muted small"><i class="bi bi-box-arrow-up-right"></i></a>`
+                        : '<span class="text-muted">-</span>';
+
+                    html += `
+                        <tr>
+                            <td>
+                                <a href="/project-placements.html?id=${stat.id}" class="text-decoration-none fw-bold">
+                                    ${escapeHtml(stat.name)}
+                                </a>
+                            </td>
+                            <td>${projectUrl}</td>
+                            <td>$${stat.totalSpent.toFixed(2)}</td>
+                            <td><span class="badge bg-success">${stat.activePlacements}</span></td>
+                            <td><span class="badge bg-warning text-dark">${stat.scheduledPlacements}</span></td>
+                            <td><span class="badge bg-primary">${stat.totalPlacements}</span></td>
+                        </tr>
+                    `;
+                });
+
+                tbody.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading project stats:', error);
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Ошибка загрузки статистики</td></tr>';
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
         // Load data on page load
