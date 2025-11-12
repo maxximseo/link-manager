@@ -913,6 +913,238 @@ const refundPlacement = async (placementId, userId) => {
   }
 };
 
+/**
+ * CRITICAL FIX: Atomic delete with refund (single transaction)
+ * Prevents race conditions and ensures money safety
+ */
+const deleteAndRefundPlacement = async (placementId, userId) => {
+  const client = await pool.connect();
+  const placementService = require('./placement.service');
+
+  try {
+    await client.query('BEGIN');
+
+    // 1. Get placement with lock and verify ownership
+    const placementResult = await client.query(`
+      SELECT
+        p.id,
+        p.user_id,
+        p.project_id,
+        p.site_id,
+        p.type,
+        p.final_price,
+        p.original_price,
+        p.discount_applied,
+        p.purchase_transaction_id,
+        p.placed_at,
+        p.status,
+        s.site_name,
+        proj.name as project_name
+      FROM placements p
+      LEFT JOIN sites s ON p.site_id = s.id
+      LEFT JOIN projects proj ON p.project_id = proj.id
+      WHERE p.id = $1
+      FOR UPDATE OF p
+    `, [placementId]);
+
+    if (placementResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      throw new Error('Placement not found');
+    }
+
+    const placement = placementResult.rows[0];
+
+    // 2. Verify ownership
+    if (placement.user_id !== userId) {
+      await client.query('ROLLBACK');
+      throw new Error('Unauthorized to delete this placement');
+    }
+
+    // 3. Process refund if paid
+    let refundResult = { refunded: false, amount: 0 };
+    const finalPrice = parseFloat(placement.final_price || 0);
+
+    if (finalPrice > 0) {
+      // Get user with lock
+      const userResult = await client.query(
+        'SELECT id, balance FROM users WHERE id = $1 FOR UPDATE',
+        [userId]
+      );
+
+      if (userResult.rows.length === 0) {
+        await client.query('ROLLBACK');
+        throw new Error('User not found');
+      }
+
+      const user = userResult.rows[0];
+      const balanceBefore = parseFloat(user.balance);
+      const balanceAfter = balanceBefore + finalPrice;
+
+      // Refund money
+      await client.query(
+        'UPDATE users SET balance = $1 WHERE id = $2',
+        [balanceAfter, userId]
+      );
+
+      // Create refund transaction
+      await client.query(`
+        INSERT INTO transactions (
+          user_id, type, amount, balance_before, balance_after,
+          description, related_placement_id
+        ) VALUES ($1, 'refund', $2, $3, $4, $5, $6)
+      `, [
+        userId,
+        finalPrice,
+        balanceBefore,
+        balanceAfter,
+        `Refund for ${placement.type} placement on ${placement.site_name} (${placement.project_name})`,
+        placementId
+      ]);
+
+      // Audit log for refund
+      await client.query(`
+        INSERT INTO audit_log (
+          user_id, action, entity_type, entity_id, details
+        ) VALUES ($1, 'placement_refund', 'placement', $2, $3)
+      `, [
+        userId,
+        placementId,
+        JSON.stringify({
+          refund_amount: finalPrice,
+          original_price: placement.original_price,
+          discount_applied: placement.discount_applied,
+          site_name: placement.site_name,
+          project_name: placement.project_name,
+          type: placement.type
+        })
+      ]);
+
+      refundResult = {
+        refunded: true,
+        amount: finalPrice,
+        newBalance: balanceAfter
+      };
+
+      logger.info('Refund processed within delete transaction', {
+        placementId,
+        userId,
+        refundAmount: finalPrice,
+        newBalance: balanceAfter
+      });
+    }
+
+    // 4. Delete placement content and placement itself
+    // Get content IDs
+    const contentResult = await client.query(`
+      SELECT
+        array_agg(DISTINCT link_id) FILTER (WHERE link_id IS NOT NULL) as link_ids,
+        array_agg(DISTINCT article_id) FILTER (WHERE article_id IS NOT NULL) as article_ids,
+        COUNT(DISTINCT link_id) as link_count,
+        COUNT(DISTINCT article_id) as article_count
+      FROM placement_content
+      WHERE placement_id = $1
+    `, [placementId]);
+
+    const { link_ids, article_ids, link_count, article_count } = contentResult.rows[0];
+
+    // Delete placement (cascade will delete placement_content)
+    await client.query('DELETE FROM placements WHERE id = $1', [placementId]);
+
+    // Update site quotas
+    if (parseInt(link_count) > 0) {
+      await client.query(
+        'UPDATE sites SET used_links = GREATEST(0, used_links - $1) WHERE id = $2',
+        [link_count, placement.site_id]
+      );
+    }
+    if (parseInt(article_count) > 0) {
+      await client.query(
+        'UPDATE sites SET used_articles = GREATEST(0, used_articles - $1) WHERE id = $2',
+        [article_count, placement.site_id]
+      );
+    }
+
+    // Decrement usage_count for links
+    if (link_ids && link_ids.length > 0) {
+      for (const linkId of link_ids) {
+        await client.query(`
+          UPDATE project_links
+          SET usage_count = GREATEST(0, usage_count - 1),
+              status = CASE
+                WHEN GREATEST(0, usage_count - 1) < usage_limit THEN 'active'
+                ELSE status
+              END
+          WHERE id = $1
+        `, [linkId]);
+      }
+    }
+
+    // Decrement usage_count for articles
+    if (article_ids && article_ids.length > 0) {
+      for (const articleId of article_ids) {
+        await client.query(`
+          UPDATE project_articles
+          SET usage_count = GREATEST(0, usage_count - 1),
+              status = CASE
+                WHEN GREATEST(0, usage_count - 1) < usage_limit THEN 'published'
+                ELSE status
+              END
+          WHERE id = $1
+        `, [articleId]);
+      }
+    }
+
+    // 5. Audit log for deletion
+    await client.query(`
+      INSERT INTO audit_log (
+        user_id, action, entity_type, entity_id, details
+      ) VALUES ($1, 'placement_delete', 'placement', $2, $3)
+    `, [
+      userId,
+      placementId,
+      JSON.stringify({
+        placement_type: placement.type,
+        site_name: placement.site_name,
+        project_name: placement.project_name,
+        refunded: refundResult.refunded,
+        refund_amount: refundResult.amount
+      })
+    ]);
+
+    // 6. COMMIT everything atomically
+    await client.query('COMMIT');
+
+    // Clear cache
+    const cache = require('./cache.service');
+    await cache.delPattern(`placements:user:${userId}:*`);
+    await cache.delPattern(`projects:user:${userId}:*`);
+    await cache.delPattern(`wp:content:*`);
+
+    logger.info('Placement deleted atomically with refund', {
+      placementId,
+      userId,
+      refunded: refundResult.refunded,
+      refundAmount: refundResult.amount
+    });
+
+    return {
+      deleted: true,
+      ...refundResult
+    };
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    logger.error('Atomic delete with refund failed - transaction rolled back', {
+      placementId,
+      userId,
+      error: error.message
+    });
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
 module.exports = {
   PRICING,
   getUserBalance,
@@ -924,5 +1156,6 @@ module.exports = {
   toggleAutoRenewal,
   getUserTransactions,
   getPricingForUser,
-  refundPlacement
+  refundPlacement,
+  deleteAndRefundPlacement
 };
