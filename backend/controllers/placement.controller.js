@@ -191,46 +191,39 @@ const createBatchPlacement = async (req, res) => {
   }
 };
 
-// Delete placement
+// Delete placement with atomic refund
 const deletePlacement = async (req, res) => {
   try {
     const placementId = req.params.id;
     const userId = req.user.id;
 
-    // First, attempt to refund if it's a paid placement
+    // CRITICAL FIX: Use atomic delete with refund (single transaction)
     const billingService = require('../services/billing.service');
-    let refundInfo = null;
 
-    try {
-      refundInfo = await billingService.refundPlacement(placementId, userId);
-    } catch (refundError) {
-      // If refund fails (e.g., placement not found), log but continue with deletion
-      logger.warn('Refund failed during placement deletion', {
-        placementId,
-        userId,
-        error: refundError.message
-      });
-    }
+    // This function handles BOTH refund AND delete in ONE transaction
+    const result = await billingService.deleteAndRefundPlacement(placementId, userId);
 
-    // Then delete the placement
-    const deleted = await placementService.deletePlacement(placementId, userId);
-
-    if (!deleted) {
-      return res.status(404).json({ error: 'Placement not found' });
-    }
-
-    // Include refund info in response if available
+    // Build response
     const response = { message: 'Placement deleted successfully' };
-    if (refundInfo && refundInfo.refunded) {
+    if (result.refunded) {
       response.refund = {
-        amount: refundInfo.amount,
-        newBalance: refundInfo.newBalance
+        amount: result.amount,
+        newBalance: result.newBalance
       };
     }
 
     res.json(response);
   } catch (error) {
     logger.error('Delete placement error:', error);
+
+    // More specific error messages
+    if (error.message.includes('not found')) {
+      return res.status(404).json({ error: 'Placement not found' });
+    }
+    if (error.message.includes('unauthorized')) {
+      return res.status(403).json({ error: 'Unauthorized to delete this placement' });
+    }
+
     res.status(500).json({ error: 'Failed to delete placement' });
   }
 };
