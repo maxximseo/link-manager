@@ -3,12 +3,17 @@ const API_BASE = window.location.origin + '/api';
 
 // Check if user is authenticated
 function isAuthenticated() {
-    return !!localStorage.getItem('authToken');
+    return !!localStorage.getItem('token');
 }
 
 // Get auth token
 function getAuthToken() {
-    return localStorage.getItem('authToken');
+    return localStorage.getItem('token');
+}
+
+// Alias for compatibility
+function getToken() {
+    return localStorage.getItem('token');
 }
 
 // Get current user
@@ -33,7 +38,7 @@ async function login(username, password) {
         }
 
         // Save token and user info
-        localStorage.setItem('authToken', data.token);
+        localStorage.setItem('token', data.token);
         localStorage.setItem('currentUser', JSON.stringify(data.user));
 
         return data;
@@ -45,7 +50,8 @@ async function login(username, password) {
 
 // Logout function
 function logout() {
-    localStorage.removeItem('authToken');
+    localStorage.removeItem('token');
+    localStorage.removeItem('authToken'); // Remove old key for compatibility
     localStorage.removeItem('currentUser');
     window.location.href = '/';
 }
