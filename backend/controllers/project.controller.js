@@ -58,26 +58,41 @@ const getProject = async (req, res) => {
 // Create new project
 const createProject = async (req, res) => {
   try {
-    const { name, description } = req.body;
-    
+    const { name, description, main_site_url } = req.body;
+
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
       return res.status(400).json({ error: 'Project name is required' });
     }
-    
+
     if (name.length > 255) {
       return res.status(400).json({ error: 'Project name must be less than 255 characters' });
     }
-    
+
     if (description && description.length > 1000) {
       return res.status(400).json({ error: 'Description must be less than 1000 characters' });
     }
-    
+
+    // Validate main_site_url if provided
+    if (main_site_url && main_site_url.trim()) {
+      const urlTrimmed = main_site_url.trim();
+      if (urlTrimmed.length > 500) {
+        return res.status(400).json({ error: 'URL must be less than 500 characters' });
+      }
+      // Basic URL validation
+      try {
+        new URL(urlTrimmed);
+      } catch (e) {
+        return res.status(400).json({ error: 'Invalid URL format' });
+      }
+    }
+
     const project = await projectService.createProject({
       name: name.trim(),
       description: description?.trim() || null,
+      main_site_url: main_site_url?.trim() || null,
       userId: req.user.id
     });
-    
+
     res.json(project);
   } catch (error) {
     logger.error('Create project error:', error);
@@ -90,10 +105,28 @@ const updateProject = async (req, res) => {
   try {
     const projectId = req.params.id;
     const userId = req.user.id;
-    const { name, description } = req.body;
-    
-    const project = await projectService.updateProject(projectId, userId, { name, description });
-    
+    const { name, description, main_site_url } = req.body;
+
+    // Validate main_site_url if provided
+    if (main_site_url && main_site_url.trim()) {
+      const urlTrimmed = main_site_url.trim();
+      if (urlTrimmed.length > 500) {
+        return res.status(400).json({ error: 'URL must be less than 500 characters' });
+      }
+      // Basic URL validation
+      try {
+        new URL(urlTrimmed);
+      } catch (e) {
+        return res.status(400).json({ error: 'Invalid URL format' });
+      }
+    }
+
+    const project = await projectService.updateProject(projectId, userId, {
+      name,
+      description,
+      main_site_url: main_site_url?.trim() || null
+    });
+
     if (!project) {
       return res.status(404).json({ error: 'Project not found' });
     }
