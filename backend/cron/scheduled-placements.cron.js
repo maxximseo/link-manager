@@ -146,8 +146,9 @@ async function processScheduledPlacements() {
 
           if (refundAmount > 0) {
             // Use atomic delete and refund operation from billing service
+            // SYSTEM: Cron jobs run as 'admin' to perform automatic cleanup
             const billingService = require('../services/billing.service');
-            await billingService.deleteAndRefundPlacement(placement.id, placementData.user_id);
+            await billingService.deleteAndRefundPlacement(placement.id, placementData.user_id, 'admin');
 
             logger.info('Scheduled placement failed - automatic refund issued', {
               placementId: placement.id,

@@ -196,12 +196,15 @@ const deletePlacement = async (req, res) => {
   try {
     const placementId = req.params.id;
     const userId = req.user.id;
+    const userRole = req.user.role; // Admin or regular user
 
     // CRITICAL FIX: Use atomic delete with refund (single transaction)
     const billingService = require('../services/billing.service');
 
+    // ADMIN-ONLY: Only administrators can delete placements (enforced by adminMiddleware)
     // This function handles BOTH refund AND delete in ONE transaction
-    const result = await billingService.deleteAndRefundPlacement(placementId, userId);
+    // Pass userRole so service knows admin can delete any placement
+    const result = await billingService.deleteAndRefundPlacement(placementId, userId, userRole);
 
     // Build response
     const response = { message: 'Placement deleted successfully' };

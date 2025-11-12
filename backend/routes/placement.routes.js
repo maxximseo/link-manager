@@ -7,6 +7,7 @@ const express = require('express');
 const router = express.Router();
 const placementController = require('../controllers/placement.controller');
 const authMiddleware = require('../middleware/auth');
+const adminMiddleware = require('../middleware/admin');
 const rateLimit = require('express-rate-limit');
 
 // Rate limiting
@@ -47,6 +48,7 @@ router.get('/:id', generalLimiter, placementController.getPlacement);
 // USE INSTEAD: POST /api/billing/purchase for paid placements
 router.get('/job/:jobId', generalLimiter, placementController.getJobStatus);
 router.post('/job/:jobId/cancel', generalLimiter, placementController.cancelJob);
-router.delete('/:id', generalLimiter, placementController.deletePlacement);
+// ADMIN ONLY: Only administrators can delete placements (with refund)
+router.delete('/:id', generalLimiter, adminMiddleware, placementController.deletePlacement);
 
 module.exports = router;
