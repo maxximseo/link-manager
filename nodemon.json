@@ -1,0 +1,22 @@
+{
+  "watch": [
+    "backend/**/*.js",
+    "backend/**/*.json",
+    "database/**/*.sql",
+    "database/**/*.js"
+  ],
+  "ignore": [
+    "node_modules/**",
+    "logs/**",
+    ".git/**",
+    "*.log"
+  ],
+  "ext": "js,json,sql",
+  "events": {
+    "restart": "bash scripts/auto-commit.sh"
+  },
+  "env": {
+    "NODE_ENV": "development"
+  },
+  "delay": 2000
+}

@@ -30,6 +30,11 @@ function getRedisConfig() {
     };
   }
 
+  // Add timeouts for better reliability
+  config.maxRetriesPerRequest = 10;
+  config.connectTimeout = 30000;
+  config.commandTimeout = 15000;
+
   return config;
 }
 

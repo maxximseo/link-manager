@@ -17,13 +17,15 @@ function initRedis() {
       port: parseInt(process.env.REDIS_PORT) || 6379,
       db: parseInt(process.env.REDIS_DB) || 0,
       retryStrategy: (times) => {
-        if (times > 3) {
-          logger.warn('Redis connection failed after 3 retries - cache disabled');
+        if (times > 10) {
+          logger.warn('Redis connection failed after 10 retries - cache disabled');
           return null; // Stop retrying
         }
         return Math.min(times * 100, 2000);
       },
-      maxRetriesPerRequest: 3,
+      maxRetriesPerRequest: 10,
+      connectTimeout: 30000,
+      commandTimeout: 15000,
       enableReadyCheck: true,
       lazyConnect: true
     };
