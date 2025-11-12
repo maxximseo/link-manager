@@ -196,14 +196,39 @@ const deletePlacement = async (req, res) => {
   try {
     const placementId = req.params.id;
     const userId = req.user.id;
-    
+
+    // First, attempt to refund if it's a paid placement
+    const billingService = require('../services/billing.service');
+    let refundInfo = null;
+
+    try {
+      refundInfo = await billingService.refundPlacement(placementId, userId);
+    } catch (refundError) {
+      // If refund fails (e.g., placement not found), log but continue with deletion
+      logger.warn('Refund failed during placement deletion', {
+        placementId,
+        userId,
+        error: refundError.message
+      });
+    }
+
+    // Then delete the placement
     const deleted = await placementService.deletePlacement(placementId, userId);
-    
+
     if (!deleted) {
       return res.status(404).json({ error: 'Placement not found' });
     }
-    
-    res.json({ message: 'Placement deleted successfully' });
+
+    // Include refund info in response if available
+    const response = { message: 'Placement deleted successfully' };
+    if (refundInfo && refundInfo.refunded) {
+      response.refund = {
+        amount: refundInfo.amount,
+        newBalance: refundInfo.newBalance
+      };
+    }
+
+    res.json(response);
   } catch (error) {
     logger.error('Delete placement error:', error);
     res.status(500).json({ error: 'Failed to delete placement' });
