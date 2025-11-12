@@ -68,7 +68,7 @@ function requireAuth() {
 // API request with auth header
 async function authenticatedFetch(url, options = {}) {
     const token = getAuthToken();
-    
+
     if (!token) {
         logout();
         throw new Error('Not authenticated');
@@ -88,4 +88,43 @@ async function authenticatedFetch(url, options = {}) {
     }
 
     return response;
+}
+
+// Load and update balance in navigation bar
+async function updateNavBalance() {
+    const navBalance = document.getElementById('navBalance');
+    if (!navBalance) return; // Element doesn't exist on this page
+
+    try {
+        const response = await fetch(`${API_BASE}/billing/balance`, {
+            headers: {
+                'Authorization': `Bearer ${getToken()}`
+            }
+        });
+
+        if (!response.ok) {
+            console.error('Failed to load balance:', response.statusText);
+            return;
+        }
+
+        const result = await response.json();
+        const balance = parseFloat(result.data?.balance || 0);
+        navBalance.textContent = balance.toFixed(2);
+    } catch (error) {
+        console.error('Error updating nav balance:', error);
+        // Don't show error to user, just keep default value
+    }
+}
+
+// Auto-update balance on authenticated pages
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        if (isAuthenticated()) {
+            updateNavBalance();
+        }
+    });
+} else {
+    if (isAuthenticated()) {
+        updateNavBalance();
+    }
 }
