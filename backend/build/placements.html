@@ -825,10 +825,19 @@
                 return;
             }
 
+            // Check if project has content
+            const availableContent = selectedContentType === 'links' ? projectLinks : projectArticles;
+            if (availableContent.length === 0) {
+                showNotification(`У проекта нет ${selectedContentType === 'links' ? 'ссылок' : 'статей'}. Добавьте контент в проекте сначала.`, 'error');
+                return;
+            }
+
             if (Object.keys(siteAssignments).length === 0) {
                 showNotification('Please select at least one site', 'error');
                 return;
             }
+
+            console.log('Creating placement with assignments:', siteAssignments);
 
             // Extract and validate scheduled publication date
             const publishType = document.querySelector('input[name="publishType"]:checked').value;
@@ -884,12 +893,15 @@
 
                 for (const data of purchases) {
                     try {
-                        await BillingAPI.purchase(data);
+                        console.log('Sending purchase request:', data);
+                        const result = await BillingAPI.purchase(data);
+                        console.log('Purchase successful:', result);
                         successful++;
                     } catch (error) {
                         failed++;
                         errors.push({ siteId: data.siteId, error: error.message });
-                        console.error('Failed placement purchase:', error);
+                        console.error('Failed placement purchase for site', data.siteId, ':', error);
+                        console.error('Full error object:', error);
                     }
                 }
 

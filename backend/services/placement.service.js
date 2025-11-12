@@ -129,16 +129,25 @@ const createPlacement = async (data) => {
     // Check existing placements for this project on this site
     const existingContentResult = await client.query(`
       SELECT
-        COUNT(DISTINCT pc.link_id) as existing_links,
-        COUNT(DISTINCT pc.article_id) as existing_articles
+        COALESCE(COUNT(DISTINCT pc.link_id) FILTER (WHERE pc.link_id IS NOT NULL), 0) as existing_links,
+        COALESCE(COUNT(DISTINCT pc.article_id) FILTER (WHERE pc.article_id IS NOT NULL), 0) as existing_articles
       FROM placements p
-      JOIN placement_content pc ON p.id = pc.placement_id
+      LEFT JOIN placement_content pc ON p.id = pc.placement_id
       WHERE p.project_id = $1 AND p.site_id = $2
     `, [project_id, site_id]);
 
-    const existing = existingContentResult.rows[0];
+    const existing = existingContentResult.rows[0] || { existing_links: 0, existing_articles: 0 };
     const hasExistingLinks = parseInt(existing.existing_links || 0) > 0;
     const hasExistingArticles = parseInt(existing.existing_articles || 0) > 0;
+
+    logger.debug('Checking existing placements', {
+      project_id,
+      site_id,
+      existing_links: existing.existing_links,
+      existing_articles: existing.existing_articles,
+      hasExistingLinks,
+      hasExistingArticles
+    });
 
     // NEW LOGIC: Only ONE placement (link OR article) allowed per site per project
     if (hasExistingLinks || hasExistingArticles) {
