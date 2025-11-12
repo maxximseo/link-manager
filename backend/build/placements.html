@@ -59,7 +59,30 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-4 d-flex align-items-end">
+        </div>
+
+        <!-- Publication Date Selection -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <label class="form-label fw-bold">Дата публикации</label>
+                <div class="mb-2">
+                    <input class="form-check-input" type="radio" name="publishType" id="publishImmediate" value="immediate" checked>
+                    <label class="form-check-label" for="publishImmediate">
+                        <i class="bi bi-lightning-fill"></i> Опубликовать сразу
+                    </label>
+                </div>
+                <div class="mb-2">
+                    <input class="form-check-input" type="radio" name="publishType" id="publishScheduled" value="scheduled">
+                    <label class="form-check-label" for="publishScheduled">
+                        <i class="bi bi-calendar-event"></i> Отложенная публикация (до 90 дней)
+                    </label>
+                </div>
+                <div id="scheduledDateDiv" style="display: none;" class="mt-2">
+                    <input type="datetime-local" class="form-control" id="scheduledDateInput">
+                    <small class="text-muted">Максимум 90 дней от сегодня</small>
+                </div>
+            </div>
+            <div class="col-md-6 d-flex align-items-end">
                 <button type="button" class="btn btn-primary w-100" onclick="createPlacement()" id="createPlacementBtn" disabled>
                     <i class="bi bi-plus-circle"></i> Create Placement
                 </button>
@@ -316,6 +339,14 @@
                     currentPage = 1; // Reset to first page
                     renderSitesTable(); // Re-render with new page size
                 });
+            });
+
+            // Add event listeners for publication type radio buttons
+            document.getElementById('publishImmediate').addEventListener('change', () => {
+                document.getElementById('scheduledDateDiv').style.display = 'none';
+            });
+            document.getElementById('publishScheduled').addEventListener('change', () => {
+                document.getElementById('scheduledDateDiv').style.display = 'block';
             });
 
             // Load projects and sites - auto-selection happens in loadProjects()
@@ -807,6 +838,34 @@
                 return;
             }
 
+            // Extract and validate scheduled publication date
+            const publishType = document.querySelector('input[name="publishType"]:checked').value;
+            let scheduledDate = null;
+
+            if (publishType === 'scheduled') {
+                const dateInput = document.getElementById('scheduledDateInput').value;
+                if (!dateInput) {
+                    showNotification('Пожалуйста, укажите дату отложенной публикации', 'error');
+                    return;
+                }
+
+                const scheduled = new Date(dateInput);
+                const now = new Date();
+                const maxDate = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000); // 90 days from now
+
+                if (scheduled < now) {
+                    showNotification('Дата публикации не может быть в прошлом', 'error');
+                    return;
+                }
+
+                if (scheduled > maxDate) {
+                    showNotification('Дата публикации не может быть позднее чем через 90 дней', 'error');
+                    return;
+                }
+
+                scheduledDate = dateInput; // ISO format for API
+            }
+
             // Build placement purchases with specific assignments
             const purchases = [];
             for (const [siteId, assignment] of Object.entries(siteAssignments)) {
@@ -816,6 +875,12 @@
                     type: selectedContentType === 'links' ? 'link' : 'article',
                     contentIds: [assignment.contentId]
                 };
+
+                // Add scheduled date if set
+                if (scheduledDate) {
+                    purchaseData.scheduledDate = scheduledDate;
+                }
+
                 purchases.push(purchaseData);
             }
 
