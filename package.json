@@ -5,9 +5,11 @@
   "main": "backend/server-new.js",
   "scripts": {
     "dev": "nodemon backend/server-new.js",
+    "dev:auto": "bash scripts/start-dev-with-auto-commit.sh",
     "start": "node backend/server-new.js",
     "start:modular": "node backend/server-new.js",
-    "start:legacy": "node backend/server.js"
+    "start:legacy": "node backend/server.js",
+    "commit": "bash scripts/auto-commit.sh"
   },
   "dependencies": {
     "axios": "^1.12.2",
