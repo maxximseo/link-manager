@@ -140,13 +140,9 @@ const createPlacement = async (data) => {
     const hasExistingLinks = parseInt(existing.existing_links || 0) > 0;
     const hasExistingArticles = parseInt(existing.existing_articles || 0) > 0;
 
-    // Check restrictions: max 1 link and 1 article per site per project
-    if (link_ids.length > 0 && hasExistingLinks) {
-      throw new Error('This site already has a link from this project. Maximum 1 link per site per project.');
-    }
-
-    if (article_ids.length > 0 && hasExistingArticles) {
-      throw new Error('This site already has an article from this project. Maximum 1 article per site per project.');
+    // NEW LOGIC: Only ONE placement (link OR article) allowed per site per project
+    if (hasExistingLinks || hasExistingArticles) {
+      throw new Error('На этом сайте уже есть размещение для данного проекта. Повторная покупка запрещена.');
     }
 
     if (link_ids.length > 1) {

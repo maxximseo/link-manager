@@ -282,9 +282,8 @@ The placements creation interface (`placements.html`) uses a streamlined 3-step 
 
 **Step 3 - Site Selection with Round-Robin Assignment**:
 - Sites table shows color-coded availability:
-  - 🟢 **Green (table-success)**: Site available for both links and articles
-  - 🟡 **Yellow (table-warning)**: Partial - has either link OR article (can add other type)
-  - 🔴 **Red (table-danger)**: Full - has both link AND article for this project
+  - 🟢 **Green (table-success)**: Site available - no placements for this project yet
+  - 🔴 **Red (table-danger)**: Already purchased - site has link OR article for this project (cannot buy again)
 - When user checks a site, dropdown appears with available content
 - **Auto-assignment**: First available content is auto-selected using round-robin
 - **Round-robin cycling**: Each subsequent site gets next content item (cycles back to start if needed)
@@ -293,8 +292,9 @@ The placements creation interface (`placements.html`) uses a streamlined 3-step 
 - `nextContentIndex` variable tracks round-robin position, resets on project/type change
 
 **Placement Restrictions** (enforced in `placement.service.js`):
-- Maximum 1 link per site per project
-- Maximum 1 article per site per project
+- **NEW LOGIC**: Only ONE placement (link OR article) allowed per site per project
+- If site already has ANY placement for the project, it's marked red and disabled
+- Cannot purchase the same site twice for the same project
 - Site quota limits checked: `used_links < max_links`, `used_articles < max_articles`
 
 ## File Locations Reference
