@@ -191,21 +191,39 @@ const createBatchPlacement = async (req, res) => {
   }
 };
 
-// Delete placement
+// Delete placement with atomic refund
 const deletePlacement = async (req, res) => {
   try {
     const placementId = req.params.id;
     const userId = req.user.id;
-    
-    const deleted = await placementService.deletePlacement(placementId, userId);
-    
-    if (!deleted) {
-      return res.status(404).json({ error: 'Placement not found' });
+
+    // CRITICAL FIX: Use atomic delete with refund (single transaction)
+    const billingService = require('../services/billing.service');
+
+    // This function handles BOTH refund AND delete in ONE transaction
+    const result = await billingService.deleteAndRefundPlacement(placementId, userId);
+
+    // Build response
+    const response = { message: 'Placement deleted successfully' };
+    if (result.refunded) {
+      response.refund = {
+        amount: result.amount,
+        newBalance: result.newBalance
+      };
     }
-    
-    res.json({ message: 'Placement deleted successfully' });
+
+    res.json(response);
   } catch (error) {
     logger.error('Delete placement error:', error);
+
+    // More specific error messages
+    if (error.message.includes('not found')) {
+      return res.status(404).json({ error: 'Placement not found' });
+    }
+    if (error.message.includes('unauthorized')) {
+      return res.status(403).json({ error: 'Unauthorized to delete this placement' });
+    }
+
     res.status(500).json({ error: 'Failed to delete placement' });
   }
 };

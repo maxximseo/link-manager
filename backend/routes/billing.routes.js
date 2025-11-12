@@ -167,7 +167,7 @@ router.post('/purchase',
     body('projectId').isInt({ min: 1 }).withMessage('Valid project ID required'),
     body('siteId').isInt({ min: 1 }).withMessage('Valid site ID required'),
     body('type').isIn(['link', 'article']).withMessage('Type must be "link" or "article"'),
-    body('contentIds').isArray({ min: 1, max: 10 }).withMessage('Content IDs must be an array (1-10 items)'),
+    body('contentIds').isArray({ min: 1, max: 1 }).withMessage('Content IDs must be an array with exactly 1 item'),
     body('contentIds.*').isInt({ min: 1 }).withMessage('Each content ID must be a valid integer'),
     body('scheduledDate').optional().isISO8601().withMessage('Scheduled date must be valid ISO8601 date'),
     body('autoRenewal').optional().isBoolean().withMessage('Auto renewal must be boolean')
