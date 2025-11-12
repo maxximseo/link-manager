@@ -437,22 +437,32 @@ const deletePlacement = async (placementId, userId) => {
     // Begin transaction
     await client.query('BEGIN');
 
-    // First get the placement details and content IDs with row-level lock
+    // First lock the placement row, then get details
+    const lockResult = await client.query(`
+      SELECT p.id, p.site_id, p.project_id
+      FROM placements p
+      LEFT JOIN sites s ON p.site_id = s.id
+      LEFT JOIN projects proj ON p.project_id = proj.id
+      WHERE p.id = $1 AND (s.user_id = $2 OR proj.user_id = $2)
+      FOR UPDATE OF p NOWAIT
+    `, [placementId, userId]);
+
+    if (lockResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return false;
+    }
+
+    // Now get the placement content details (no lock needed, it's protected by placement lock)
     const placementInfo = await client.query(`
       SELECT
-        p.site_id,
+        $1::INTEGER as site_id,
         COUNT(DISTINCT pc.link_id) as link_count,
         COUNT(DISTINCT pc.article_id) as article_count,
         array_agg(DISTINCT pc.link_id) FILTER (WHERE pc.link_id IS NOT NULL) as link_ids,
         array_agg(DISTINCT pc.article_id) FILTER (WHERE pc.article_id IS NOT NULL) as article_ids
-      FROM placements p
-      LEFT JOIN placement_content pc ON p.id = pc.placement_id
-      LEFT JOIN sites s ON p.site_id = s.id
-      LEFT JOIN projects proj ON p.project_id = proj.id
-      WHERE p.id = $1 AND (s.user_id = $2 OR proj.user_id = $2)
-      GROUP BY p.site_id, p.id
-      FOR UPDATE OF p NOWAIT
-    `, [placementId, userId]);
+      FROM placement_content pc
+      WHERE pc.placement_id = $2
+    `, [lockResult.rows[0].site_id, placementId]);
 
     if (placementInfo.rows.length === 0) {
       await client.query('ROLLBACK');
