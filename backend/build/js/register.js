@@ -2,7 +2,7 @@
 const API_BASE = window.location.origin + '/api';
 
 // Check if already logged in
-if (localStorage.getItem('authToken')) {
+if (localStorage.getItem('token') || localStorage.getItem('authToken')) {
     window.location.href = '/dashboard.html';
 }
 
