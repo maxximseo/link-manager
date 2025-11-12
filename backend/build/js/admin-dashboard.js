@@ -393,5 +393,5 @@ function showAlert(message, type = 'info') {
 }
 
 function getToken() {
-    return localStorage.getItem('token');
+    return localStorage.getItem('token') || localStorage.getItem('authToken');
 }

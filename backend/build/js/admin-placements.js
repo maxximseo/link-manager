@@ -406,7 +406,7 @@ function showError(message) {
 
 // Get token from auth.js
 function getToken() {
-    return localStorage.getItem('token');
+    return localStorage.getItem('token') || localStorage.getItem('authToken');
 }
 
 // Logout function
