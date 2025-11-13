@@ -134,6 +134,19 @@
                             </div>
                         </div>
 
+                        <!-- Allow Articles checkbox (WordPress only) -->
+                        <div class="mb-3" id="allowArticlesField">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="allowArticles" checked>
+                                <label class="form-check-label" for="allowArticles">
+                                    <i class="bi bi-file-text"></i> Разрешить размещение статей
+                                </label>
+                            </div>
+                            <small class="text-muted">
+                                Снимите галочку, чтобы запретить покупку статей на этом сайте (ссылки будут доступны)
+                            </small>
+                        </div>
+
                         <!-- WordPress Plugin Info -->
                         <div class="alert alert-info" id="wordpressPluginInfo">
                             <h6><i class="bi bi-wordpress"></i> WordPress Plugin Required</h6>
@@ -284,6 +297,7 @@
 
             // Toggle fields visibility
             document.getElementById('maxArticlesField').style.display = isWordPress ? 'block' : 'none';
+            document.getElementById('allowArticlesField').style.display = isWordPress ? 'block' : 'none';
             document.getElementById('wordpressPluginInfo').style.display = isWordPress ? 'block' : 'none';
             document.getElementById('staticWidgetInfo').style.display = isWordPress ? 'none' : 'block';
 
@@ -322,6 +336,7 @@
             document.getElementById('siteTypeWordPress').checked = true; // Default to WordPress
             document.getElementById('maxLinks').value = '10';
             document.getElementById('maxArticles').value = '10';
+            document.getElementById('allowArticles').checked = true; // Default: allow articles
 
             // Enable API key input for new sites
             document.getElementById('apiKey').removeAttribute('readonly');
@@ -341,6 +356,9 @@
             document.getElementById('apiKey').value = site.api_key || '';
             document.getElementById('maxLinks').value = site.max_links || 10;
             document.getElementById('maxArticles').value = site.max_articles || 10;
+
+            // Set allow_articles checkbox (default to true if not set)
+            document.getElementById('allowArticles').checked = site.allow_articles !== false;
 
             // Make API key readonly when editing
             document.getElementById('apiKey').setAttribute('readonly', 'readonly');
@@ -369,9 +387,13 @@
                 max_articles: parseInt(document.getElementById('maxArticles').value)
             };
 
-            // Only include API key for WordPress sites
+            // Only include API key and allow_articles for WordPress sites
             if (siteType === 'wordpress') {
                 data.api_key = document.getElementById('apiKey').value;
+                data.allow_articles = document.getElementById('allowArticles').checked;
+            } else {
+                // Static sites always have allow_articles = false
+                data.allow_articles = false;
             }
 
             try {
