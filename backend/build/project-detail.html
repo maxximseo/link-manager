@@ -358,7 +358,7 @@ If you want to explore reliable platforms, check out <a href="https://example.co
                             </div>
                             <div class="btn-group btn-group-sm">
                                 ${!isExhausted ? `<button class="btn btn-outline-primary" onclick="editLink(${link.id})" title="Редактировать"><i class="bi bi-pencil"></i></button>` : ''}
-                                ${userIsAdmin ? `<button class="btn btn-outline-danger" onclick="deleteLink(${link.id})" title="Удалить"><i class="bi bi-trash"></i></button>` : ''}
+                                ${(userIsAdmin || link.usage_count === 0) ? `<button class="btn btn-outline-danger" onclick="deleteLink(${link.id})" title="Удалить"><i class="bi bi-trash"></i></button>` : ''}
                             </div>
                         </div>
                         <div>
@@ -426,7 +426,7 @@ If you want to explore reliable platforms, check out <a href="https://example.co
                                 <button class="btn btn-outline-info" onclick="viewArticle(${article.id})" title="Просмотр"><i class="bi bi-eye"></i></button>
                                 ${!isExhausted ? `<button class="btn btn-outline-primary" onclick="editArticle(${article.id})" title="Редактировать"><i class="bi bi-pencil"></i></button>` : ''}
                                 <button class="btn btn-outline-secondary" onclick="duplicateArticle(${article.id})" title="Создать копию"><i class="bi bi-files"></i></button>
-                                ${userIsAdmin ? `<button class="btn ${isExhausted ? 'btn-outline-secondary disabled' : 'btn-outline-danger'}" onclick="deleteArticle(${article.id})" title="${isExhausted ? 'Нельзя удалить использованную статью' : 'Удалить статью'}"><i class="bi bi-trash"></i></button>` : ''}
+                                ${(userIsAdmin || article.usage_count === 0) ? `<button class="btn ${isExhausted ? 'btn-outline-secondary disabled' : 'btn-outline-danger'}" onclick="deleteArticle(${article.id})" title="${isExhausted ? 'Нельзя удалить использованную статью' : 'Удалить статью'}"><i class="bi bi-trash"></i></button>` : ''}
                             </div>
                         </div>
                     </div>

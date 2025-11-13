@@ -178,9 +178,16 @@ function renderActivePlacements(placements) {
             : '';
 
         const viewBtn = p.wordpress_post_id
-            ? `<a href="${p.site_url}/?p=${p.wordpress_post_id}" target="_blank" class="btn btn-sm btn-outline-primary">
+            ? `<a href="${p.site_url}/?p=${p.wordpress_post_id}" target="_blank" class="btn btn-sm btn-outline-primary me-1">
                  <i class="bi bi-eye"></i>
                </a>`
+            : '';
+
+        // Delete button - only for admins
+        const deleteBtn = isAdmin()
+            ? `<button class="btn btn-sm btn-outline-danger" onclick="deletePlacement(${p.id})" title="Удалить размещение">
+                 <i class="bi bi-trash"></i>
+               </button>`
             : '';
 
         // For articles, show full WordPress post URL; for links, show site URL
@@ -200,6 +207,7 @@ function renderActivePlacements(placements) {
             <td class="text-nowrap">
                 ${renewBtn}
                 ${viewBtn}
+                ${deleteBtn}
             </td>
         `;
 
