@@ -611,3 +611,235 @@ Before updating, verify columns exist in schema:
 \d placements
 ```
 Common issue: Trying to update non-existent columns like `status` or `notes` in `sites` table causes UPDATE failures. Always check [database/init.sql](database/init.sql) for actual schema.
+
+## Static PHP Sites (NEW - November 2025)
+
+Static PHP sites are a new site type that doesn't require WordPress integration.
+
+### Key Features
+- **No API key required** - Uses domain-based authentication
+- **Links only** - Cannot publish articles (max_articles automatically set to 0)
+- **Simple widget** - Direct HTTP endpoint, no WordPress plugin needed
+- **Domain normalization** - Matches by clean domain (no protocol/www/path)
+
+### Creating Static PHP Site
+```bash
+curl -X POST http://localhost:3003/api/sites \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"site_url":"https://example.com","site_type":"static_php","max_links":20}'
+
+# Response: api_key will be null, max_articles will be 0
+```
+
+### Widget Integration
+Place this PHP code on static site:
+```php
+<?php
+$domain = $_SERVER['HTTP_HOST'];
+$api_url = "https://your-api.com/api/static/get-content-by-domain?domain=" . urlencode($domain);
+$response = file_get_contents($api_url);
+$data = json_decode($response, true);
+
+foreach ($data['links'] as $link) {
+    echo '<a href="' . htmlspecialchars($link['url']) . '">'
+       . htmlspecialchars($link['anchor_text']) . '</a>';
+}
+?>
+```
+
+### Static Widget Endpoint
+```
+GET /api/static/get-content-by-domain?domain=example.com
+
+Response:
+{
+  "links": [
+    {"url": "https://...", "anchor_text": "Link Text"}
+  ],
+  "articles": []  // Always empty for static sites
+}
+```
+
+### Domain Normalization
+- `https://www.example.com/path` → `example.com`
+- `http://example.com` → `example.com`
+- Allows widget to work on any subdomain/protocol
+
+### Critical Migration
+**REQUIRED**: Make api_key nullable:
+```bash
+node database/run_nullable_migration.js
+```
+
+Without this migration, static site creation will fail with:
+```
+null value in column "api_key" violates not-null constraint
+```
+
+## Billing System API (NEW - November 2025)
+
+Placement creation moved to billing system. Old `/api/placements` endpoint is DEPRECATED.
+
+### New Endpoint Format
+```javascript
+POST /api/billing/purchase
+{
+  "projectId": 123,        // Single ID (not project_id)
+  "siteId": 456,          // Single ID (not site_ids array)
+  "type": "link",         // "link" or "article"
+  "contentIds": [789],    // Array with exactly 1 ID
+  "scheduledDate": "2025-01-15T10:00:00Z",  // Optional
+  "autoRenewal": false    // Optional
+}
+
+Response:
+{
+  "success": true,
+  "data": {
+    "placement": {...},
+    "newBalance": 95.50,
+    "newDiscount": 0.05,
+    "newTier": "Bronze"
+  }
+}
+```
+
+### Old Endpoint (DEPRECATED)
+```
+POST /api/placements
+→ Returns 410 Gone with migration instructions
+```
+
+### Validation Rules
+1. **Static PHP sites CANNOT purchase articles**
+   - Returns 400 with error details
+   - Check `billing.service.js:207-210`
+
+2. **One placement per site per project**
+   - Cannot purchase same site twice for same project
+   - Enforced in billing.service.js
+
+3. **Site quota limits**
+   - `used_links < max_links`
+   - `used_articles < max_articles`
+
+### Error Response Format
+```javascript
+{
+  "error": "Failed to purchase placement",
+  "details": "Site \"example.com\" is a static PHP site and does not support article placements"
+}
+```
+
+Use `details` field for specific error information.
+
+## Testing
+
+### Run Test Suite
+```bash
+node test-static-sites.js
+```
+
+### Test Coverage
+1. ✅ Create static PHP site via API
+2. ✅ Validate site_type restrictions
+3. ✅ Create placement with link on static site
+4. ✅ Block article placement on static site  
+5. ✅ Test widget endpoint for static site
+6. ✅ Update site type WordPress → Static
+
+All 6 tests should pass when system is properly configured.
+
+### Test Requirements
+- Server running on port 3003
+- Database with migrations applied (including nullable api_key)
+- Admin user: username='admin', password='admin123'
+
+## Recent Critical Updates (November 2025)
+
+### 1. API Key Made Nullable
+**Issue**: Static PHP sites don't need API keys
+**Fix**: `ALTER TABLE sites ALTER COLUMN api_key DROP NOT NULL`
+**Migration**: `node database/run_nullable_migration.js`
+
+### 2. Site Types Added
+**New column**: `site_type VARCHAR(20) DEFAULT 'wordpress'`
+**Values**: 'wordpress' | 'static_php'
+**Migration**: `node database/run_site_types_migration.js`
+
+### 3. Billing API Refactor
+**Old**: `POST /api/placements` (DEPRECATED)
+**New**: `POST /api/billing/purchase`
+**Breaking change**: Request format completely different
+
+### 4. Site Type Validation
+**Controller**: `backend/controllers/site.controller.js`
+- Lines 56, 70-72, 109, 120-122: site_type extraction and validation
+**Service**: `backend/services/site.service.js`
+- Lines 92-107: Static site logic (force api_key=null, max_articles=0)
+
+### 5. Static Widget Endpoint
+**Route**: `GET /api/static/get-content-by-domain`
+**Service**: `backend/services/site.service.js:getSiteByDomain()`
+- Domain normalization for matching
+- Returns links only (no articles)
+
+## Debugging Static PHP Sites
+
+### Error: `api_key constraint violation`
+**Cause**: Database has NOT NULL on api_key
+**Fix**: Run `node database/run_nullable_migration.js`
+
+### Error: `Site type must be wordpress or static_php`
+**Cause**: Invalid site_type value or missing validation
+**Fix**: Only send 'wordpress' or 'static_php'
+
+### Error: `static PHP site does not support article placements`
+**Cause**: Trying to purchase article on static site
+**Fix**: This is expected - use type='link' instead
+
+### Error: `This endpoint is deprecated`  
+**Cause**: Using old `/api/placements` endpoint
+**Fix**: Use `/api/billing/purchase` with new format
+
+### Widget Returns Empty
+**For static sites**:
+1. Check domain normalization matches
+2. Verify site exists with site_type='static_php'
+3. Check placement_content has link records
+4. Cache TTL is 5 minutes - wait or clear
+
+**For WordPress sites**:
+1. Check api_key exists in sites table
+2. Verify placements have placement_content records
+3. Check WordPress plugin is active
+
+## Migration Order (Critical)
+
+Run migrations in this exact order for new environments:
+
+```bash
+# 1. Core schema
+psql -d linkmanager -f database/init.sql
+
+# 2. Add user_id to placements (REQUIRED)
+node database/run_user_id_migration.js
+
+# 3. Add site_type column
+node database/run_site_types_migration.js
+
+# 4. Make api_key nullable (REQUIRED for static sites)
+node database/run_nullable_migration.js
+
+# 5. Add WordPress post_id and status
+psql -d linkmanager -f database/migrate_add_wordpress_post_id.sql
+
+# 6. Install billing system (optional)
+node database/run_billing_migration.js
+
+# 7. Seed data
+psql -d linkmanager -f database/seed.sql
+```
+
+**DO NOT SKIP** migrations #2, #3, or #4 - system will not work without them.
