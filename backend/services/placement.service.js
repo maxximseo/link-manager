@@ -212,16 +212,42 @@ const createPlacement = async (data) => {
 
       if (existingLink.rows.length === 0) {
         try {
+          // CRITICAL FIX: Check if link is not exhausted before using it
+          const linkCheck = await client.query(`
+            SELECT id, usage_count, usage_limit, status
+            FROM project_links
+            WHERE id = $1
+            FOR UPDATE
+          `, [linkId]);
+
+          if (linkCheck.rows.length === 0) {
+            throw new Error(`Link ${linkId} not found`);
+          }
+
+          const link = linkCheck.rows[0];
+          if (link.status === 'exhausted' || link.usage_count >= link.usage_limit) {
+            throw new Error(`Link ${linkId} is exhausted (${link.usage_count}/${link.usage_limit} uses)`);
+          }
+
           await client.query(
             'INSERT INTO placement_content (placement_id, link_id) VALUES ($1, $2)',
             [placement.id, linkId]
           );
 
-          // Increment usage_count for the link
-          await client.query(
-            'UPDATE project_links SET usage_count = usage_count + 1 WHERE id = $1',
-            [linkId]
-          );
+          // Increment usage_count and update status
+          await client.query(`
+            UPDATE project_links
+            SET usage_count = usage_count + 1,
+                status = CASE WHEN usage_count + 1 >= usage_limit THEN 'exhausted' ELSE 'active' END
+            WHERE id = $1
+          `, [linkId]);
+
+          logger.debug('Link added to placement', {
+            placementId: placement.id,
+            linkId,
+            newUsageCount: link.usage_count + 1,
+            usageLimit: link.usage_limit
+          });
         } catch (insertError) {
           // Handle unique constraint violation (race condition)
           if (insertError.code === '23505') {
@@ -249,16 +275,42 @@ const createPlacement = async (data) => {
 
       if (existingArticle.rows.length === 0) {
         try {
+          // CRITICAL FIX: Check if article is not exhausted before using it
+          const articleCheck = await client.query(`
+            SELECT id, usage_count, usage_limit, status
+            FROM project_articles
+            WHERE id = $1
+            FOR UPDATE
+          `, [articleId]);
+
+          if (articleCheck.rows.length === 0) {
+            throw new Error(`Article ${articleId} not found`);
+          }
+
+          const article = articleCheck.rows[0];
+          if (article.status === 'exhausted' || article.usage_count >= article.usage_limit) {
+            throw new Error(`Article ${articleId} is exhausted (${article.usage_count}/${article.usage_limit} uses)`);
+          }
+
           await client.query(
             'INSERT INTO placement_content (placement_id, article_id) VALUES ($1, $2)',
             [placement.id, articleId]
           );
 
-          // Increment usage_count for the article
-          await client.query(
-            'UPDATE project_articles SET usage_count = usage_count + 1 WHERE id = $1',
-            [articleId]
-          );
+          // Increment usage_count and update status
+          await client.query(`
+            UPDATE project_articles
+            SET usage_count = usage_count + 1,
+                status = CASE WHEN usage_count + 1 >= usage_limit THEN 'exhausted' ELSE 'active' END
+            WHERE id = $1
+          `, [articleId]);
+
+          logger.debug('Article added to placement', {
+            placementId: placement.id,
+            articleId,
+            newUsageCount: article.usage_count + 1,
+            usageLimit: article.usage_limit
+          });
         } catch (insertError) {
           // Handle unique constraint violation (race condition)
           if (insertError.code === '23505') {
@@ -585,7 +637,25 @@ const deletePlacement = async (placementId, userId) => {
       // Invalidate cache after commit
       await cache.delPattern(`placements:user:${userId}:*`);
       await cache.delPattern(`projects:user:${userId}:*`);
-      await cache.delPattern(`wp:content:*`); // Invalidate WordPress API cache
+
+      // CRITICAL FIX: Invalidate site-specific WordPress/Static content cache
+      const siteInfoResult = await query('SELECT api_key, site_url, site_type FROM sites WHERE id = $1', [site_id]);
+      if (siteInfoResult.rows.length > 0) {
+        const siteInfo = siteInfoResult.rows[0];
+        if (siteInfo.site_type === 'wordpress' && siteInfo.api_key) {
+          await cache.del(`wp:content:${siteInfo.api_key}`);
+          logger.debug('WordPress content cache invalidated after deletion', { apiKey: siteInfo.api_key });
+        } else if (siteInfo.site_type === 'static_php' && siteInfo.site_url) {
+          const normalizedDomain = siteInfo.site_url
+            .toLowerCase()
+            .replace(/^https?:\/\//, '')
+            .replace(/^www\./, '')
+            .replace(/\/.*$/, '');
+          await cache.del(`static:content:${normalizedDomain}`);
+          logger.debug('Static content cache invalidated after deletion', { domain: normalizedDomain });
+        }
+      }
+
       logger.info('Placement deleted, usage counts updated, and cache invalidated', {
         placementId,
         site_id,

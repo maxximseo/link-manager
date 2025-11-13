@@ -66,6 +66,28 @@ const createSite = async (data) => {
   try {
     const { site_url, api_key, max_links, max_articles, userId, site_type } = data;
 
+    // SECURITY: Validate URL format
+    if (!site_url) {
+      throw new Error('Site URL is required');
+    }
+
+    try {
+      const parsedUrl = new URL(site_url);
+      // Only allow HTTP and HTTPS protocols
+      if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+        throw new Error('Only HTTP and HTTPS protocols are allowed');
+      }
+      // Check for valid hostname
+      if (!parsedUrl.hostname || parsedUrl.hostname.length < 3) {
+        throw new Error('Invalid hostname in URL');
+      }
+    } catch (urlError) {
+      if (urlError.message.includes('Invalid URL')) {
+        throw new Error('Invalid site URL format. Must be a valid HTTP or HTTPS URL.');
+      }
+      throw urlError;
+    }
+
     // Determine site type (default: wordpress)
     const finalSiteType = site_type || 'wordpress';
 
@@ -107,6 +129,26 @@ const createSite = async (data) => {
 const updateSite = async (siteId, userId, data) => {
   try {
     const { site_url, site_name, api_key, max_links, max_articles, site_type } = data;
+
+    // SECURITY: Validate URL format if provided
+    if (site_url) {
+      try {
+        const parsedUrl = new URL(site_url);
+        // Only allow HTTP and HTTPS protocols
+        if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+          throw new Error('Only HTTP and HTTPS protocols are allowed');
+        }
+        // Check for valid hostname
+        if (!parsedUrl.hostname || parsedUrl.hostname.length < 3) {
+          throw new Error('Invalid hostname in URL');
+        }
+      } catch (urlError) {
+        if (urlError.message.includes('Invalid URL')) {
+          throw new Error('Invalid site URL format. Must be a valid HTTP or HTTPS URL.');
+        }
+        throw urlError;
+      }
+    }
 
     // Validate site_type if provided
     if (site_type && !['wordpress', 'static_php'].includes(site_type)) {
