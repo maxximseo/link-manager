@@ -132,7 +132,7 @@ const createSite = async (data) => {
 // Update site
 const updateSite = async (siteId, userId, data) => {
   try {
-    const { site_url, site_name, api_key, max_links, max_articles, site_type } = data;
+    const { site_url, site_name, api_key, max_links, max_articles, site_type, allow_articles } = data;
 
     // SECURITY: Validate URL format if provided
     if (site_url) {
