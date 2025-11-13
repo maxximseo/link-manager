@@ -53,19 +53,24 @@ const getSite = async (req, res) => {
 // Create new site
 const createSite = async (req, res) => {
   try {
-    const { site_url, api_key, max_links, max_articles } = req.body;
-    
+    const { site_url, api_key, max_links, max_articles, site_type } = req.body;
+
     // Validate required fields
     if (!site_url || typeof site_url !== 'string' || site_url.trim().length === 0) {
       return res.status(400).json({ error: 'Site URL is required' });
     }
-    
+
     // Validate URL format
     const urlPattern = /^https?:\/\/.+/;
     if (!urlPattern.test(site_url)) {
       return res.status(400).json({ error: 'Site URL must be a valid HTTP/HTTPS URL' });
     }
-    
+
+    // Validate site_type
+    if (site_type && !['wordpress', 'static_php'].includes(site_type)) {
+      return res.status(400).json({ error: 'Site type must be wordpress or static_php' });
+    }
+
     // Validate API key length (VARCHAR(100) in database)
     if (api_key && (typeof api_key !== 'string' || api_key.length > 100)) {
       return res.status(400).json({ error: 'API key must be less than 100 characters' });
@@ -79,15 +84,16 @@ const createSite = async (req, res) => {
     if (max_articles !== undefined && (typeof max_articles !== 'number' || max_articles < 0)) {
       return res.status(400).json({ error: 'Max articles must be a positive number' });
     }
-    
+
     const site = await siteService.createSite({
       site_url: site_url.trim(),
       api_key,
       max_links,
       max_articles,
+      site_type,
       userId: req.user.id
     });
-    
+
     res.json(site);
   } catch (error) {
     logger.error('Create site error:', error);
