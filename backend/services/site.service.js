@@ -96,17 +96,17 @@ const createSite = async (data) => {
       throw new Error('Invalid site_type. Must be wordpress or static_php');
     }
 
-    // For static_php sites: api_key is optional, max_articles must be 0
+    // Both site types now use API key authentication
     let finalApiKey = api_key;
     let finalMaxArticles = max_articles;
 
     if (finalSiteType === 'static_php') {
-      // Static PHP sites don't need API key (domain-based auth)
-      finalApiKey = finalApiKey || null;
+      // Static PHP sites: generate API key if not provided
+      finalApiKey = api_key || `api_${crypto.randomBytes(12).toString('hex')}`;
       // Static PHP sites only support links, not articles
       finalMaxArticles = 0;
     } else {
-      // WordPress sites require API key
+      // WordPress sites: generate API key if not provided
       finalApiKey = api_key || `api_${crypto.randomBytes(12).toString('hex')}`;
       finalMaxArticles = max_articles || 30;
     }
