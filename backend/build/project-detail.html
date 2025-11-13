@@ -325,6 +325,10 @@ If you want to explore reliable platforms, check out <a href="https://example.co
         function displayLinks() {
             const list = document.getElementById('linksList');
 
+            // Check admin status BEFORE map (so it's available in template string scope)
+            const userIsAdmin = typeof isAdmin === 'function' ? isAdmin() : false;
+            console.log('displayLinks: userIsAdmin =', userIsAdmin, 'user:', getCurrentUser());
+
             if (links.length === 0) {
                 list.innerHTML = `
                     <div class="alert alert-info">
@@ -354,7 +358,7 @@ If you want to explore reliable platforms, check out <a href="https://example.co
                             </div>
                             <div class="btn-group btn-group-sm">
                                 ${!isExhausted ? `<button class="btn btn-outline-primary" onclick="editLink(${link.id})" title="Редактировать"><i class="bi bi-pencil"></i></button>` : ''}
-                                ${isAdmin() ? `<button class="btn btn-outline-danger" onclick="deleteLink(${link.id})" title="Удалить"><i class="bi bi-trash"></i></button>` : ''}
+                                ${userIsAdmin ? `<button class="btn btn-outline-danger" onclick="deleteLink(${link.id})" title="Удалить"><i class="bi bi-trash"></i></button>` : ''}
                             </div>
                         </div>
                         <div>
@@ -388,6 +392,10 @@ If you want to explore reliable platforms, check out <a href="https://example.co
         function displayArticles() {
             const list = document.getElementById('articlesList');
 
+            // Check admin status BEFORE map (so it's available in template string scope)
+            const userIsAdmin = typeof isAdmin === 'function' ? isAdmin() : false;
+            console.log('displayArticles: userIsAdmin =', userIsAdmin, 'user:', getCurrentUser());
+
             if (articles.length === 0) {
                 list.innerHTML = `
                     <div class="alert alert-info">
@@ -418,7 +426,7 @@ If you want to explore reliable platforms, check out <a href="https://example.co
                                 <button class="btn btn-outline-info" onclick="viewArticle(${article.id})" title="Просмотр"><i class="bi bi-eye"></i></button>
                                 ${!isExhausted ? `<button class="btn btn-outline-primary" onclick="editArticle(${article.id})" title="Редактировать"><i class="bi bi-pencil"></i></button>` : ''}
                                 <button class="btn btn-outline-secondary" onclick="duplicateArticle(${article.id})" title="Создать копию"><i class="bi bi-files"></i></button>
-                                ${isAdmin() ? `<button class="btn ${isExhausted ? 'btn-outline-secondary disabled' : 'btn-outline-danger'}" onclick="deleteArticle(${article.id})" title="${isExhausted ? 'Нельзя удалить использованную статью' : 'Удалить статью'}"><i class="bi bi-trash"></i></button>` : ''}
+                                ${userIsAdmin ? `<button class="btn ${isExhausted ? 'btn-outline-secondary disabled' : 'btn-outline-danger'}" onclick="deleteArticle(${article.id})" title="${isExhausted ? 'Нельзя удалить использованную статью' : 'Удалить статью'}"><i class="bi bi-trash"></i></button>` : ''}
                             </div>
                         </div>
                     </div>
@@ -816,6 +824,12 @@ If you want to explore reliable platforms, check out <a href="https://example.co
         }
 
         // Initialize
+        console.log('=== Admin Check Debug ===');
+        console.log('isAdmin function exists:', typeof isAdmin);
+        console.log('getCurrentUser:', getCurrentUser());
+        console.log('isAdmin():', typeof isAdmin === 'function' ? isAdmin() : 'function not available');
+        console.log('========================');
+
         loadProject();
         loadLinks();
         loadArticles();
