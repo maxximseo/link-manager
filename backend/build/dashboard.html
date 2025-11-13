@@ -157,10 +157,27 @@
                 const projectStats = projects.map(project => {
                     const projectPlacements = placementsArray.filter(p => p.project_id === project.id);
 
-                    const totalSpent = projectPlacements.reduce((sum, p) => sum + parseFloat(p.final_price || 0), 0);
-                    const activePlacements = projectPlacements.filter(p => p.status === 'placed' && !p.scheduled_date).length;
-                    const scheduledPlacements = projectPlacements.filter(p => p.scheduled_date).length;
+                    console.log(`Project "${project.name}" (ID: ${project.id}):`, {
+                        totalPlacements: projectPlacements.length,
+                        placements: projectPlacements.map(p => ({
+                            id: p.id,
+                            final_price: p.final_price,
+                            status: p.status,
+                            scheduled_publish_date: p.scheduled_publish_date
+                        }))
+                    });
+
+                    const totalSpent = projectPlacements.reduce((sum, p) => {
+                        const price = parseFloat(p.final_price || 0);
+                        console.log(`  Placement #${p.id}: $${price}`);
+                        return sum + price;
+                    }, 0);
+
+                    const activePlacements = projectPlacements.filter(p => p.status === 'placed' && !p.scheduled_publish_date).length;
+                    const scheduledPlacements = projectPlacements.filter(p => p.scheduled_publish_date).length;
                     const totalPlacements = projectPlacements.length;
+
+                    console.log(`  Total spent: $${totalSpent.toFixed(2)}`);
 
                     return {
                         id: project.id,

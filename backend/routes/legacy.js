@@ -134,18 +134,22 @@ router.get('/sites', authMiddleware, async (req, res) => {
   }
 });
 
-// Basic placements route  
+// Basic placements route
 router.get('/placements', authMiddleware, async (req, res) => {
   try {
     const result = await query(`
-      SELECT p.*, pr.name as project_name, s.site_name, s.site_url
+      SELECT
+        p.*,
+        pr.name as project_name,
+        s.site_name,
+        s.site_url
       FROM placements p
       JOIN projects pr ON p.project_id = pr.id
       JOIN sites s ON p.site_id = s.id
       WHERE pr.user_id = $1
       ORDER BY p.placed_at DESC
-    `, [req.user.userId]);
-    
+    `, [req.user.id]); // Fixed: was req.user.userId, should be req.user.id
+
     res.json(result.rows);
   } catch (error) {
     logger.error('Get placements error:', error);
