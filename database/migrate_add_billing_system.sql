@@ -66,14 +66,14 @@ CREATE TABLE IF NOT EXISTS discount_tiers (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Insert default discount tiers
+-- Insert default discount tiers (updated 2025-01-13)
 INSERT INTO discount_tiers (min_spent, discount_percentage, tier_name) VALUES
 (0, 0, 'Стандарт'),
-(800, 10, 'Bronze'),
-(1200, 15, 'Silver'),
-(1600, 20, 'Gold'),
-(2000, 25, 'Platinum'),
-(2400, 30, 'Diamond')
+(1000, 10, 'Bronze'),
+(2000, 15, 'Silver'),
+(3000, 20, 'Gold'),
+(4000, 25, 'Platinum'),
+(5000, 30, 'Diamond')
 ON CONFLICT (min_spent) DO NOTHING;
 
 -- ============================================
