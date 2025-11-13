@@ -11,6 +11,7 @@ const authMiddleware = require('../middleware/auth');
 const billingService = require('../services/billing.service');
 const exportService = require('../services/export.service');
 const logger = require('../config/logger');
+const { handleError, handleSmartError } = require('../utils/errorHandler');
 
 // Strict rate limiting for financial operations
 const financialLimiter = rateLimit({
@@ -86,8 +87,7 @@ router.post('/deposit',
       });
 
     } catch (error) {
-      logger.error('Failed to deposit balance', { userId: req.user.id, error: error.message });
-      res.status(500).json({ error: error.message || 'Failed to deposit balance' });
+      return handleSmartError(res, error, 'Failed to deposit balance', 500);
     }
   }
 );
@@ -213,8 +213,7 @@ router.post('/purchase',
       });
 
     } catch (error) {
-      logger.error('Failed to purchase placement', { userId: req.user.id, error: error.message });
-      res.status(400).json({ error: error.message || 'Failed to purchase placement' });
+      return handleSmartError(res, error, 'Failed to purchase placement', 400);
     }
   }
 );
@@ -250,12 +249,7 @@ router.post('/renew/:placementId',
       });
 
     } catch (error) {
-      logger.error('Failed to renew placement', {
-        userId: req.user.id,
-        placementId: req.params.placementId,
-        error: error.message
-      });
-      res.status(400).json({ error: error.message || 'Failed to renew placement' });
+      return handleSmartError(res, error, 'Failed to renew placement', 400);
     }
   }
 );
@@ -293,12 +287,7 @@ router.patch('/auto-renewal/:placementId',
       });
 
     } catch (error) {
-      logger.error('Failed to toggle auto-renewal', {
-        userId: req.user.id,
-        placementId: req.params.placementId,
-        error: error.message
-      });
-      res.status(400).json({ error: error.message || 'Failed to toggle auto-renewal' });
+      return handleSmartError(res, error, 'Failed to toggle auto-renewal', 400);
     }
   }
 );

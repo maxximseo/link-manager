@@ -3,7 +3,7 @@
  * Plugin Name: Link Manager Widget Pro
  * Plugin URI: https://github.com/maxximseo/link-manager
  * Description: Display placed links and articles from Link Manager system
- * Version: 2.2.2
+ * Version: 2.3.0
  * Author: Link Manager Team
  * License: GPL v2 or later
  */
@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('LMW_VERSION', '2.2.2');
+define('LMW_VERSION', '2.3.0');
 define('LMW_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('LMW_PLUGIN_PATH', plugin_dir_path(__FILE__));
 
@@ -170,13 +170,13 @@ class LinkManagerWidget {
                 .then(data => {
                     if (data.success) {
                         var resultHtml = '<div class="notice notice-success"><p>✅ <strong>Connection successful!</strong></p>';
-                        resultHtml += '<p>Site: ' + data.site.site_name + '</p>';
-                        resultHtml += '<p>URL: ' + data.site.site_url + '</p>';
-                        resultHtml += '<p>Limits: ' + data.site.used_links + '/' + data.site.max_links + ' links, ';
-                        resultHtml += data.site.used_articles + '/' + data.site.max_articles + ' articles used</p></div>';
+                        if (data.site_name) {
+                            resultHtml += '<p>Site: ' + data.site_name + '</p>';
+                        }
+                        resultHtml += '<p>' + (data.message || 'API key is valid') + '</p></div>';
                         document.getElementById('test-connection-result').innerHTML = resultHtml;
                     } else {
-                        document.getElementById('test-connection-result').innerHTML = 
+                        document.getElementById('test-connection-result').innerHTML =
                             '<div class="notice notice-error"><p>❌ Connection failed: ' + (data.error || 'Unknown error') + '</p></div>';
                     }
                 })
@@ -242,12 +242,14 @@ class LinkManagerWidget {
         }
         
         // Fetch from API
+        // SECURITY: Send API key in header instead of URL to prevent logging
         $response = wp_remote_get(
-            $this->api_endpoint . '/wordpress/get-content/' . $this->api_key,
+            $this->api_endpoint . '/wordpress/get-content',
             array(
                 'timeout' => 30,
                 'headers' => array(
-                    'Accept' => 'application/json'
+                    'Accept' => 'application/json',
+                    'X-API-Key' => $this->api_key
                 )
             )
         );

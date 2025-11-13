@@ -256,7 +256,7 @@
                             ` : ''}
                             <div class="mb-3">
                                 <span class="badge bg-${s.status === 'active' ? 'success' : 'secondary'}">
-                                    ${s.status || 'active'}
+                                    ${escapeHtml(s.status || 'active')}
                                 </span>
                             </div>
                             <div class="d-flex gap-2">
