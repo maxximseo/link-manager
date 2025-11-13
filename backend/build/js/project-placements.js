@@ -458,6 +458,46 @@ async function renewPlacement(placementId) {
 }
 
 /**
+ * Delete placement (admin only)
+ */
+async function deletePlacement(placementId) {
+    if (!confirm('Вы уверены, что хотите удалить это размещение? Средства будут возвращены на баланс.')) return;
+
+    try {
+        const response = await fetch(`/api/placements/${placementId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${getToken()}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to delete placement');
+        }
+
+        const result = await response.json();
+
+        let message = 'Размещение удалено';
+        if (result.refund) {
+            message += `. Возвращено $${result.refund.amount.toFixed(2)}. Новый баланс: $${result.refund.newBalance.toFixed(2)}`;
+        }
+
+        showAlert(message, 'success');
+
+        // Reload data
+        await loadBalance();
+        await loadActivePlacements();
+        await loadScheduledPlacements();
+
+    } catch (error) {
+        console.error('Failed to delete placement:', error);
+        showAlert(error.message || 'Ошибка удаления размещения', 'danger');
+    }
+}
+
+/**
  * Export placements - show modal for selection
  */
 function exportPlacements(format = 'csv') {

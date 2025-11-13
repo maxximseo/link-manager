@@ -146,9 +146,16 @@ function renderActivePlacements(placements) {
             : '';
 
         const viewBtn = p.wordpress_post_id
-            ? `<a href="${p.site_url}/?p=${p.wordpress_post_id}" target="_blank" class="btn btn-sm btn-outline-primary">
+            ? `<a href="${p.site_url}/?p=${p.wordpress_post_id}" target="_blank" class="btn btn-sm btn-outline-primary me-1">
                  <i class="bi bi-eye"></i>
                </a>`
+            : '';
+
+        // Delete button - only for admins
+        const deleteBtn = isAdmin()
+            ? `<button class="btn btn-sm btn-outline-danger" onclick="deletePlacement(${p.id})" title="Удалить размещение">
+                 <i class="bi bi-trash"></i>
+               </button>`
             : '';
 
         // For articles, show full WordPress post URL; for links, show site URL
@@ -168,6 +175,7 @@ function renderActivePlacements(placements) {
             <td class="text-nowrap">
                 ${renewBtn}
                 ${viewBtn}
+                ${deleteBtn}
             </td>
         `;
 
@@ -402,6 +410,47 @@ async function renewPlacement(placementId) {
     } catch (error) {
         console.error('Failed to renew placement:', error);
         showAlert(error.message || 'Ошибка продления размещения', 'danger');
+    }
+}
+
+/**
+ * Delete placement (admin only)
+ */
+async function deletePlacement(placementId) {
+    if (!confirm('Вы уверены, что хотите удалить это размещение? Средства будут возвращены на баланс.')) return;
+
+    try {
+        const response = await fetch(`/api/placements/${placementId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${getToken()}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to delete placement');
+        }
+
+        const result = await response.json();
+
+        let message = 'Размещение удалено';
+        if (result.refund) {
+            message += `. Возвращено $${result.refund.amount.toFixed(2)}. Новый баланс: $${result.refund.newBalance.toFixed(2)}`;
+        }
+
+        showAlert(message, 'success');
+
+        // Reload data
+        await loadBalance();
+        await loadActivePlacements();
+        await loadScheduledPlacements();
+        await loadHistory();
+
+    } catch (error) {
+        console.error('Failed to delete placement:', error);
+        showAlert(error.message || 'Ошибка удаления размещения', 'danger');
     }
 }
 
