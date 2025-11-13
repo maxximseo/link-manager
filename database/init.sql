@@ -27,6 +27,7 @@ CREATE TABLE sites (
     site_url VARCHAR(500) NOT NULL,
     site_type VARCHAR(20) DEFAULT 'wordpress',
     api_key VARCHAR(100),
+    allow_articles BOOLEAN DEFAULT TRUE,
     max_links INTEGER DEFAULT 10,
     used_links INTEGER DEFAULT 0,
     max_articles INTEGER DEFAULT 5,
