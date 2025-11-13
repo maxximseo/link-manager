@@ -1,0 +1,8 @@
+# DigitalOcean Deployment Trigger
+# This file forces DigitalOcean to re-clone the repository
+# Timestamp: 2025-11-13 12:19:00
+# Current commit: 3b2c789a2c3716276e8522645ad59b2c55cc1b62
+# Branch: main
+
+DEPLOY_ID=20251113121900
+FORCE_REFRESH=true
