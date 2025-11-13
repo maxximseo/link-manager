@@ -322,7 +322,6 @@
             document.getElementById('siteTypeWordPress').checked = true; // Default to WordPress
             document.getElementById('maxLinks').value = '10';
             document.getElementById('maxArticles').value = '10';
-            document.getElementById('siteStatus').value = 'active';
 
             // Enable API key input for new sites
             document.getElementById('apiKey').removeAttribute('readonly');
@@ -342,8 +341,6 @@
             document.getElementById('apiKey').value = site.api_key || '';
             document.getElementById('maxLinks').value = site.max_links || 10;
             document.getElementById('maxArticles').value = site.max_articles || 10;
-            document.getElementById('siteStatus').value = site.status || 'active';
-            document.getElementById('notes').value = site.notes || '';
 
             // Make API key readonly when editing
             document.getElementById('apiKey').setAttribute('readonly', 'readonly');
@@ -369,9 +366,7 @@
                 site_url: document.getElementById('siteUrl').value,
                 site_type: siteType,
                 max_links: parseInt(document.getElementById('maxLinks').value),
-                max_articles: parseInt(document.getElementById('maxArticles').value),
-                status: document.getElementById('siteStatus').value,
-                notes: document.getElementById('notes').value
+                max_articles: parseInt(document.getElementById('maxArticles').value)
             };
 
             // Only include API key for WordPress sites
