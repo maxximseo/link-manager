@@ -9,19 +9,21 @@ const cache = require('./cache.service');
 const wordpressService = require('./wordpress.service');
 
 // Get user placements with statistics (with caching)
-const getUserPlacements = async (userId, page = 0, limit = 0) => {
+const getUserPlacements = async (userId, page = 0, limit = 0, filters = {}) => {
   try {
+    const { project_id, status } = filters;
+
     // Check cache first (2 minutes TTL for placements list)
-    const cacheKey = `placements:user:${userId}:p${page}:l${limit}`;
+    const cacheKey = `placements:user:${userId}:p${page}:l${limit}:proj${project_id || 'all'}:st${status || 'all'}`;
     const cached = await cache.get(cacheKey);
 
     if (cached) {
-      logger.debug('Placements served from cache', { userId, page, limit });
+      logger.debug('Placements served from cache', { userId, page, limit, filters });
       return cached;
     }
 
     const usePagination = page > 0 && limit > 0;
-    
+
     // Query to get placements with content details
     let placementsQuery = `
       SELECT
@@ -46,34 +48,66 @@ const getUserPlacements = async (userId, page = 0, limit = 0) => {
       FROM placements p
       LEFT JOIN sites s ON p.site_id = s.id
       LEFT JOIN projects proj ON p.project_id = proj.id
-      WHERE s.user_id = $1 OR proj.user_id = $1
-      ORDER BY p.placed_at DESC
+      WHERE (s.user_id = $1 OR proj.user_id = $1)
     `;
-    
+
     const queryParams = [userId];
+    let paramIndex = 2;
+
+    // Add project_id filter
+    if (project_id) {
+      placementsQuery += ` AND p.project_id = $${paramIndex}`;
+      queryParams.push(project_id);
+      paramIndex++;
+    }
+
+    // Add status filter
+    if (status) {
+      placementsQuery += ` AND p.status = $${paramIndex}`;
+      queryParams.push(status);
+      paramIndex++;
+    }
+
+    placementsQuery += ' ORDER BY p.placed_at DESC';
+
     const DEFAULT_MAX_RESULTS = 1000; // Prevent unbounded queries
 
     if (usePagination) {
       const offset = (page - 1) * limit;
-      placementsQuery += ' LIMIT $2 OFFSET $3';
+      placementsQuery += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
       queryParams.push(limit, offset);
     } else {
       // Always add LIMIT for safety even without pagination
-      placementsQuery += ' LIMIT $2';
+      placementsQuery += ` LIMIT $${paramIndex}`;
       queryParams.push(DEFAULT_MAX_RESULTS);
     }
 
     const result = await query(placementsQuery, queryParams);
-    
+
     if (usePagination) {
-      // Get total count
-      const countResult = await query(`
+      // Build count query with same filters
+      let countQuery = `
         SELECT COUNT(DISTINCT p.id) as count
         FROM placements p
         LEFT JOIN sites s ON p.site_id = s.id
         LEFT JOIN projects proj ON p.project_id = proj.id
-        WHERE s.user_id = $1 OR proj.user_id = $1
-      `, [userId]);
+        WHERE (s.user_id = $1 OR proj.user_id = $1)
+      `;
+      const countParams = [userId];
+      let countParamIndex = 2;
+
+      if (project_id) {
+        countQuery += ` AND p.project_id = $${countParamIndex}`;
+        countParams.push(project_id);
+        countParamIndex++;
+      }
+
+      if (status) {
+        countQuery += ` AND p.status = $${countParamIndex}`;
+        countParams.push(status);
+      }
+
+      const countResult = await query(countQuery, countParams);
       
       const total = parseInt(countResult.rows[0].count);
       const totalPages = Math.ceil(total / limit);
