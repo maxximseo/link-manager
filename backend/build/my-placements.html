@@ -325,6 +325,28 @@
         </div>
     </div>
 
+    <!-- Export Options Modal -->
+    <div class="modal fade" id="exportModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Выберите что экспортировать</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" onclick="confirmExport('all')">
+                            <i class="bi bi-file-earmark-spreadsheet"></i> Экспортировать все проекты
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="confirmExport('current')" id="exportCurrentBtn" style="display: none;">
+                            <i class="bi bi-file-earmark-text"></i> Экспортировать только текущий проект
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/js/auth.js"></script>
     <script src="/js/api.js"></script>

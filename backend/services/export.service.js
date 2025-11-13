@@ -47,10 +47,22 @@ function arrayToCSV(data, headers) {
 
 /**
  * Export user placements to CSV or JSON
+ * @param {number} userId - User ID
+ * @param {string} format - Export format (csv or json)
+ * @param {number|string} projectId - Optional project ID to filter by
  */
-const exportUserPlacements = async (userId, format = 'csv') => {
+const exportUserPlacements = async (userId, format = 'csv', projectId = null) => {
   try {
-    // Get all placements for user
+    // Build WHERE clause with optional project filter
+    let whereClause = 'WHERE p.user_id = $1';
+    const params = [userId];
+
+    if (projectId) {
+      whereClause += ' AND p.project_id = $2';
+      params.push(parseInt(projectId));
+    }
+
+    // Get placements for user (optionally filtered by project)
     const result = await query(`
       SELECT
         p.id,
@@ -81,9 +93,9 @@ const exportUserPlacements = async (userId, format = 'csv') => {
       FROM placements p
       JOIN projects pr ON p.project_id = pr.id
       JOIN sites s ON p.site_id = s.id
-      WHERE p.user_id = $1
+      ${whereClause}
       ORDER BY p.purchased_at DESC
-    `, [userId]);
+    `, params);
 
     const placements = result.rows;
 

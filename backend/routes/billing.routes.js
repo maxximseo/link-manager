@@ -306,12 +306,13 @@ router.patch('/auto-renewal/:placementId',
 /**
  * GET /api/billing/export/placements
  * Export user placements to CSV or JSON
+ * Optional: ?project_id=123 to filter by project
  */
 router.get('/export/placements', authMiddleware, async (req, res) => {
   try {
-    const { format = 'csv' } = req.query;
+    const { format = 'csv', project_id } = req.query;
 
-    const result = await exportService.exportUserPlacements(req.user.id, format);
+    const result = await exportService.exportUserPlacements(req.user.id, format, project_id);
 
     if (format === 'csv') {
       res.setHeader('Content-Type', 'text/csv');

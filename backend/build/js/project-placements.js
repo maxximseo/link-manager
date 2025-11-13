@@ -183,10 +183,15 @@ function renderActivePlacements(placements) {
                </a>`
             : '';
 
+        // For articles, show full WordPress post URL; for links, show site URL
+        const displayUrl = (p.type === 'article' && p.wordpress_post_id)
+            ? `${p.site_url}/?p=${p.wordpress_post_id}`
+            : p.site_url;
+
         row.innerHTML = `
             <td>#${p.id}</td>
             <td>${p.project_name || '—'}</td>
-            <td><a href="${p.site_url}" target="_blank">${p.site_name || p.site_url}</a></td>
+            <td><a href="${displayUrl}" target="_blank">${displayUrl}</a></td>
             <td>${typeBadge}</td>
             <td>${formatDate(p.published_at || p.placed_at)}</td>
             <td class="${expiryClass}">${expiryText}</td>
@@ -252,10 +257,15 @@ function renderScheduledPlacements(placements) {
             ? '<span class="badge bg-primary">Ссылка</span>'
             : '<span class="badge bg-success">Статья</span>';
 
+        // For articles, show full WordPress post URL; for links, show site URL
+        const displayUrl = (p.type === 'article' && p.wordpress_post_id)
+            ? `${p.site_url}/?p=${p.wordpress_post_id}`
+            : p.site_url;
+
         row.innerHTML = `
             <td>#${p.id}</td>
             <td>${p.project_name || '—'}</td>
-            <td><a href="${p.site_url}" target="_blank">${p.site_name || p.site_url}</a></td>
+            <td><a href="${displayUrl}" target="_blank">${displayUrl}</a></td>
             <td>${typeBadge}</td>
             <td class="fw-bold text-primary">${formatDate(p.scheduled_publish_date)}</td>
             <td>${formatDate(p.purchased_at)}</td>
@@ -334,10 +344,15 @@ function renderHistoryPlacements(placements) {
             'failed': '<span class="badge bg-danger">Ошибка</span>'
         };
 
+        // For articles, show full WordPress post URL; for links, show site URL
+        const displayUrl = (p.type === 'article' && p.wordpress_post_id)
+            ? `${p.site_url}/?p=${p.wordpress_post_id}`
+            : p.site_url;
+
         row.innerHTML = `
             <td>#${p.id}</td>
             <td>${p.project_name || '—'}</td>
-            <td><a href="${p.site_url}" target="_blank">${p.site_name || '—'}</a></td>
+            <td><a href="${displayUrl}" target="_blank">${displayUrl}</a></td>
             <td>${typeBadge}</td>
             <td>${statusBadges[p.status] || p.status}</td>
             <td>${formatDate(p.published_at || p.placed_at)}</td>
@@ -435,11 +450,34 @@ async function renewPlacement(placementId) {
 }
 
 /**
- * Export placements
+ * Export placements - show modal for selection
  */
-async function exportPlacements(format = 'csv') {
+function exportPlacements(format = 'csv') {
+    // Store format for later use
+    window.exportFormat = format;
+
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('exportModal'));
+    modal.show();
+}
+
+/**
+ * Confirm export with selected option
+ */
+async function confirmExport(scope) {
+    const format = window.exportFormat || 'csv';
+    const modal = bootstrap.Modal.getInstance(document.getElementById('exportModal'));
+    modal.hide();
+
     try {
-        const response = await fetch(`/api/billing/export/placements?format=${format}`, {
+        let url_path = `/api/billing/export/placements?format=${format}`;
+
+        // For 'current' scope, add project_id parameter
+        if (scope === 'current' && currentProjectId) {
+            url_path += `&project_id=${currentProjectId}`;
+        }
+
+        const response = await fetch(url_path, {
             headers: { 'Authorization': `Bearer ${getToken()}` }
         });
 
@@ -449,13 +487,15 @@ async function exportPlacements(format = 'csv') {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `placements-${Date.now()}.${format}`;
+        const scopeLabel = scope === 'current' ? `project-${currentProjectId}` : 'all-projects';
+        a.download = `placements-${scopeLabel}-${Date.now()}.${format}`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
 
-        showAlert(`Размещения экспортированы в формате ${format.toUpperCase()}`, 'success');
+        const scopeText = scope === 'current' ? 'текущего проекта' : 'всех проектов';
+        showAlert(`Размещения ${scopeText} экспортированы в формате ${format.toUpperCase()}`, 'success');
 
     } catch (error) {
         console.error('Failed to export:', error);
