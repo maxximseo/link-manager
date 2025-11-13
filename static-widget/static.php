@@ -200,9 +200,6 @@ function lm_render_widget() {
     $links = $data['links'];
 
     // Render links
-    echo '<div class="link-manager-widget">';
-    echo '<ul class="lm-links-list">';
-
     foreach ($links as $link) {
         if (!isset($link['url']) || !isset($link['anchor_text'])) {
             continue;
@@ -211,13 +208,8 @@ function lm_render_widget() {
         $url = lm_esc_url($link['url']);
         $anchor = lm_esc_html($link['anchor_text']);
 
-        echo '<li class="lm-link-item">';
-        echo '<a href="' . $url . '" rel="nofollow" target="_blank">' . $anchor . '</a>';
-        echo '</li>';
+        echo '<a href="' . $url . '" target="_blank">' . $anchor . '</a><br>';
     }
-
-    echo '</ul>';
-    echo '</div>';
 }
 
 // Auto-render widget when file is included
