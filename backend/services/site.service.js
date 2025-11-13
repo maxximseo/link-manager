@@ -218,11 +218,20 @@ const getSiteByDomain = async (domain) => {
       .replace(/^www\./, '')
       .replace(/\/.*$/, '');
 
-    // Try to find site by matching site_url
+    // Try to find site by exact domain match
+    // Normalize site_url the same way: remove protocol, www, and path
     const result = await query(
       `SELECT id, user_id, site_name, site_url, site_type, max_links, max_articles, used_links, used_articles, created_at
        FROM sites
-       WHERE LOWER(REGEXP_REPLACE(REGEXP_REPLACE(site_url, '^https?://', ''), '^www\\.', '')) LIKE $1 || '%'
+       WHERE LOWER(
+         REGEXP_REPLACE(
+           REGEXP_REPLACE(
+             REGEXP_REPLACE(site_url, '^https?://', ''),
+             '^www\\.', ''
+           ),
+           '/.*$', ''
+         )
+       ) = $1
        AND site_type = 'static_php'
        LIMIT 1`,
       [normalizedDomain]
