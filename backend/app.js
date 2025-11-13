@@ -30,7 +30,7 @@ const helmetConfig = {
       scriptSrc: ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net", "cdnjs.cloudflare.com"], // Allow Bootstrap & other CDN scripts
       styleSrc: ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net", "cdnjs.cloudflare.com"], // Allow inline styles for Bootstrap
       imgSrc: ["'self'", "data:", "https:"], // Allow images from any HTTPS source
-      connectSrc: ["'self'"], // API calls only to same origin
+      connectSrc: ["'self'", "cdn.jsdelivr.net", "cdnjs.cloudflare.com"], // API calls + CDN source maps
       fontSrc: ["'self'", "cdn.jsdelivr.net", "cdnjs.cloudflare.com"], // CDN fonts
       objectSrc: ["'none'"], // Block plugins like Flash
       mediaSrc: ["'self'"],
