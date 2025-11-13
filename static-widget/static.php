@@ -21,11 +21,9 @@
 // ========================================
 // CONFIGURATION - EDIT THIS!
 // ========================================
-define('LM_API_KEY', 'lm_c6eb6733a3879ffc4c370df1b8a68213fa7f2a77f08f8944086644ced1c0c2e1');
-// ========================================
-
-// API Configuration
+define('LM_API_KEY', 'YOUR_API_KEY_HERE'); // Replace with your actual API key from dashboard
 define('LM_API_URL', 'https://shark-app-9kv6u.ondigitalocean.app/api/wordpress/get-content');
+// ========================================
 define('LM_CACHE_DIR', sys_get_temp_dir() . '/link-manager-cache');
 define('LM_CACHE_TTL', 300); // 5 minutes
 define('LM_TIMEOUT', 5); // API timeout in seconds
