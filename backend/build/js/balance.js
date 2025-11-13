@@ -269,7 +269,17 @@ function renderTransactionsPagination(pagination) {
     // Previous button
     const prevLi = document.createElement('li');
     prevLi.className = `page-item ${!pagination.hasPrev ? 'disabled' : ''}`;
-    prevLi.innerHTML = `<a class="page-link" href="#" onclick="loadTransactions(${pagination.page - 1}); return false;">Назад</a>`;
+    const prevLink = document.createElement('a');
+    prevLink.className = 'page-link';
+    prevLink.href = '#';
+    prevLink.textContent = 'Назад';
+    prevLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (pagination.hasPrev) {
+            loadTransactions(pagination.page - 1);
+        }
+    });
+    prevLi.appendChild(prevLink);
     ul.appendChild(prevLi);
 
     // Page numbers
@@ -279,14 +289,33 @@ function renderTransactionsPagination(pagination) {
     for (let i = startPage; i <= endPage; i++) {
         const li = document.createElement('li');
         li.className = `page-item ${i === pagination.page ? 'active' : ''}`;
-        li.innerHTML = `<a class="page-link" href="#" onclick="loadTransactions(${i}); return false;">${i}</a>`;
+        const pageLink = document.createElement('a');
+        pageLink.className = 'page-link';
+        pageLink.href = '#';
+        pageLink.textContent = i;
+        const pageNum = i; // Capture current value for closure
+        pageLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            loadTransactions(pageNum);
+        });
+        li.appendChild(pageLink);
         ul.appendChild(li);
     }
 
     // Next button
     const nextLi = document.createElement('li');
     nextLi.className = `page-item ${!pagination.hasNext ? 'disabled' : ''}`;
-    nextLi.innerHTML = `<a class="page-link" href="#" onclick="loadTransactions(${pagination.page + 1}); return false;">Вперед</a>`;
+    const nextLink = document.createElement('a');
+    nextLink.className = 'page-link';
+    nextLink.href = '#';
+    nextLink.textContent = 'Вперед';
+    nextLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (pagination.hasNext) {
+            loadTransactions(pagination.page + 1);
+        }
+    });
+    nextLi.appendChild(nextLink);
     ul.appendChild(nextLi);
 
     nav.appendChild(ul);
