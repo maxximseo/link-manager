@@ -73,6 +73,26 @@
                     <form id="siteForm">
                         <input type="hidden" id="siteId">
 
+                        <!-- Site Type Selection -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Тип сайта *</label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="siteType" id="siteTypeWordPress" value="wordpress" checked onchange="toggleSiteTypeFields()">
+                                <label class="btn btn-outline-primary" for="siteTypeWordPress">
+                                    <i class="bi bi-wordpress"></i> WordPress
+                                </label>
+
+                                <input type="radio" class="btn-check" name="siteType" id="siteTypeStatic" value="static_php" onchange="toggleSiteTypeFields()">
+                                <label class="btn btn-outline-success" for="siteTypeStatic">
+                                    <i class="bi bi-filetype-php"></i> Статичный PHP
+                                </label>
+                            </div>
+                            <small class="form-text text-muted d-block mt-1">
+                                <span id="typeHintWordPress">WordPress с установленным плагином Link Manager</span>
+                                <span id="typeHintStatic" style="display:none">Статичный сайт с PHP виджетом (только ссылки)</span>
+                            </small>
+                        </div>
+
                         <div class="mb-3">
                             <label for="siteName" class="form-label">Site Name *</label>
                             <input type="text" class="form-control" id="siteName" required>
@@ -84,13 +104,16 @@
                                    placeholder="https://example.com">
                         </div>
 
-                        <div class="mb-3">
-                            <label for="apiKey" class="form-label">API Token *</label>
-                            <input type="text" class="form-control" id="apiKey" required
-                                   placeholder="Получите токен из плагина на вашем WordPress сайте">
-                            <small class="form-text text-muted">
-                                <i class="bi bi-info-circle"></i> Установите плагин Link Manager на WordPress и скопируйте токен из настроек
-                            </small>
+                        <!-- WordPress-specific fields -->
+                        <div id="wordpressFields">
+                            <div class="mb-3">
+                                <label for="apiKey" class="form-label">API Token *</label>
+                                <input type="text" class="form-control" id="apiKey"
+                                       placeholder="Получите токен из плагина на вашем WordPress сайте">
+                                <small class="form-text text-muted">
+                                    <i class="bi bi-info-circle"></i> Установите плагин Link Manager на WordPress и скопируйте токен из настроек
+                                </small>
+                            </div>
                         </div>
 
                         <div class="row">
@@ -98,7 +121,7 @@
                                 <label for="maxLinks" class="form-label">Max Links *</label>
                                 <input type="number" class="form-control" id="maxLinks" required min="0" value="10">
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-6 mb-3" id="maxArticlesField">
                                 <label for="maxArticles" class="form-label">Max Articles *</label>
                                 <input type="number" class="form-control" id="maxArticles" required min="0" value="10">
                             </div>
@@ -117,13 +140,37 @@
                             <textarea class="form-control" id="notes" rows="3"></textarea>
                         </div>
 
-                        <div class="alert alert-info">
-                            <h6><i class="bi bi-info-circle"></i> WordPress Plugin Required</h6>
+                        <!-- WordPress Plugin Info -->
+                        <div class="alert alert-info" id="wordpressPluginInfo">
+                            <h6><i class="bi bi-wordpress"></i> WordPress Plugin Required</h6>
                             <p class="mb-2">To enable link placement, install the Link Manager plugin on your WordPress site:</p>
                             <a href="/link-manager-widget.zip" download="link-manager-widget.zip" class="btn btn-sm btn-success">
                                 <i class="bi bi-download"></i> Download Plugin (ZIP)
                             </a>
                             <small class="d-block mt-2 text-muted">Upload and activate this plugin in your WordPress admin panel</small>
+                        </div>
+
+                        <!-- Static PHP Widget Info -->
+                        <div class="alert alert-success" id="staticWidgetInfo" style="display:none">
+                            <h6><i class="bi bi-filetype-php"></i> PHP Widget для статичных сайтов</h6>
+                            <p class="mb-2">Скачайте виджет и установите на ваш PHP сайт:</p>
+                            <div class="d-grid gap-2">
+                                <a href="/static-widget/link-manager-widget.php" download="link-manager-widget.php" class="btn btn-sm btn-success">
+                                    <i class="bi bi-download"></i> Скачать Виджет (PHP)
+                                </a>
+                                <a href="/static-widget/INSTALL.txt" download="INSTALL.txt" class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-file-text"></i> Инструкция по установке
+                                </a>
+                            </div>
+                            <small class="d-block mt-2">
+                                <strong>3 простых шага:</strong><br>
+                                1. Загрузите <code>link-manager-widget.php</code> в корень сайта<br>
+                                2. Добавьте <code>&lt;?php include 'link-manager-widget.php'; ?&gt;</code> в нужное место<br>
+                                3. Ссылки появятся автоматически!
+                            </small>
+                            <div class="alert alert-warning mt-2 mb-0">
+                                <small><i class="bi bi-exclamation-triangle"></i> <strong>Важно:</strong> Статичные сайты поддерживают только ссылки, статьи недоступны.</small>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -175,11 +222,21 @@
             });
 
             const list = document.getElementById('sitesList');
-            list.innerHTML = filtered.map(s => `
+            list.innerHTML = filtered.map(s => {
+                const siteType = s.site_type || 'wordpress';
+                const typeIcon = siteType === 'wordpress' ? 'bi-wordpress' : 'bi-filetype-php';
+                const typeBadge = siteType === 'wordpress'
+                    ? '<span class="badge bg-primary"><i class="bi bi-wordpress"></i> WordPress</span>'
+                    : '<span class="badge bg-success"><i class="bi bi-filetype-php"></i> Static PHP</span>';
+
+                return `
                 <div class="col-md-6 col-lg-4 mb-3">
                     <div class="card h-100">
                         <div class="card-body">
-                            <h5 class="card-title">${escapeHtml(s.site_name)}</h5>
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="card-title mb-0">${escapeHtml(s.site_name)}</h5>
+                                ${typeBadge}
+                            </div>
                             <p class="card-text">
                                 <a href="${escapeHtml(s.site_url)}" target="_blank" class="text-decoration-none">
                                     <i class="bi bi-globe"></i> ${escapeHtml(s.site_url)}
@@ -190,11 +247,13 @@
                                     <i class="bi bi-link-45deg"></i> Links: ${s.used_links || 0}/${s.max_links || 0}
                                 </small>
                             </div>
+                            ${siteType === 'wordpress' ? `
                             <div class="mb-2">
                                 <small class="text-muted">
                                     <i class="bi bi-file-text"></i> Articles: ${s.used_articles || 0}/${s.max_articles || 0}
                                 </small>
                             </div>
+                            ` : ''}
                             <div class="mb-3">
                                 <span class="badge bg-${s.status === 'active' ? 'success' : 'secondary'}">
                                     ${s.status || 'active'}
@@ -211,16 +270,49 @@
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
+        }
+
+        // Toggle site type fields visibility
+        function toggleSiteTypeFields() {
+            const siteType = document.querySelector('input[name="siteType"]:checked').value;
+            const isWordPress = siteType === 'wordpress';
+
+            // Toggle fields visibility
+            document.getElementById('wordpressFields').style.display = isWordPress ? 'block' : 'none';
+            document.getElementById('maxArticlesField').style.display = isWordPress ? 'block' : 'none';
+            document.getElementById('wordpressPluginInfo').style.display = isWordPress ? 'block' : 'none';
+            document.getElementById('staticWidgetInfo').style.display = isWordPress ? 'none' : 'block';
+
+            // Toggle hints
+            document.getElementById('typeHintWordPress').style.display = isWordPress ? 'inline' : 'none';
+            document.getElementById('typeHintStatic').style.display = isWordPress ? 'none' : 'inline';
+
+            // Update API key required attribute
+            const apiKeyInput = document.getElementById('apiKey');
+            if (isWordPress) {
+                apiKeyInput.setAttribute('required', 'required');
+            } else {
+                apiKeyInput.removeAttribute('required');
+                apiKeyInput.value = ''; // Clear API key for static sites
+            }
+
+            // Set max_articles to 0 for static PHP sites
+            if (!isWordPress) {
+                document.getElementById('maxArticles').value = '0';
+            }
         }
 
         function showCreateModal() {
             document.getElementById('modalTitle').textContent = 'Add Site';
             document.getElementById('siteForm').reset();
             document.getElementById('siteId').value = '';
+            document.getElementById('siteTypeWordPress').checked = true; // Default to WordPress
             document.getElementById('maxLinks').value = '10';
             document.getElementById('maxArticles').value = '10';
             document.getElementById('siteStatus').value = 'active';
+            toggleSiteTypeFields(); // Initialize field visibility
             modal.show();
         }
 
@@ -237,20 +329,37 @@
             document.getElementById('maxArticles').value = site.max_articles || 10;
             document.getElementById('siteStatus').value = site.status || 'active';
             document.getElementById('notes').value = site.notes || '';
+
+            // Set site type (default to wordpress if not set)
+            const siteType = site.site_type || 'wordpress';
+            if (siteType === 'static_php') {
+                document.getElementById('siteTypeStatic').checked = true;
+            } else {
+                document.getElementById('siteTypeWordPress').checked = true;
+            }
+            toggleSiteTypeFields(); // Update field visibility
+
             modal.show();
         }
 
         async function saveSite() {
             const id = document.getElementById('siteId').value;
+            const siteType = document.querySelector('input[name="siteType"]:checked').value;
+
             const data = {
                 site_name: document.getElementById('siteName').value,
                 site_url: document.getElementById('siteUrl').value,
-                api_key: document.getElementById('apiKey').value,
+                site_type: siteType,
                 max_links: parseInt(document.getElementById('maxLinks').value),
                 max_articles: parseInt(document.getElementById('maxArticles').value),
                 status: document.getElementById('siteStatus').value,
                 notes: document.getElementById('notes').value
             };
+
+            // Only include API key for WordPress sites
+            if (siteType === 'wordpress') {
+                data.api_key = document.getElementById('apiKey').value;
+            }
 
             try {
                 if (id) {
