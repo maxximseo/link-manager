@@ -247,7 +247,7 @@ const recalculateSiteStats = async (userId) => {
 const getSiteById = async (siteId, userId) => {
   try {
     const result = await query(
-      'SELECT id, user_id, site_name, site_url, api_key, site_type, max_links, max_articles, used_links, used_articles, created_at FROM sites WHERE id = $1 AND user_id = $2',
+      'SELECT id, user_id, site_name, site_url, api_key, site_type, max_links, max_articles, used_links, used_articles, allow_articles, created_at FROM sites WHERE id = $1 AND user_id = $2',
       [siteId, userId]
     );
 
