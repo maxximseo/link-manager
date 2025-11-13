@@ -47,14 +47,28 @@ function lm_get_current_domain() {
 }
 
 /**
+ * Check if cache directory is available and writable
+ */
+function lm_is_cache_available() {
+    // Try to create cache directory if it doesn't exist
+    if (!is_dir(LM_CACHE_DIR)) {
+        if (!@mkdir(LM_CACHE_DIR, 0755, true)) {
+            return false;
+        }
+    }
+
+    // Verify directory is writable
+    if (!is_writable(LM_CACHE_DIR)) {
+        return false;
+    }
+
+    return true;
+}
+
+/**
  * Get cache file path for current domain
  */
 function lm_get_cache_path($domain) {
-    // Create cache directory if it doesn't exist
-    if (!is_dir(LM_CACHE_DIR)) {
-        @mkdir(LM_CACHE_DIR, 0755, true);
-    }
-
     // Use MD5 of domain as filename for security
     $hash = md5($domain);
     return LM_CACHE_DIR . '/lm_' . $hash . '.json';
@@ -64,6 +78,11 @@ function lm_get_cache_path($domain) {
  * Get cached content if valid
  */
 function lm_get_cache($domain) {
+    // Check if cache is available before attempting to read
+    if (!lm_is_cache_available()) {
+        return false;
+    }
+
     $cache_file = lm_get_cache_path($domain);
 
     // Check if cache file exists and is not expired
@@ -88,14 +107,21 @@ function lm_get_cache($domain) {
  * Save content to cache
  */
 function lm_set_cache($domain, $data) {
+    // Check if cache is available before attempting to write
+    if (!lm_is_cache_available()) {
+        return false;
+    }
+
     $cache_file = lm_get_cache_path($domain);
     $content = json_encode($data);
 
     // Atomic write using temp file + rename
     $temp_file = $cache_file . '.tmp';
     if (@file_put_contents($temp_file, $content) !== false) {
-        @rename($temp_file, $cache_file);
+        return @rename($temp_file, $cache_file);
     }
+
+    return false;
 }
 
 /**
@@ -140,6 +166,19 @@ function lm_fetch_links($domain) {
 
         if ($response === false) {
             return false;
+        }
+
+        // Check HTTP status code
+        if (isset($http_response_header) && count($http_response_header) > 0) {
+            // First line contains status: "HTTP/1.1 200 OK"
+            $status_line = $http_response_header[0];
+            if (preg_match('{HTTP\/\S*\s(\d{3})}', $status_line, $match)) {
+                $status_code = (int)$match[1];
+                if ($status_code !== 200) {
+                    // Non-200 status code (404, 500, etc.)
+                    return false;
+                }
+            }
         }
     }
 
