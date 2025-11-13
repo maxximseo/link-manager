@@ -106,7 +106,7 @@ const updateSite = async (req, res) => {
   try {
     const siteId = req.params.id;
     const userId = req.user.id;
-    const { site_url, site_name, api_key, max_links, max_articles } = req.body;
+    const { site_url, site_name, api_key, max_links, max_articles, site_type } = req.body;
 
     // Validate URL format if provided
     if (site_url) {
@@ -114,6 +114,11 @@ const updateSite = async (req, res) => {
       if (!urlPattern.test(site_url)) {
         return res.status(400).json({ error: 'Site URL must be a valid HTTP/HTTPS URL' });
       }
+    }
+
+    // Validate site_type if provided
+    if (site_type && !['wordpress', 'static_php'].includes(site_type)) {
+      return res.status(400).json({ error: 'Site type must be wordpress or static_php' });
     }
 
     // Validate numeric fields
@@ -130,7 +135,8 @@ const updateSite = async (req, res) => {
       site_name,
       api_key,
       max_links,
-      max_articles
+      max_articles,
+      site_type
     });
 
     if (!site) {
