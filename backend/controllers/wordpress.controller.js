@@ -58,8 +58,8 @@ const publishArticle = async (req, res) => {
     });
 
     // Update placement with WordPress post ID if successful
-    if (result.success && result.wordpress_id) {
-      await wordpressService.updatePlacementWithPostId(site_id, article_id, result.wordpress_id);
+    if (result.success && result.post_id) {
+      await wordpressService.updatePlacementWithPostId(site_id, article_id, result.post_id);
     }
 
     res.json(result);
