@@ -298,7 +298,7 @@ async function loadHistoryPlacements(page = 1) {
         const type = document.getElementById('historyTypeFilter').value;
         const status = document.getElementById('historyStatusFilter').value;
 
-        let url = `/api/placements?page=${page}&limit=50`;
+        let url = `/api/placements?page=${page}&limit=50&project_id=${currentProjectId}`;
         if (type) url += `&type=${type}`;
         if (status) url += `&status=${status}`;
 
@@ -311,12 +311,7 @@ async function loadHistoryPlacements(page = 1) {
         const result = await response.json();
         const placements = result.data || result;
 
-        // Filter by current project ID
-        const projectPlacements = Array.isArray(placements)
-            ? placements.filter(p => p.project_id == currentProjectId)
-            : [];
-
-        renderHistoryPlacements(projectPlacements);
+        renderHistoryPlacements(Array.isArray(placements) ? placements : []);
 
     } catch (error) {
         console.error('Failed to load history:', error);
