@@ -20,6 +20,8 @@ const publicApiLimiter = rateLimit({
 
 // GET /api/static/get-content-by-domain?domain=example.com
 // Public endpoint - no authentication required
+// NOTE: This is a legacy endpoint for backward compatibility
+// New static sites should use API key authentication via /api/wordpress/get-content
 router.get('/get-content-by-domain', publicApiLimiter, async (req, res) => {
   try {
     const domain = req.query.domain;
