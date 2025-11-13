@@ -298,16 +298,21 @@ const addProjectLinksBulk = async (req, res) => {
 
 const deleteProjectLink = async (req, res) => {
   try {
+    // Only admins can delete links
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Access denied. Only admins can delete links.' });
+    }
+
     const projectId = req.params.id;
     const linkId = req.params.linkId;
     const userId = req.user.id;
-    
+
     const deleted = await projectService.deleteProjectLink(projectId, linkId, userId);
-    
+
     if (!deleted) {
       return res.status(404).json({ error: 'Project link not found' });
     }
-    
+
     res.json({ message: 'Project link deleted successfully' });
   } catch (error) {
     logger.error('Delete project link error:', error);
@@ -403,6 +408,11 @@ const updateProjectArticle = async (req, res) => {
 
 const deleteProjectArticle = async (req, res) => {
   try {
+    // Only admins can delete articles
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Access denied. Only admins can delete articles.' });
+    }
+
     const projectId = req.params.id;
     const articleId = req.params.articleId;
     const userId = req.user.id;
