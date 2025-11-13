@@ -136,13 +136,19 @@ const updateSite = async (req, res) => {
       return res.status(400).json({ error: 'Max articles must be a positive number' });
     }
 
+    // Validate allow_articles if provided
+    if (allow_articles !== undefined && typeof allow_articles !== 'boolean') {
+      return res.status(400).json({ error: 'Allow articles must be a boolean value' });
+    }
+
     const site = await siteService.updateSite(siteId, userId, {
       site_url,
       site_name,
       api_key,
       max_links,
       max_articles,
-      site_type
+      site_type,
+      allow_articles
     });
 
     if (!site) {
