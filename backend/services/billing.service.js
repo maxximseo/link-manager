@@ -524,10 +524,13 @@ const publishPlacement = async (client, placementId) => {
   // Publish to WordPress
   if (placement.type === 'article' && content.article_id) {
     const result = await wordpressService.publishArticle(
+      placement.site_url,
       placement.api_key,
-      content.title,
-      content.content,
-      placement.site_url
+      {
+        title: content.title,
+        content: content.content,
+        slug: content.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+      }
     );
 
     await client.query(`
