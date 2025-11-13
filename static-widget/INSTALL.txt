@@ -1,0 +1,152 @@
+=================================================================
+  LINK MANAGER WIDGET - INSTALLATION GUIDE
+  For Static PHP Websites
+  Version 1.0.0
+=================================================================
+
+OVERVIEW
+--------
+This widget automatically displays your Link Manager links on any
+static PHP website. No configuration required - just upload and include!
+
+
+REQUIREMENTS
+------------
+- PHP 5.4 or higher
+- write permissions to system temp directory (for caching)
+- cURL extension (recommended) or allow_url_fopen enabled
+
+
+INSTALLATION STEPS
+------------------
+
+1. UPLOAD THE FILE
+   - Upload link-manager-widget.php to your website's root directory
+   - Example: /public_html/link-manager-widget.php
+   - Or any directory: /public_html/includes/link-manager-widget.php
+
+
+2. ADD INCLUDE CODE
+   - Open your website's index.php (or any PHP file where you want links)
+   - Add this line where you want the links to appear:
+
+   <?php include 'link-manager-widget.php'; ?>
+
+   - If you placed the file in a subdirectory:
+
+   <?php include 'includes/link-manager-widget.php'; ?>
+
+
+3. REGISTER YOUR DOMAIN
+   - Go to Link Manager dashboard: https://shark-app-9kv6u.ondigitalocean.app
+   - Navigate to "Sites" section
+   - Click "Add New Site"
+   - Select site type: "Static PHP Site"
+   - Enter your domain (e.g., example.com)
+   - Click "Save"
+
+
+4. PURCHASE LINKS
+   - Go to "Placements" section
+   - Select your site from the list
+   - Choose links to place
+   - Complete purchase
+   - Links will appear on your site within 5 minutes (cache refresh)
+
+
+CUSTOMIZATION (OPTIONAL)
+-------------------------
+
+Default styling is minimal. You can add custom CSS:
+
+.link-manager-widget {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f5f5f5;
+    border-radius: 5px;
+}
+
+.lm-links-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.lm-link-item {
+    margin: 8px 0;
+}
+
+.lm-link-item a {
+    color: #0066cc;
+    text-decoration: none;
+}
+
+.lm-link-item a:hover {
+    text-decoration: underline;
+}
+
+
+FEATURES
+--------
+✓ Automatic domain detection
+✓ 5-minute caching (reduces server load)
+✓ XSS protection built-in
+✓ Silent failure (no errors shown to visitors)
+✓ No configuration needed
+✓ Works with any PHP framework
+
+
+CACHING
+-------
+- Links are cached for 5 minutes in your system temp directory
+- Cache directory: /tmp/link-manager-cache/ (Linux/Mac)
+- Cache directory: C:\Windows\Temp\link-manager-cache\ (Windows)
+- To force refresh: delete cache files or wait 5 minutes
+
+
+TROUBLESHOOTING
+---------------
+
+Q: Links not showing up?
+A: Check:
+   1. PHP file is properly included
+   2. Domain is registered in Link Manager as "Static PHP Site"
+   3. You have purchased links for this site
+   4. Cache has refreshed (wait 5 minutes)
+
+Q: How to verify widget is loaded?
+A: View page source and search for "link-manager-widget"
+
+Q: How to clear cache manually?
+A: Delete files in /tmp/link-manager-cache/ directory
+
+Q: Widget slows down page load?
+A: Enable caching on your server. Widget caches API responses
+   for 5 minutes, so it only makes 1 request per 5 minutes.
+
+
+SECURITY
+--------
+- All URLs are validated and sanitized
+- XSS protection on all output
+- Only http:// and https:// protocols allowed
+- Domain validation prevents injection attacks
+- Cached data is stored securely with MD5 hashing
+
+
+SUPPORT
+-------
+For questions or issues:
+- Email: support@linkmanager.com
+- GitHub: https://github.com/maxximseo/link-manager
+
+
+LICENSE
+-------
+This widget is provided as part of Link Manager service.
+Free to use on any number of websites registered in your account.
+
+
+=================================================================
+  Thank you for using Link Manager!
+=================================================================

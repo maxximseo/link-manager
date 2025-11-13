@@ -12,6 +12,7 @@ const projectRoutes = require('./project.routes');
 const siteRoutes = require('./site.routes');
 const placementRoutes = require('./placement.routes');
 const wordpressRoutes = require('./wordpress.routes');
+const staticRoutes = require('./static.routes');
 const billingRoutes = require('./billing.routes');
 const adminRoutes = require('./admin.routes');
 const notificationRoutes = require('./notification.routes');
@@ -56,6 +57,7 @@ router.use('/projects', projectRoutes);
 router.use('/sites', siteRoutes);
 router.use('/placements', placementRoutes);
 router.use('/wordpress', wordpressRoutes);
+router.use('/static', staticRoutes); // Public API for static PHP widgets
 router.use('/billing', billingRoutes);
 router.use('/admin', adminRoutes);
 router.use('/notifications', notificationRoutes);

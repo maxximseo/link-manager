@@ -143,6 +143,73 @@ const getContentByApiKey = async (apiKey) => {
   }
 };
 
+// Get content by domain (for static PHP sites)
+const getContentByDomain = async (domain) => {
+  try {
+    const siteService = require('./site.service');
+
+    // Normalize domain
+    const normalizedDomain = domain
+      .toLowerCase()
+      .replace(/^https?:\/\//, '')
+      .replace(/^www\./, '')
+      .replace(/\/.*$/, '');
+
+    // Check cache first (5 minutes TTL)
+    const cacheKey = `static:content:${normalizedDomain}`;
+    const cached = await cache.get(cacheKey);
+
+    if (cached) {
+      logger.debug('Static content served from cache', { domain: normalizedDomain });
+      return cached;
+    }
+
+    // Find site by domain
+    const site = await siteService.getSiteByDomain(normalizedDomain);
+
+    if (!site) {
+      logger.warn('Site not found for domain', { domain: normalizedDomain });
+      return { links: [], articles: [] };
+    }
+
+    // Get all links for this site (static_php only supports links, not articles)
+    const linksResult = await query(`
+      SELECT
+        pl.id,
+        pl.url,
+        pl.anchor_text
+      FROM project_links pl
+      JOIN placement_content pc ON pl.id = pc.link_id
+      JOIN placements plc ON pc.placement_id = plc.id
+      WHERE plc.site_id = $1
+        AND pc.link_id IS NOT NULL
+        AND plc.status = 'placed'
+      ORDER BY pc.id DESC
+    `, [site.id]);
+
+    // Format response (same format as WordPress plugin)
+    const links = linksResult.rows.map(row => ({
+      url: row.url,
+      anchor_text: row.anchor_text,
+      position: ''
+    }));
+
+    const response = {
+      links: links,
+      articles: [] // Static PHP sites don't support articles
+    };
+
+    // Cache for 5 minutes
+    await cache.set(cacheKey, response, 300);
+    logger.debug('Static content cached', { domain: normalizedDomain, linksCount: links.length });
+
+    return response;
+  } catch (error) {
+    logger.error('Get content by domain error:', error);
+    throw error;
+  }
+};
+
 // Publish article to WordPress via Link Manager plugin
 const publishArticle = async (siteUrl, apiKey, articleData) => {
   try {
@@ -336,6 +403,7 @@ const updatePlacementWithPostId = async (siteId, articleId, wordpressPostId) => 
 
 module.exports = {
   getContentByApiKey,
+  getContentByDomain,
   publishArticle,
   deleteArticle,
   verifyWordPressConnection,

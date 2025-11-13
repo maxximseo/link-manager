@@ -203,6 +203,14 @@ const purchasePlacement = async ({
 
     const site = siteResult.rows[0];
 
+    // 3.5. Validate site type - static_php sites cannot purchase articles
+    if (site.site_type === 'static_php' && type === 'article') {
+      throw new Error(
+        `Site "${site.site_name}" is a static PHP site and does not support article placements. ` +
+        `Static PHP sites can only purchase link placements.`
+      );
+    }
+
     // 4. CRITICAL FIX (BUG #5): Check site quotas BEFORE creating placement (with lock to prevent race condition)
     if (type === 'link' && site.used_links >= site.max_links) {
       throw new Error(
