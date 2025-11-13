@@ -104,9 +104,8 @@
 
             <!-- Pagination Controls -->
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <div>
-                    <strong>Sites per page:</strong>
-                    <div class="btn-group ms-2" role="group">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="btn-group" role="group">
                         <input type="radio" class="btn-check" name="sitesPerPage" id="sites100" value="100" checked>
                         <label class="btn btn-outline-primary btn-sm" for="sites100">100</label>
 
@@ -116,7 +115,7 @@
                         <input type="radio" class="btn-check" name="sitesPerPage" id="sites500" value="500">
                         <label class="btn btn-outline-primary btn-sm" for="sites500">500</label>
                     </div>
-                    <span class="ms-2 text-muted" id="sitesCountInfo"></span>
+                    <span class="text-muted" id="sitesCountInfo"></span>
                 </div>
                 <div id="paginationControls">
                     <!-- Pagination buttons will be inserted here -->
