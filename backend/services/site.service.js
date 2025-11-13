@@ -64,7 +64,7 @@ const getUserSites = async (userId, page = 0, limit = 0, recalculate = false) =>
 // Create new site
 const createSite = async (data) => {
   try {
-    const { site_url, api_key, max_links, max_articles, userId, site_type } = data;
+    const { site_url, api_key, max_links, max_articles, userId, site_type, allow_articles } = data;
 
     // SECURITY: Validate URL format
     if (!site_url) {
