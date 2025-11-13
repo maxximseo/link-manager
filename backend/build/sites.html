@@ -104,16 +104,23 @@
                                    placeholder="https://example.com">
                         </div>
 
-                        <!-- WordPress-specific fields -->
-                        <div id="wordpressFields">
-                            <div class="mb-3">
-                                <label for="apiKey" class="form-label">API Token *</label>
-                                <input type="text" class="form-control" id="apiKey"
+                        <!-- API Key field (shown for WordPress, auto-generated for static) -->
+                        <div id="apiKeyField" class="mb-3">
+                            <label for="apiKey" class="form-label">
+                                API Token
+                                <span id="apiKeyRequired">*</span>
+                                <span id="apiKeyAutoNote" style="display:none;" class="badge bg-success ms-2">Auto-generated</span>
+                            </label>
+                            <div class="input-group">
+                                <input type="text" class="form-control font-monospace" id="apiKey"
                                        placeholder="Получите токен из плагина на вашем WordPress сайте">
-                                <small class="form-text text-muted">
-                                    <i class="bi bi-info-circle"></i> Установите плагин Link Manager на WordPress и скопируйте токен из настроек
-                                </small>
+                                <button class="btn btn-outline-secondary" type="button" onclick="copyFieldToClipboard('apiKey')" id="copyApiKeyBtn">
+                                    <i class="bi bi-clipboard"></i> Copy
+                                </button>
                             </div>
+                            <small class="form-text text-muted" id="apiKeyHint">
+                                <i class="bi bi-info-circle"></i> <span id="apiKeyHintText">Установите плагин Link Manager на WordPress и скопируйте токен из настроек</span>
+                            </small>
                         </div>
 
                         <div class="row">
@@ -254,6 +261,18 @@
                                 </small>
                             </div>
                             ` : ''}
+                            ${s.api_key ? `
+                            <div class="mb-2">
+                                <small class="text-muted d-flex align-items-center gap-1">
+                                    <i class="bi bi-key"></i>
+                                    <span class="font-monospace" style="font-size: 0.75rem;">${s.api_key.substring(0, 20)}...</span>
+                                    <button class="btn btn-sm btn-outline-secondary py-0 px-1" style="font-size: 0.7rem; line-height: 1;"
+                                            onclick="copyApiKey('${s.api_key}', event)" title="Copy API Key">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </small>
+                            </div>
+                            ` : ''}
                             <div class="mb-3">
                                 <span class="badge bg-${s.status === 'active' ? 'success' : 'secondary'}">
                                     ${escapeHtml(s.status || 'active')}
@@ -280,7 +299,6 @@
             const isWordPress = siteType === 'wordpress';
 
             // Toggle fields visibility
-            document.getElementById('wordpressFields').style.display = isWordPress ? 'block' : 'none';
             document.getElementById('maxArticlesField').style.display = isWordPress ? 'block' : 'none';
             document.getElementById('wordpressPluginInfo').style.display = isWordPress ? 'block' : 'none';
             document.getElementById('staticWidgetInfo').style.display = isWordPress ? 'none' : 'block';
@@ -289,13 +307,22 @@
             document.getElementById('typeHintWordPress').style.display = isWordPress ? 'inline' : 'none';
             document.getElementById('typeHintStatic').style.display = isWordPress ? 'none' : 'inline';
 
-            // Update API key required attribute
+            // Update API key field
             const apiKeyInput = document.getElementById('apiKey');
+            const apiKeyRequired = document.getElementById('apiKeyRequired');
+            const apiKeyAutoNote = document.getElementById('apiKeyAutoNote');
+            const apiKeyHintText = document.getElementById('apiKeyHintText');
+
             if (isWordPress) {
+                apiKeyRequired.style.display = 'inline';
+                apiKeyAutoNote.style.display = 'none';
+                apiKeyHintText.textContent = 'Установите плагин Link Manager на WordPress и скопируйте токен из настроек';
                 apiKeyInput.setAttribute('required', 'required');
             } else {
+                apiKeyRequired.style.display = 'none';
+                apiKeyAutoNote.style.display = 'inline';
+                apiKeyHintText.textContent = 'API ключ генерируется автоматически при создании сайта';
                 apiKeyInput.removeAttribute('required');
-                apiKeyInput.value = ''; // Clear API key for static sites
             }
 
             // Set max_articles to 0 for static PHP sites
@@ -312,6 +339,10 @@
             document.getElementById('maxLinks').value = '10';
             document.getElementById('maxArticles').value = '10';
             document.getElementById('siteStatus').value = 'active';
+
+            // Enable API key input for new sites
+            document.getElementById('apiKey').removeAttribute('readonly');
+
             toggleSiteTypeFields(); // Initialize field visibility
             modal.show();
         }
@@ -329,6 +360,9 @@
             document.getElementById('maxArticles').value = site.max_articles || 10;
             document.getElementById('siteStatus').value = site.status || 'active';
             document.getElementById('notes').value = site.notes || '';
+
+            // Make API key readonly when editing
+            document.getElementById('apiKey').setAttribute('readonly', 'readonly');
 
             // Set site type (default to wordpress if not set)
             const siteType = site.site_type || 'wordpress';
@@ -386,6 +420,42 @@
             } catch (error) {
                 showNotification('Failed to delete site: ' + error.message, 'error');
             }
+        }
+
+        function copyApiKey(apiKey, event) {
+            event.stopPropagation(); // Prevent card click
+            navigator.clipboard.writeText(apiKey).then(() => {
+                showNotification('API Key copied to clipboard!', 'success');
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                showNotification('Failed to copy API Key', 'error');
+            });
+        }
+
+        function copyFieldToClipboard(fieldId) {
+            const field = document.getElementById(fieldId);
+            const text = field.value;
+            if (!text) {
+                showNotification('Nothing to copy', 'warning');
+                return;
+            }
+            navigator.clipboard.writeText(text).then(() => {
+                showNotification('Copied to clipboard!', 'success');
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                showNotification('Failed to copy', 'error');
+            });
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
         }
     </script>
 </body>
