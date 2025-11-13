@@ -18,7 +18,9 @@ const getPlacements = async (req, res) => {
       defaultPage: 1
     });
 
-    const result = await placementService.getUserPlacements(req.user.id, page, limit);
+    const { project_id, status } = req.query;
+
+    const result = await placementService.getUserPlacements(req.user.id, page, limit, { project_id, status });
 
     res.json(result);
   } catch (error) {
