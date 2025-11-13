@@ -99,23 +99,27 @@ const createSite = async (data) => {
     // Both site types now use API key authentication
     let finalApiKey = api_key;
     let finalMaxArticles = max_articles;
+    let finalAllowArticles = allow_articles;
 
     if (finalSiteType === 'static_php') {
       // Static PHP sites: generate API key if not provided
       finalApiKey = api_key || `api_${crypto.randomBytes(12).toString('hex')}`;
       // Static PHP sites only support links, not articles
       finalMaxArticles = 0;
+      finalAllowArticles = false; // Force to false for static sites
     } else {
       // WordPress sites: generate API key if not provided
       finalApiKey = api_key || `api_${crypto.randomBytes(12).toString('hex')}`;
       finalMaxArticles = max_articles || 30;
+      // Default to true if not specified for WordPress
+      finalAllowArticles = allow_articles !== undefined ? allow_articles : true;
     }
 
     const site_name = site_url;
 
     const result = await query(
-      'INSERT INTO sites (site_url, site_name, api_key, site_type, user_id, max_links, max_articles, used_links, used_articles) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
-      [site_url, site_name, finalApiKey, finalSiteType, userId, max_links || 10, finalMaxArticles, 0, 0]
+      'INSERT INTO sites (site_url, site_name, api_key, site_type, user_id, max_links, max_articles, used_links, used_articles, allow_articles) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *',
+      [site_url, site_name, finalApiKey, finalSiteType, userId, max_links || 10, finalMaxArticles, 0, 0, finalAllowArticles]
     );
 
     return result.rows[0];
