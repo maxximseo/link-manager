@@ -489,6 +489,81 @@ All multi-step database operations now use transactions:
 - Removed non-existent `status`/`notes` from sites controller
 - WordPress service now returns `post_id` (not wordpress_id)
 
+### WordPress Article Publication Bugs (Fixed November 2025)
+**Commit**: 46a11ea
+
+**Bug 1 - wordpress.controller.js:61**: Using wrong field name
+```javascript
+// Before (WRONG):
+if (result.success && result.wordpress_id) {
+  await wordpressService.updatePlacementWithPostId(site_id, article_id, result.wordpress_id);
+}
+
+// After (FIXED):
+if (result.success && result.post_id) {
+  await wordpressService.updatePlacementWithPostId(site_id, article_id, result.post_id);
+}
+```
+**Impact**: WordPress post IDs weren't being saved, leaving placements stuck in "pending" status.
+
+**Bug 2 - billing.service.js:526**: Wrong parameter order
+```javascript
+// Before (WRONG):
+const result = await wordpressService.publishArticle(
+  placement.api_key,
+  content.title,
+  content.content,
+  placement.site_url
+);
+
+// After (FIXED):
+const result = await wordpressService.publishArticle(
+  placement.site_url,
+  placement.api_key,
+  {
+    title: content.title,
+    content: content.content,
+    slug: content.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+  }
+);
+```
+**Impact**: Article publication would crash due to mismatched parameters.
+
+**Bug 3 - database/init.sql:28**: Missing site_type in base schema
+- Added `site_type VARCHAR(20) DEFAULT 'wordpress'` to CREATE TABLE statement
+- **Impact**: Fresh database installations would fail when creating static sites
+
+### HTML/JavaScript Synchronization Bug (Fixed November 2025)
+**Commit**: beb7afb
+
+**Root Cause**: Incomplete refactoring when removing non-existent database fields (status, notes) from sites.html.
+
+**The Problem**:
+1. Removed HTML form fields for `status` and `notes` (correct - these columns don't exist in database)
+2. Forgot to remove JavaScript code that referenced these deleted fields (error - caused "Add Site" button to break)
+
+**Files Fixed**: `backend/build/sites.html`
+```javascript
+// REMOVED from showCreateModal() (line 325):
+document.getElementById('siteStatus').value = 'active';
+
+// REMOVED from editSite() (lines 344-345):
+document.getElementById('siteStatus').value = site.status || 'active';
+document.getElementById('notes').value = site.notes || '';
+
+// REMOVED from saveSite() (lines 370-371):
+status: document.getElementById('siteStatus').value,
+notes: document.getElementById('notes').value
+```
+
+**Lesson Learned**: When removing HTML form fields, ALWAYS check for JavaScript references:
+1. Search for `getElementById('fieldName')` across entire file
+2. Check modal initialization functions (showCreateModal, showEditModal)
+3. Check form submission functions (saveSite, updateSite, etc.)
+4. Verify no orphaned references to deleted fields in data objects
+
+**Impact**: "Add Site" button was completely broken - JavaScript threw errors when trying to access non-existent DOM elements, halting all execution.
+
 ### Migration Required
 If upgrading existing database, run migrations in this order:
 
@@ -611,6 +686,45 @@ Before updating, verify columns exist in schema:
 \d placements
 ```
 Common issue: Trying to update non-existent columns like `status` or `notes` in `sites` table causes UPDATE failures. Always check [database/init.sql](database/init.sql) for actual schema.
+
+### Frontend Form Buttons Not Working
+**Symptom**: "Add Site", "Save", or other form buttons do nothing when clicked.
+
+**Common Causes**:
+1. **Orphaned JavaScript references to deleted HTML fields**
+   - Check browser console for errors like: `Cannot read property 'value' of null`
+   - Search entire HTML file for `getElementById('deletedFieldName')`
+   - Look in modal initialization functions (showCreateModal, showEditModal)
+   - Look in form submission functions (saveSite, createProject, etc.)
+
+2. **Missing form field IDs**
+   - Verify all `document.getElementById()` calls match actual HTML `id=""` attributes
+   - Check that modal HTML includes all fields referenced in JavaScript
+
+3. **JavaScript syntax errors**
+   - Open browser DevTools Console tab
+   - Look for red error messages that stop script execution
+   - Common: missing commas in object literals, unclosed parentheses
+
+**Debugging Steps**:
+```javascript
+// Add console.log() at function start to verify it's called:
+function saveSite() {
+  console.log('saveSite called');
+
+  // Log each field access:
+  const name = document.getElementById('siteName').value;
+  console.log('Site name:', name);
+
+  // Continue debugging...
+}
+```
+
+**Prevention**: When removing HTML fields, use multi-step approach:
+1. Find all JavaScript references: `grep -r "getElementById('fieldName')" file.html`
+2. Remove JavaScript references first
+3. Then remove HTML elements
+4. Test in browser before committing
 
 ## Static PHP Sites (NEW - November 2025)
 
@@ -784,6 +898,33 @@ All 6 tests should pass when system is properly configured.
 **Service**: `backend/services/site.service.js:getSiteByDomain()`
 - Domain normalization for matching
 - Returns links only (no articles)
+
+### 6. Static Widget Output Format (Updated November 2025)
+**Files**: `static-widget/static.php` and `backend/build/static.php`
+
+**Output format changed** from wrapped HTML to clean links:
+```php
+// Old format (removed):
+<div class="link-manager-widget">
+  <ul class="link-manager-links">
+    <li><a href="..." rel="nofollow">Text</a></li>
+  </ul>
+</div>
+
+// New format (current):
+<a href="URL" target="_blank">Anchor Text</a><br>
+<a href="URL" target="_blank">Anchor Text</a><br>
+```
+
+**Key changes**:
+- Removed div/ul/li wrappers for cleaner SEO
+- Removed rel="nofollow" attribute
+- Uses <br> as link separator
+- Maintains XSS protection (lm_esc_url, lm_esc_html)
+
+**Important**: Both widget files must stay synchronized:
+- Primary: `static-widget/static.php` (users download this)
+- Build: `backend/build/static.php` (served via UI download button)
 
 ## Debugging Static PHP Sites
 
