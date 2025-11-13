@@ -211,6 +211,14 @@ const purchasePlacement = async ({
       );
     }
 
+    // 3.6. Validate allow_articles flag - check if site allows article placements
+    if (type === 'article' && !site.allow_articles) {
+      throw new Error(
+        `Site "${site.site_name}" does not allow article placements. ` +
+        `The site owner has disabled article purchases. Only link placements are permitted on this site.`
+      );
+    }
+
     // 4. CRITICAL FIX (BUG #5): Check site quotas BEFORE creating placement (with lock to prevent race condition)
     if (type === 'link' && site.used_links >= site.max_links) {
       throw new Error(
