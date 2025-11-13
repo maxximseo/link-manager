@@ -195,13 +195,16 @@ function renderActivePlacements(placements) {
             ? `${p.site_url}/?p=${p.wordpress_post_id}`
             : p.site_url;
 
+        // Display site name or URL
+        const siteDisplay = p.site_name || p.site_url;
+
         // Debug log
-        console.log(`Placement #${p.id}: type=${p.type}, wordpress_post_id=${p.wordpress_post_id}, displayUrl=${displayUrl}`);
+        console.log(`Placement #${p.id}: type=${p.type}, wordpress_post_id=${p.wordpress_post_id}, site_name=${p.site_name}, displayUrl=${displayUrl}`);
 
         row.innerHTML = `
             <td>#${p.id}</td>
             <td>${p.project_name || '—'}</td>
-            <td><a href="${displayUrl}" target="_blank" class="text-break">${displayUrl}</a></td>
+            <td><a href="${displayUrl}" target="_blank" class="text-break">${siteDisplay}</a></td>
             <td>${typeBadge}</td>
             <td>${formatDate(p.published_at || p.placed_at)}</td>
             <td class="${expiryClass}">${expiryText}</td>
