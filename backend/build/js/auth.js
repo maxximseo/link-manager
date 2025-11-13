@@ -22,6 +22,12 @@ function getCurrentUser() {
     return userStr ? JSON.parse(userStr) : null;
 }
 
+// Check if current user is admin
+function isAdmin() {
+    const user = getCurrentUser();
+    return user && user.role === 'admin';
+}
+
 // Login function
 async function login(username, password) {
     try {
