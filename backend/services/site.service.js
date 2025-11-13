@@ -18,7 +18,7 @@ const getUserSites = async (userId, page = 0, limit = 0, recalculate = false) =>
     }
     
     // Fetch sites data
-    let sitesQuery = 'SELECT id, user_id, site_name, site_url, api_key, max_links, max_articles, used_links, used_articles, created_at FROM sites WHERE user_id = $1 ORDER BY created_at DESC';
+    let sitesQuery = 'SELECT id, user_id, site_name, site_url, api_key, site_type, max_links, max_articles, used_links, used_articles, created_at FROM sites WHERE user_id = $1 ORDER BY created_at DESC';
     const queryParams = [userId];
     
     if (usePagination) {
@@ -64,17 +64,38 @@ const getUserSites = async (userId, page = 0, limit = 0, recalculate = false) =>
 // Create new site
 const createSite = async (data) => {
   try {
-    const { site_url, api_key, max_links, max_articles, userId } = data;
-    
-    // Generate cryptographically secure API key if not provided
-    const finalApiKey = api_key || `api_${crypto.randomBytes(12).toString('hex')}`;
+    const { site_url, api_key, max_links, max_articles, userId, site_type } = data;
+
+    // Determine site type (default: wordpress)
+    const finalSiteType = site_type || 'wordpress';
+
+    // Validate site_type
+    if (!['wordpress', 'static_php'].includes(finalSiteType)) {
+      throw new Error('Invalid site_type. Must be wordpress or static_php');
+    }
+
+    // For static_php sites: api_key is optional, max_articles must be 0
+    let finalApiKey = api_key;
+    let finalMaxArticles = max_articles;
+
+    if (finalSiteType === 'static_php') {
+      // Static PHP sites don't need API key (domain-based auth)
+      finalApiKey = finalApiKey || null;
+      // Static PHP sites only support links, not articles
+      finalMaxArticles = 0;
+    } else {
+      // WordPress sites require API key
+      finalApiKey = api_key || `api_${crypto.randomBytes(12).toString('hex')}`;
+      finalMaxArticles = max_articles || 30;
+    }
+
     const site_name = site_url;
-    
+
     const result = await query(
-      'INSERT INTO sites (site_url, site_name, api_key, user_id, max_links, max_articles, used_links, used_articles) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
-      [site_url, site_name, finalApiKey, userId, max_links || 10, max_articles || 30, 0, 0]
+      'INSERT INTO sites (site_url, site_name, api_key, site_type, user_id, max_links, max_articles, used_links, used_articles) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
+      [site_url, site_name, finalApiKey, finalSiteType, userId, max_links || 10, finalMaxArticles, 0, 0]
     );
-    
+
     return result.rows[0];
   } catch (error) {
     logger.error('Create site error:', error);
@@ -85,7 +106,18 @@ const createSite = async (data) => {
 // Update site
 const updateSite = async (siteId, userId, data) => {
   try {
-    const { site_url, site_name, api_key, max_links, max_articles } = data;
+    const { site_url, site_name, api_key, max_links, max_articles, site_type } = data;
+
+    // Validate site_type if provided
+    if (site_type && !['wordpress', 'static_php'].includes(site_type)) {
+      throw new Error('Invalid site_type. Must be wordpress or static_php');
+    }
+
+    // For static_php sites, force max_articles to 0
+    let finalMaxArticles = max_articles;
+    if (site_type === 'static_php') {
+      finalMaxArticles = 0;
+    }
 
     const result = await query(
       `UPDATE sites
@@ -93,10 +125,11 @@ const updateSite = async (siteId, userId, data) => {
            site_name = COALESCE($2, site_name),
            api_key = COALESCE($3, api_key),
            max_links = COALESCE($4, max_links),
-           max_articles = COALESCE($5, max_articles)
-       WHERE id = $6 AND user_id = $7
+           max_articles = COALESCE($5, max_articles),
+           site_type = COALESCE($6, site_type)
+       WHERE id = $7 AND user_id = $8
        RETURNING *`,
-      [site_url, site_name, api_key, max_links, max_articles, siteId, userId]
+      [site_url, site_name, api_key, max_links, finalMaxArticles, site_type, siteId, userId]
     );
 
     return result.rows.length > 0 ? result.rows[0] : null;
@@ -164,13 +197,40 @@ const recalculateSiteStats = async (userId) => {
 const getSiteById = async (siteId, userId) => {
   try {
     const result = await query(
-      'SELECT id, user_id, site_name, site_url, api_key, max_links, max_articles, used_links, used_articles, created_at FROM sites WHERE id = $1 AND user_id = $2',
+      'SELECT id, user_id, site_name, site_url, api_key, site_type, max_links, max_articles, used_links, used_articles, created_at FROM sites WHERE id = $1 AND user_id = $2',
       [siteId, userId]
     );
-    
+
     return result.rows.length > 0 ? result.rows[0] : null;
   } catch (error) {
     logger.error('Get site by ID error:', error);
+    throw error;
+  }
+};
+
+// Get site by domain (for static PHP widget)
+const getSiteByDomain = async (domain) => {
+  try {
+    // Normalize domain: remove protocol, www, trailing slash, path
+    const normalizedDomain = domain
+      .toLowerCase()
+      .replace(/^https?:\/\//, '')
+      .replace(/^www\./, '')
+      .replace(/\/.*$/, '');
+
+    // Try to find site by matching site_url
+    const result = await query(
+      `SELECT id, user_id, site_name, site_url, site_type, max_links, max_articles, used_links, used_articles, created_at
+       FROM sites
+       WHERE LOWER(REGEXP_REPLACE(REGEXP_REPLACE(site_url, '^https?://', ''), '^www\\.', '')) LIKE $1 || '%'
+       AND site_type = 'static_php'
+       LIMIT 1`,
+      [normalizedDomain]
+    );
+
+    return result.rows.length > 0 ? result.rows[0] : null;
+  } catch (error) {
+    logger.error('Get site by domain error:', error);
     throw error;
   }
 };
@@ -181,5 +241,6 @@ module.exports = {
   updateSite,
   deleteSite,
   recalculateSiteStats,
-  getSiteById
+  getSiteById,
+  getSiteByDomain
 };
