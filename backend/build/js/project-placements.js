@@ -221,7 +221,7 @@ function renderActivePlacements(placements) {
  */
 async function loadScheduledPlacements() {
     try {
-        const response = await fetch('/api/placements?status=scheduled', {
+        const response = await fetch(`/api/placements?status=scheduled&project_id=${currentProjectId}`, {
             headers: { 'Authorization': `Bearer ${getToken()}` }
         });
 
@@ -230,12 +230,7 @@ async function loadScheduledPlacements() {
         const result = await response.json();
         const placements = Array.isArray(result.data) ? result.data : result;
 
-        // Filter by current project ID
-        const projectPlacements = placements.filter(p =>
-            p.status === 'scheduled' && p.project_id == currentProjectId
-        );
-
-        renderScheduledPlacements(projectPlacements);
+        renderScheduledPlacements(placements);
 
     } catch (error) {
         console.error('Failed to load scheduled placements:', error);
