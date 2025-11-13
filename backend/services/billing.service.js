@@ -451,6 +451,22 @@ const purchasePlacement = async ({
     await cache.delPattern(`placements:user:${userId}:*`);
     await cache.delPattern(`projects:user:${userId}:*`);
 
+    // CRITICAL FIX: Invalidate WordPress/Static content cache for this site
+    // This ensures the plugin/widget shows updated content immediately
+    if (site.site_type === 'wordpress' && site.api_key) {
+      await cache.del(`wp:content:${site.api_key}`);
+      logger.debug('WordPress content cache invalidated', { apiKey: site.api_key });
+    } else if (site.site_type === 'static_php' && site.site_url) {
+      // Normalize domain for cache key
+      const normalizedDomain = site.site_url
+        .toLowerCase()
+        .replace(/^https?:\/\//, '')
+        .replace(/^www\./, '')
+        .replace(/\/.*$/, '');
+      await cache.del(`static:content:${normalizedDomain}`);
+      logger.debug('Static content cache invalidated', { domain: normalizedDomain });
+    }
+
     logger.info('Placement purchased successfully', {
       userId,
       placementId: placement.id,
