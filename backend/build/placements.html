@@ -517,6 +517,9 @@
                     // Check if site type is incompatible with selected content type
                     const incompatibleType = (siteType === 'static_php' && contentType === 'articles');
 
+                    // Check if site disallows articles (new check for allow_articles flag)
+                    const articlesDisabled = (contentType === 'articles' && site.allow_articles === false);
+
                     // Determine status class and badge
                     let statusClass, statusBadge, isDisabled, disableReason;
 
@@ -532,6 +535,12 @@
                         statusBadge = '<span class="badge bg-warning">Только ссылки</span>';
                         isDisabled = true;
                         disableReason = 'Статичные сайты поддерживают только ссылки';
+                    } else if (articlesDisabled) {
+                        // Site owner disabled article placements
+                        statusClass = 'table-secondary';
+                        statusBadge = '<span class="badge bg-secondary">Статьи отключены</span>';
+                        isDisabled = true;
+                        disableReason = 'Владелец сайта отключил размещение статей';
                     } else {
                         // Site available for purchase
                         statusClass = 'table-success';
