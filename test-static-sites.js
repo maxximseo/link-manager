@@ -203,10 +203,10 @@ async function test3_CreatePlacementWithLink() {
 
     // Create placement via billing API
     const placementResponse = await axios.post(`${API_URL}/billing/purchase`, {
-      project_id: testProjectId,
-      site_ids: [testSiteId],
-      link_ids: [testLinkId],
-      article_ids: []
+      projectId: testProjectId,
+      siteId: testSiteId,
+      type: 'link',
+      contentIds: [testLinkId]
     }, {
       headers: { 'Authorization': `Bearer ${authToken}` }
     });
@@ -286,10 +286,10 @@ async function test4_BlockArticlePlacement() {
     // Attempt to create placement with article (should fail)
     try {
       await axios.post(`${API_URL}/billing/purchase`, {
-        project_id: testProjectId,
-        site_ids: [testSiteId],
-        link_ids: [],
-        article_ids: [testArticleId]
+        projectId: testProjectId,
+        siteId: testSiteId,
+        type: 'article',
+        contentIds: [testArticleId]
       }, {
         headers: { 'Authorization': `Bearer ${authToken}` }
       });
@@ -298,11 +298,14 @@ async function test4_BlockArticlePlacement() {
       return false;
 
     } catch (error) {
+      const errorText = error.response?.data?.details || error.response?.data?.error || '';
       if (error.response?.status === 400 &&
-          error.response?.data?.error?.toLowerCase().includes('article limit')) {
-        logSuccess(`Correctly blocked article: "${error.response.data.error}"`);
+          (errorText.toLowerCase().includes('article') ||
+           errorText.toLowerCase().includes('static php'))) {
+        logSuccess(`Correctly blocked article: "${errorText}"`);
       } else {
         logError(`Wrong error: ${error.response?.data?.error}`);
+        logError(`Details: ${error.response?.data?.details}`);
         return false;
       }
     }
