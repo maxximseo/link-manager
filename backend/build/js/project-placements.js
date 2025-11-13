@@ -97,7 +97,7 @@ async function loadBalance() {
  */
 async function loadActivePlacements() {
     try {
-        const response = await fetch('/api/placements?status=placed', {
+        const response = await fetch(`/api/placements?status=placed&project_id=${currentProjectId}`, {
             headers: { 'Authorization': `Bearer ${getToken()}` }
         });
 
@@ -106,12 +106,7 @@ async function loadActivePlacements() {
         const result = await response.json();
         const placements = Array.isArray(result.data) ? result.data : result;
 
-        // Filter by current project ID
-        const projectPlacements = placements.filter(p =>
-            p.status === 'placed' && p.project_id == currentProjectId
-        );
-
-        renderActivePlacements(projectPlacements);
+        renderActivePlacements(placements);
 
     } catch (error) {
         console.error('Failed to load active placements:', error);
