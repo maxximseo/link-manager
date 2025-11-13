@@ -159,10 +159,13 @@ const updateSite = async (siteId, userId, data) => {
       throw new Error('Invalid site_type. Must be wordpress or static_php');
     }
 
-    // For static_php sites, force max_articles to 0
+    // For static_php sites, force max_articles to 0 and allow_articles to false
     let finalMaxArticles = max_articles;
+    let finalAllowArticles = allow_articles;
+
     if (site_type === 'static_php') {
       finalMaxArticles = 0;
+      finalAllowArticles = false;
     }
 
     const result = await query(
@@ -172,10 +175,11 @@ const updateSite = async (siteId, userId, data) => {
            api_key = COALESCE($3, api_key),
            max_links = COALESCE($4, max_links),
            max_articles = COALESCE($5, max_articles),
-           site_type = COALESCE($6, site_type)
-       WHERE id = $7 AND user_id = $8
+           site_type = COALESCE($6, site_type),
+           allow_articles = COALESCE($7, allow_articles)
+       WHERE id = $8 AND user_id = $9
        RETURNING *`,
-      [site_url, site_name, api_key, max_links, finalMaxArticles, site_type, siteId, userId]
+      [site_url, site_name, api_key, max_links, finalMaxArticles, site_type, finalAllowArticles, siteId, userId]
     );
 
     return result.rows.length > 0 ? result.rows[0] : null;
