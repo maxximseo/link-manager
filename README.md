@@ -5,7 +5,7 @@ A powerful Node.js/Express application with modular architecture for managing SE
 ## 📋 Features
 
 - ✅ **Project Management** - Organize your SEO campaigns
-- ✅ **Site Management** - Track multiple WordPress sites with quota limits
+- ✅ **Site Management** - Track WordPress & static PHP sites with quota limits
 - ✅ **Link Placement** - Smart quota management system
 - ✅ **Article Management** - Content publishing capabilities
 - ✅ **JWT Authentication** - Secure token-based auth
@@ -13,6 +13,7 @@ A powerful Node.js/Express application with modular architecture for managing SE
 - ✅ **PostgreSQL Database** - Robust data persistence
 - ✅ **Modular Frontend** - 8 independent JavaScript modules
 - ✅ **WordPress Plugin** - Easy integration with WP sites
+- ✅ **Static PHP Widget** - API key-based widget for static sites
 - ✅ **Background Workers** - Optional Redis/Bull queue support
 
 ## 🏗️ Architecture
@@ -163,6 +164,34 @@ Copy `wordpress-plugin/link-manager-widget.php` to your WordPress plugins direct
 - Go to **Settings > Link Manager** in WP admin
 - Copy the API key
 - Add it to your site in the Link Manager app
+
+## 🔗 Static PHP Widget
+
+For static HTML/PHP sites without WordPress.
+
+### Installation
+
+1. **Create site** in Link Manager dashboard with type `static_php`
+2. **Copy API key** from site settings
+3. **Download widget** from `static-widget/link-manager-widget.php`
+4. **Edit widget** - replace `YOUR_API_KEY_HERE` with your actual key (line 15)
+5. **Upload** to your server
+6. **Include** in your HTML/PHP:
+
+```php
+<?php include 'link-manager-widget.php'; ?>
+```
+
+### Features
+- ✅ API key authentication (same as WordPress)
+- ✅ 5-minute file-based caching
+- ✅ XSS protection
+- ✅ SSL compatibility
+- ✅ Links only (no article support)
+
+### Legacy Domain-Based Widget
+For backward compatibility, `static-code.php` uses domain detection instead of API key.
+New sites should use API key authentication.
 
 ## 🎨 Frontend Modules
 

@@ -268,6 +268,46 @@ When updating the plugin:
 - Sanitize all user inputs: `sanitize_text_field()`, `esc_url_raw()`, `esc_attr()`
 - Escape all outputs: `esc_html()`, `esc_url()`, `wp_kses_post()`
 
+### Static PHP Sites Integration
+
+**Two site types supported:**
+1. **wordpress** - Full-featured WordPress sites with article support
+2. **static_php** - Static HTML/PHP sites (links only, no articles)
+
+**API Key Authentication:**
+Both site types now use API key authentication (domain-based is legacy):
+- API key is auto-generated if not provided: `api_${crypto.randomBytes(12).toString('hex')}`
+- Static sites use same `/api/wordpress/get-content?api_key=XXX` endpoint as WordPress
+
+**Widget Files (static-widget/):**
+- `link-manager-widget.php` - **PRIMARY**: API key-based widget (recommended)
+- `static-code.php` - **LEGACY**: Domain-based widget (backward compatibility only)
+
+**Primary Widget Installation:**
+```php
+// 1. Copy your API key from site settings in dashboard
+// 2. Edit link-manager-widget.php, line 15:
+define('LM_API_KEY', 'your_api_key_here');
+
+// 3. Upload to server and include in your HTML/PHP:
+<?php include 'link-manager-widget.php'; ?>
+```
+
+**Widget Features:**
+- 5-minute file-based caching
+- XSS protection (URL and HTML escaping)
+- SSL compatibility (verify_peer=false for older PHP)
+- Silent failure (no error display to users)
+
+**Site Type Constraints:**
+- `static_php`: max_articles forced to 0 (links only)
+- `wordpress`: supports both links and articles
+- API key required for both types
+
+**Content Retrieval Endpoints:**
+- **Recommended**: `/api/wordpress/get-content?api_key=XXX` (works for both types)
+- **Legacy**: `/api/static/get-content-by-domain?domain=example.com` (backward compatibility)
+
 ### Automatic Article Publication
 When a placement is created with articles, they are **automatically published** to WordPress:
 - `placement.service.js` imports `wordpressService.publishArticle()`

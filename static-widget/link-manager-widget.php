@@ -9,7 +9,7 @@
  * 1. Copy your API key from Link Manager dashboard
  * 2. Replace 'YOUR_API_KEY_HERE' below with your actual API key
  * 3. Upload this file to your website's root directory
- * 4. Add <?php include 'link-manager-widget-apikey.php'; ?> where you want links
+ * 4. Add <?php include 'link-manager-widget.php'; ?> where you want links
  *
  * Features:
  * - Works with API key (like WordPress)
