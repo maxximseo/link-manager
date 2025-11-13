@@ -143,7 +143,8 @@ const getContentByApiKey = async (apiKey) => {
   }
 };
 
-// Get content by domain (for static PHP sites)
+// Get content by domain (legacy method for static PHP sites)
+// NOTE: New static sites should use API key via getContentByApiKey() instead
 const getContentByDomain = async (domain) => {
   try {
     const siteService = require('./site.service');
