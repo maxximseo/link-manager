@@ -53,7 +53,7 @@ const getSite = async (req, res) => {
 // Create new site
 const createSite = async (req, res) => {
   try {
-    const { site_url, api_key, max_links, max_articles, site_type } = req.body;
+    const { site_url, api_key, max_links, max_articles, site_type, allow_articles } = req.body;
 
     // Validate required fields
     if (!site_url || typeof site_url !== 'string' || site_url.trim().length === 0) {
@@ -85,12 +85,18 @@ const createSite = async (req, res) => {
       return res.status(400).json({ error: 'Max articles must be a positive number' });
     }
 
+    // Validate allow_articles if provided
+    if (allow_articles !== undefined && typeof allow_articles !== 'boolean') {
+      return res.status(400).json({ error: 'Allow articles must be a boolean value' });
+    }
+
     const site = await siteService.createSite({
       site_url: site_url.trim(),
       api_key,
       max_links,
       max_articles,
       site_type,
+      allow_articles,
       userId: req.user.id
     });
 
