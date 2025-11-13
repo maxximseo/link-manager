@@ -509,26 +509,38 @@
                 // NEW LOGIC: Red = already purchased (link OR article), cannot buy again
                 filteredSites = sitesToShow.map(site => {
                     const status = sitesStatus.get(site.id) || { hasLinks: false, hasArticles: false };
+                    const siteType = site.site_type || 'wordpress';
 
                     // Check if this site already has ANY placement for this project
                     const alreadyPurchased = status.hasLinks || status.hasArticles;
 
+                    // Check if site type is incompatible with selected content type
+                    const incompatibleType = (siteType === 'static_php' && contentType === 'articles');
+
                     // Determine status class and badge
-                    let statusClass, statusBadge, isDisabled;
+                    let statusClass, statusBadge, isDisabled, disableReason;
 
                     if (alreadyPurchased) {
                         // Site already has placement for this project - mark red and disable
                         statusClass = 'table-danger';
                         statusBadge = '<span class="badge bg-danger">Уже куплено</span>';
                         isDisabled = true;
+                        disableReason = 'Уже куплено';
+                    } else if (incompatibleType) {
+                        // Static PHP site cannot have articles
+                        statusClass = 'table-warning';
+                        statusBadge = '<span class="badge bg-warning">Только ссылки</span>';
+                        isDisabled = true;
+                        disableReason = 'Статичные сайты поддерживают только ссылки';
                     } else {
                         // Site available for purchase
                         statusClass = 'table-success';
                         statusBadge = '<span class="badge bg-success">Доступно</span>';
                         isDisabled = false;
+                        disableReason = '';
                     }
 
-                    return { ...site, statusClass, statusBadge, isDisabled };
+                    return { ...site, statusClass, statusBadge, isDisabled, disableReason, siteType };
                 });
 
                 // Reset assignments and round-robin index
@@ -605,21 +617,42 @@
                            ${contentOptions}
                        </select>`;
 
+                // Site type badge
+                const siteType = site.siteType || 'wordpress';
+                const siteTypeBadge = siteType === 'wordpress'
+                    ? '<span class="badge bg-primary ms-1"><i class="bi bi-wordpress"></i> WP</span>'
+                    : '<span class="badge bg-success ms-1"><i class="bi bi-filetype-php"></i> PHP</span>';
+
+                // Disable reason tooltip
+                const tooltipAttr = site.disableReason
+                    ? `title="${escapeHtml(site.disableReason)}" data-bs-toggle="tooltip"`
+                    : '';
+
                 return `
                     <tr class="${site.statusClass}">
                         <td>
                             <input type="checkbox" class="site-checkbox"
                                    data-site-id="${site.id}"
                                    onchange="onSiteCheckboxChange(${site.id}, this.checked)"
-                                   ${site.isDisabled ? 'disabled' : ''}>
+                                   ${site.isDisabled ? 'disabled' : ''}
+                                   ${tooltipAttr}>
                         </td>
-                        <td>${escapeHtml(site.site_name)}</td>
+                        <td>
+                            ${escapeHtml(site.site_name)}
+                            ${siteTypeBadge}
+                        </td>
                         <td>${escapeHtml(site.site_url)}</td>
                         <td>${site.statusBadge}</td>
                         <td id="assigned_${site.id}">${dropdownHtml}</td>
                     </tr>
                 `;
             }).join('');
+
+            // Initialize Bootstrap tooltips for disabled sites
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
 
             // Render pagination controls
             renderPagination(totalPages);
