@@ -26,6 +26,9 @@ PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB
 # Or use the migration runner
 node database/run_migration.js
 
+# CRITICAL: If you get "column user_id does not exist" error, run this migration first:
+node database/run_user_id_migration.js
+
 # Initialize fresh database
 psql -d linkmanager -f database/init.sql
 psql -d linkmanager -f database/seed.sql
@@ -331,7 +334,13 @@ The placements creation interface (`placements.html`) uses a streamlined 3-step 
 - Migrations:
   - `database/migrate_usage_limits.sql` - Usage tracking system
   - `database/migrate_add_wordpress_post_id.sql` - Add status and wordpress_post_id to placements
-- Migration runner: `database/run_migration.js`
+  - `database/migrate_add_user_id_to_placements.sql` - Add user_id column to placements (REQUIRED for billing system)
+  - `database/migrate_add_billing_system.sql` - Full billing system with transactions, discounts, renewals
+- Migration runners:
+  - `database/run_migration.js` - General purpose migration runner
+  - `database/run_user_id_migration.js` - Adds user_id to placements table
+  - `database/run_billing_migration.js` - Installs full billing system
+- See `database/MIGRATION_INSTRUCTIONS.md` for detailed migration instructions
 
 ## Performance & Caching System
 
@@ -441,10 +450,20 @@ All multi-step database operations now use transactions:
 - WordPress service now returns `post_id` (not wordpress_id)
 
 ### Migration Required
-If upgrading existing database, run:
+If upgrading existing database, run migrations in this order:
+
 ```bash
+# 1. Add user_id to placements (REQUIRED for billing system)
+node database/run_user_id_migration.js
+
+# 2. Add WordPress post_id and status columns
 PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f database/migrate_add_wordpress_post_id.sql
+
+# 3. Install full billing system (optional, if using billing features)
+node database/run_billing_migration.js
 ```
+
+See `database/MIGRATION_INSTRUCTIONS.md` for detailed instructions and troubleshooting.
 
 ## Git Workflow
 
@@ -487,6 +506,18 @@ do {
 } while (cursor !== '0');
 ```
 Implemented in `cache.service.js:delPattern()`.
+
+### Database Schema Mismatch Errors
+**Error**: `column "user_id" of relation "placements" does not exist`
+
+**Cause**: Production database was created from an older version of init.sql that didn't include user_id in placements table.
+
+**Solution**:
+1. Run the user_id migration: `node database/run_user_id_migration.js`
+2. Or manually execute: `ALTER TABLE placements ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE CASCADE;`
+3. See `database/MIGRATION_INSTRUCTIONS.md` for detailed instructions
+
+**Prevention**: Always run all migrations when deploying to new environments. Check `database/` folder for all `migrate_*.sql` files.
 
 ### Server Won't Start
 1. Check if port is in use: `lsof -ti:3003`
