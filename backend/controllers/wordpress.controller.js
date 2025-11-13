@@ -5,22 +5,23 @@
 
 const wordpressService = require('../services/wordpress.service');
 const logger = require('../config/logger');
+const { handleError, handleSmartError } = require('../utils/errorHandler');
 
 // Get content by API key (for WordPress plugin)
 const getContent = async (req, res) => {
   try {
-    const apiKey = req.params.api_key;
-    
+    // SECURITY: Read API key from header instead of URL to prevent logging
+    const apiKey = req.headers['x-api-key'] || req.query.api_key; // Support both for backward compatibility
+
     if (!apiKey) {
-      return res.status(400).json({ error: 'API key is required' });
+      return res.status(400).json({ error: 'API key is required in X-API-Key header or api_key query parameter' });
     }
-    
+
     const content = await wordpressService.getContentByApiKey(apiKey);
-    
+
     res.json(content);
   } catch (error) {
-    logger.error('Get WordPress content error:', error);
-    res.status(500).json({ error: 'Failed to fetch content' });
+    return handleError(res, error, 'Failed to fetch content', 500);
   }
 };
 
@@ -63,8 +64,7 @@ const publishArticle = async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    logger.error('WordPress publish error:', error);
-    res.status(500).json({ error: error.message || 'Failed to publish article' });
+    return handleSmartError(res, error, 'Failed to publish article', 500);
   }
 };
 
@@ -83,17 +83,19 @@ const verifyConnection = async (req, res) => {
     if (!result) {
       return res.json({
         success: false,
-        error: 'Site not found with this API key'
+        error: 'Invalid API key'
       });
     }
 
+    // SECURITY: Don't expose site details to prevent information disclosure
+    // Only confirm that the API key is valid
     res.json({
       success: true,
-      site: result
+      message: 'API key is valid',
+      site_name: result.site_name // Only return site name for user confirmation
     });
   } catch (error) {
-    logger.error('WordPress verify error:', error);
-    res.status(500).json({ error: 'Failed to verify connection' });
+    return handleError(res, error, 'Failed to verify connection', 500);
   }
 };
 
@@ -107,8 +109,7 @@ const handleContent = async (req, res) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    logger.error('WordPress content error:', error);
-    res.status(500).json({ error: 'WordPress content operation failed' });
+    return handleError(res, error, 'WordPress content operation failed', 500);
   }
 };
 

@@ -6,6 +6,7 @@
 const projectService = require('../services/project.service');
 const logger = require('../config/logger');
 const { validatePagination } = require('../utils/validators');
+const { handleError, handleSmartError, handleValidationError } = require('../utils/errorHandler');
 
 // Get all projects for user
 const getProjects = async (req, res) => {
@@ -26,13 +27,11 @@ const getProjects = async (req, res) => {
       res.json(result.data || result);
     }
   } catch (error) {
-    logger.error('Get projects error:', error);
-
+    // Validation errors are safe to expose
     if (error.message.includes('Page number') || error.message.includes('Limit cannot')) {
-      return res.status(400).json({ error: error.message });
+      return handleValidationError(res, error, error.message);
     }
-
-    res.status(500).json({ error: 'Failed to fetch projects' });
+    return handleError(res, error, 'Failed to fetch projects', 500);
   }
 };
 
@@ -213,14 +212,11 @@ const addProjectLink = async (req, res) => {
 
     res.json(link);
   } catch (error) {
-    logger.error('Add project link error:', error);
-
-    // Return specific error message for duplicate anchor text
+    // Duplicate anchor text is a safe business error
     if (error.message && error.message.includes('Duplicate anchor text')) {
-      return res.status(400).json({ error: error.message });
+      return handleValidationError(res, error, error.message);
     }
-
-    res.status(500).json({ error: 'Failed to add project link' });
+    return handleError(res, error, 'Failed to add project link', 500);
   }
 };
 
@@ -291,8 +287,7 @@ const addProjectLinksBulk = async (req, res) => {
       summary: result.summary
     });
   } catch (error) {
-    logger.error('Bulk add project links error:', error);
-    res.status(500).json({ error: error.message || 'Failed to bulk import links' });
+    return handleSmartError(res, error, 'Failed to bulk import links', 500);
   }
 };
 

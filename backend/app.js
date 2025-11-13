@@ -21,10 +21,31 @@ const app = express();
 app.set('trust proxy', 1);
 
 // Security middleware
-app.use(helmet({
-  contentSecurityPolicy: false, // Disable for development
-  crossOriginEmbedderPolicy: false
-}));
+// Configure helmet for production security
+const helmetConfig = {
+  crossOriginEmbedderPolicy: false, // Allow loading external resources
+  contentSecurityPolicy: process.env.NODE_ENV === 'production' ? {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net", "cdnjs.cloudflare.com"], // Allow Bootstrap & other CDN scripts
+      styleSrc: ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net", "cdnjs.cloudflare.com"], // Allow inline styles for Bootstrap
+      imgSrc: ["'self'", "data:", "https:"], // Allow images from any HTTPS source
+      connectSrc: ["'self'"], // API calls only to same origin
+      fontSrc: ["'self'", "cdn.jsdelivr.net", "cdnjs.cloudflare.com"], // CDN fonts
+      objectSrc: ["'none'"], // Block plugins like Flash
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"], // Block iframes
+      upgradeInsecureRequests: [] // Force HTTPS
+    }
+  } : false, // Disable CSP in development for easier debugging
+  hsts: process.env.NODE_ENV === 'production' ? {
+    maxAge: 31536000, // 1 year in seconds
+    includeSubDomains: true, // Apply to all subdomains
+    preload: true // Allow preloading in browsers
+  } : false // Disable HSTS in development
+};
+
+app.use(helmet(helmetConfig));
 
 // CORS configuration
 const corsOptions = {
