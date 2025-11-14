@@ -412,14 +412,55 @@
         }
 
         async function deleteSite(id) {
-            if (!confirm('Are you sure you want to delete this site?')) return;
-
             try {
-                await SitesAPI.delete(id);
-                showNotification('Site deleted successfully');
+                // Get placements for this site to show warning
+                const response = await PlacementsAPI.getBySite(id);
+                const { placements, summary } = response;
+
+                // Build confirmation message
+                let message = 'Вы уверены, что хотите удалить этот сайт?';
+
+                if (summary.total > 0) {
+                    message = `⚠️ ВНИМАНИЕ: На этом сайте есть ${summary.total} размещени${summary.total === 1 ? 'е' : summary.total < 5 ? 'я' : 'й'}!\n\n`;
+
+                    if (summary.paidCount > 0) {
+                        message += `💰 Платных размещений: ${summary.paidCount}\n`;
+                        message += `💵 Общая стоимость: $${summary.totalRefund.toFixed(2)}\n\n`;
+                        message += `✅ Все размещения будут удалены\n`;
+                        message += `✅ Деньги ($${summary.totalRefund.toFixed(2)}) будут возвращены на ваш баланс\n`;
+                        message += `✅ Использование ссылок/статей будет восстановлено\n\n`;
+                    } else {
+                        message += `Все размещения (бесплатные) будут удалены.\n\n`;
+                    }
+
+                    message += `Вы уверены, что хотите продолжить?`;
+                }
+
+                if (!confirm(message)) return;
+
+                // Delete site with refunds
+                const result = await SitesAPI.delete(id);
+
+                // Show success message with refund details
+                if (result.refundedCount > 0) {
+                    showNotification(
+                        `Сайт удалён успешно! Возвращено: $${result.totalRefunded.toFixed(2)} (${result.refundedCount} размещени${result.refundedCount === 1 ? 'е' : result.refundedCount < 5 ? 'я' : 'й'})`,
+                        'success'
+                    );
+
+                    if (result.tierChanged) {
+                        showNotification(
+                            `Ваш уровень скидки изменился на "${result.newTier}" из-за уменьшения общих затрат.`,
+                            'info'
+                        );
+                    }
+                } else {
+                    showNotification('Сайт удалён успешно', 'success');
+                }
+
                 await loadSites();
             } catch (error) {
-                showNotification('Failed to delete site: ' + error.message, 'error');
+                showNotification('Ошибка при удалении сайта: ' + error.message, 'error');
             }
         }
 
