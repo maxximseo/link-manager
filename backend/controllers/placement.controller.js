@@ -503,6 +503,7 @@ const cancelJob = async (req, res) => {
 
 module.exports = {
   getPlacements,
+  getPlacementsBySite,
   getPlacement,
   createBatchPlacement,
   createBatchPlacementAsync,
