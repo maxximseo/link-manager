@@ -1049,3 +1049,105 @@ p {
     border-color: #667eea;
     box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
 }
+
+/* #7: Breadcrumbs Navigation */
+.breadcrumb {
+    background: transparent;
+    padding: 12px 0;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.breadcrumb-item {
+    color: #6b7280;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    content: '›';
+    color: #9ca3af;
+    font-size: 18px;
+    font-weight: 300;
+}
+
+.breadcrumb-item a {
+    color: #667eea;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.breadcrumb-item a:hover {
+    color: #764ba2;
+    text-decoration: underline;
+}
+
+.breadcrumb-item.active {
+    color: #1f2937;
+    font-weight: 500;
+}
+
+/* #8: Sortable Tables */
+.table th.sortable {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    padding-right: 30px;
+}
+
+.table th.sortable:hover {
+    background-color: #f3f4f6;
+}
+
+.table th.sortable::after {
+    content: '⇅';
+    position: absolute;
+    right: 10px;
+    color: #9ca3af;
+    font-size: 12px;
+}
+
+.table th.sortable.sort-asc::after {
+    content: '▲';
+    color: #667eea;
+}
+
+.table th.sortable.sort-desc::after {
+    content: '▼';
+    color: #667eea;
+}
+
+/* #10: Empty States */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6b7280;
+}
+
+.empty-state-icon {
+    font-size: 64px;
+    color: #d1d5db;
+    margin-bottom: 20px;
+    opacity: 0.6;
+}
+
+.empty-state-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 12px;
+}
+
+.empty-state-description {
+    font-size: 15px;
+    color: #6b7280;
+    margin-bottom: 24px;
+    line-height: 1.6;
+}
+
+.empty-state-cta {
+    margin-top: 20px;
+}
+
+.empty-state-cta .btn {
+    padding: 10px 24px;
+    font-weight: 500;
+}

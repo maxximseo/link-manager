@@ -117,3 +117,92 @@ const BillingAPI = {
         body: JSON.stringify({ enabled })
     })
 };
+
+// #8: Table Sorting Utility
+class TableSorter {
+    constructor(tableId, storageKey) {
+        this.table = document.getElementById(tableId);
+        this.tbody = this.table ? this.table.querySelector('tbody') : null;
+        this.storageKey = storageKey || `table-sort-${tableId}`;
+        this.currentSort = this.loadSortState();
+    }
+
+    loadSortState() {
+        try {
+            const saved = localStorage.getItem(this.storageKey);
+            return saved ? JSON.parse(saved) : { column: null, direction: 'asc' };
+        } catch {
+            return { column: null, direction: 'asc' };
+        }
+    }
+
+    saveSortState() {
+        try {
+            localStorage.setItem(this.storageKey, JSON.stringify(this.currentSort));
+        } catch {}
+    }
+
+    initSortableHeaders() {
+        if (!this.table) return;
+
+        const headers = this.table.querySelectorAll('th.sortable');
+        headers.forEach((header, index) => {
+            header.addEventListener('click', () => this.sortByColumn(index));
+
+            // Apply saved sort state
+            if (this.currentSort.column === index) {
+                header.classList.add(`sort-${this.currentSort.direction}`);
+            }
+        });
+    }
+
+    sortByColumn(columnIndex) {
+        if (!this.tbody) return;
+
+        const headers = this.table.querySelectorAll('th');
+        const header = headers[columnIndex];
+
+        // Toggle sort direction
+        if (this.currentSort.column === columnIndex) {
+            this.currentSort.direction = this.currentSort.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+            this.currentSort.column = columnIndex;
+            this.currentSort.direction = 'asc';
+        }
+
+        // Update header classes
+        headers.forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
+        header.classList.add(`sort-${this.currentSort.direction}`);
+
+        // Sort rows
+        const rows = Array.from(this.tbody.querySelectorAll('tr'));
+        rows.sort((a, b) => {
+            const aCell = a.cells[columnIndex];
+            const bCell = b.cells[columnIndex];
+
+            if (!aCell || !bCell) return 0;
+
+            const aText = aCell.textContent.trim();
+            const bText = bCell.textContent.trim();
+
+            // Try numeric comparison first
+            const aNum = parseFloat(aText.replace(/[^0-9.-]/g, ''));
+            const bNum = parseFloat(bText.replace(/[^0-9.-]/g, ''));
+
+            if (!isNaN(aNum) && !isNaN(bNum)) {
+                return this.currentSort.direction === 'asc' ? aNum - bNum : bNum - aNum;
+            }
+
+            // Fallback to string comparison
+            return this.currentSort.direction === 'asc'
+                ? aText.localeCompare(bText)
+                : bText.localeCompare(aText);
+        });
+
+        // Re-append sorted rows
+        rows.forEach(row => this.tbody.appendChild(row));
+
+        // Save state
+        this.saveSortState();
+    }
+}
