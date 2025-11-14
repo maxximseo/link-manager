@@ -72,8 +72,8 @@ INSERT INTO discount_tiers (min_spent, discount_percentage, tier_name) VALUES
 (1000, 10, 'Bronze'),
 (2000, 15, 'Silver'),
 (3000, 20, 'Gold'),
-(4000, 25, 'Platinum'),
-(5000, 30, 'Diamond')
+(5000, 25, 'Platinum'),
+(10000, 30, 'Diamond')
 ON CONFLICT (min_spent) DO NOTHING;
 
 -- ============================================

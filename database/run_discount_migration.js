@@ -67,8 +67,8 @@ async function runMigration() {
         // Determine new discount based on NEW thresholds
         let newDiscount = 0;
         const spent = parseFloat(user.total_spent);
-        if (spent >= 5000) newDiscount = 30;
-        else if (spent >= 4000) newDiscount = 25;
+        if (spent >= 10000) newDiscount = 30;
+        else if (spent >= 5000) newDiscount = 25;
         else if (spent >= 3000) newDiscount = 20;
         else if (spent >= 2000) newDiscount = 15;
         else if (spent >= 1000) newDiscount = 10;
@@ -166,8 +166,8 @@ async function runMigration() {
     console.log(`  Bronze (10%):    ${s.bronze_count || 0} users (min $1000 spent)`);
     console.log(`  Silver (15%):    ${s.silver_count || 0} users (min $2000 spent)`);
     console.log(`  Gold (20%):      ${s.gold_count || 0} users (min $3000 spent)`);
-    console.log(`  Platinum (25%):  ${s.platinum_count || 0} users (min $4000 spent)`);
-    console.log(`  Diamond (30%):   ${s.diamond_count || 0} users (min $5000 spent)`);
+    console.log(`  Platinum (25%):  ${s.platinum_count || 0} users (min $5000 spent)`);
+    console.log(`  Diamond (30%):   ${s.diamond_count || 0} users (min $10000 spent)`);
     console.log('');
 
     console.log('========================================');

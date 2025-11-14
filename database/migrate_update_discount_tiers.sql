@@ -6,8 +6,8 @@
 --   Bronze: $800 → $1000 (10% discount)
 --   Silver: $1200 → $2000 (15% discount)
 --   Gold: $1600 → $3000 (20% discount)
---   Platinum: $2000 → $4000 (25% discount)
---   Diamond: $2400 → $5000 (30% discount)
+--   Platinum: $2000 → $5000 (25% discount)
+--   Diamond: $2400 → $10000 (30% discount)
 --
 -- Impact: Users with $800-999 total_spent will lose Bronze (10%) discount
 
@@ -22,8 +22,8 @@ INSERT INTO discount_tiers (min_spent, discount_percentage, tier_name) VALUES
 (1000, 10, 'Bronze'),
 (2000, 15, 'Silver'),
 (3000, 20, 'Gold'),
-(4000, 25, 'Platinum'),
-(5000, 30, 'Diamond')
+(5000, 25, 'Platinum'),
+(10000, 30, 'Diamond')
 ON CONFLICT (min_spent) DO UPDATE SET
   discount_percentage = EXCLUDED.discount_percentage,
   tier_name = EXCLUDED.tier_name;
@@ -39,7 +39,7 @@ SET current_discount = (
 WHERE users.id IS NOT NULL;
 
 -- Step 4: Add comment for documentation
-COMMENT ON TABLE discount_tiers IS 'Discount tier thresholds. Updated 2025-01-13: Bronze $1000, Silver $2000, Gold $3000, Platinum $4000, Diamond $5000';
+COMMENT ON TABLE discount_tiers IS 'Discount tier thresholds. Updated 2025-11-14: Bronze $1000, Silver $2000, Gold $3000, Platinum $5000, Diamond $10000';
 
 COMMIT;
 
