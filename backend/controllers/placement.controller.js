@@ -34,6 +34,64 @@ const getPlacements = async (req, res) => {
   }
 };
 
+// Get placements for a specific site (for site deletion warning)
+const getPlacementsBySite = async (req, res) => {
+  try {
+    const siteId = parseInt(req.params.siteId);
+    const userId = req.user.id;
+
+    if (isNaN(siteId)) {
+      return res.status(400).json({ error: 'Invalid site ID' });
+    }
+
+    // Get placements with financial information
+    const { query } = require('../config/database');
+    const result = await query(`
+      SELECT
+        p.id,
+        p.user_id,
+        p.project_id,
+        p.site_id,
+        p.type,
+        p.final_price,
+        p.original_price,
+        p.discount_applied,
+        p.status,
+        p.created_at,
+        proj.name as project_name
+      FROM placements p
+      INNER JOIN sites s ON p.site_id = s.id
+      LEFT JOIN projects proj ON p.project_id = proj.id
+      WHERE p.site_id = $1 AND s.user_id = $2
+      ORDER BY p.created_at DESC
+    `, [siteId, userId]);
+
+    // Calculate totals
+    let totalRefund = 0;
+    let paidCount = 0;
+
+    result.rows.forEach(placement => {
+      const price = parseFloat(placement.final_price || 0);
+      if (price > 0) {
+        totalRefund += price;
+        paidCount++;
+      }
+    });
+
+    res.json({
+      placements: result.rows,
+      summary: {
+        total: result.rows.length,
+        paidCount,
+        totalRefund
+      }
+    });
+  } catch (error) {
+    logger.error('Get placements by site error:', error);
+    res.status(500).json({ error: 'Failed to fetch placements' });
+  }
+};
+
 // Get single placement
 const getPlacement = async (req, res) => {
   try {
