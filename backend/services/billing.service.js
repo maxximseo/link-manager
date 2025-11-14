@@ -1460,5 +1460,7 @@ module.exports = {
   getUserTransactions,
   getPricingForUser,
   refundPlacement,
-  deleteAndRefundPlacement
+  deleteAndRefundPlacement,
+  refundPlacementInTransaction,
+  restoreUsageCountsInTransaction
 };
