@@ -22,7 +22,27 @@
                     <li class="nav-item"><a class="nav-link" href="/sites.html">Мои сайты</a></li>
                     <li class="nav-item"><a class="nav-link" href="/admin-placements.html">Размещения</a></li>
                 </ul>
-                <ul class="navbar-nav ms-auto">
+                <!-- Admin Menu (visible only to admins) -->
+                <ul class="navbar-nav ms-auto" id="adminMenu" style="display: none;">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button"
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-shield-lock"></i> Admin
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+                            <li><a class="dropdown-item" href="/admin-dashboard.html">
+                                <i class="bi bi-speedometer2"></i> Dashboard
+                            </a></li>
+                            <li><a class="dropdown-item" href="/admin-users.html">
+                                <i class="bi bi-people"></i> Пользователи
+                            </a></li>
+                            <li><a class="dropdown-item" href="/admin-placements.html">
+                                <i class="bi bi-bookmark-star"></i> Размещения
+                            </a></li>
+                        </ul>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
                     <li class="nav-item">
                         <span class="navbar-text me-3">
                             <i class="bi bi-person-badge"></i> Администратор
@@ -252,5 +272,22 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/js/auth.js"></script>
     <script src="/js/admin-users.js"></script>
+    <script>
+        // Show admin menu if user is admin
+        const token = localStorage.getItem('token');
+        if (token) {
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                if (payload.role === 'admin') {
+                    const adminMenu = document.getElementById('adminMenu');
+                    if (adminMenu) {
+                        adminMenu.style.display = 'flex';
+                    }
+                }
+            } catch (e) {
+                console.error('Error parsing token:', e);
+            }
+        }
+    </script>
 </body>
 </html>
