@@ -42,6 +42,7 @@ router.post('/', (req, res) => {
 router.get('/', generalLimiter, placementController.getPlacements);
 router.get('/statistics', generalLimiter, placementController.getStatistics); // Must be before /:id
 router.get('/available-sites/:projectId', generalLimiter, placementController.getAvailableSites); // Must be before /:id
+router.get('/by-site/:siteId', generalLimiter, placementController.getPlacementsBySite); // Get placements for a site
 router.get('/:id', generalLimiter, placementController.getPlacement);
 // REMOVED: router.post('/batch/create') - SECURITY: Bypassed billing system
 // REMOVED: router.post('/batch/async') - SECURITY: Bypassed billing system
