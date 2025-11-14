@@ -408,6 +408,164 @@ const getMultiPeriodRevenue = async () => {
   }
 };
 
+/**
+ * Manually refund a placement (admin only)
+ * @param {number} placementId - Placement ID to refund
+ * @param {string} reason - Reason for manual refund
+ * @param {number} adminId - Admin user ID issuing refund
+ * @param {boolean} deleteWordPressPost - Whether to delete WordPress post
+ * @returns {object} Refund result with amount, new balance, tier info
+ */
+const refundPlacement = async (placementId, reason, adminId, deleteWordPressPost = false) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    // 1. Get placement details with site info
+    const placementResult = await client.query(`
+      SELECT
+        p.id,
+        p.user_id,
+        p.project_id,
+        p.site_id,
+        p.type,
+        p.final_price,
+        p.original_price,
+        p.discount_applied,
+        p.wordpress_post_id,
+        s.site_name,
+        s.site_url,
+        s.api_key,
+        s.site_type,
+        proj.name as project_name
+      FROM placements p
+      LEFT JOIN sites s ON p.site_id = s.id
+      LEFT JOIN projects proj ON p.project_id = proj.id
+      WHERE p.id = $1
+      FOR UPDATE
+    `, [placementId]);
+
+    if (placementResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      throw new Error('Placement not found');
+    }
+
+    const placement = placementResult.rows[0];
+    const finalPrice = parseFloat(placement.final_price || 0);
+
+    if (finalPrice <= 0) {
+      await client.query('ROLLBACK');
+      throw new Error('Placement has no refundable amount (free placement)');
+    }
+
+    // 2. Delete WordPress post if requested and possible
+    let wordpressPostDeleted = false;
+    if (deleteWordPressPost && placement.type === 'article' && placement.wordpress_post_id) {
+      if (placement.site_type === 'wordpress' && placement.api_key) {
+        const wordpressService = require('./wordpress.service');
+        try {
+          const result = await wordpressService.deleteArticle(
+            placement.site_url,
+            placement.api_key,
+            placement.wordpress_post_id
+          );
+          wordpressPostDeleted = result.success;
+
+          if (wordpressPostDeleted) {
+            logger.info('WordPress post deleted during admin refund', {
+              adminId,
+              placementId,
+              wordpressPostId: placement.wordpress_post_id
+            });
+          }
+        } catch (error) {
+          logger.warn('Failed to delete WordPress post during admin refund', {
+            adminId,
+            placementId,
+            error: error.message
+          });
+          // Continue with refund even if WP deletion fails
+        }
+      }
+    }
+
+    // 3. Process refund using reusable billing service function
+    const refundResult = await billingService.refundPlacementInTransaction(client, placement);
+
+    if (!refundResult.refunded) {
+      await client.query('ROLLBACK');
+      throw new Error('Failed to process refund');
+    }
+
+    // 4. Restore usage counts
+    await billingService.restoreUsageCountsInTransaction(client, placementId);
+
+    // 5. Create admin audit log entry
+    await client.query(`
+      INSERT INTO audit_log (
+        user_id, action, entity_type, entity_id, details
+      ) VALUES ($1, 'admin_refund_placement', 'placement', $2, $3)
+    `, [
+      adminId,
+      placementId,
+      JSON.stringify({
+        placement_id: placementId,
+        user_id: placement.user_id,
+        refund_amount: finalPrice,
+        reason,
+        wordpress_post_deleted: wordpressPostDeleted,
+        site_name: placement.site_name,
+        project_name: placement.project_name,
+        type: placement.type
+      })
+    ]);
+
+    // 6. Delete placement
+    await client.query('DELETE FROM placements WHERE id = $1', [placementId]);
+
+    // 7. COMMIT transaction
+    await client.query('COMMIT');
+
+    // 8. Clear cache
+    const cache = require('./cache.service');
+    await cache.delPattern(`placements:user:${placement.user_id}:*`);
+    await cache.delPattern(`projects:user:${placement.user_id}:*`);
+    await cache.delPattern(`wp:content:*`);
+
+    logger.info('Admin manual refund completed', {
+      adminId,
+      placementId,
+      userId: placement.user_id,
+      refundAmount: finalPrice,
+      reason,
+      tierChanged: refundResult.tierChanged,
+      newTier: refundResult.newTier,
+      wordpressPostDeleted
+    });
+
+    return {
+      refunded: true,
+      refundAmount: finalPrice,
+      newBalance: refundResult.newBalance,
+      tierChanged: refundResult.tierChanged,
+      newTier: refundResult.newTier,
+      wordpressPostDeleted
+    };
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    logger.error('Admin refund failed - transaction rolled back', {
+      adminId,
+      placementId,
+      error: error.message
+    });
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
 module.exports = {
   getAdminStats,
   getRevenueBreakdown,
@@ -415,5 +573,6 @@ module.exports = {
   adjustUserBalance,
   getRecentPurchases,
   getAdminPlacements,
-  getMultiPeriodRevenue
+  getMultiPeriodRevenue,
+  refundPlacement
 };

@@ -223,7 +223,11 @@ const deleteSite = async (siteId, userId) => {
         p.final_price,
         p.original_price,
         p.discount_applied,
+        p.wordpress_post_id,
         s.site_name,
+        s.api_key,
+        s.site_url,
+        s.site_type,
         proj.name as project_name
       FROM placements p
       LEFT JOIN sites s ON p.site_id = s.id
@@ -233,6 +237,53 @@ const deleteSite = async (siteId, userId) => {
     `, [siteId]);
 
     const placements = placementsResult.rows;
+
+    // 2.5. Delete WordPress posts (for article placements on WordPress sites)
+    // Do this BEFORE refunds, but don't fail the entire deletion if WordPress is down
+    const wordpressService = require('./wordpress.service');
+    let wpPostsDeleted = 0;
+    let wpDeletionErrors = [];
+
+    if (site.site_type === 'wordpress' && site.api_key) {
+      for (const placement of placements) {
+        if (placement.type === 'article' && placement.wordpress_post_id) {
+          try {
+            const result = await wordpressService.deleteArticle(
+              site.site_url,
+              site.api_key,
+              placement.wordpress_post_id
+            );
+
+            if (result.success) {
+              wpPostsDeleted++;
+              logger.info('WordPress post deleted during site deletion', {
+                siteId,
+                placementId: placement.id,
+                wordpressPostId: placement.wordpress_post_id
+              });
+            } else {
+              wpDeletionErrors.push({
+                placementId: placement.id,
+                postId: placement.wordpress_post_id,
+                error: result.error
+              });
+            }
+          } catch (error) {
+            // Log error but continue with deletion
+            wpDeletionErrors.push({
+              placementId: placement.id,
+              postId: placement.wordpress_post_id,
+              error: error.message
+            });
+            logger.warn('Failed to delete WordPress post, continuing with site deletion', {
+              siteId,
+              placementId: placement.id,
+              error: error.message
+            });
+          }
+        }
+      }
+    }
 
     // 3. Process refunds for each paid placement
     const billingService = require('./billing.service');
@@ -301,7 +352,9 @@ const deleteSite = async (siteId, userId) => {
         refunded_count: refundedCount,
         total_refunded: totalRefunded,
         tier_changed: tierChanged,
-        new_tier: newTierName
+        new_tier: newTierName,
+        wordpress_posts_deleted: wpPostsDeleted,
+        wordpress_deletion_errors: wpDeletionErrors.length
       })
     ]);
 
@@ -322,7 +375,9 @@ const deleteSite = async (siteId, userId) => {
       refundedCount,
       totalRefunded,
       tierChanged,
-      newTier: newTierName
+      newTier: newTierName,
+      wpPostsDeleted,
+      wpDeletionErrorsCount: wpDeletionErrors.length
     });
 
     return {
@@ -332,7 +387,9 @@ const deleteSite = async (siteId, userId) => {
       totalRefunded,
       tierChanged,
       newTier: newTierName,
-      refundDetails: refundResults
+      refundDetails: refundResults,
+      wordpressPostsDeleted: wpPostsDeleted,
+      wordpressDeletionErrors: wpDeletionErrors
     };
 
   } catch (error) {

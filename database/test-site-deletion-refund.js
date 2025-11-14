@@ -208,9 +208,9 @@ async function purchaseLinkPlacement() {
   }
 }
 
-// Step 9: Purchase article placement ($50)
+// Step 9: Purchase article placement ($15)
 async function purchaseArticlePlacement() {
-  logTest('Purchase Article Placement ($50)');
+  logTest('Purchase Article Placement ($15)');
   try {
     const response = await axios.post(`${API_URL}/billing/purchase`, {
       projectId: testData.projectId,
@@ -239,11 +239,11 @@ async function checkBalanceAfterPurchases() {
     });
     const balance = parseFloat(response.data.balance);
     const totalSpent = parseFloat(response.data.total_spent);
-    logSuccess(`Balance: $${balance.toFixed(2)} (spent $75 for 2 placements)`);
+    logSuccess(`Balance: $${balance.toFixed(2)} (spent $40 for 2 placements)`);
     logSuccess(`Total spent: $${totalSpent.toFixed(2)}`);
 
     // Verify expected balance
-    const expectedBalance = testData.initialBalance + 500 - 75; // +500 deposit - 75 spent
+    const expectedBalance = testData.initialBalance + 500 - 40; // +500 deposit - 40 spent ($25 link + $15 article)
     if (Math.abs(balance - expectedBalance) < 0.01) {
       logSuccess(`✓ Balance is correct: $${expectedBalance.toFixed(2)}`);
     } else {
@@ -271,8 +271,8 @@ async function getPlacementsBySite() {
     if (summary.total !== 2) {
       logWarning(`Expected 2 placements, found ${summary.total}`);
     }
-    if (Math.abs(summary.totalRefund - 75) > 0.01) {
-      logWarning(`Expected $75 total refund, found $${summary.totalRefund.toFixed(2)}`);
+    if (Math.abs(summary.totalRefund - 40) > 0.01) {
+      logWarning(`Expected $40 total refund, found $${summary.totalRefund.toFixed(2)}`);
     }
 
     return true;
@@ -303,8 +303,8 @@ async function deleteSiteWithRefunds() {
     if (response.data.placementsCount !== 2) {
       logWarning(`Expected 2 placements deleted, got ${response.data.placementsCount}`);
     }
-    if (Math.abs(response.data.totalRefunded - 75) > 0.01) {
-      logWarning(`Expected $75 refunded, got $${response.data.totalRefunded.toFixed(2)}`);
+    if (Math.abs(response.data.totalRefunded - 40) > 0.01) {
+      logWarning(`Expected $40 refunded, got $${response.data.totalRefunded.toFixed(2)}`);
     }
 
     return true;

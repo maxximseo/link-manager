@@ -1289,7 +1289,7 @@ const deleteAndRefundPlacement = async (placementId, userId, userRole = 'user') 
       await client.query(`
         INSERT INTO transactions (
           user_id, type, amount, balance_before, balance_after,
-          description, related_placement_id
+          description, placement_id
         ) VALUES ($1, 'refund', $2, $3, $4, $5, $6)
       `, [
         refundUserId,
