@@ -162,22 +162,32 @@ const updateSite = async (req, res) => {
   }
 };
 
-// Delete site
+// Delete site with automatic refunds
 const deleteSite = async (req, res) => {
   try {
     const siteId = req.params.id;
     const userId = req.user.id;
-    
-    const deleted = await siteService.deleteSite(siteId, userId);
-    
-    if (!deleted) {
-      return res.status(404).json({ error: 'Site not found' });
+
+    const result = await siteService.deleteSite(siteId, userId);
+
+    if (!result.deleted) {
+      return res.status(404).json({ error: result.error || 'Site not found' });
     }
-    
-    res.json({ message: 'Site deleted successfully' });
+
+    // Return detailed refund information for frontend
+    res.json({
+      success: true,
+      message: 'Site deleted successfully',
+      placementsCount: result.placementsCount,
+      refundedCount: result.refundedCount,
+      totalRefunded: result.totalRefunded,
+      tierChanged: result.tierChanged,
+      newTier: result.newTier,
+      refundDetails: result.refundDetails
+    });
   } catch (error) {
     logger.error('Delete site error:', error);
-    res.status(500).json({ error: 'Failed to delete site' });
+    res.status(500).json({ error: 'Failed to delete site: ' + error.message });
   }
 };
 
