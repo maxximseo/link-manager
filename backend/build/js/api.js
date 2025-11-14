@@ -63,6 +63,10 @@ const SitesAPI = {
         const response = await apiCall('/sites');
         return response.data || response; // Extract data array if paginated
     },
+    getMarketplace: async () => {
+        const response = await apiCall('/sites/marketplace');
+        return response.data || response; // Returns public sites + user's own sites
+    },
     get: (id) => apiCall(`/sites/${id}`),
     create: (data) => apiCall('/sites', { method: 'POST', body: JSON.stringify(data) }),
     update: (id, data) => apiCall(`/sites/${id}`, { method: 'PUT', body: JSON.stringify(data) }),

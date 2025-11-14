@@ -53,7 +53,7 @@ const getSite = async (req, res) => {
 // Create new site
 const createSite = async (req, res) => {
   try {
-    const { site_url, api_key, max_links, max_articles, site_type, allow_articles } = req.body;
+    const { site_url, api_key, max_links, max_articles, site_type, allow_articles, is_public } = req.body;
 
     // Validate required fields
     if (!site_url || typeof site_url !== 'string' || site_url.trim().length === 0) {
@@ -90,6 +90,11 @@ const createSite = async (req, res) => {
       return res.status(400).json({ error: 'Allow articles must be a boolean value' });
     }
 
+    // Validate is_public if provided
+    if (is_public !== undefined && typeof is_public !== 'boolean') {
+      return res.status(400).json({ error: 'is_public must be a boolean value' });
+    }
+
     const site = await siteService.createSite({
       site_url: site_url.trim(),
       api_key,
@@ -97,6 +102,7 @@ const createSite = async (req, res) => {
       max_articles,
       site_type,
       allow_articles,
+      is_public,
       userId: req.user.id
     });
 
@@ -112,7 +118,7 @@ const updateSite = async (req, res) => {
   try {
     const siteId = req.params.id;
     const userId = req.user.id;
-    const { site_url, site_name, api_key, max_links, max_articles, site_type, allow_articles } = req.body;
+    const { site_url, site_name, api_key, max_links, max_articles, site_type, allow_articles, is_public } = req.body;
 
     // Validate URL format if provided
     if (site_url) {
@@ -141,6 +147,11 @@ const updateSite = async (req, res) => {
       return res.status(400).json({ error: 'Allow articles must be a boolean value' });
     }
 
+    // Validate is_public if provided
+    if (is_public !== undefined && typeof is_public !== 'boolean') {
+      return res.status(400).json({ error: 'is_public must be a boolean value' });
+    }
+
     const site = await siteService.updateSite(siteId, userId, {
       site_url,
       site_name,
@@ -148,7 +159,8 @@ const updateSite = async (req, res) => {
       max_links,
       max_articles,
       site_type,
-      allow_articles
+      allow_articles,
+      is_public
     });
 
     if (!site) {
@@ -205,9 +217,23 @@ const recalculateStats = async (req, res) => {
   }
 };
 
+// Get marketplace sites (public + owned)
+const getMarketplaceSites = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const sites = await siteService.getMarketplaceSites(userId);
+
+    res.json({ data: sites });
+  } catch (error) {
+    logger.error('Get marketplace sites error:', error);
+    res.status(500).json({ error: 'Failed to get marketplace sites' });
+  }
+};
+
 module.exports = {
   getSites,
   getSite,
+  getMarketplaceSites,
   createSite,
   updateSite,
   deleteSite,

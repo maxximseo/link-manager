@@ -27,6 +27,7 @@ router.use(authMiddleware);
 
 // Site CRUD routes
 router.get('/', generalLimiter, siteController.getSites);
+router.get('/marketplace', generalLimiter, siteController.getMarketplaceSites); // Must be BEFORE /:id
 router.get('/:id', generalLimiter, siteController.getSite);
 router.post('/', createLimiter, siteController.createSite);
 router.put('/:id', generalLimiter, siteController.updateSite);

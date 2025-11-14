@@ -203,6 +203,17 @@ const purchasePlacement = async ({
 
     const site = siteResult.rows[0];
 
+    // 3.1. NEW: Check site visibility authorization
+    // User can purchase if:
+    // - Site is public (is_public = TRUE), OR
+    // - User owns the site (site.user_id === userId)
+    if (!site.is_public && site.user_id !== userId) {
+      throw new Error(
+        `Сайт "${site.site_name}" приватный. ` +
+        `Только владелец может размещать контент на приватных сайтах.`
+      );
+    }
+
     // 3.5. Validate site type - static_php sites cannot purchase articles
     if (site.site_type === 'static_php' && type === 'article') {
       throw new Error(
