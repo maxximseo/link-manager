@@ -28,6 +28,7 @@ CREATE TABLE sites (
     site_type VARCHAR(20) DEFAULT 'wordpress',
     api_key VARCHAR(100),
     allow_articles BOOLEAN DEFAULT TRUE,
+    is_public BOOLEAN DEFAULT FALSE,
     max_links INTEGER DEFAULT 10,
     used_links INTEGER DEFAULT 0,
     max_articles INTEGER DEFAULT 5,
@@ -82,6 +83,7 @@ CREATE TABLE placement_content (
 -- Indexes
 CREATE INDEX idx_projects_user ON projects(user_id);
 CREATE INDEX idx_sites_user ON sites(user_id);
+CREATE INDEX idx_sites_visibility ON sites(is_public, user_id);
 CREATE INDEX idx_placements_user ON placements(user_id);
 CREATE INDEX idx_placements_project ON placements(project_id);
 CREATE INDEX idx_placements_site ON placements(site_id);
