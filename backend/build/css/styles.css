@@ -888,7 +888,8 @@ body {
 .stat-card.success,
 .stat-card.warning,
 .stat-card.info {
-    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+    background: white;
+    color: #1f2937;
 }
 
 .stat-card h3 {
@@ -966,8 +967,9 @@ body {
 .badge.bg-info,
 .badge.bg-primary,
 .badge.bg-secondary {
-    background: #6b7280 !important;
-    color: white !important;
+    background: transparent !important;
+    color: #1f2937 !important;
+    border: 1px solid #e5e7eb !important;
 }
 
 /* Улучшение 4: Enhanced Typography */
