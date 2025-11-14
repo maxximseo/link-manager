@@ -189,18 +189,157 @@ const updateSite = async (siteId, userId, data) => {
   }
 };
 
-// Delete site
+// Delete site with automatic refunds for all placements
 const deleteSite = async (siteId, userId) => {
+  const client = await pool.connect();
+
   try {
-    const result = await query(
-      'DELETE FROM sites WHERE id = $1 AND user_id = $2 RETURNING id',
+    await client.query('BEGIN');
+
+    // 1. Lock site with FOR UPDATE
+    const siteResult = await client.query(
+      'SELECT * FROM sites WHERE id = $1 AND user_id = $2 FOR UPDATE',
       [siteId, userId]
     );
-    
-    return result.rows.length > 0;
+
+    if (siteResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return {
+        deleted: false,
+        error: 'Site not found or access denied'
+      };
+    }
+
+    const site = siteResult.rows[0];
+
+    // 2. Get all placements for this site with financial data
+    const placementsResult = await client.query(`
+      SELECT
+        p.id,
+        p.user_id,
+        p.project_id,
+        p.site_id,
+        p.type,
+        p.final_price,
+        p.original_price,
+        p.discount_applied,
+        s.site_name,
+        proj.name as project_name
+      FROM placements p
+      LEFT JOIN sites s ON p.site_id = s.id
+      LEFT JOIN projects proj ON p.project_id = proj.id
+      WHERE p.site_id = $1
+      ORDER BY p.id
+    `, [siteId]);
+
+    const placements = placementsResult.rows;
+
+    // 3. Process refunds for each paid placement
+    const billingService = require('./billing.service');
+    const refundResults = [];
+    let totalRefunded = 0;
+    let refundedCount = 0;
+    let tierChanged = false;
+    let newTierName = null;
+
+    for (const placement of placements) {
+      const finalPrice = parseFloat(placement.final_price || 0);
+
+      if (finalPrice > 0) {
+        // Refund this placement using reusable function
+        const refundResult = await billingService.refundPlacementInTransaction(client, placement);
+
+        if (refundResult.refunded) {
+          totalRefunded += refundResult.amount;
+          refundedCount++;
+
+          if (refundResult.tierChanged) {
+            tierChanged = true;
+            newTierName = refundResult.newTier;
+          }
+
+          refundResults.push({
+            placementId: placement.id,
+            amount: refundResult.amount,
+            type: placement.type
+          });
+        }
+
+        // Restore usage counts for this placement
+        await billingService.restoreUsageCountsInTransaction(client, placement.id);
+      }
+    }
+
+    // 4. Update site quotas (will be zero since all placements deleted)
+    // CASCADE will handle placement deletion, but we need to update quotas first
+    await client.query(`
+      UPDATE sites
+      SET used_links = 0, used_articles = 0
+      WHERE id = $1
+    `, [siteId]);
+
+    // 5. Delete site (CASCADE will delete all placements and placement_content)
+    await client.query(
+      'DELETE FROM sites WHERE id = $1 AND user_id = $2',
+      [siteId, userId]
+    );
+
+    // 6. Create audit log entry
+    await client.query(`
+      INSERT INTO audit_log (
+        user_id, action, entity_type, entity_id, details
+      ) VALUES ($1, 'site_delete', 'site', $2, $3)
+    `, [
+      userId,
+      siteId,
+      JSON.stringify({
+        site_name: site.site_name,
+        site_url: site.site_url,
+        site_type: site.site_type,
+        placements_count: placements.length,
+        refunded_count: refundedCount,
+        total_refunded: totalRefunded,
+        tier_changed: tierChanged,
+        new_tier: newTierName
+      })
+    ]);
+
+    // 7. COMMIT transaction
+    await client.query('COMMIT');
+
+    // 8. Clear cache
+    const cache = require('./cache.service');
+    await cache.delPattern(`placements:user:${userId}:*`);
+    await cache.delPattern(`projects:user:${userId}:*`);
+    await cache.delPattern(`wp:content:*`);
+
+    logger.info('Site deleted with automatic refunds', {
+      siteId,
+      userId,
+      siteName: site.site_name,
+      placementsCount: placements.length,
+      refundedCount,
+      totalRefunded,
+      tierChanged,
+      newTier: newTierName
+    });
+
+    return {
+      deleted: true,
+      placementsCount: placements.length,
+      refundedCount,
+      totalRefunded,
+      tierChanged,
+      newTier: newTierName,
+      refundDetails: refundResults
+    };
+
   } catch (error) {
-    logger.error('Delete site error:', error);
+    await client.query('ROLLBACK');
+    logger.error('Delete site with refunds failed - transaction rolled back:', error);
     throw error;
+  } finally {
+    client.release();
   }
 };
 
