@@ -41,108 +41,126 @@
         <h1 class="mb-4">Create Placements</h1>
 
         <!-- Step 1 & 2: Project and Content Type Selection -->
-        <div class="row mb-4">
-            <div class="col-md-4">
-                <label for="projectSelect" class="form-label fw-bold">Select Project</label>
-                <select class="form-select" id="projectSelect">
-                    <option value="">Select project...</option>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label fw-bold">Content Type</label>
-                <div class="d-flex gap-3 align-items-center" style="height: 38px;">
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="contentType" id="typeLinks" value="links">
-                        <label class="form-check-label" for="typeLinks">
-                            <i class="bi bi-link-45deg"></i> Links
-                        </label>
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Выбор проекта и типа контента</h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <label for="projectSelect" class="form-label fw-bold">Select Project</label>
+                        <select class="form-select" id="projectSelect">
+                            <option value="">Select project...</option>
+                        </select>
                     </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="contentType" id="typeArticles" value="articles">
-                        <label class="form-check-label" for="typeArticles">
-                            <i class="bi bi-file-text"></i> Articles
-                        </label>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Content Type</label>
+                        <div class="d-flex gap-3 align-items-center" style="height: 38px;">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="contentType" id="typeLinks" value="links">
+                                <label class="form-check-label" for="typeLinks">
+                                    <i class="bi bi-link-45deg"></i> Links
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="contentType" id="typeArticles" value="articles">
+                                <label class="form-check-label" for="typeArticles">
+                                    <i class="bi bi-file-text"></i> Articles
+                                </label>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Publication Date Selection -->
-        <div class="row mb-4">
-            <div class="col-md-6">
-                <label class="form-label fw-bold">Дата публикации</label>
-                <div class="mb-2">
-                    <input class="form-check-input" type="radio" name="publishType" id="publishImmediate" value="immediate" checked>
-                    <label class="form-check-label" for="publishImmediate">
-                        <i class="bi bi-lightning-fill"></i> Опубликовать сразу
-                    </label>
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Настройки публикации</h5>
+                <div class="row">
+                    <div class="col-md-12">
+                        <label class="form-label fw-bold">Дата публикации</label>
+                        <div class="mb-2">
+                            <input class="form-check-input" type="radio" name="publishType" id="publishImmediate" value="immediate" checked>
+                            <label class="form-check-label" for="publishImmediate">
+                                <i class="bi bi-lightning-fill"></i> Опубликовать сразу
+                            </label>
+                        </div>
+                        <div class="mb-2">
+                            <input class="form-check-input" type="radio" name="publishType" id="publishScheduled" value="scheduled">
+                            <label class="form-check-label" for="publishScheduled">
+                                <i class="bi bi-calendar-event"></i> Отложенная публикация (до 90 дней)
+                            </label>
+                        </div>
+                        <div id="scheduledDateDiv" style="display: none;" class="mt-2">
+                            <input type="datetime-local" class="form-control" id="scheduledDateInput">
+                            <small class="text-muted">Максимум 90 дней от сегодня</small>
+                        </div>
+                    </div>
                 </div>
-                <div class="mb-2">
-                    <input class="form-check-input" type="radio" name="publishType" id="publishScheduled" value="scheduled">
-                    <label class="form-check-label" for="publishScheduled">
-                        <i class="bi bi-calendar-event"></i> Отложенная публикация (до 90 дней)
-                    </label>
-                </div>
-                <div id="scheduledDateDiv" style="display: none;" class="mt-2">
-                    <input type="datetime-local" class="form-control" id="scheduledDateInput">
-                    <small class="text-muted">Максимум 90 дней от сегодня</small>
-                </div>
-            </div>
-            <div class="col-md-6 d-flex align-items-end">
-                <button type="button" class="btn btn-primary w-100" onclick="createPlacement()" id="createPlacementBtn" disabled>
-                    <i class="bi bi-plus-circle"></i> Create Placement
-                </button>
             </div>
         </div>
 
         <!-- Step 3: Sites Table -->
         <div id="sitesTableDiv" style="display: none;">
-            <!-- Active filters info -->
-            <div class="mb-3">
-                <span id="activeFiltersInfo"></span>
-            </div>
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Доступные сайты для размещения</h5>
 
-            <!-- Pagination Controls -->
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <div class="d-flex align-items-center gap-2">
-                    <div class="btn-group" role="group">
-                        <input type="radio" class="btn-check" name="sitesPerPage" id="sites100" value="100" checked>
-                        <label class="btn btn-outline-primary btn-sm" for="sites100">100</label>
-
-                        <input type="radio" class="btn-check" name="sitesPerPage" id="sites300" value="300">
-                        <label class="btn btn-outline-primary btn-sm" for="sites300">300</label>
-
-                        <input type="radio" class="btn-check" name="sitesPerPage" id="sites500" value="500">
-                        <label class="btn btn-outline-primary btn-sm" for="sites500">500</label>
+                    <!-- Active filters info -->
+                    <div class="mb-3">
+                        <span id="activeFiltersInfo"></span>
                     </div>
-                    <span class="text-muted" id="sitesCountInfo"></span>
-                </div>
-                <div id="paginationControls">
-                    <!-- Pagination buttons will be inserted here -->
-                </div>
-            </div>
 
-            <div class="table-responsive">
-                <table class="table table-sm table-hover table-bordered">
-                    <thead class="table-light">
-                        <tr>
-                            <th style="width: 50px;">
-                                <input type="checkbox" id="selectAllSites" onclick="toggleAllSites()">
-                            </th>
-                            <th>Site Name</th>
-                            <th>Site URL</th>
-                            <th>Status</th>
-                            <th>Assigned Content</th>
-                        </tr>
-                    </thead>
-                    <tbody id="sitesTableBody">
-                        <tr>
-                            <td colspan="5" class="text-center text-muted">
-                                Select a project and content type above
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                    <!-- Pagination Controls -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="btn-group" role="group">
+                                <input type="radio" class="btn-check" name="sitesPerPage" id="sites100" value="100" checked>
+                                <label class="btn btn-outline-primary btn-sm" for="sites100">100</label>
+
+                                <input type="radio" class="btn-check" name="sitesPerPage" id="sites300" value="300">
+                                <label class="btn btn-outline-primary btn-sm" for="sites300">300</label>
+
+                                <input type="radio" class="btn-check" name="sitesPerPage" id="sites500" value="500">
+                                <label class="btn btn-outline-primary btn-sm" for="sites500">500</label>
+                            </div>
+                            <span class="text-muted" id="sitesCountInfo"></span>
+                        </div>
+                        <div id="paginationControls">
+                            <!-- Pagination buttons will be inserted here -->
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 50px;">
+                                        <input type="checkbox" id="selectAllSites" onclick="toggleAllSites()">
+                                    </th>
+                                    <th>Site Name</th>
+                                    <th>Site URL</th>
+                                    <th>Status</th>
+                                    <th>Assigned Content</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sitesTableBody">
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">
+                                        Select a project and content type above
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Buy Button moved here, positioned left -->
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-success btn-lg" onclick="createPlacement()" id="createPlacementBtn" disabled>
+                            <i class="bi bi-cart-check"></i> Купить
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- Whitelist/Blacklist Actions -->
