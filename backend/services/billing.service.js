@@ -1001,6 +1001,172 @@ const refundPlacement = async (placementId, userId) => {
 };
 
 /**
+ * Reusable refund logic for placements within an existing transaction
+ * Used by both direct placement deletion and site deletion
+ *
+ * @param {object} client - PostgreSQL client with active transaction
+ * @param {object} placement - Placement object with all fields
+ * @returns {object} Refund result { refunded: boolean, amount: number, newBalance: number, tierChanged: boolean, newTier: string }
+ */
+const refundPlacementInTransaction = async (client, placement) => {
+  const finalPrice = parseFloat(placement.final_price || 0);
+
+  // No refund needed for free placements
+  if (finalPrice <= 0) {
+    return { refunded: false, amount: 0, tierChanged: false };
+  }
+
+  // Get placement owner with lock
+  const userResult = await client.query(
+    'SELECT id, balance, total_spent, current_discount FROM users WHERE id = $1 FOR UPDATE',
+    [placement.user_id]
+  );
+
+  if (userResult.rows.length === 0) {
+    throw new Error('Placement owner not found');
+  }
+
+  const user = userResult.rows[0];
+  const balanceBefore = parseFloat(user.balance);
+  const balanceAfter = balanceBefore + finalPrice;
+
+  // Decrement total_spent to prevent discount tier exploitation
+  const totalSpentBefore = parseFloat(user.total_spent || 0);
+  const totalSpentAfter = Math.max(0, totalSpentBefore - finalPrice);
+
+  // Refund money and decrement total_spent
+  await client.query(
+    'UPDATE users SET balance = $1, total_spent = $2 WHERE id = $3',
+    [balanceAfter, totalSpentAfter, placement.user_id]
+  );
+
+  // Recalculate discount tier after refund
+  let tierChanged = false;
+  let newTierName = null;
+  const newTier = await calculateDiscountTier(totalSpentAfter);
+
+  if (newTier.discount !== user.current_discount) {
+    await client.query(
+      'UPDATE users SET current_discount = $1 WHERE id = $2',
+      [newTier.discount, placement.user_id]
+    );
+
+    tierChanged = true;
+    newTierName = newTier.tier;
+
+    logger.info('Discount tier downgraded after refund', {
+      userId: placement.user_id,
+      oldDiscount: user.current_discount,
+      newDiscount: newTier.discount,
+      newTier: newTier.tier,
+      totalSpentAfter
+    });
+
+    // Notify placement owner about tier downgrade
+    await client.query(`
+      INSERT INTO notifications (user_id, type, title, message)
+      VALUES ($1, 'discount_tier_changed', $2, $3)
+    `, [
+      placement.user_id,
+      'Изменение уровня скидки',
+      `Ваш уровень скидки изменён на "${newTier.tier}" (${newTier.discount}%) после возврата средств.`
+    ]);
+  }
+
+  // Create refund transaction
+  await client.query(`
+    INSERT INTO transactions (
+      user_id, type, amount, balance_before, balance_after,
+      description, placement_id
+    ) VALUES ($1, 'refund', $2, $3, $4, $5, $6)
+  `, [
+    placement.user_id,
+    finalPrice,
+    balanceBefore,
+    balanceAfter,
+    `Refund for ${placement.type} placement on ${placement.site_name || 'site'} (${placement.project_name || 'project'})`,
+    placement.id
+  ]);
+
+  logger.info('Refund processed within transaction', {
+    placementId: placement.id,
+    userId: placement.user_id,
+    refundAmount: finalPrice,
+    newBalance: balanceAfter,
+    tierChanged,
+    newTier: newTierName
+  });
+
+  return {
+    refunded: true,
+    amount: finalPrice,
+    newBalance: balanceAfter,
+    tierChanged,
+    newTier: newTierName,
+    oldDiscount: user.current_discount,
+    newDiscount: newTier.discount
+  };
+};
+
+/**
+ * Restore usage counts for links and articles after placement refund
+ * Used by both direct placement deletion and site deletion
+ *
+ * @param {object} client - PostgreSQL client with active transaction
+ * @param {number} placementId - ID of placement being refunded
+ * @returns {object} Counts of restored items { linkCount: number, articleCount: number }
+ */
+const restoreUsageCountsInTransaction = async (client, placementId) => {
+  // Get content IDs
+  const contentResult = await client.query(`
+    SELECT
+      array_agg(DISTINCT link_id) FILTER (WHERE link_id IS NOT NULL) as link_ids,
+      array_agg(DISTINCT article_id) FILTER (WHERE article_id IS NOT NULL) as article_ids,
+      COUNT(DISTINCT link_id) as link_count,
+      COUNT(DISTINCT article_id) as article_count
+    FROM placement_content
+    WHERE placement_id = $1
+  `, [placementId]);
+
+  const { link_ids, article_ids, link_count, article_count } = contentResult.rows[0];
+
+  // Decrement usage_count for links
+  if (link_ids && link_ids.length > 0) {
+    for (const linkId of link_ids) {
+      await client.query(`
+        UPDATE project_links
+        SET usage_count = GREATEST(0, usage_count - 1),
+            status = CASE
+              WHEN GREATEST(0, usage_count - 1) < usage_limit THEN 'active'
+              ELSE status
+            END
+        WHERE id = $1
+      `, [linkId]);
+    }
+  }
+
+  // Decrement usage_count for articles
+  if (article_ids && article_ids.length > 0) {
+    for (const articleId of article_ids) {
+      await client.query(`
+        UPDATE project_articles
+        SET usage_count = GREATEST(0, usage_count - 1),
+            status = CASE
+              WHEN GREATEST(0, usage_count - 1) < usage_limit THEN 'active'
+              ELSE status
+            END
+        WHERE id = $1
+      `, [articleId]);
+    }
+  }
+
+  return {
+    linkCount: parseInt(link_count) || 0,
+    articleCount: parseInt(article_count) || 0
+  };
+};
+
+/**
  * CRITICAL FIX: Atomic delete with refund (single transaction)
  * Prevents race conditions and ensures money safety
  *
