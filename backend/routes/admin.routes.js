@@ -210,4 +210,66 @@ router.get('/recent-purchases', async (req, res) => {
   }
 });
 
+/**
+ * POST /api/admin/placements/:id/refund
+ * Manually refund a placement (admin only)
+ *
+ * Use cases:
+ * - Customer dispute/complaint
+ * - Quality issues with site
+ * - Site downtime
+ * - Goodwill refunds
+ *
+ * Body:
+ * - reason (required): String explaining why refund is issued
+ * - deleteWordPressPost (optional): Boolean, if true deletes WP post (default: false)
+ */
+router.post('/placements/:id/refund',
+  [
+    body('reason').isString().trim().notEmpty().withMessage('Refund reason is required'),
+    body('deleteWordPressPost').optional().isBoolean().withMessage('deleteWordPressPost must be boolean')
+  ],
+  validateRequest,
+  async (req, res) => {
+    try {
+      const placementId = parseInt(req.params.id);
+      const { reason, deleteWordPressPost = false } = req.body;
+
+      if (isNaN(placementId)) {
+        return res.status(400).json({ error: 'Invalid placement ID' });
+      }
+
+      const result = await adminService.refundPlacement(
+        placementId,
+        reason,
+        req.user.id, // admin ID
+        deleteWordPressPost
+      );
+
+      res.json({
+        success: true,
+        message: 'Placement refunded successfully',
+        data: {
+          placementId,
+          refundAmount: result.refundAmount,
+          newBalance: result.newBalance,
+          tierChanged: result.tierChanged,
+          newTier: result.newTier,
+          wordpressPostDeleted: result.wordpressPostDeleted
+        }
+      });
+
+    } catch (error) {
+      logger.error('Failed to refund placement', {
+        adminId: req.user.id,
+        placementId: req.params.id,
+        error: error.message
+      });
+      res.status(400).json({
+        error: error.message || 'Failed to refund placement'
+      });
+    }
+  }
+);
+
 module.exports = router;
