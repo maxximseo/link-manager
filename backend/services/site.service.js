@@ -287,12 +287,13 @@ const deleteSite = async (siteId, userId) => {
     // 6. Create audit log entry
     await client.query(`
       INSERT INTO audit_log (
-        user_id, action, entity_type, entity_id, details
-      ) VALUES ($1, 'site_delete', 'site', $2, $3)
+        user_id, action, details
+      ) VALUES ($1, $2, $3)
     `, [
       userId,
-      siteId,
+      'site_delete',
       JSON.stringify({
+        site_id: siteId,
         site_name: site.site_name,
         site_url: site.site_url,
         site_type: site.site_type,
