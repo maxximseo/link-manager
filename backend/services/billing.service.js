@@ -936,7 +936,7 @@ const refundPlacement = async (placementId, userId) => {
     const transactionResult = await client.query(`
       INSERT INTO transactions (
         user_id, type, amount, balance_before, balance_after,
-        description, related_placement_id
+        description, placement_id
       ) VALUES ($1, 'refund', $2, $3, $4, $5, $6)
       RETURNING id, created_at
     `, [
