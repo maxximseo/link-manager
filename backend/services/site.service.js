@@ -18,7 +18,7 @@ const getUserSites = async (userId, page = 0, limit = 0, recalculate = false) =>
     }
     
     // Fetch sites data
-    let sitesQuery = 'SELECT id, user_id, site_name, site_url, api_key, site_type, max_links, max_articles, used_links, used_articles, allow_articles, created_at FROM sites WHERE user_id = $1 ORDER BY created_at DESC';
+    let sitesQuery = 'SELECT id, user_id, site_name, site_url, api_key, site_type, max_links, max_articles, used_links, used_articles, allow_articles, is_public, created_at FROM sites WHERE user_id = $1 ORDER BY created_at DESC';
     const queryParams = [userId];
     
     if (usePagination) {
@@ -61,10 +61,45 @@ const getUserSites = async (userId, page = 0, limit = 0, recalculate = false) =>
   }
 };
 
+// Get marketplace sites (public sites + user's own sites)
+const getMarketplaceSites = async (userId) => {
+  try {
+    // Return sites that are either:
+    // 1. Public (is_public = TRUE), OR
+    // 2. Owned by the requesting user (user_id = userId)
+    // Note: Don't expose api_key for sites user doesn't own
+    const result = await query(`
+      SELECT
+        id, user_id, site_name, site_url, site_type,
+        max_links, max_articles, used_links, used_articles,
+        allow_articles, is_public, created_at,
+        CASE
+          WHEN user_id = $1 THEN api_key
+          ELSE NULL
+        END as api_key
+      FROM sites
+      WHERE is_public = TRUE OR user_id = $1
+      ORDER BY created_at DESC
+    `, [userId]);
+
+    logger.info('Marketplace sites retrieved', {
+      userId,
+      totalSites: result.rows.length,
+      publicSites: result.rows.filter(s => s.is_public).length,
+      ownedSites: result.rows.filter(s => s.user_id === userId).length
+    });
+
+    return result.rows;
+  } catch (error) {
+    logger.error('Get marketplace sites error:', error);
+    throw error;
+  }
+};
+
 // Create new site
 const createSite = async (data) => {
   try {
-    const { site_url, api_key, max_links, max_articles, userId, site_type, allow_articles } = data;
+    const { site_url, api_key, max_links, max_articles, userId, site_type, allow_articles, is_public } = data;
 
     // SECURITY: Validate URL format
     if (!site_url) {
@@ -116,10 +151,11 @@ const createSite = async (data) => {
     }
 
     const site_name = site_url;
+    const finalIsPublic = is_public !== undefined ? is_public : false; // Default to private
 
     const result = await query(
-      'INSERT INTO sites (site_url, site_name, api_key, site_type, user_id, max_links, max_articles, used_links, used_articles, allow_articles) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *',
-      [site_url, site_name, finalApiKey, finalSiteType, userId, max_links || 10, finalMaxArticles, 0, 0, finalAllowArticles]
+      'INSERT INTO sites (site_url, site_name, api_key, site_type, user_id, max_links, max_articles, used_links, used_articles, allow_articles, is_public) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
+      [site_url, site_name, finalApiKey, finalSiteType, userId, max_links || 10, finalMaxArticles, 0, 0, finalAllowArticles, finalIsPublic]
     );
 
     return result.rows[0];
@@ -132,7 +168,7 @@ const createSite = async (data) => {
 // Update site
 const updateSite = async (siteId, userId, data) => {
   try {
-    const { site_url, site_name, api_key, max_links, max_articles, site_type, allow_articles } = data;
+    const { site_url, site_name, api_key, max_links, max_articles, site_type, allow_articles, is_public } = data;
 
     // SECURITY: Validate URL format if provided
     if (site_url) {
@@ -176,10 +212,11 @@ const updateSite = async (siteId, userId, data) => {
            max_links = COALESCE($4, max_links),
            max_articles = COALESCE($5, max_articles),
            site_type = COALESCE($6, site_type),
-           allow_articles = COALESCE($7, allow_articles)
-       WHERE id = $8 AND user_id = $9
+           allow_articles = COALESCE($7, allow_articles),
+           is_public = COALESCE($8, is_public)
+       WHERE id = $9 AND user_id = $10
        RETURNING *`,
-      [site_url, site_name, api_key, max_links, finalMaxArticles, site_type, finalAllowArticles, siteId, userId]
+      [site_url, site_name, api_key, max_links, finalMaxArticles, site_type, finalAllowArticles, is_public, siteId, userId]
     );
 
     return result.rows.length > 0 ? result.rows[0] : null;
@@ -493,6 +530,7 @@ const getSiteByDomain = async (domain) => {
 
 module.exports = {
   getUserSites,
+  getMarketplaceSites,
   createSite,
   updateSite,
   deleteSite,
