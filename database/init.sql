@@ -64,11 +64,22 @@ CREATE TABLE placements (
     project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
     site_id INTEGER REFERENCES sites(id) ON DELETE CASCADE,
     type VARCHAR(50) NOT NULL,
+    count INTEGER DEFAULT 0,
     status VARCHAR(50) DEFAULT 'pending',
     wordpress_post_id INTEGER,
     placed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    purchased_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    scheduled_publish_date TIMESTAMP,
+    published_at TIMESTAMP,
+    expires_at TIMESTAMP,
+    original_price NUMERIC(10, 2),
+    discount_applied INTEGER DEFAULT 0,
+    final_price NUMERIC(10, 2),
+    auto_renewal BOOLEAN DEFAULT FALSE,
+    renewal_price NUMERIC(10, 2),
+    last_renewed_at TIMESTAMP,
+    renewal_count INTEGER DEFAULT 0,
+    purchase_transaction_id INTEGER REFERENCES transactions(id)
 );
 
 -- 7. placement_content

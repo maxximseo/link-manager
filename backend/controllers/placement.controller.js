@@ -57,13 +57,13 @@ const getPlacementsBySite = async (req, res) => {
         p.original_price,
         p.discount_applied,
         p.status,
-        p.created_at,
+        p.purchased_at,
         proj.name as project_name
       FROM placements p
       INNER JOIN sites s ON p.site_id = s.id
       LEFT JOIN projects proj ON p.project_id = proj.id
       WHERE p.site_id = $1 AND s.user_id = $2
-      ORDER BY p.created_at DESC
+      ORDER BY p.purchased_at DESC
     `, [siteId, userId]);
 
     // Calculate totals
