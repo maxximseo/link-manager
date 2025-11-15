@@ -274,16 +274,26 @@ const addProjectLinksBulk = async (req, res) => {
       return res.status(404).json({ error: 'Project not found' });
     }
 
-    // Build message with duplicate info
-    let message = `Successfully imported ${result.summary.imported} links`;
+    // Build detailed message
+    let message = `Successfully imported ${result.summary.imported} of ${result.summary.total} links`;
+
+    const skippedParts = [];
     if (result.summary.duplicates > 0) {
-      message += `. Skipped ${result.summary.duplicates} duplicate${result.summary.duplicates > 1 ? 's' : ''}`;
+      skippedParts.push(`${result.summary.duplicates} duplicate${result.summary.duplicates > 1 ? 's' : ''}`);
+    }
+    if (result.summary.invalidUrls > 0) {
+      skippedParts.push(`${result.summary.invalidUrls} invalid URL${result.summary.invalidUrls > 1 ? 's' : ''}`);
+    }
+
+    if (skippedParts.length > 0) {
+      message += `. Skipped: ${skippedParts.join(', ')}`;
     }
 
     res.json({
       message,
       links: result.imported,
       duplicates: result.duplicates,
+      invalidUrls: result.invalidUrls,
       summary: result.summary
     });
   } catch (error) {
