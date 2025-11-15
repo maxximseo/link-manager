@@ -20,7 +20,8 @@ async function loadFilterDropdowns() {
             const projectsResult = await projectsResponse.json();
             console.log('Full API response:', projectsResult);
 
-            projects = projectsResult.data || [];
+            // API returns array directly OR {data: array}
+            projects = Array.isArray(projectsResult) ? projectsResult : (projectsResult.data || []);
 
             console.log('Loaded projects:', projects.length, projects);
 
