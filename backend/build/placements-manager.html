@@ -12,13 +12,10 @@
     <!-- Navbar Container (injected by navbar.js) -->
     <div id="navbar-container"></div>
 
-    <div class="container-fluid mt-4">
+    <div class="container mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>📋 Управление размещениями</h1>
             <div>
-                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#purchasePlacementModal">
-                    <i class="bi bi-plus-circle"></i> Купить размещение
-                </button>
                 <button class="btn btn-outline-primary" onclick="exportPlacements('csv')">
                     <i class="bi bi-download"></i> Экспорт CSV
                 </button>
@@ -41,6 +38,7 @@
                             <option value="">Все типы</option>
                             <option value="link">Ссылки</option>
                             <option value="article">Статьи</option>
+                            <option value="manual">Ручные</option>
                         </select>
                     </div>
                     <div class="col-md-2">

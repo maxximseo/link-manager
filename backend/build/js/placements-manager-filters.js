@@ -51,38 +51,14 @@ async function loadFilterDropdowns() {
 function applyPlacementFilters(placements) {
     let filtered = [...placements];
 
-    // Debug: Show all placements before filtering
-    console.log('=== FILTER DEBUG START ===');
-    console.log('Total placements before filtering:', placements.length);
-
-    if (placements.length > 0) {
-        // Count placements by type
-        const typeCounts = {};
-        placements.forEach(p => {
-            typeCounts[p.type] = (typeCounts[p.type] || 0) + 1;
-        });
-        console.log('Placements by type:', typeCounts);
-        console.log('Sample placement:', placements[0]);
-        console.log('Active filters:', activeFilters);
-    }
-
     // Filter by project
     if (activeFilters.projectId) {
-        const beforeCount = filtered.length;
         filtered = filtered.filter(p => p.project_id == activeFilters.projectId);
-        console.log(`After project filter: ${filtered.length} (removed ${beforeCount - filtered.length})`);
     }
 
     // Filter by type
     if (activeFilters.type) {
-        const beforeCount = filtered.length;
         filtered = filtered.filter(p => p.type === activeFilters.type);
-        console.log(`After type filter (${activeFilters.type}): ${filtered.length} (removed ${beforeCount - filtered.length})`);
-
-        // Show what types remain
-        if (filtered.length > 0) {
-            console.log('Remaining placement types:', [...new Set(filtered.map(p => p.type))]);
-        }
     }
 
     // Filter by date range
@@ -102,10 +78,6 @@ function applyPlacementFilters(placements) {
             return placementDate <= toDate;
         });
     }
-
-    // Debug: Final results
-    console.log('Final filtered count:', filtered.length);
-    console.log('=== FILTER DEBUG END ===');
 
     // Update filter status display
     updateFilterStatus(filtered.length, placements.length);
