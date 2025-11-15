@@ -790,13 +790,46 @@ If you want to explore reliable platforms, check out <a href="https://example.co
 
                 if (response.ok) {
                     bootstrap.Modal.getInstance(document.getElementById('bulkPreviewModal')).hide();
-                    alert(`Успешно импортировано ${data.summary.imported} ссылок!`);
+
+                    // Build detailed success message
+                    let message = `Успешно импортировано ${data.summary.imported} из ${data.summary.total} ссылок`;
+
+                    if (data.summary.skipped > 0) {
+                        message += `\n\nПропущено: ${data.summary.skipped}`;
+
+                        if (data.duplicates && data.duplicates.length > 0) {
+                            message += `\n\nДубликаты (${data.duplicates.length}):`;
+                            const showCount = Math.min(data.duplicates.length, 5);
+                            for (let i = 0; i < showCount; i++) {
+                                const dup = data.duplicates[i];
+                                message += `\n  • Строка ${dup.line}: "${dup.anchor_text}"`;
+                            }
+                            if (data.duplicates.length > 5) {
+                                message += `\n  ... и ещё ${data.duplicates.length - 5}`;
+                            }
+                        }
+
+                        if (data.invalidUrls && data.invalidUrls.length > 0) {
+                            message += `\n\nНеверные URL (${data.invalidUrls.length}):`;
+                            const showCount = Math.min(data.invalidUrls.length, 5);
+                            for (let i = 0; i < showCount; i++) {
+                                const inv = data.invalidUrls[i];
+                                message += `\n  • Строка ${inv.line}: ${inv.url}`;
+                            }
+                            if (data.invalidUrls.length > 5) {
+                                message += `\n  ... и ещё ${data.invalidUrls.length - 5}`;
+                            }
+                        }
+                    }
+
+                    alert(message);
                     loadLinks(); // Reload links list
                 } else {
                     throw new Error(data.error || 'Ошибка импорта');
                 }
             } catch (error) {
-                alert('Ошибка при импорте: ' + error.message);
+                // Error message already contains detailed info from backend
+                alert('Ошибка при импорте:\n\n' + error.message);
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="bi bi-check-circle"></i> Импортировать (<span id="validLinksCount">' + validLinks.length + '</span>)';
