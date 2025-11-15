@@ -2,11 +2,6 @@
  * Filter functions for Placements Manager
  */
 
-// Global variables (if not already defined in placements-manager.js)
-if (typeof projects === 'undefined') {
-    var projects = [];
-}
-
 /**
  * Load projects and sites for filter dropdowns
  */
