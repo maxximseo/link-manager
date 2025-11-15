@@ -55,7 +55,7 @@ function applyPlacementFilters(placements) {
 
     // Filter by type
     if (activeFilters.type) {
-        filtered = filtered.filter(p => p.placement_type === activeFilters.type);
+        filtered = filtered.filter(p => p.type === activeFilters.type);
     }
 
     // Filter by date range
