@@ -299,42 +299,110 @@ const addProjectLinksBulk = async (projectId, userId, links) => {
     );
     const existingAnchors = new Set(existingLinksResult.rows.map(row => row.anchor_text));
 
-    // Track duplicates for reporting
+    // Track duplicates and invalid entries for reporting
     const duplicates = [];
+    const invalidUrls = [];
     const batchAnchors = new Set();
 
-    // Prepare bulk insert, filtering out duplicates
+    // Prepare bulk insert, filtering out duplicates and invalid URLs
     const values = [];
     const placeholders = [];
     let paramIndex = 1;
 
-    links.forEach((link) => {
-      if (link.url && link.url.startsWith('http')) {
-        const anchorText = link.anchor_text || link.url;
-        const anchorLower = anchorText.toLowerCase();
+    links.forEach((link, index) => {
+      const lineNumber = index + 1;
 
-        // Check for duplicates against existing links and within batch
-        if (existingAnchors.has(anchorLower) || batchAnchors.has(anchorLower)) {
-          duplicates.push({ anchor_text: anchorText, url: link.url });
-        } else {
-          placeholders.push(`($${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++})`);
-          values.push(
-            projectId,
-            link.url,
-            anchorText,
-            link.position || 0,
-            link.html_context || null,
-            link.usage_limit || 1
-          );
-          batchAnchors.add(anchorLower);
-        }
+      // Check for invalid URL
+      if (!link.url || !link.url.startsWith('http')) {
+        invalidUrls.push({
+          line: lineNumber,
+          url: link.url || '(empty)',
+          anchor_text: link.anchor_text || '(no anchor)',
+          reason: 'URL must start with http:// or https://'
+        });
+        return;
       }
+
+      const anchorText = link.anchor_text || link.url;
+      const anchorLower = anchorText.toLowerCase();
+
+      // Check for duplicates against existing links
+      if (existingAnchors.has(anchorLower)) {
+        duplicates.push({
+          line: lineNumber,
+          anchor_text: anchorText,
+          url: link.url,
+          reason: 'Anchor text already exists in project (case-insensitive)'
+        });
+        return;
+      }
+
+      // Check for duplicates within batch
+      if (batchAnchors.has(anchorLower)) {
+        duplicates.push({
+          line: lineNumber,
+          anchor_text: anchorText,
+          url: link.url,
+          reason: 'Duplicate anchor text in this import batch'
+        });
+        return;
+      }
+
+      // Valid link - add to batch
+      placeholders.push(`($${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++})`);
+      values.push(
+        projectId,
+        link.url,
+        anchorText,
+        link.position || 0,
+        link.html_context || null,
+        link.usage_limit || 1
+      );
+      batchAnchors.add(anchorLower);
     });
 
+    // Build detailed error message if no valid links
     if (placeholders.length === 0) {
+      const errorParts = [];
+
       if (duplicates.length > 0) {
-        throw new Error(`All ${duplicates.length} links are duplicates. No links were added.`);
+        errorParts.push(`${duplicates.length} duplicate(s)`);
       }
+      if (invalidUrls.length > 0) {
+        errorParts.push(`${invalidUrls.length} invalid URL(s)`);
+      }
+
+      if (errorParts.length > 0) {
+        const summary = errorParts.join(', ');
+        let detailMsg = `Import failed: ${summary}. No links were added.\n\n`;
+
+        if (duplicates.length > 0 && duplicates.length <= 10) {
+          detailMsg += 'Duplicates:\n';
+          duplicates.forEach(d => {
+            detailMsg += `  Line ${d.line}: "${d.anchor_text}" - ${d.reason}\n`;
+          });
+        } else if (duplicates.length > 10) {
+          detailMsg += `Duplicates: ${duplicates.length} found (showing first 5):\n`;
+          duplicates.slice(0, 5).forEach(d => {
+            detailMsg += `  Line ${d.line}: "${d.anchor_text}"\n`;
+          });
+        }
+
+        if (invalidUrls.length > 0 && invalidUrls.length <= 10) {
+          detailMsg += '\nInvalid URLs:\n';
+          invalidUrls.forEach(inv => {
+            detailMsg += `  Line ${inv.line}: ${inv.url} - ${inv.reason}\n`;
+          });
+        } else if (invalidUrls.length > 10) {
+          detailMsg += `\nInvalid URLs: ${invalidUrls.length} found (showing first 5):\n`;
+          invalidUrls.slice(0, 5).forEach(inv => {
+            detailMsg += `  Line ${inv.line}: ${inv.url}\n`;
+          });
+        }
+
+        throw new Error(detailMsg);
+      }
+
       throw new Error('No valid links provided');
     }
 
