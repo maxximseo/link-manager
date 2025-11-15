@@ -158,6 +158,11 @@ const updateSite = async (req, res) => {
       return res.status(400).json({ error: 'is_public must be a boolean value' });
     }
 
+    // Validate available_for_purchase if provided
+    if (available_for_purchase !== undefined && typeof available_for_purchase !== 'boolean') {
+      return res.status(400).json({ error: 'available_for_purchase must be a boolean value' });
+    }
+
     const site = await siteService.updateSite(siteId, userId, {
       site_url,
       site_name,
@@ -166,7 +171,8 @@ const updateSite = async (req, res) => {
       max_articles,
       site_type,
       allow_articles,
-      is_public
+      is_public,
+      available_for_purchase
     });
 
     if (!site) {
