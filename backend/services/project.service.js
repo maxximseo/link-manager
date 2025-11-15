@@ -276,24 +276,10 @@ const addProjectLinksBulk = async (projectId, userId, links) => {
       throw new Error('Maximum 500 links at once');
     }
 
-    // Get existing anchor texts in this project (case-insensitive)
-    // Use efficient batch check with ANY instead of fetching all
-    const anchorTextsToCheck = links
-      .filter(l => l.url && l.url.startsWith('http'))
-      .map(l => (l.anchor_text || l.url).toLowerCase());
-
-    const existingLinksResult = await query(
-      'SELECT LOWER(anchor_text) as anchor_text FROM project_links WHERE project_id = $1 AND LOWER(anchor_text) = ANY($2)',
-      [projectId, anchorTextsToCheck]
-    );
-    const existingAnchors = new Set(existingLinksResult.rows.map(row => row.anchor_text));
-
-    // Track duplicates and invalid entries for reporting
-    const duplicates = [];
+    // Track invalid entries for reporting
     const invalidUrls = [];
-    const batchAnchors = new Set();
 
-    // Prepare bulk insert, filtering out duplicates and invalid URLs
+    // Prepare bulk insert, filtering out invalid URLs only
     const values = [];
     const placeholders = [];
     let paramIndex = 1;
@@ -313,31 +299,8 @@ const addProjectLinksBulk = async (projectId, userId, links) => {
       }
 
       const anchorText = link.anchor_text || link.url;
-      const anchorLower = anchorText.toLowerCase();
 
-      // Check for duplicates against existing links
-      if (existingAnchors.has(anchorLower)) {
-        duplicates.push({
-          line: lineNumber,
-          anchor_text: anchorText,
-          url: link.url,
-          reason: 'Anchor text already exists in project (case-insensitive)'
-        });
-        return;
-      }
-
-      // Check for duplicates within batch
-      if (batchAnchors.has(anchorLower)) {
-        duplicates.push({
-          line: lineNumber,
-          anchor_text: anchorText,
-          url: link.url,
-          reason: 'Duplicate anchor text in this import batch'
-        });
-        return;
-      }
-
-      // Valid link - add to batch
+      // Valid link - add to batch (duplicates are now allowed)
       placeholders.push(`($${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++})`);
       values.push(
         projectId,
@@ -347,7 +310,6 @@ const addProjectLinksBulk = async (projectId, userId, links) => {
         link.html_context || null,
         link.usage_limit || 1
       );
-      batchAnchors.add(anchorLower);
     });
 
     // Build detailed error message if no valid links
