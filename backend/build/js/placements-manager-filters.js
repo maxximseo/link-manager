@@ -28,7 +28,7 @@ async function loadFilterDropdowns() {
             projects.forEach(project => {
                 const option = document.createElement('option');
                 option.value = project.id;
-                option.textContent = project.project_name;
+                option.textContent = project.name;
                 projectFilter.appendChild(option);
             });
 
