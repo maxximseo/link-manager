@@ -214,10 +214,11 @@ const updateSite = async (siteId, userId, data) => {
            max_articles = COALESCE($5, max_articles),
            site_type = COALESCE($6, site_type),
            allow_articles = COALESCE($7, allow_articles),
-           is_public = COALESCE($8, is_public)
-       WHERE id = $9 AND user_id = $10
+           is_public = COALESCE($8, is_public),
+           available_for_purchase = COALESCE($9, available_for_purchase)
+       WHERE id = $10 AND user_id = $11
        RETURNING *`,
-      [site_url, site_name, api_key, max_links, finalMaxArticles, site_type, finalAllowArticles, is_public, siteId, userId]
+      [site_url, site_name, api_key, max_links, finalMaxArticles, site_type, finalAllowArticles, is_public, available_for_purchase, siteId, userId]
     );
 
     return result.rows.length > 0 ? result.rows[0] : null;
