@@ -106,10 +106,10 @@ function applyFilters() {
     console.log('Filter values read from UI:', activeFilters);
 
     // Re-render current tab with filters
-    const activeTabElement = document.querySelector('.nav-link.active');
-    console.log('Active tab element:', activeTabElement);
-    const activeTab = activeTabElement ? activeTabElement.getAttribute('data-bs-target') : null;
-    console.log('Active tab value:', activeTab);
+    // Check which tab content is currently visible
+    const activePane = document.querySelector('.tab-pane.active');
+    const activeTab = activePane ? '#' + activePane.id : '#active';
+    console.log('Active tab pane:', activeTab);
 
     if (activeTab === '#active') {
         const filtered = applyPlacementFilters(allActivePlacements);
