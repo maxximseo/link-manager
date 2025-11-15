@@ -615,23 +615,9 @@ If you want to explore reliable platforms, check out <a href="https://example.co
             // Split by single newline
             const blocks = text.split('\n').filter(b => b.trim());
 
-            // Track duplicates
-            const seenAnchors = new Set();
-
             parsedLinks = blocks.map((block, index) => {
                 block = block.trim();
                 const validation = validateLinkBlock(block);
-
-                // Check for duplicate anchor text
-                if (validation.valid && validation.anchor_text) {
-                    const anchorLower = validation.anchor_text.toLowerCase();
-                    if (seenAnchors.has(anchorLower)) {
-                        validation.valid = false;
-                        validation.errors.push('Дубликат анкора (уже есть в списке)');
-                    } else {
-                        seenAnchors.add(anchorLower);
-                    }
-                }
 
                 return {
                     id: index,
@@ -794,31 +780,16 @@ If you want to explore reliable platforms, check out <a href="https://example.co
                     // Build detailed success message
                     let message = `Успешно импортировано ${data.summary.imported} из ${data.summary.total} ссылок`;
 
-                    if (data.summary.skipped > 0) {
-                        message += `\n\nПропущено: ${data.summary.skipped}`;
+                    if (data.invalidUrls && data.invalidUrls.length > 0) {
+                        message += `\n\nПропущено неверных URL: ${data.invalidUrls.length}`;
 
-                        if (data.duplicates && data.duplicates.length > 0) {
-                            message += `\n\nДубликаты (${data.duplicates.length}):`;
-                            const showCount = Math.min(data.duplicates.length, 5);
-                            for (let i = 0; i < showCount; i++) {
-                                const dup = data.duplicates[i];
-                                message += `\n  • Строка ${dup.line}: "${dup.anchor_text}"`;
-                            }
-                            if (data.duplicates.length > 5) {
-                                message += `\n  ... и ещё ${data.duplicates.length - 5}`;
-                            }
+                        const showCount = Math.min(data.invalidUrls.length, 5);
+                        for (let i = 0; i < showCount; i++) {
+                            const inv = data.invalidUrls[i];
+                            message += `\n  • Строка ${inv.line}: ${inv.url}`;
                         }
-
-                        if (data.invalidUrls && data.invalidUrls.length > 0) {
-                            message += `\n\nНеверные URL (${data.invalidUrls.length}):`;
-                            const showCount = Math.min(data.invalidUrls.length, 5);
-                            for (let i = 0; i < showCount; i++) {
-                                const inv = data.invalidUrls[i];
-                                message += `\n  • Строка ${inv.line}: ${inv.url}`;
-                            }
-                            if (data.invalidUrls.length > 5) {
-                                message += `\n  ... и ещё ${data.invalidUrls.length - 5}`;
-                            }
+                        if (data.invalidUrls.length > 5) {
+                            message += `\n  ... и ещё ${data.invalidUrls.length - 5}`;
                         }
                     }
 

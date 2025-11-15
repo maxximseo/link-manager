@@ -327,49 +327,33 @@ class LinkManagerWidget {
     // Articles are now only published as WordPress posts, not as shortcodes
     
     /**
-     * Render links
+     * Render links (clean output without wrappers - matches static widget)
      */
     private function render_links($links, $atts) {
         if (empty($links)) {
             return '';
         }
-        
+
         // Filter by position if specified
         if (!empty($atts['position'])) {
             $links = array_filter($links, function($link) use ($atts) {
                 return isset($link['position']) && $link['position'] == $atts['position'];
             });
         }
-        
+
         // Apply limit
         if ($atts['limit'] > 0) {
             $links = array_slice($links, 0, $atts['limit']);
         }
-        
-        $style = isset($atts['style']) ? $atts['style'] : 'list';
-        $output = '<div class="lmw-links lmw-style-' . esc_attr($style) . '">';
-        
-        if ($style === 'inline') {
-            $link_html = array();
-            foreach ($links as $link) {
-                $link_html[] = '<a href="' . esc_url($link['url']) . '" target="_blank">' . 
-                              esc_html($link['anchor_text']) . '</a>';
-            }
-            $output .= implode(' | ', $link_html);
-        } else {
-            $output .= '<ul class="lmw-link-list">';
-            foreach ($links as $link) {
-                $output .= '<li>';
-                $output .= '<a href="' . esc_url($link['url']) . '" target="_blank">';
-                $output .= esc_html($link['anchor_text']);
-                $output .= '</a>';
-                $output .= '</li>';
-            }
-            $output .= '</ul>';
+
+        // Clean output without wrappers (like static widget)
+        $output = '';
+        foreach ($links as $link) {
+            $output .= '<a href="' . esc_url($link['url']) . '" target="_blank">';
+            $output .= esc_html($link['anchor_text']);
+            $output .= '</a><br>' . "\n";
         }
-        
-        $output .= '</div>';
-        
+
         return $output;
     }
     
