@@ -124,7 +124,7 @@ const updateSite = async (req, res) => {
   try {
     const siteId = req.params.id;
     const userId = req.user.id;
-    const { site_url, site_name, api_key, max_links, max_articles, site_type, allow_articles, is_public } = req.body;
+    const { site_url, site_name, api_key, max_links, max_articles, site_type, allow_articles, is_public, available_for_purchase } = req.body;
 
     // Validate URL format if provided
     if (site_url) {
