@@ -7,23 +7,16 @@
  */
 async function loadFilterDropdowns() {
     try {
-        console.log('Loading filter dropdowns...');
-
         // Load projects
         const projectsResponse = await fetch('/api/projects', {
             headers: { 'Authorization': `Bearer ${getToken()}` }
         });
 
-        console.log('Projects response status:', projectsResponse.status);
-
         if (projectsResponse.ok) {
             const projectsResult = await projectsResponse.json();
-            console.log('Full API response:', projectsResult);
 
             // API returns array directly OR {data: array}
             projects = Array.isArray(projectsResult) ? projectsResult : (projectsResult.data || []);
-
-            console.log('Loaded projects:', projects.length, projects);
 
             const projectFilter = document.getElementById('projectFilter');
             projectFilter.innerHTML = '<option value="">Все проекты</option>';
@@ -34,10 +27,6 @@ async function loadFilterDropdowns() {
                 option.textContent = project.name;
                 projectFilter.appendChild(option);
             });
-
-            console.log('Project dropdown populated with', projects.length, 'projects');
-        } else {
-            console.error('Failed to load projects:', projectsResponse.status, projectsResponse.statusText);
         }
 
     } catch (error) {
