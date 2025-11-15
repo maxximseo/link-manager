@@ -530,6 +530,135 @@ const getSiteByDomain = async (domain) => {
   }
 };
 
+// ============================================================================
+// Registration Token Methods (for bulk WordPress site registration)
+// ============================================================================
+
+/**
+ * Generate a new registration token for bulk site registration
+ */
+const generateRegistrationToken = async (userId, options = {}) => {
+  try {
+    const {
+      label = 'Registration Token',
+      max_uses = 0, // 0 = unlimited
+      expires_at = null
+    } = options;
+
+    // Generate secure random token
+    const token = 'reg_' + crypto.randomBytes(32).toString('hex');
+
+    const result = await query(
+      `INSERT INTO registration_tokens
+       (user_id, token, label, max_uses, expires_at)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING *`,
+      [userId, token, label, max_uses, expires_at]
+    );
+
+    logger.info('Registration token generated', { userId, token: token.substring(0, 15) + '...' });
+    return result.rows[0];
+  } catch (error) {
+    logger.error('Generate registration token error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Validate a registration token and return its details
+ */
+const validateRegistrationToken = async (token) => {
+  try {
+    const result = await query(
+      `SELECT * FROM registration_tokens
+       WHERE token = $1`,
+      [token]
+    );
+
+    if (result.rows.length === 0) {
+      return null; // Token not found
+    }
+
+    const tokenData = result.rows[0];
+
+    // Check if token has expired
+    if (tokenData.expires_at && new Date(tokenData.expires_at) < new Date()) {
+      logger.warn('Token expired', { token: token.substring(0, 15) + '...' });
+      return null;
+    }
+
+    // Check if token has reached max uses
+    if (tokenData.max_uses > 0 && tokenData.current_uses >= tokenData.max_uses) {
+      logger.warn('Token max uses reached', { token: token.substring(0, 15) + '...' });
+      return null;
+    }
+
+    return tokenData;
+  } catch (error) {
+    logger.error('Validate registration token error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Increment the usage count for a registration token
+ */
+const incrementTokenUsage = async (token) => {
+  try {
+    await query(
+      `UPDATE registration_tokens
+       SET current_uses = current_uses + 1,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE token = $1`,
+      [token]
+    );
+
+    logger.info('Token usage incremented', { token: token.substring(0, 15) + '...' });
+  } catch (error) {
+    logger.error('Increment token usage error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get site by URL for a specific user (to check for duplicates)
+ */
+const getSiteByUrlForUser = async (siteUrl, userId) => {
+  try {
+    const result = await query(
+      `SELECT * FROM sites
+       WHERE site_url = $1 AND user_id = $2
+       LIMIT 1`,
+      [siteUrl, userId]
+    );
+
+    return result.rows.length > 0 ? result.rows[0] : null;
+  } catch (error) {
+    logger.error('Get site by URL for user error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get all registration tokens for a user
+ */
+const getUserTokens = async (userId) => {
+  try {
+    const result = await query(
+      `SELECT id, token, label, max_uses, current_uses, expires_at, created_at
+       FROM registration_tokens
+       WHERE user_id = $1
+       ORDER BY created_at DESC`,
+      [userId]
+    );
+
+    return result.rows;
+  } catch (error) {
+    logger.error('Get user tokens error:', error);
+    throw error;
+  }
+};
+
 module.exports = {
   getUserSites,
   getMarketplaceSites,
@@ -538,5 +667,11 @@ module.exports = {
   deleteSite,
   recalculateSiteStats,
   getSiteById,
-  getSiteByDomain
+  getSiteByDomain,
+  // Registration token methods
+  generateRegistrationToken,
+  validateRegistrationToken,
+  incrementTokenUsage,
+  getSiteByUrlForUser,
+  getUserTokens
 };
