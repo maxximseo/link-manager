@@ -29,6 +29,7 @@ CREATE TABLE sites (
     api_key VARCHAR(100),
     allow_articles BOOLEAN DEFAULT TRUE,
     is_public BOOLEAN DEFAULT FALSE,
+    available_for_purchase BOOLEAN DEFAULT TRUE,
     max_links INTEGER DEFAULT 10,
     used_links INTEGER DEFAULT 0,
     max_articles INTEGER DEFAULT 5,
