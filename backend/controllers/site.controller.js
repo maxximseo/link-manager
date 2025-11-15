@@ -242,6 +242,112 @@ const getMarketplaceSites = async (req, res) => {
   }
 };
 
+// ============================================================================
+// Registration Token Controllers (for bulk WordPress site registration)
+// ============================================================================
+
+// Generate a new registration token
+const generateToken = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { label, max_uses, expires_at } = req.body;
+
+    const token = await siteService.generateRegistrationToken(userId, {
+      label,
+      max_uses: max_uses || 0,
+      expires_at
+    });
+
+    res.json({
+      success: true,
+      token: token.token,
+      id: token.id,
+      label: token.label,
+      max_uses: token.max_uses,
+      expires_at: token.expires_at
+    });
+  } catch (error) {
+    logger.error('Generate token error:', error);
+    res.status(500).json({ error: 'Failed to generate registration token' });
+  }
+};
+
+// Register a WordPress site using a registration token (no auth required - token is auth)
+const registerFromWordPress = async (req, res) => {
+  try {
+    const { registration_token, site_url, api_key } = req.body;
+
+    // Validate required fields
+    if (!registration_token || typeof registration_token !== 'string') {
+      return res.status(400).json({ error: 'Registration token is required' });
+    }
+
+    if (!site_url || typeof site_url !== 'string' || site_url.trim().length === 0) {
+      return res.status(400).json({ error: 'Site URL is required' });
+    }
+
+    if (!api_key || typeof api_key !== 'string') {
+      return res.status(400).json({ error: 'API key is required' });
+    }
+
+    // Validate token
+    const tokenData = await siteService.validateRegistrationToken(registration_token);
+    if (!tokenData) {
+      return res.status(401).json({ error: 'Invalid, expired, or exhausted registration token' });
+    }
+
+    // Check if site already registered for this user
+    const existing = await siteService.getSiteByUrlForUser(site_url, tokenData.user_id);
+    if (existing) {
+      return res.status(409).json({
+        error: 'Site already registered',
+        site_id: existing.id
+      });
+    }
+
+    // Create site
+    const site = await siteService.createSite({
+      site_url: site_url.trim(),
+      api_key,
+      site_type: 'wordpress',
+      max_links: 10,
+      max_articles: 30,
+      userId: tokenData.user_id
+    });
+
+    // Increment token usage
+    await siteService.incrementTokenUsage(registration_token);
+
+    logger.info('WordPress site registered via token', {
+      site_id: site.id,
+      site_url: site_url,
+      user_id: tokenData.user_id
+    });
+
+    res.json({
+      success: true,
+      site_id: site.id,
+      message: 'Site registered successfully'
+    });
+  } catch (error) {
+    logger.error('WordPress registration error:', error);
+    res.status(500).json({ error: 'Failed to register site' });
+  }
+};
+
+// Get all tokens for the authenticated user
+const getTokens = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const tokens = await siteService.getUserTokens(userId);
+
+    res.json({ data: tokens });
+  } catch (error) {
+    logger.error('Get tokens error:', error);
+    res.status(500).json({ error: 'Failed to get tokens' });
+  }
+};
+
 module.exports = {
   getSites,
   getSite,
@@ -249,5 +355,9 @@ module.exports = {
   createSite,
   updateSite,
   deleteSite,
-  recalculateStats
+  recalculateStats,
+  // Registration token controllers
+  generateToken,
+  registerFromWordPress,
+  getTokens
 };
