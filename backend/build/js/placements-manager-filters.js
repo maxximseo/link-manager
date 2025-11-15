@@ -78,21 +78,16 @@ function applyPlacementFilters(placements) {
  * Apply filters from UI
  */
 function applyFilters() {
-    console.log('applyFilters() called');
-
     // Read filter values
     activeFilters.projectId = document.getElementById('projectFilter').value;
     activeFilters.type = document.getElementById('typeFilter').value;
     activeFilters.dateFrom = document.getElementById('dateFrom').value;
     activeFilters.dateTo = document.getElementById('dateTo').value;
 
-    console.log('Filter values read from UI:', activeFilters);
-
     // Re-render current tab with filters
     // Check which tab content is currently visible
     const activePane = document.querySelector('.tab-pane.active');
     const activeTab = activePane ? '#' + activePane.id : '#active';
-    console.log('Active tab pane:', activeTab);
 
     if (activeTab === '#active') {
         const filtered = applyPlacementFilters(allActivePlacements);
