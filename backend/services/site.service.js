@@ -99,7 +99,7 @@ const getMarketplaceSites = async (userId) => {
 // Create new site
 const createSite = async (data) => {
   try {
-    const { site_url, api_key, max_links, max_articles, userId, site_type, allow_articles, is_public } = data;
+    const { site_url, api_key, max_links, max_articles, userId, site_type, allow_articles, is_public, available_for_purchase } = data;
 
     // SECURITY: Validate URL format
     if (!site_url) {
