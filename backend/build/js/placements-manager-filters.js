@@ -103,6 +103,10 @@ function applyPlacementFilters(placements) {
         });
     }
 
+    // Debug: Final results
+    console.log('Final filtered count:', filtered.length);
+    console.log('=== FILTER DEBUG END ===');
+
     // Update filter status display
     updateFilterStatus(filtered.length, placements.length);
 
