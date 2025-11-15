@@ -206,17 +206,6 @@ const addProjectLink = async (projectId, userId, linkData) => {
       return null;
     }
 
-    // Check for duplicate anchor_text in the same project
-    const duplicateCheck = await query(
-      'SELECT id, anchor_text, url FROM project_links WHERE project_id = $1 AND LOWER(anchor_text) = LOWER($2)',
-      [projectId, anchor_text || url]
-    );
-
-    if (duplicateCheck.rows.length > 0) {
-      const existing = duplicateCheck.rows[0];
-      throw new Error(`Duplicate anchor text "${existing.anchor_text}" already exists in this project (ID: ${existing.id})`);
-    }
-
     const result = await query(
       'INSERT INTO project_links (project_id, url, anchor_text, position, usage_limit, html_context) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
       [projectId, url, anchor_text || url, position || 0, usage_limit || 1, html_context || null]
