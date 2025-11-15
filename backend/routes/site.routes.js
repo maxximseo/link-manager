@@ -22,7 +22,16 @@ const generalLimiter = rateLimit({
   message: { error: 'Too many requests, please slow down' }
 });
 
-// Apply auth middleware to all routes
+const registerLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 5, // 5 WordPress registrations per minute (prevent abuse)
+  message: { error: 'Too many registration attempts, please slow down' }
+});
+
+// WordPress self-registration endpoint (NO auth - uses token)
+router.post('/register-from-wordpress', registerLimiter, siteController.registerFromWordPress);
+
+// Apply auth middleware to all OTHER routes
 router.use(authMiddleware);
 
 // Site CRUD routes
