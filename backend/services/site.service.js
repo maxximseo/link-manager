@@ -152,10 +152,11 @@ const createSite = async (data) => {
 
     const site_name = site_url;
     const finalIsPublic = is_public !== undefined ? is_public : false; // Default to private
+    const finalAvailableForPurchase = available_for_purchase !== undefined ? available_for_purchase : true; // Default to available
 
     const result = await query(
-      'INSERT INTO sites (site_url, site_name, api_key, site_type, user_id, max_links, max_articles, used_links, used_articles, allow_articles, is_public) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
-      [site_url, site_name, finalApiKey, finalSiteType, userId, max_links || 10, finalMaxArticles, 0, 0, finalAllowArticles, finalIsPublic]
+      'INSERT INTO sites (site_url, site_name, api_key, site_type, user_id, max_links, max_articles, used_links, used_articles, allow_articles, is_public, available_for_purchase) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *',
+      [site_url, site_name, finalApiKey, finalSiteType, userId, max_links || 10, finalMaxArticles, 0, 0, finalAllowArticles, finalIsPublic, finalAvailableForPurchase]
     );
 
     return result.rows[0];
