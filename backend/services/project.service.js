@@ -314,38 +314,16 @@ const addProjectLinksBulk = async (projectId, userId, links) => {
 
     // Build detailed error message if no valid links
     if (placeholders.length === 0) {
-      const errorParts = [];
-
-      if (duplicates.length > 0) {
-        errorParts.push(`${duplicates.length} duplicate(s)`);
-      }
       if (invalidUrls.length > 0) {
-        errorParts.push(`${invalidUrls.length} invalid URL(s)`);
-      }
+        let detailMsg = `Import failed: ${invalidUrls.length} invalid URL(s). No links were added.\n\n`;
 
-      if (errorParts.length > 0) {
-        const summary = errorParts.join(', ');
-        let detailMsg = `Import failed: ${summary}. No links were added.\n\n`;
-
-        if (duplicates.length > 0 && duplicates.length <= 10) {
-          detailMsg += 'Duplicates:\n';
-          duplicates.forEach(d => {
-            detailMsg += `  Line ${d.line}: "${d.anchor_text}" - ${d.reason}\n`;
-          });
-        } else if (duplicates.length > 10) {
-          detailMsg += `Duplicates: ${duplicates.length} found (showing first 5):\n`;
-          duplicates.slice(0, 5).forEach(d => {
-            detailMsg += `  Line ${d.line}: "${d.anchor_text}"\n`;
-          });
-        }
-
-        if (invalidUrls.length > 0 && invalidUrls.length <= 10) {
-          detailMsg += '\nInvalid URLs:\n';
+        if (invalidUrls.length <= 10) {
+          detailMsg += 'Invalid URLs:\n';
           invalidUrls.forEach(inv => {
             detailMsg += `  Line ${inv.line}: ${inv.url} - ${inv.reason}\n`;
           });
-        } else if (invalidUrls.length > 10) {
-          detailMsg += `\nInvalid URLs: ${invalidUrls.length} found (showing first 5):\n`;
+        } else {
+          detailMsg += `Invalid URLs: ${invalidUrls.length} found (showing first 5):\n`;
           invalidUrls.slice(0, 5).forEach(inv => {
             detailMsg += `  Line ${inv.line}: ${inv.url}\n`;
           });
