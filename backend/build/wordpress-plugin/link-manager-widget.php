@@ -3,7 +3,7 @@
  * Plugin Name: Link Manager Widget Pro
  * Plugin URI: https://github.com/maxximseo/link-manager
  * Description: Display placed links and articles from Link Manager system
- * Version: 2.3.0
+ * Version: 2.4.0
  * Author: Link Manager Team
  * License: GPL v2 or later
  */
@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('LMW_VERSION', '2.3.0');
+define('LMW_VERSION', '2.4.0');
 define('LMW_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('LMW_PLUGIN_PATH', plugin_dir_path(__FILE__));
 
@@ -91,6 +91,29 @@ class LinkManagerWidget {
      * Admin settings page
      */
     public function admin_page() {
+        // Handle registration form submission
+        if (isset($_POST['register_site'])) {
+            if (!isset($_POST['lmw_register_nonce']) || !wp_verify_nonce($_POST['lmw_register_nonce'], 'lmw_register_site')) {
+                echo '<div class="notice notice-error"><p>Security check failed. Please try again.</p></div>';
+            } else {
+                $registration_token = sanitize_text_field($_POST['registration_token']);
+                $result = $this->register_site_with_token($registration_token);
+
+                if ($result['success']) {
+                    echo '<div class="notice notice-success"><p><strong>✅ Site registered successfully!</strong></p>';
+                    echo '<p>Your site has been added to the Link Manager system.</p>';
+                    if (isset($result['api_key'])) {
+                        update_option('lmw_api_key', $result['api_key']);
+                        echo '<p>API key has been saved automatically.</p>';
+                    }
+                    echo '</div>';
+                } else {
+                    echo '<div class="notice notice-error"><p><strong>❌ Registration failed:</strong> ' . esc_html($result['error']) . '</p></div>';
+                }
+            }
+        }
+
+        // Handle settings form submission
         if (isset($_POST['submit'])) {
             // Verify nonce for CSRF protection
             if (!isset($_POST['lmw_settings_nonce']) || !wp_verify_nonce($_POST['lmw_settings_nonce'], 'lmw_save_settings')) {
@@ -109,7 +132,32 @@ class LinkManagerWidget {
         ?>
         <div class="wrap">
             <h1>Link Manager Widget Settings</h1>
-            
+
+            <?php if (empty($api_key)): ?>
+            <!-- Quick Registration Form (shown when no API key) -->
+            <div class="notice notice-info" style="padding: 20px; border-left: 4px solid #00a0d2;">
+                <h2 style="margin-top: 0;">🚀 Quick Site Registration</h2>
+                <p>Don't have an API key yet? Use a registration token from your Link Manager dashboard to quickly register this site.</p>
+
+                <form method="post" action="" style="max-width: 600px;">
+                    <?php wp_nonce_field('lmw_register_site', 'lmw_register_nonce'); ?>
+                    <table class="form-table">
+                        <tr>
+                            <th scope="row">Registration Token</th>
+                            <td>
+                                <input type="text" name="registration_token" value="" class="regular-text" placeholder="reg_..." required />
+                                <p class="description">Paste the registration token from your Link Manager dashboard (Sites page)</p>
+                            </td>
+                        </tr>
+                    </table>
+                    <p>
+                        <button type="submit" name="register_site" class="button button-primary">Register This Site</button>
+                    </p>
+                </form>
+                <hr>
+            </div>
+            <?php endif; ?>
+
             <form method="post" action="">
                 <?php wp_nonce_field('lmw_save_settings', 'lmw_settings_nonce'); ?>
                 <table class="form-table">
@@ -228,7 +276,55 @@ class LinkManagerWidget {
     public function enqueue_styles() {
         wp_enqueue_style('lmw-styles', LMW_PLUGIN_URL . 'assets/styles.css', array(), LMW_VERSION);
     }
-    
+
+    /**
+     * Register site with token
+     */
+    private function register_site_with_token($registration_token) {
+        // Auto-generate API key for this site
+        $api_key = 'api_' . substr(md5(site_url() . time()), 0, 24);
+
+        // Call backend registration endpoint
+        $response = wp_remote_post(
+            $this->api_endpoint . '/sites/register-from-wordpress',
+            array(
+                'timeout' => 30,
+                'headers' => array(
+                    'Content-Type' => 'application/json'
+                ),
+                'body' => json_encode(array(
+                    'registration_token' => $registration_token,
+                    'site_url' => site_url(),
+                    'api_key' => $api_key
+                ))
+            )
+        );
+
+        if (is_wp_error($response)) {
+            return array(
+                'success' => false,
+                'error' => 'Connection error: ' . $response->get_error_message()
+            );
+        }
+
+        $status_code = wp_remote_retrieve_response_code($response);
+        $body = wp_remote_retrieve_body($response);
+        $data = json_decode($body, true);
+
+        if ($status_code === 200 && isset($data['success']) && $data['success']) {
+            return array(
+                'success' => true,
+                'api_key' => $api_key,
+                'site_id' => $data['site_id'] ?? null
+            );
+        } else {
+            return array(
+                'success' => false,
+                'error' => $data['error'] ?? 'Unknown error (Status: ' . $status_code . ')'
+            );
+        }
+    }
+
     /**
      * Fetch content from API
      */

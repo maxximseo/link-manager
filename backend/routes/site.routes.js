@@ -34,6 +34,10 @@ router.post('/register-from-wordpress', registerLimiter, siteController.register
 // Apply auth middleware to all OTHER routes
 router.use(authMiddleware);
 
+// Registration token routes (require auth)
+router.post('/generate-token', generalLimiter, siteController.generateToken);
+router.get('/tokens', generalLimiter, siteController.getTokens);
+
 // Site CRUD routes
 router.get('/', generalLimiter, siteController.getSites);
 router.get('/marketplace', generalLimiter, siteController.getMarketplaceSites); // Must be BEFORE /:id
