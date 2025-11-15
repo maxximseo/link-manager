@@ -111,14 +111,12 @@ function applyFilters() {
  */
 function resetFilters() {
     document.getElementById('projectFilter').value = '';
-    document.getElementById('siteFilter').value = '';
     document.getElementById('typeFilter').value = '';
     document.getElementById('dateFrom').value = '';
     document.getElementById('dateTo').value = '';
 
     activeFilters = {
         projectId: '',
-        siteId: '',
         type: '',
         dateFrom: '',
         dateTo: ''
