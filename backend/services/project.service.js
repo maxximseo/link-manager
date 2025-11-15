@@ -414,14 +414,17 @@ const addProjectLinksBulk = async (projectId, userId, links) => {
 
     const result = await query(bulkQuery, values);
 
-    // Return results with duplicate info
+    // Return results with detailed info
     return {
       imported: result.rows,
       duplicates: duplicates,
+      invalidUrls: invalidUrls,
       summary: {
         total: links.length,
         imported: result.rows.length,
-        duplicates: duplicates.length
+        duplicates: duplicates.length,
+        invalidUrls: invalidUrls.length,
+        skipped: duplicates.length + invalidUrls.length
       }
     };
   } catch (error) {
