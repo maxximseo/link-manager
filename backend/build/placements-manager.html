@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мои размещения - Link Manager</title>
+    <title>Управление размещениями - Link Manager</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="/css/styles.css">
@@ -14,7 +14,7 @@
 
     <div class="container-fluid mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>📋 Мои размещения</h1>
+            <h1>📋 Управление размещениями</h1>
             <div>
                 <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#purchasePlacementModal">
                     <i class="bi bi-plus-circle"></i> Купить размещение
@@ -22,6 +22,50 @@
                 <button class="btn btn-outline-primary" onclick="exportPlacements('csv')">
                     <i class="bi bi-download"></i> Экспорт CSV
                 </button>
+            </div>
+        </div>
+
+        <!-- Filters Bar -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Фильтр по проекту</label>
+                        <select class="form-select" id="projectFilter" onchange="applyFilters()">
+                            <option value="">Все проекты</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Фильтр по сайту</label>
+                        <select class="form-select" id="siteFilter" onchange="applyFilters()">
+                            <option value="">Все сайты</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Тип</label>
+                        <select class="form-select" id="typeFilter" onchange="applyFilters()">
+                            <option value="">Все типы</option>
+                            <option value="link">Ссылки</option>
+                            <option value="article">Статьи</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Дата от</label>
+                        <input type="date" class="form-control" id="dateFrom" onchange="applyFilters()">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Дата до</label>
+                        <input type="date" class="form-control" id="dateTo" onchange="applyFilters()">
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-12">
+                        <button class="btn btn-sm btn-secondary" onclick="resetFilters()">
+                            <i class="bi bi-x-circle"></i> Сбросить фильтры
+                        </button>
+                        <span class="text-muted ms-3" id="filterStatus"></span>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -311,10 +355,10 @@
                 <div class="modal-body">
                     <div class="d-grid gap-2">
                         <button class="btn btn-primary" onclick="confirmExport('all')">
-                            <i class="bi bi-file-earmark-spreadsheet"></i> Экспортировать все проекты
+                            <i class="bi bi-file-earmark-spreadsheet"></i> Экспортировать все размещения
                         </button>
-                        <button class="btn btn-outline-primary" onclick="confirmExport('current')" id="exportCurrentBtn" style="display: none;">
-                            <i class="bi bi-file-earmark-text"></i> Экспортировать только текущий проект
+                        <button class="btn btn-outline-primary" onclick="confirmExport('filtered')">
+                            <i class="bi bi-file-earmark-text"></i> Экспортировать только отфильтрованные
                         </button>
                     </div>
                 </div>
@@ -327,6 +371,11 @@
     <script src="/js/api.js"></script>
     <script src="/js/navbar-config.js"></script>
     <script src="/js/navbar.js"></script>
-    <script src="/js/my-placements.js"></script>
+    <script>
+        // Initialize navbar
+        initNavbar('user', 'placements-manager');
+    </script>
+    <script src="/js/placements-manager.js"></script>
+    <script src="/js/placements-manager-filters.js"></script>
 </body>
 </html>

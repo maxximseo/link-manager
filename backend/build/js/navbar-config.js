@@ -11,7 +11,8 @@ const NavbarConfig = {
         menuItems: [
             { text: 'Dashboard', href: '/dashboard.html', page: 'dashboard' },
             { text: 'Проекты', href: '/projects.html', page: 'projects' },
-            { text: 'Размещения', href: '/placements.html', page: 'placements' },
+            { text: 'Купить размещение', href: '/placements.html', page: 'placements' },
+            { text: 'Мои размещения', href: '/placements-manager.html', page: 'placements-manager' },
             { text: 'Баланс', href: '/balance.html', page: 'balance' },
             { text: 'Сайты', href: '/sites.html', page: 'sites' }
         ],
@@ -47,14 +48,6 @@ const NavbarConfig = {
         // project-detail.html uses 'projects' as active page
         'project-detail': {
             activePage: 'projects'
-        },
-        // my-placements.html uses 'placements' as active page
-        'my-placements': {
-            activePage: 'placements'
-        },
-        // project-placements.html uses 'placements' as active page
-        'project-placements': {
-            activePage: 'placements'
         }
     }
 };
