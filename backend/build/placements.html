@@ -958,16 +958,28 @@
                         failed > 0 ? 'error' : 'success');
                     console.error('Placement errors:', errorMessages);
                 } else {
-                    showNotification(`Successfully created ${successful} placements!`, 'success');
+                    showNotification(`Successfully created ${successful} placements! Sites table refreshed.`, 'success');
                 }
 
-                // Reset form
-                document.getElementById('projectSelect').value = '';
-                document.getElementById('typeLinks').checked = false;
-                document.getElementById('typeArticles').checked = false;
-                document.getElementById('sitesTableDiv').style.display = 'none';
-                selectedContentType = null;
+                // Clear site selections but keep project and content type selected
                 siteAssignments = {};
+                nextContentIndex = 0;
+
+                // Uncheck all site checkboxes
+                document.querySelectorAll('.site-checkbox:checked').forEach(cb => {
+                    cb.checked = false;
+                });
+
+                // Clear content dropdowns
+                document.querySelectorAll('.content-select').forEach(select => {
+                    select.style.display = 'none';
+                });
+
+                // Reload sites table to show updated availability (purchased sites marked as unavailable)
+                const projectId = document.getElementById('projectSelect').value;
+                if (projectId && selectedContentType) {
+                    await loadSitesForPlacement(projectId, selectedContentType);
+                }
             } catch (error) {
                 showNotification('Failed to create placements: ' + error.message, 'error');
             }
