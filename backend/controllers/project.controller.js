@@ -277,22 +277,13 @@ const addProjectLinksBulk = async (req, res) => {
     // Build detailed message
     let message = `Successfully imported ${result.summary.imported} of ${result.summary.total} links`;
 
-    const skippedParts = [];
-    if (result.summary.duplicates > 0) {
-      skippedParts.push(`${result.summary.duplicates} duplicate${result.summary.duplicates > 1 ? 's' : ''}`);
-    }
     if (result.summary.invalidUrls > 0) {
-      skippedParts.push(`${result.summary.invalidUrls} invalid URL${result.summary.invalidUrls > 1 ? 's' : ''}`);
-    }
-
-    if (skippedParts.length > 0) {
-      message += `. Skipped: ${skippedParts.join(', ')}`;
+      message += `. Skipped: ${result.summary.invalidUrls} invalid URL${result.summary.invalidUrls > 1 ? 's' : ''}`;
     }
 
     res.json({
       message,
       links: result.imported,
-      duplicates: result.duplicates,
       invalidUrls: result.invalidUrls,
       summary: result.summary
     });
