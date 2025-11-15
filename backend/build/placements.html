@@ -494,6 +494,9 @@
                 // Apply whitelist/blacklist filtering ONLY if activated
                 let sitesToShow = sites;
 
+                // FIRST: Filter out sites that are not available for purchase
+                sitesToShow = sitesToShow.filter(site => site.available_for_purchase !== false);
+
                 // If whitelist is ACTIVE and not empty, show ONLY whitelist sites
                 if (whitelistActive && whitelist.size > 0) {
                     sitesToShow = sitesToShow.filter(site => whitelist.has(site.id));

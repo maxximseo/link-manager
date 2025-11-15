@@ -230,6 +230,14 @@ const purchasePlacement = async ({
       );
     }
 
+    // 3.7. Validate available_for_purchase flag - check if site is open for new placements
+    if (site.available_for_purchase === false) {
+      throw new Error(
+        `Site "${site.site_name}" is not available for purchase. ` +
+        `The site owner has temporarily closed this site for new placements.`
+      );
+    }
+
     // 4. CRITICAL FIX (BUG #5): Check site quotas BEFORE creating placement (with lock to prevent race condition)
     if (type === 'link' && site.used_links >= site.max_links) {
       throw new Error(

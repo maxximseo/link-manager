@@ -135,6 +135,19 @@
                             </small>
                         </div>
 
+                        <!-- Available for Purchase -->
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="availableForPurchase" checked>
+                                <label class="form-check-label" for="availableForPurchase">
+                                    <i class="bi bi-cart-check"></i> Доступен для покупки
+                                </label>
+                            </div>
+                            <small class="text-muted">
+                                Снимите галочку, чтобы временно закрыть сайт для новых размещений. Старые размещения останутся активными.
+                            </small>
+                        </div>
+
                         <!-- WordPress Plugin Info -->
                         <div class="alert alert-info" id="wordpressPluginInfo">
                             <h6><i class="bi bi-wordpress"></i> WordPress Plugin Required</h6>
@@ -270,7 +283,9 @@
                                 ${s.is_public
                                     ? '<span class="badge bg-info ms-1"><i class="bi bi-globe"></i> Публичный</span>'
                                     : '<span class="badge bg-secondary ms-1"><i class="bi bi-lock-fill"></i> Приватный</span>'}
-
+                                ${s.available_for_purchase !== false
+                                    ? '<span class="badge bg-success ms-1"><i class="bi bi-cart-check"></i> Доступен</span>'
+                                    : '<span class="badge bg-secondary ms-1"><i class="bi bi-cart-x"></i> Закрыт</span>'}
                             </div>
                             <div class="d-flex gap-2">
                                 <button class="btn btn-sm btn-outline-primary" onclick="editSite(${s.id})">
@@ -334,6 +349,7 @@
             document.getElementById('maxLinks').value = '10';
             document.getElementById('maxArticles').value = '10';
             document.getElementById('allowArticles').checked = true; // Default: allow articles
+            document.getElementById('availableForPurchase').checked = true; // Default: available for purchase
 
             // Enable API key input for new sites
             document.getElementById('apiKey').removeAttribute('readonly');
@@ -359,6 +375,9 @@
 
             // Set is_public checkbox (default to false if not set)
             document.getElementById('isPublic').checked = site.is_public === true;
+
+            // Set available_for_purchase checkbox (default to true if not set)
+            document.getElementById('availableForPurchase').checked = site.available_for_purchase !== false;
 
             // Make API key readonly when editing
             document.getElementById('apiKey').setAttribute('readonly', 'readonly');
@@ -398,6 +417,9 @@
 
             // Add is_public checkbox value (applies to all site types)
             data.is_public = document.getElementById('isPublic').checked;
+
+            // Add available_for_purchase checkbox value (applies to all site types)
+            data.available_for_purchase = document.getElementById('availableForPurchase').checked;
 
             try {
                 if (id) {
