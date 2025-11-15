@@ -11,7 +11,6 @@ let sites = [];
 // Filter state
 let activeFilters = {
     projectId: '',
-    siteId: '',
     type: '',
     dateFrom: '',
     dateTo: ''
