@@ -88,7 +88,6 @@ function applyPlacementFilters(placements) {
 function applyFilters() {
     // Read filter values
     activeFilters.projectId = document.getElementById('projectFilter').value;
-    activeFilters.siteId = document.getElementById('siteFilter').value;
     activeFilters.type = document.getElementById('typeFilter').value;
     activeFilters.dateFrom = document.getElementById('dateFrom').value;
     activeFilters.dateTo = document.getElementById('dateTo').value;
