@@ -51,6 +51,12 @@ async function loadFilterDropdowns() {
 function applyPlacementFilters(placements) {
     let filtered = [...placements];
 
+    // Debug: log first placement to see field names
+    if (placements.length > 0) {
+        console.log('Sample placement for debugging:', placements[0]);
+        console.log('Active filters:', activeFilters);
+    }
+
     // Filter by project
     if (activeFilters.projectId) {
         filtered = filtered.filter(p => p.project_id == activeFilters.projectId);
