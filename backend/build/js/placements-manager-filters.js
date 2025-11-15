@@ -37,26 +37,6 @@ async function loadFilterDropdowns() {
             console.error('Failed to load projects:', projectsResponse.status, projectsResponse.statusText);
         }
 
-        // Load sites
-        const sitesResponse = await fetch('/api/sites', {
-            headers: { 'Authorization': `Bearer ${getToken()}` }
-        });
-
-        if (sitesResponse.ok) {
-            const sitesResult = await sitesResponse.json();
-            sites = sitesResult.data || [];
-
-            const siteFilter = document.getElementById('siteFilter');
-            siteFilter.innerHTML = '<option value="">Все сайты</option>';
-
-            sites.forEach(site => {
-                const option = document.createElement('option');
-                option.value = site.id;
-                option.textContent = site.name;
-                siteFilter.appendChild(option);
-            });
-        }
-
     } catch (error) {
         console.error('Failed to load filter dropdowns:', error);
     }
