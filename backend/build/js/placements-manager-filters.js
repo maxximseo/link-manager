@@ -53,11 +53,6 @@ function applyPlacementFilters(placements) {
         filtered = filtered.filter(p => p.project_id == activeFilters.projectId);
     }
 
-    // Filter by site
-    if (activeFilters.siteId) {
-        filtered = filtered.filter(p => p.site_id == activeFilters.siteId);
-    }
-
     // Filter by type
     if (activeFilters.type) {
         filtered = filtered.filter(p => p.placement_type === activeFilters.type);
