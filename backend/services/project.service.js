@@ -346,14 +346,12 @@ const addProjectLinksBulk = async (projectId, userId, links) => {
     // Return results with detailed info
     return {
       imported: result.rows,
-      duplicates: duplicates,
       invalidUrls: invalidUrls,
       summary: {
         total: links.length,
         imported: result.rows.length,
-        duplicates: duplicates.length,
         invalidUrls: invalidUrls.length,
-        skipped: duplicates.length + invalidUrls.length
+        skipped: invalidUrls.length
       }
     };
   } catch (error) {
