@@ -132,8 +132,8 @@ function updateFilterStatus(filteredCount, totalCount) {
     const statusEl = document.getElementById('filterStatus');
     const resetBtn = document.getElementById('resetFiltersBtn');
 
-    const hasFilters = activeFilters.projectId || activeFilters.siteId ||
-                       activeFilters.type || activeFilters.dateFrom || activeFilters.dateTo;
+    const hasFilters = activeFilters.projectId || activeFilters.type ||
+                       activeFilters.dateFrom || activeFilters.dateTo;
 
     // Show/hide reset button based on active filters
     if (resetBtn) {
