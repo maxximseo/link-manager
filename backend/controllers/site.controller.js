@@ -53,7 +53,7 @@ const getSite = async (req, res) => {
 // Create new site
 const createSite = async (req, res) => {
   try {
-    const { site_url, api_key, max_links, max_articles, site_type, allow_articles, is_public } = req.body;
+    const { site_url, api_key, max_links, max_articles, site_type, allow_articles, is_public, available_for_purchase } = req.body;
 
     // Validate required fields
     if (!site_url || typeof site_url !== 'string' || site_url.trim().length === 0) {
