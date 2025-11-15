@@ -34,6 +34,62 @@
         </div>
 
         <div id="sitesList" class="row"></div>
+
+        <!-- Bulk Registration Section -->
+        <div class="card mt-5 mb-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+            <div class="card-body">
+                <h5 class="card-title mb-3">
+                    <i class="bi bi-cloud-arrow-down"></i> Массовая регистрация WordPress сайтов
+                </h5>
+                <p class="small mb-3 opacity-75">
+                    Сгенерируйте токен регистрации и используйте его на множестве WordPress сайтов с плагином Link Manager для быстрого добавления в систему.
+                </p>
+
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label small">Название токена</label>
+                        <input type="text" class="form-control" id="tokenLabel" placeholder="Например: Январь 2025">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small">Макс. использований</label>
+                        <input type="number" class="form-control" id="tokenMaxUses" value="0" min="0" placeholder="0 = безлимит">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small">Срок действия (дней)</label>
+                        <input type="number" class="form-control" id="tokenExpireDays" value="30" min="1" placeholder="30">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small">&nbsp;</label>
+                        <button class="btn btn-light w-100" onclick="generateRegistrationToken()">
+                            <i class="bi bi-key"></i> Создать
+                        </button>
+                    </div>
+                </div>
+
+                <div id="tokenDisplay" style="display:none;" class="mt-3">
+                    <div class="alert alert-light mb-0">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div class="flex-grow-1">
+                                <strong class="text-dark">Токен создан!</strong>
+                                <div class="small text-muted" id="tokenInfo"></div>
+                            </div>
+                            <button class="btn btn-sm btn-outline-dark" onclick="hideToken()">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>
+                        <div class="input-group">
+                            <input type="text" class="form-control font-monospace bg-white text-dark" id="generatedToken" readonly>
+                            <button class="btn btn-dark" onclick="copyToken()">
+                                <i class="bi bi-clipboard"></i> Копировать
+                            </button>
+                        </div>
+                        <div class="mt-2 small text-dark">
+                            <i class="bi bi-info-circle"></i> Вставьте этот токен в настройках плагина Link Manager на ваших WordPress сайтах
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Create/Edit Modal -->
@@ -523,6 +579,71 @@
                 console.error('Failed to copy:', err);
                 showNotification('Failed to copy', 'error');
             });
+        }
+
+        // Bulk Registration Token Functions
+        async function generateRegistrationToken() {
+            try {
+                const label = document.getElementById('tokenLabel').value || 'Registration Token';
+                const maxUses = parseInt(document.getElementById('tokenMaxUses').value) || 0;
+                const expireDays = parseInt(document.getElementById('tokenExpireDays').value) || 30;
+
+                // Calculate expiry date
+                const expiresAt = new Date();
+                expiresAt.setDate(expiresAt.getDate() + expireDays);
+
+                const response = await fetch('/api/sites/generate-token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({
+                        label,
+                        max_uses: maxUses,
+                        expires_at: expiresAt.toISOString()
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to generate token');
+                }
+
+                const data = await response.json();
+
+                // Display token
+                document.getElementById('generatedToken').value = data.token;
+                document.getElementById('tokenDisplay').style.display = 'block';
+
+                // Show token info
+                const maxUsesText = data.max_uses === 0 ? 'безлимит' : data.max_uses;
+                const expiryDate = new Date(data.expires_at).toLocaleDateString('ru-RU');
+                document.getElementById('tokenInfo').textContent =
+                    `${data.label} | Макс: ${maxUsesText} | До: ${expiryDate}`;
+
+                showNotification('Токен регистрации создан!', 'success');
+            } catch (error) {
+                console.error('Generate token error:', error);
+                showNotification('Ошибка создания токена: ' + error.message, 'error');
+            }
+        }
+
+        function copyToken() {
+            const tokenField = document.getElementById('generatedToken');
+            navigator.clipboard.writeText(tokenField.value).then(() => {
+                showNotification('Токен скопирован в буфер обмена!', 'success');
+            }).catch(err => {
+                console.error('Failed to copy token:', err);
+                showNotification('Ошибка копирования токена', 'error');
+            });
+        }
+
+        function hideToken() {
+            document.getElementById('tokenDisplay').style.display = 'none';
+            document.getElementById('tokenLabel').value = '';
+            document.getElementById('tokenMaxUses').value = '0';
+            document.getElementById('tokenExpireDays').value = '30';
         }
 
         function escapeHtml(text) {
