@@ -1,32 +1,40 @@
 /**
- * Project Placements page logic - filtered by project ID
+ * Placements Manager - Unified placements management with filters
  */
 
 let userBalance = 0;
-let currentProjectId = null;
-let currentProject = null;
+let userDiscount = 0;
+let pricing = null;
+let projects = [];
+let sites = [];
 
-// Extract project ID from URL
-function getProjectIdFromURL() {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('id');
-}
+// Filter state
+let activeFilters = {
+    projectId: '',
+    siteId: '',
+    type: '',
+    dateFrom: '',
+    dateTo: ''
+};
+
+// Cache all placements for filtering
+let allActivePlacements = [];
+let allScheduledPlacements = [];
+let allHistoryPlacements = [];
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', async () => {
-    // Get project ID from URL
-    currentProjectId = getProjectIdFromURL();
+    await loadBalance();
+    await loadFilterDropdowns(); // Load projects and sites for filters
 
-    if (!currentProjectId) {
-        alert('Не указан ID проекта');
-        window.location.href = '/dashboard.html';
-        return;
+    // Check for projectId in URL and apply filter
+    const urlParams = new URLSearchParams(window.location.search);
+    const projectId = urlParams.get('projectId');
+    if (projectId) {
+        activeFilters.projectId = projectId;
+        document.getElementById('projectFilter').value = projectId;
     }
 
-    // Load project info and update page title
-    await loadProjectInfo();
-
-    await loadBalance();
     await loadActivePlacements();
     await updateTabCounts();
 
@@ -37,34 +45,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     // History filters
     document.getElementById('historyTypeFilter').addEventListener('change', () => loadHistoryPlacements());
     document.getElementById('historyStatusFilter').addEventListener('change', () => loadHistoryPlacements());
+
+    // Purchase modal listeners
+    document.getElementById('purchaseProjectSelect').addEventListener('change', onProjectChange);
+    document.querySelectorAll('input[name="purchaseType"]').forEach(radio => {
+        radio.addEventListener('change', onTypeChange);
+    });
+    document.getElementById('purchaseSiteSelect').addEventListener('change', onSiteChange);
+    document.getElementById('purchaseContentSelect').addEventListener('change', onContentChange);
+    document.querySelectorAll('input[name="publishTime"]').forEach(radio => {
+        radio.addEventListener('change', onPublishTimeChange);
+    });
+
+    // Load data for purchase modal
+    document.getElementById('purchasePlacementModal').addEventListener('show.bs.modal', async () => {
+        await loadPurchaseModalData();
+    });
 });
-
-/**
- * Load project information
- */
-async function loadProjectInfo() {
-    try {
-        const response = await fetch(`/api/projects/${currentProjectId}`, {
-            headers: { 'Authorization': `Bearer ${getToken()}` }
-        });
-
-        if (!response.ok) {
-            throw new Error('Project not found');
-        }
-
-        currentProject = await response.json();
-
-        // Update page title and breadcrumb
-        document.getElementById('projectName').textContent = currentProject.name;
-        document.getElementById('projectBreadcrumb').textContent = currentProject.name;
-        document.title = `${currentProject.name} - Размещения`;
-
-    } catch (error) {
-        console.error('Failed to load project:', error);
-        alert('Проект не найден');
-        window.location.href = '/dashboard.html';
-    }
-}
 
 /**
  * Load user balance
@@ -93,11 +90,11 @@ async function loadBalance() {
 }
 
 /**
- * Load active placements for current project
+ * Load active placements
  */
 async function loadActivePlacements() {
     try {
-        const response = await fetch(`/api/placements?status=placed&project_id=${currentProjectId}`, {
+        const response = await fetch('/api/placements?status=placed', {
             headers: { 'Authorization': `Bearer ${getToken()}` }
         });
 
@@ -106,7 +103,12 @@ async function loadActivePlacements() {
         const result = await response.json();
         const placements = Array.isArray(result.data) ? result.data : result;
 
-        renderActivePlacements(placements);
+        // Cache all placements
+        allActivePlacements = placements.filter(p => p.status === 'placed');
+
+        // Apply filters and render
+        const filtered = applyPlacementFilters(allActivePlacements);
+        renderActivePlacements(filtered);
 
     } catch (error) {
         console.error('Failed to load active placements:', error);
@@ -190,16 +192,10 @@ function renderActivePlacements(placements) {
             ? `${p.site_url}/?p=${p.wordpress_post_id}`
             : p.site_url;
 
-        // Display site name or URL
-        const siteDisplay = p.site_name || p.site_url;
-
-        // Debug log
-        console.log(`Placement #${p.id}: type=${p.type}, wordpress_post_id=${p.wordpress_post_id}, site_name=${p.site_name}, displayUrl=${displayUrl}`);
-
         row.innerHTML = `
             <td>#${p.id}</td>
             <td>${p.project_name || '—'}</td>
-            <td><a href="${displayUrl}" target="_blank" class="text-break">${siteDisplay}</a></td>
+            <td><a href="${displayUrl}" target="_blank">${displayUrl}</a></td>
             <td>${typeBadge}</td>
             <td>${formatDate(p.published_at || p.placed_at)}</td>
             <td class="${expiryClass}">${expiryText}</td>
@@ -221,7 +217,7 @@ function renderActivePlacements(placements) {
  */
 async function loadScheduledPlacements() {
     try {
-        const response = await fetch(`/api/placements?status=scheduled&project_id=${currentProjectId}`, {
+        const response = await fetch('/api/placements?status=scheduled', {
             headers: { 'Authorization': `Bearer ${getToken()}` }
         });
 
@@ -230,7 +226,12 @@ async function loadScheduledPlacements() {
         const result = await response.json();
         const placements = Array.isArray(result.data) ? result.data : result;
 
-        renderScheduledPlacements(placements);
+        // Cache all placements
+        allScheduledPlacements = placements.filter(p => p.status === 'scheduled');
+
+        // Apply filters and render
+        const filtered = applyPlacementFilters(allScheduledPlacements);
+        renderScheduledPlacements(filtered);
 
     } catch (error) {
         console.error('Failed to load scheduled placements:', error);
@@ -266,15 +267,10 @@ function renderScheduledPlacements(placements) {
             ? `${p.site_url}/?p=${p.wordpress_post_id}`
             : p.site_url;
 
-        // Display site name or URL
-        const siteDisplay = p.site_name || p.site_url;
-
-        console.log(`Scheduled #${p.id}: type=${p.type}, wordpress_post_id=${p.wordpress_post_id}, site_name=${p.site_name}, displayUrl=${displayUrl}`);
-
         row.innerHTML = `
             <td>#${p.id}</td>
             <td>${p.project_name || '—'}</td>
-            <td><a href="${displayUrl}" target="_blank" class="text-break">${siteDisplay}</a></td>
+            <td><a href="${displayUrl}" target="_blank">${displayUrl}</a></td>
             <td>${typeBadge}</td>
             <td class="fw-bold text-primary">${formatDate(p.scheduled_publish_date)}</td>
             <td>${formatDate(p.purchased_at)}</td>
@@ -298,7 +294,7 @@ async function loadHistoryPlacements(page = 1) {
         const type = document.getElementById('historyTypeFilter').value;
         const status = document.getElementById('historyStatusFilter').value;
 
-        let url = `/api/placements?page=${page}&limit=50&project_id=${currentProjectId}`;
+        let url = `/api/placements?page=${page}&limit=50`;
         if (type) url += `&type=${type}`;
         if (status) url += `&status=${status}`;
 
@@ -309,9 +305,7 @@ async function loadHistoryPlacements(page = 1) {
         if (!response.ok) throw new Error('Failed to load history');
 
         const result = await response.json();
-        const placements = result.data || result;
-
-        renderHistoryPlacements(Array.isArray(placements) ? placements : []);
+        renderHistoryPlacements(result.data || result);
 
     } catch (error) {
         console.error('Failed to load history:', error);
@@ -353,15 +347,10 @@ function renderHistoryPlacements(placements) {
             ? `${p.site_url}/?p=${p.wordpress_post_id}`
             : p.site_url;
 
-        // Display site name or URL
-        const siteDisplay = p.site_name || p.site_url;
-
-        console.log(`History #${p.id}: type=${p.type}, wordpress_post_id=${p.wordpress_post_id}, site_name=${p.site_name}, displayUrl=${displayUrl}`);
-
         row.innerHTML = `
             <td>#${p.id}</td>
             <td>${p.project_name || '—'}</td>
-            <td><a href="${displayUrl}" target="_blank" class="text-break">${siteDisplay}</a></td>
+            <td><a href="${displayUrl}" target="_blank">${displayUrl}</a></td>
             <td>${typeBadge}</td>
             <td>${statusBadges[p.status] || p.status}</td>
             <td>${formatDate(p.published_at || p.placed_at)}</td>
@@ -491,6 +480,7 @@ async function deletePlacement(placementId) {
         await loadBalance();
         await loadActivePlacements();
         await loadScheduledPlacements();
+        await loadHistory();
 
     } catch (error) {
         console.error('Failed to delete placement:', error);
@@ -519,14 +509,9 @@ async function confirmExport(scope) {
     modal.hide();
 
     try {
-        let url_path = `/api/billing/export/placements?format=${format}`;
-
-        // For 'current' scope, add project_id parameter
-        if (scope === 'current' && currentProjectId) {
-            url_path += `&project_id=${currentProjectId}`;
-        }
-
-        const response = await fetch(url_path, {
+        // For 'all' scope, export all placements
+        // For 'current' scope, this would need project_id (not applicable in my-placements.html)
+        const response = await fetch(`/api/billing/export/placements?format=${format}`, {
             headers: { 'Authorization': `Bearer ${getToken()}` }
         });
 
@@ -536,15 +521,14 @@ async function confirmExport(scope) {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        const scopeLabel = scope === 'current' ? `project-${currentProjectId}` : 'all-projects';
+        const scopeLabel = scope === 'all' ? 'all-projects' : 'current-project';
         a.download = `placements-${scopeLabel}-${Date.now()}.${format}`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
 
-        const scopeText = scope === 'current' ? 'текущего проекта' : 'всех проектов';
-        showAlert(`Размещения ${scopeText} экспортированы в формате ${format.toUpperCase()}`, 'success');
+        showAlert(`Размещения экспортированы в формате ${format.toUpperCase()}`, 'success');
 
     } catch (error) {
         console.error('Failed to export:', error);
