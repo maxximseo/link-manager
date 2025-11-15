@@ -1270,3 +1270,28 @@ p {
     padding: 10px 24px;
     font-weight: 500;
 }
+
+/* Bootstrap Pagination Styles with Gradient */
+.pagination .page-item.active .page-link {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border-color: #667eea !important;
+    color: white !important;
+}
+
+.pagination .page-item .page-link {
+    color: #667eea !important;
+    border-color: #dee2e6;
+    transition: all 0.3s ease;
+}
+
+.pagination .page-item .page-link:hover {
+    background: linear-gradient(135deg, #5568d3 0%, #643a8c 100%) !important;
+    border-color: #667eea !important;
+    color: white !important;
+}
+
+.pagination .page-item.disabled .page-link {
+    color: #6c757d !important;
+    background-color: #fff !important;
+    border-color: #dee2e6 !important;
+}
