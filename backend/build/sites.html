@@ -105,7 +105,9 @@
                 <thead class="table-light sticky-top">
                     <tr>
                         <th>Site Name</th>
-                        <th>URL</th>
+                        <th class="text-center" style="width: 60px;" title="Открыть сайт">
+                            <i class="bi bi-box-arrow-up-right"></i>
+                        </th>
                         <th style="width: 120px;">Links</th>
                         <th style="width: 120px;">Articles</th>
                         <th class="text-center" style="width: 60px;" title="Разрешить размещение статей">
@@ -411,8 +413,8 @@
                         </div>
                     </td>
                     <td>
-                        <a href="${escapeHtml(s.site_url)}" target="_blank" class="text-decoration-none" title="Открыть сайт">
-                            <i class="bi bi-box-arrow-up-right"></i> ${escapeHtml(s.site_url)}
+                        <a href="${escapeHtml(s.site_url)}" target="_blank" class="btn btn-sm btn-outline-secondary" title="${escapeHtml(s.site_url)}">
+                            <i class="bi bi-box-arrow-up-right"></i>
                         </a>
                     </td>
                     <td>
