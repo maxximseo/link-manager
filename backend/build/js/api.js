@@ -24,15 +24,51 @@ function showNotification(message, type = 'success') {
 async function apiCall(endpoint, options = {}) {
     try {
         const response = await authenticatedFetch(`${API_BASE}${endpoint}`, options);
-        
+
+        // Check if response is JSON before parsing
+        const contentType = response.headers.get('content-type');
+        const isJson = contentType && contentType.includes('application/json');
+
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Request failed');
+            if (isJson) {
+                try {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Request failed');
+                } catch (jsonError) {
+                    // JSON parsing failed even though content-type says JSON
+                    const text = await response.text();
+                    console.error('Failed to parse error JSON:', text);
+                    throw new Error(`Server error (${response.status}): ${response.statusText}`);
+                }
+            } else {
+                // Non-JSON error response (HTML error page, plain text, etc.)
+                const text = await response.text();
+                console.error('Non-JSON error response:', text);
+                throw new Error(`Server error (${response.status}): ${response.statusText}`);
+            }
         }
-        
-        return await response.json();
+
+        // Parse successful response
+        if (isJson) {
+            try {
+                return await response.json();
+            } catch (jsonError) {
+                const text = await response.text();
+                console.error('Failed to parse success JSON:', text);
+                throw new Error('Server returned invalid JSON');
+            }
+        } else {
+            const text = await response.text();
+            console.error('Non-JSON success response:', text);
+            throw new Error('Server returned non-JSON response');
+        }
     } catch (error) {
-        showNotification(error.message, 'error');
+        // Don't show notification twice for our custom errors
+        if (!error.message.includes('Server error') && !error.message.includes('invalid JSON')) {
+            showNotification(error.message, 'error');
+        } else {
+            showNotification(error.message, 'error');
+        }
         throw error;
     }
 }
