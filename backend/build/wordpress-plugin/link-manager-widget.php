@@ -3,7 +3,7 @@
  * Plugin Name: Link Manager Widget Pro
  * Plugin URI: https://github.com/maxximseo/link-manager
  * Description: Display placed links and articles from Link Manager system
- * Version: 2.4.1
+ * Version: 2.4.2
  * Author: Link Manager Team
  * License: GPL v2 or later
  */
@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('LMW_VERSION', '2.4.1');
+define('LMW_VERSION', '2.4.2');
 define('LMW_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('LMW_PLUGIN_PATH', plugin_dir_path(__FILE__));
 
@@ -139,7 +139,7 @@ class LinkManagerWidget {
                 <h2 style="margin-top: 0;">🚀 Quick Site Registration</h2>
                 <p>Don't have an API key yet? Use a registration token from your Link Manager dashboard to quickly register this site.</p>
 
-                <form method="post" action="" style="max-width: 600px;">
+                <form method="post" action="" style="max-width: 600px;" autocomplete="off">
                     <?php wp_nonce_field('lmw_register_site', 'lmw_register_nonce'); ?>
                     <table class="form-table">
                         <tr>
@@ -149,7 +149,7 @@ class LinkManagerWidget {
                                     <strong>Step 1:</strong> Get a registration token from your Link Manager dashboard (Sites page)<br>
                                     <strong>Step 2:</strong> Paste it below and click "Register This Site"
                                 </p>
-                                <input type="text" name="registration_token" value="" class="regular-text" placeholder="Paste your registration token here..." required />
+                                <input type="text" name="registration_token" value="" class="regular-text" placeholder="Paste your registration token here..." autocomplete="off" required />
                                 <p class="description" style="margin-top: 8px;">
                                     The token should start with <code>reg_</code> and be about 68 characters long.<br>
                                     <em>Don't have a token? Contact your Link Manager administrator.</em>
