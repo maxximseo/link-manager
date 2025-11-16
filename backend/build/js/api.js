@@ -25,50 +25,45 @@ async function apiCall(endpoint, options = {}) {
     try {
         const response = await authenticatedFetch(`${API_BASE}${endpoint}`, options);
 
-        // Check if response is JSON before parsing
+        // Read body once as text, then parse if JSON
+        const text = await response.text();
+
+        // Check if response should be JSON
         const contentType = response.headers.get('content-type');
         const isJson = contentType && contentType.includes('application/json');
 
         if (!response.ok) {
-            if (isJson) {
+            // Try to parse error as JSON if content-type indicates JSON
+            if (isJson && text) {
                 try {
-                    const error = await response.json();
+                    const error = JSON.parse(text);
                     throw new Error(error.error || 'Request failed');
-                } catch (jsonError) {
-                    // JSON parsing failed even though content-type says JSON
-                    const text = await response.text();
+                } catch (parseError) {
+                    // JSON parsing failed
                     console.error('Failed to parse error JSON:', text);
                     throw new Error(`Server error (${response.status}): ${response.statusText}`);
                 }
             } else {
-                // Non-JSON error response (HTML error page, plain text, etc.)
-                const text = await response.text();
+                // Non-JSON error response
                 console.error('Non-JSON error response:', text);
                 throw new Error(`Server error (${response.status}): ${response.statusText}`);
             }
         }
 
         // Parse successful response
-        if (isJson) {
+        if (isJson && text) {
             try {
-                return await response.json();
-            } catch (jsonError) {
-                const text = await response.text();
+                return JSON.parse(text);
+            } catch (parseError) {
                 console.error('Failed to parse success JSON:', text);
                 throw new Error('Server returned invalid JSON');
             }
         } else {
-            const text = await response.text();
             console.error('Non-JSON success response:', text);
             throw new Error('Server returned non-JSON response');
         }
     } catch (error) {
-        // Don't show notification twice for our custom errors
-        if (!error.message.includes('Server error') && !error.message.includes('invalid JSON')) {
-            showNotification(error.message, 'error');
-        } else {
-            showNotification(error.message, 'error');
-        }
+        showNotification(error.message, 'error');
         throw error;
     }
 }
