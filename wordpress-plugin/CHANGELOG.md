@@ -1,5 +1,32 @@
 # Link Manager Widget Pro - Changelog
 
+## Version 2.4.5 (2025-01-16)
+
+### Added
+- **Comprehensive status display**: Status section now shows both placed content AND available quotas
+- New method `verify_api_connection()` to fetch site quotas from `/wordpress/verify` endpoint
+- Automatic caching of verification data (5 minutes)
+
+### Improved
+- **Enhanced Status section** displays:
+  - Site name
+  - **Placed content**: Count of actually placed links and articles
+  - **Links quota**: Used/Max with available count (color-coded)
+  - **Articles quota**: Used/Max with available count (color-coded)
+- Color indicators:
+  - Blue for available quota
+  - Red for exhausted quota
+- Styled info box with gray background for better readability
+
+### UI/UX
+- Single Status section now provides complete overview:
+  - What's currently on the site (placed content)
+  - How much capacity is remaining (quotas)
+  - Visual distinction between available and exhausted quotas
+- No need to click "Test Connection" to see quotas anymore
+
+---
+
 ## Version 2.4.4 (2025-01-16)
 
 ### Improved

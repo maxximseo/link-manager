@@ -3,7 +3,7 @@
  * Plugin Name: Link Manager Widget Pro
  * Plugin URI: https://github.com/maxximseo/link-manager
  * Description: Display placed links and articles from Link Manager system
- * Version: 2.4.4
+ * Version: 2.4.5
  * Author: Link Manager Team
  * License: GPL v2 or later
  */
@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('LMW_VERSION', '2.4.4');
+define('LMW_VERSION', '2.4.5');
 define('LMW_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('LMW_PLUGIN_PATH', plugin_dir_path(__FILE__));
 
@@ -277,12 +277,54 @@ class LinkManagerWidget {
 
             <h2>Status</h2>
             <?php
+            // Get placed content
             $content = $this->fetch_content_from_api();
-            if ($content) {
-                $link_count = count($content['links'] ?? []);
-                $article_count = count($content['articles'] ?? []);
+
+            // Get site quotas from verify endpoint
+            $site_info = $this->verify_api_connection();
+
+            if ($content || $site_info) {
                 echo '<p style="color: green;">✅ Connected to Link Manager API</p>';
-                echo '<p>Available content: ' . $link_count . ' links, ' . $article_count . ' articles</p>';
+
+                if ($site_info && $site_info['success']) {
+                    echo '<div style="margin: 15px 0; padding: 15px; background: #f0f0f1; border-left: 4px solid #2271b1;">';
+
+                    // Site name
+                    if (isset($site_info['site_name'])) {
+                        echo '<p style="margin: 5px 0;"><strong>Site:</strong> ' . esc_html($site_info['site_name']) . '</p>';
+                    }
+
+                    // Placed content
+                    if ($content) {
+                        $link_count = count($content['links'] ?? []);
+                        $article_count = count($content['articles'] ?? []);
+                        echo '<p style="margin: 5px 0;"><strong>Placed content:</strong> ' . $link_count . ' links, ' . $article_count . ' articles</p>';
+                    }
+
+                    // Available quotas
+                    echo '<p style="margin: 5px 0;"><strong>Links quota:</strong> ' . esc_html($site_info['used_links']) . ' / ' . esc_html($site_info['max_links']) . ' used';
+                    if ($site_info['available_links'] > 0) {
+                        echo ' <span style="color: #2271b1;">(' . esc_html($site_info['available_links']) . ' available)</span>';
+                    } else {
+                        echo ' <span style="color: #d63638;">(quota exhausted)</span>';
+                    }
+                    echo '</p>';
+
+                    echo '<p style="margin: 5px 0;"><strong>Articles quota:</strong> ' . esc_html($site_info['used_articles']) . ' / ' . esc_html($site_info['max_articles']) . ' used';
+                    if ($site_info['available_articles'] > 0) {
+                        echo ' <span style="color: #2271b1;">(' . esc_html($site_info['available_articles']) . ' available)</span>';
+                    } else {
+                        echo ' <span style="color: #d63638;">(quota exhausted)</span>';
+                    }
+                    echo '</p>';
+
+                    echo '</div>';
+                } else if ($content) {
+                    // Fallback if verify endpoint fails but get-content works
+                    $link_count = count($content['links'] ?? []);
+                    $article_count = count($content['articles'] ?? []);
+                    echo '<p><strong>Placed content on this site:</strong> ' . $link_count . ' links, ' . $article_count . ' articles</p>';
+                }
             } else {
                 echo '<p style="color: red;">❌ Not connected to Link Manager API</p>';
                 echo '<p>Please check your API key and endpoint settings.</p>';
@@ -348,17 +390,63 @@ class LinkManagerWidget {
     }
 
     /**
+     * Verify API connection and get site info
+     */
+    private function verify_api_connection() {
+        if (empty($this->api_key)) {
+            return false;
+        }
+
+        // Check cache first
+        $cache_key = 'lmw_verify_' . md5($this->api_key);
+        $cached = get_transient($cache_key);
+
+        if ($cached !== false) {
+            return $cached;
+        }
+
+        // Call verify endpoint
+        $response = wp_remote_post(
+            $this->api_endpoint . '/wordpress/verify',
+            array(
+                'timeout' => 30,
+                'headers' => array(
+                    'Content-Type' => 'application/json'
+                ),
+                'body' => json_encode(array(
+                    'api_key' => $this->api_key
+                ))
+            )
+        );
+
+        if (is_wp_error($response)) {
+            return false;
+        }
+
+        $body = wp_remote_retrieve_body($response);
+        $data = json_decode($body, true);
+
+        if ($data && isset($data['success'])) {
+            // Cache for 5 minutes
+            set_transient($cache_key, $data, 300);
+            return $data;
+        }
+
+        return false;
+    }
+
+    /**
      * Fetch content from API
      */
     private function fetch_content_from_api() {
         // Check cache first
         $cache_key = 'lmw_content_' . md5($this->api_key);
         $cached = get_transient($cache_key);
-        
+
         if ($cached !== false) {
             return $cached;
         }
-        
+
         // Fetch from API
         // SECURITY: Send API key in header instead of URL to prevent logging
         $response = wp_remote_get(
@@ -371,20 +459,20 @@ class LinkManagerWidget {
                 )
             )
         );
-        
+
         if (is_wp_error($response)) {
             return false;
         }
-        
+
         $body = wp_remote_retrieve_body($response);
         $data = json_decode($body, true);
-        
+
         if ($data && isset($data['links'])) {
             // Cache the result
             set_transient($cache_key, $data, $this->cache_duration);
             return $data;
         }
-        
+
         return false;
     }
     
