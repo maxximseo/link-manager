@@ -283,7 +283,8 @@ const purchasePlacement = async ({
     for (const contentId of contentIds) {
       // Check if content exists AND belongs to user AND is not exhausted (lock to prevent race condition)
       const contentResult = await client.query(`
-        SELECT id, project_id, usage_count, usage_limit, status
+        SELECT id, project_id, usage_count, usage_limit, status,
+               ${type === 'link' ? 'anchor_text, url' : 'title'}
         FROM ${tableName}
         WHERE id = $1
         FOR UPDATE
