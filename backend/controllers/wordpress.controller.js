@@ -87,12 +87,20 @@ const verifyConnection = async (req, res) => {
       });
     }
 
-    // SECURITY: Don't expose site details to prevent information disclosure
-    // Only confirm that the API key is valid
+    // Calculate available content
+    const availableLinks = result.max_links - result.used_links;
+    const availableArticles = result.max_articles - result.used_articles;
+
     res.json({
       success: true,
       message: 'API key is valid',
-      site_name: result.site_name // Only return site name for user confirmation
+      site_name: result.site_name,
+      available_links: availableLinks,
+      available_articles: availableArticles,
+      max_links: result.max_links,
+      used_links: result.used_links,
+      max_articles: result.max_articles,
+      used_articles: result.used_articles
     });
   } catch (error) {
     return handleError(res, error, 'Failed to verify connection', 500);
