@@ -304,7 +304,8 @@ const purchasePlacement = async ({
 
       // TEST 4: Exhausted content
       if (content.status === 'exhausted' || content.usage_count >= content.usage_limit) {
-        throw new Error(`${type === 'link' ? 'Link' : 'Article'} with ID ${contentId} is exhausted (${content.usage_count}/${content.usage_limit} uses)`);
+        const displayName = type === 'link' ? content.anchor_text : content.title;
+        throw new Error(`${type === 'link' ? 'Link' : 'Article'} "${displayName}" is exhausted (${content.usage_count}/${content.usage_limit} uses)`);
       }
     }
 
