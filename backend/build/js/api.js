@@ -59,9 +59,10 @@ const ProjectsAPI = {
 
 // Sites API
 const SitesAPI = {
-    getAll: async () => {
-        const response = await apiCall('/sites');
-        return response.data || response; // Extract data array if paginated
+    getAll: async (page = 1, limit = 100) => {
+        const params = new URLSearchParams({ page, limit });
+        const response = await apiCall(`/sites?${params}`);
+        return response; // Returns { data: [...], pagination: {...} }
     },
     getMarketplace: async () => {
         const response = await apiCall('/sites/marketplace');
