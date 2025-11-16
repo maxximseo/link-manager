@@ -3,7 +3,7 @@
  * Plugin Name: Link Manager Widget Pro
  * Plugin URI: https://github.com/maxximseo/link-manager
  * Description: Display placed links and articles from Link Manager system
- * Version: 2.4.3
+ * Version: 2.4.4
  * Author: Link Manager Team
  * License: GPL v2 or later
  */
@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('LMW_VERSION', '2.4.3');
+define('LMW_VERSION', '2.4.4');
 define('LMW_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('LMW_PLUGIN_PATH', plugin_dir_path(__FILE__));
 
@@ -224,11 +224,26 @@ class LinkManagerWidget {
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        var resultHtml = '<div class="notice notice-success"><p>✅ <strong>Connection successful!</strong></p>';
+                        var resultHtml = '<div class="notice notice-success">';
+                        resultHtml += '<p><strong>✅ Connected to Link Manager API</strong></p>';
                         if (data.site_name) {
-                            resultHtml += '<p>Site: ' + data.site_name + '</p>';
+                            resultHtml += '<p><strong>Site:</strong> ' + data.site_name + '</p>';
                         }
-                        resultHtml += '<p>' + (data.message || 'API key is valid') + '</p></div>';
+
+                        // Display available content
+                        var availableLinks = data.available_links || 0;
+                        var availableArticles = data.available_articles || 0;
+                        resultHtml += '<p><strong>Available content:</strong> ' + availableLinks + ' links, ' + availableArticles + ' articles</p>';
+
+                        // Display usage statistics
+                        if (typeof data.used_links !== 'undefined' && typeof data.max_links !== 'undefined') {
+                            resultHtml += '<p><strong>Links:</strong> ' + data.used_links + ' / ' + data.max_links + ' used</p>';
+                        }
+                        if (typeof data.used_articles !== 'undefined' && typeof data.max_articles !== 'undefined') {
+                            resultHtml += '<p><strong>Articles:</strong> ' + data.used_articles + ' / ' + data.max_articles + ' used</p>';
+                        }
+
+                        resultHtml += '</div>';
                         document.getElementById('test-connection-result').innerHTML = resultHtml;
                     } else {
                         document.getElementById('test-connection-result').innerHTML =

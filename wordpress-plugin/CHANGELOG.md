@@ -1,5 +1,19 @@
 # Link Manager Widget Pro - Changelog
 
+## Version 2.4.4 (2025-01-16)
+
+### Improved
+- **Enhanced connection status display**: Test Connection now shows available content statistics
+- Displays "Available content: X links, Y articles"
+- Shows quota usage: "Links: X / Y used" and "Articles: X / Y used"
+- Better visibility of remaining content capacity
+
+### Backend
+- Updated `/api/wordpress/verify` endpoint to return content availability data
+- Returns `available_links`, `available_articles`, `used_links`, `used_articles`, `max_links`, `max_articles`
+
+---
+
 ## Version 2.4.3 (2025-01-16)
 
 ### Changed
