@@ -3,7 +3,7 @@
  * Plugin Name: Link Manager Widget Pro
  * Plugin URI: https://github.com/maxximseo/link-manager
  * Description: Display placed links and articles from Link Manager system
- * Version: 2.4.0
+ * Version: 2.4.1
  * Author: Link Manager Team
  * License: GPL v2 or later
  */
@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('LMW_VERSION', '2.4.0');
+define('LMW_VERSION', '2.4.1');
 define('LMW_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('LMW_PLUGIN_PATH', plugin_dir_path(__FILE__));
 
@@ -145,8 +145,15 @@ class LinkManagerWidget {
                         <tr>
                             <th scope="row">Registration Token</th>
                             <td>
-                                <input type="text" name="registration_token" value="" class="regular-text" placeholder="reg_..." required />
-                                <p class="description">Paste the registration token from your Link Manager dashboard (Sites page)</p>
+                                <p class="description" style="margin-bottom: 8px;">
+                                    <strong>Step 1:</strong> Get a registration token from your Link Manager dashboard (Sites page)<br>
+                                    <strong>Step 2:</strong> Paste it below and click "Register This Site"
+                                </p>
+                                <input type="text" name="registration_token" value="" class="regular-text" placeholder="Paste your registration token here..." required />
+                                <p class="description" style="margin-top: 8px;">
+                                    The token should start with <code>reg_</code> and be about 68 characters long.<br>
+                                    <em>Don't have a token? Contact your Link Manager administrator.</em>
+                                </p>
                             </td>
                         </tr>
                     </table>

@@ -1,5 +1,14 @@
 # Link Manager Widget Pro - Changelog
 
+## Version 2.4.1 (2025-01-16)
+
+### Improved
+- **Better UX for registration form**: Improved placeholder text and added step-by-step instructions
+- Added visual hints about token format (starts with `reg_`, ~68 characters)
+- Clearer guidance for users without a token
+
+---
+
 ## Version 2.4.0 (2025-01-15)
 
 ### Added
