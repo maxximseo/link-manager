@@ -1,5 +1,13 @@
 # Link Manager Widget Pro - Changelog
 
+## Version 2.4.2 (2025-01-16)
+
+### Fixed
+- **Browser autofill issue**: Added `autocomplete="off"` to registration token field to prevent browser from auto-filling old API keys
+- Ensures token field is always empty on page load
+
+---
+
 ## Version 2.4.1 (2025-01-16)
 
 ### Improved
