@@ -3,7 +3,7 @@
  * Plugin Name: Link Manager Widget Pro
  * Plugin URI: https://github.com/maxximseo/link-manager
  * Description: Display placed links and articles from Link Manager system
- * Version: 2.4.2
+ * Version: 2.4.3
  * Author: Link Manager Team
  * License: GPL v2 or later
  */
@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('LMW_VERSION', '2.4.2');
+define('LMW_VERSION', '2.4.3');
 define('LMW_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('LMW_PLUGIN_PATH', plugin_dir_path(__FILE__));
 
@@ -609,31 +609,24 @@ class LMW_Links_Widget extends WP_Widget {
             echo $args['before_title'] . apply_filters('widget_title', $instance['title']) . $args['after_title'];
         }
         
-        echo do_shortcode('[lm_links limit="' . intval($instance['limit']) . '" style="' . esc_attr($instance['style']) . '"]');
+        echo do_shortcode('[lm_links style="' . esc_attr($instance['style']) . '"]');
         
         echo $args['after_widget'];
     }
     
     public function form($instance) {
         $title = !empty($instance['title']) ? $instance['title'] : 'Links';
-        $limit = !empty($instance['limit']) ? $instance['limit'] : 10;
         $style = !empty($instance['style']) ? $instance['style'] : 'list';
         ?>
         <p>
             <label for="<?php echo $this->get_field_id('title'); ?>">Title:</label>
-            <input class="widefat" id="<?php echo $this->get_field_id('title'); ?>" 
-                   name="<?php echo $this->get_field_name('title'); ?>" type="text" 
+            <input class="widefat" id="<?php echo $this->get_field_id('title'); ?>"
+                   name="<?php echo $this->get_field_name('title'); ?>" type="text"
                    value="<?php echo esc_attr($title); ?>">
         </p>
         <p>
-            <label for="<?php echo $this->get_field_id('limit'); ?>">Number of links:</label>
-            <input class="tiny-text" id="<?php echo $this->get_field_id('limit'); ?>" 
-                   name="<?php echo $this->get_field_name('limit'); ?>" type="number" 
-                   value="<?php echo esc_attr($limit); ?>">
-        </p>
-        <p>
             <label for="<?php echo $this->get_field_id('style'); ?>">Style:</label>
-            <select id="<?php echo $this->get_field_id('style'); ?>" 
+            <select id="<?php echo $this->get_field_id('style'); ?>"
                     name="<?php echo $this->get_field_name('style'); ?>">
                 <option value="list" <?php selected($style, 'list'); ?>>List</option>
                 <option value="inline" <?php selected($style, 'inline'); ?>>Inline</option>
@@ -645,7 +638,6 @@ class LMW_Links_Widget extends WP_Widget {
     public function update($new_instance, $old_instance) {
         $instance = array();
         $instance['title'] = (!empty($new_instance['title'])) ? strip_tags($new_instance['title']) : '';
-        $instance['limit'] = (!empty($new_instance['limit'])) ? intval($new_instance['limit']) : 10;
         $instance['style'] = (!empty($new_instance['style'])) ? strip_tags($new_instance['style']) : 'list';
         return $instance;
     }
