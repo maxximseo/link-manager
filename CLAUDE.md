@@ -984,3 +984,186 @@ psql -d linkmanager -f database/seed.sql
 ```
 
 **DO NOT SKIP** migrations #2, #3, or #4 - system will not work without them.
+
+## Bulk WordPress Site Registration (NEW - November 2025)
+
+System for mass-registering WordPress sites using registration tokens instead of manual one-by-one entry.
+
+### Architecture
+
+**Flow**:
+1. Admin generates registration token in dashboard (Sites page)
+2. Token distributed to multiple WordPress installations via plugin
+3. WordPress sites self-register using token
+4. Sites automatically added to system with unique API keys
+
+### Database Schema
+
+**Table**: `registration_tokens` (created via `database/migrate_add_registration_tokens.sql`)
+```sql
+CREATE TABLE registration_tokens (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token VARCHAR(128) UNIQUE NOT NULL,  -- Format: 'reg_' + 64 hex chars
+    label VARCHAR(255),                   -- Human-readable label
+    max_uses INTEGER DEFAULT 0,           -- 0 = unlimited
+    current_uses INTEGER DEFAULT 0,       -- Increments on each use
+    expires_at TIMESTAMP,                 -- Optional expiry date
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**CRITICAL**: Token column must be VARCHAR(128) or larger to accommodate `'reg_' + crypto.randomBytes(32).toString('hex')` (68 characters total).
+
+### Backend Implementation
+
+**Service Methods** (`backend/services/site.service.js`):
+- `generateRegistrationToken(userId, options)` - Creates secure token
+- `validateRegistrationToken(token)` - Validates token (expiry, usage limits)
+- `incrementTokenUsage(token)` - Increments usage counter
+- `getSiteByUrlForUser(siteUrl, userId)` - Checks for duplicates
+- `getUserTokens(userId)` - Retrieves all user tokens
+
+**Controller Endpoints** (`backend/controllers/site.controller.js`):
+- `POST /api/sites/generate-token` - Generate new token (requires auth)
+- `POST /api/sites/register-from-wordpress` - Self-registration (NO auth, token IS the auth)
+- `GET /api/sites/tokens` - List all user tokens (requires auth)
+
+**Routes** (`backend/routes/site.routes.js`):
+```javascript
+// NO auth - token-based registration (BEFORE auth middleware)
+router.post('/register-from-wordpress', registerLimiter, siteController.registerFromWordPress);
+
+// Apply auth middleware
+router.use(authMiddleware);
+
+// Auth required routes
+router.post('/generate-token', generalLimiter, siteController.generateToken);
+router.get('/tokens', generalLimiter, siteController.getTokens);
+```
+
+**Rate Limiting**:
+- Token generation: 100 requests/minute
+- WordPress registration: 5 requests/minute (prevent abuse)
+
+### Frontend Implementation
+
+**UI Location**: `backend/build/sites.html` (bottom of page, after sites list)
+
+**Token Generation Form**:
+- Label input (e.g., "January 2025")
+- Max uses (0 = unlimited)
+- Expiry days (default 30)
+- Generate button → displays token with copy button
+
+**JavaScript Functions**:
+```javascript
+generateRegistrationToken()  // Calls POST /api/sites/generate-token
+copyToken()                   // Copies token to clipboard
+hideToken()                   // Hides token display, resets form
+```
+
+### WordPress Plugin Integration
+
+**Plugin Version**: 2.4.0 (updated in `wordpress-plugin/link-manager-widget.php`)
+
+**Registration Form** (auto-shows when no API key exists):
+```php
+// In admin settings page
+if (empty($api_key)):
+  // Show registration form with token input
+  <input name="registration_token" placeholder="reg_..." required />
+  <button name="register_site">Register This Site</button>
+endif;
+```
+
+**Registration Method** (`register_site_with_token()`):
+```php
+private function register_site_with_token($registration_token) {
+  // Auto-generate API key
+  $api_key = 'api_' . substr(md5(site_url() . time()), 0, 24);
+
+  // Call backend endpoint
+  wp_remote_post($this->api_endpoint . '/sites/register-from-wordpress', [
+    'body' => json_encode([
+      'registration_token' => $registration_token,
+      'site_url' => site_url(),
+      'api_key' => $api_key
+    ])
+  ]);
+
+  // Save API key on success
+  update_option('lmw_api_key', $api_key);
+}
+```
+
+### Security Features
+
+1. **Token Format**: `reg_` prefix + 64 random hex characters (128 total length)
+2. **Token Validation**: Checks expiry date and usage limits before registration
+3. **Rate Limiting**: Maximum 5 WordPress registrations per minute
+4. **CSRF Protection**: WordPress nonce verification on registration form
+5. **Duplicate Prevention**: Checks for existing site_url before registration
+6. **API Key Generation**: Secure random generation using MD5 hash
+
+### Migration Required
+
+**Run migration** before using this feature:
+```bash
+node database/run_registration_tokens_migration.js
+```
+
+**Migration creates**:
+- `registration_tokens` table
+- Indexes on `token` and `user_id` columns
+- Proper foreign key constraints
+
+**CRITICAL FIX**: If you get "value too long for type character varying(64)" error:
+```sql
+ALTER TABLE registration_tokens ALTER COLUMN token TYPE VARCHAR(128);
+```
+
+### Common Issues
+
+**Error: "Failed to generate registration token"**
+- Check server logs for actual database error
+- Most common: token column too small (must be VARCHAR(128))
+- Solution: Run `ALTER TABLE registration_tokens ALTER COLUMN token TYPE VARCHAR(128);`
+
+**Error: "Invalid, expired, or exhausted registration token"**
+- Token has expired (check `expires_at`)
+- Token has reached max usage limit (check `current_uses` vs `max_uses`)
+- Token doesn't exist in database
+
+**Error: "Site already registered"**
+- Duplicate `site_url` for the same user
+- Returns 409 Conflict with existing site_id
+
+### Usage Example
+
+**Admin Workflow**:
+1. Go to Sites page → scroll to bottom
+2. Enter label: "Batch January 2025"
+3. Set max uses: 10 (or 0 for unlimited)
+4. Set expiry: 30 days
+5. Click "Создать" (Create)
+6. Copy generated token (starts with `reg_`)
+
+**WordPress Site Owner Workflow**:
+1. Install Link Manager Widget Pro plugin
+2. Go to Settings → Link Manager Widget
+3. See registration form (if no API key)
+4. Paste token from admin
+5. Click "Register This Site"
+6. API key auto-saved, site registered
+
+### Plugin Update Process
+
+When adding features to bulk registration:
+1. Edit `wordpress-plugin/link-manager-widget.php`
+2. Update version in header comment AND `LMW_VERSION` constant
+3. Update `wordpress-plugin/CHANGELOG.md`
+4. Copy to build: `cp -r wordpress-plugin/* backend/build/wordpress-plugin/`
+5. Create ZIP: `zip -r backend/build/link-manager-widget.zip wordpress-plugin/ -x "*.DS_Store"`
+6. Test on WordPress site before deployment
