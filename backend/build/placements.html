@@ -949,24 +949,35 @@
             }
 
             try {
-                // Process each purchase through billing API
+                // Process purchases IN PARALLEL using Promise.allSettled (much faster than sequential)
+                console.log(`⚡ Starting ${purchases.length} parallel purchase requests...`);
+                const startTime = performance.now();
+
+                const results = await Promise.allSettled(
+                    purchases.map(data => BillingAPI.purchase(data))
+                );
+
+                const endTime = performance.now();
+                console.log(`✅ Completed in ${((endTime - startTime) / 1000).toFixed(2)} seconds`);
+
+                // Count successes and failures
                 let successful = 0;
                 let failed = 0;
                 const errors = [];
 
-                for (const data of purchases) {
-                    try {
-                        console.log('Sending purchase request:', data);
-                        const result = await BillingAPI.purchase(data);
-                        console.log('Purchase successful:', result);
+                results.forEach((result, index) => {
+                    const purchaseData = purchases[index];
+
+                    if (result.status === 'fulfilled') {
                         successful++;
-                    } catch (error) {
+                        console.log('Purchase successful:', purchaseData.siteId, result.value);
+                    } else {
                         failed++;
-                        errors.push({ siteId: data.siteId, error: error.message });
-                        console.error('Failed placement purchase for site', data.siteId, ':', error);
-                        console.error('Full error object:', error);
+                        const errorMessage = result.reason?.message || String(result.reason);
+                        errors.push({ siteId: purchaseData.siteId, error: errorMessage });
+                        console.error('Failed placement purchase for site', purchaseData.siteId, ':', errorMessage);
                     }
-                }
+                });
 
                 // Show results
                 if (errors.length > 0) {
