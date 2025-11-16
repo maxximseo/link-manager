@@ -600,23 +600,30 @@
                 `Showing ${startIndex + 1}-${endIndex} of ${totalSites} sites`;
 
             // Build dropdown options for available content with usage counters
-            const contentOptions = availableContent.map(item => {
-                const displayName = contentType === 'links'
-                    ? escapeHtml(item.anchor_text)
-                    : escapeHtml(item.title);
-                const usageCount = item.usage_count || 0;
-                const usageLimit = item.usage_limit || (contentType === 'articles' ? 1 : 999);
-                const counter = `${usageCount}/${usageLimit}`;
+            // FILTER OUT EXHAUSTED CONTENT - only show items with usage_count < usage_limit
+            const contentOptions = availableContent
+                .filter(item => {
+                    const usageCount = item.usage_count || 0;
+                    const usageLimit = item.usage_limit || (contentType === 'articles' ? 1 : 999);
+                    return usageCount < usageLimit; // Only show available items
+                })
+                .map(item => {
+                    const displayName = contentType === 'links'
+                        ? escapeHtml(item.anchor_text)
+                        : escapeHtml(item.title);
+                    const usageCount = item.usage_count || 0;
+                    const usageLimit = item.usage_limit || (contentType === 'articles' ? 1 : 999);
+                    const counter = `${usageCount}/${usageLimit}`;
 
-                // Validate ID is integer to prevent XSS
-                const safeId = parseInt(item.id);
-                if (isNaN(safeId)) {
-                    console.error('Invalid item ID:', item.id);
-                    return '';
-                }
+                    // Validate ID is integer to prevent XSS
+                    const safeId = parseInt(item.id);
+                    if (isNaN(safeId)) {
+                        console.error('Invalid item ID:', item.id);
+                        return '';
+                    }
 
-                return `<option value="${safeId}">${displayName} (${escapeHtml(counter)})</option>`;
-            }).join('');
+                    return `<option value="${safeId}">${displayName} (${escapeHtml(counter)})</option>`;
+                }).join('');
 
             // Render table rows for current page
             const tbody = document.getElementById('sitesTableBody');
@@ -753,7 +760,14 @@
                 dropdown.style.display = 'block';
 
                 // Auto-select next available content using round-robin
-                const availableContent = selectedContentType === 'links' ? projectLinks : projectArticles;
+                const allContent = selectedContentType === 'links' ? projectLinks : projectArticles;
+
+                // FILTER OUT EXHAUSTED CONTENT before round-robin selection
+                const availableContent = allContent.filter(item => {
+                    const usageCount = item.usage_count || 0;
+                    const usageLimit = item.usage_limit || (selectedContentType === 'articles' ? 1 : 999);
+                    return usageCount < usageLimit;
+                });
 
                 if (availableContent.length > 0) {
                     // Get next content using round-robin (cycle through available content)
@@ -956,10 +970,28 @@
 
                 // Show results
                 if (errors.length > 0) {
-                    const errorMessages = errors.map(e => `Site ID ${e.siteId}: ${e.error}`).join('\n');
-                    showNotification(`Placements: ${successful} successful, ${failed} failed. Check console for details.`,
-                        failed > 0 ? 'error' : 'success');
-                    console.error('Placement errors:', errorMessages);
+                    // Build detailed error message with site names
+                    const errorDetails = errors.map(e => {
+                        const site = filteredSites.find(s => s.id === e.siteId);
+                        const siteName = site ? site.site_name : `ID ${e.siteId}`;
+                        return `• ${siteName}: ${e.error}`;
+                    }).join('\n');
+
+                    // Show summary notification
+                    const summaryMsg = successful > 0
+                        ? `Размещений: ${successful} успешно, ${failed} провалено`
+                        : `Все ${failed} размещений провалены`;
+                    showNotification(summaryMsg, failed > 0 ? 'error' : 'warning');
+
+                    // Log detailed errors to console
+                    console.error('=== ОШИБКИ РАЗМЕЩЕНИЙ ===');
+                    console.error(errorDetails);
+                    console.error('========================');
+
+                    // Also show detailed alert if all failed
+                    if (successful === 0) {
+                        alert(`Все размещения провалены:\n\n${errorDetails}\n\nПроверьте, что ссылки не исчерпаны (не использованы ранее).`);
+                    }
                 } else {
                     showNotification(`Successfully created ${successful} placements! Sites table refreshed.`, 'success');
                 }
