@@ -1,5 +1,14 @@
 # Link Manager Widget Pro - Changelog
 
+## Version 2.4.3 (2025-01-16)
+
+### Changed
+- **Simplified widget settings**: Removed "Number of links" field from widget configuration
+- Widget now displays all available links (no limit)
+- Cleaner UI with only Title and Style options
+
+---
+
 ## Version 2.4.2 (2025-01-16)
 
 ### Fixed
