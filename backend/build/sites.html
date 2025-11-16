@@ -7,6 +7,73 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        /* Custom styles for sites table */
+        .table-responsive {
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            overflow-x: auto;
+        }
+
+        .table thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .table tbody tr:hover {
+            transform: scale(1.01);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        /* Row background colors with transparency for better visibility */
+        .table-danger {
+            background-color: rgba(220, 38, 38, 0.08) !important;
+        }
+
+        .table-success {
+            background-color: rgba(34, 197, 94, 0.08) !important;
+        }
+
+        /* Progress bar custom styling */
+        .progress {
+            background-color: #e9ecef;
+            border-radius: 4px;
+        }
+
+        /* Icon buttons styling */
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        /* Tooltip-enabled icons */
+        [title] {
+            cursor: help;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .table thead th:nth-child(4),
+            .table thead th:nth-child(5),
+            .table thead th:nth-child(6),
+            .table thead th:nth-child(7) {
+                display: none;
+            }
+
+            .table tbody td:nth-child(4),
+            .table tbody td:nth-child(5),
+            .table tbody td:nth-child(6),
+            .table tbody td:nth-child(7) {
+                display: none;
+            }
+        }
+    </style>
 </head>
 <body>
     <!-- Navbar Container (injected by navbar.js) -->
@@ -33,7 +100,31 @@
             </div>
         </div>
 
-        <div id="sitesList" class="row"></div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light sticky-top">
+                    <tr>
+                        <th>Site Name</th>
+                        <th>URL</th>
+                        <th style="width: 120px;">Links</th>
+                        <th style="width: 120px;">Articles</th>
+                        <th class="text-center" style="width: 60px;" title="Разрешить размещение статей">
+                            <i class="bi bi-file-text"></i>
+                        </th>
+                        <th class="text-center" style="width: 60px;" title="Публичные покупки">
+                            <i class="bi bi-globe"></i>
+                        </th>
+                        <th class="text-center" style="width: 60px;" title="Доступен для покупки">
+                            <i class="bi bi-cart-check"></i>
+                        </th>
+                        <th style="width: 80px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="sitesTableBody">
+                    <!-- Sites will be rendered here -->
+                </tbody>
+            </table>
+        </div>
 
         <!-- Bulk Registration Section -->
         <div class="card mt-5 mb-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
@@ -270,85 +361,103 @@
                 return matchesSearch && matchesStatus;
             });
 
-            const list = document.getElementById('sitesList');
-            list.innerHTML = filtered.map(s => {
+            const tbody = document.getElementById('sitesTableBody');
+            tbody.innerHTML = filtered.map(s => {
                 const siteType = s.site_type || 'wordpress';
-                const typeIcon = siteType === 'wordpress' ? 'bi-wordpress' : 'bi-filetype-php';
                 const typeBadge = siteType === 'wordpress'
-                    ? '<span class="badge bg-primary"><i class="bi bi-wordpress"></i> WordPress</span>'
-                    : '<span class="badge bg-success"><i class="bi bi-filetype-php"></i> Static PHP</span>';
+                    ? '<span class="badge bg-primary" style="font-size: 0.7rem;"><i class="bi bi-wordpress"></i> WP</span>'
+                    : '<span class="badge bg-success" style="font-size: 0.7rem;"><i class="bi bi-filetype-php"></i> PHP</span>';
 
-                // Highlight sites based on status:
-                // - Red background: unavailable for purchase
-                // - Green background: public (available to all users)
-                // - White background: private (default)
-                let cardStyle = '';
+                // Row background color based on status
+                let rowClass = '';
                 if (s.available_for_purchase === false) {
-                    cardStyle = 'style="background-color: rgba(220, 38, 38, 0.08); border-color: rgba(220, 38, 38, 0.3);"';
+                    rowClass = 'table-danger';
                 } else if (s.is_public === true) {
-                    cardStyle = 'style="background-color: rgba(34, 197, 94, 0.08); border-color: rgba(34, 197, 94, 0.3);"';
+                    rowClass = 'table-success';
                 }
 
+                // Calculate usage percentages for progress bars
+                const linksUsed = s.used_links || 0;
+                const linksMax = s.max_links || 0;
+                const linksPercent = linksMax > 0 ? (linksUsed / linksMax * 100) : 0;
+                const linksColor = linksPercent >= 90 ? 'danger' : linksPercent >= 70 ? 'warning' : 'success';
+
+                const articlesUsed = s.used_articles || 0;
+                const articlesMax = s.max_articles || 0;
+                const articlesPercent = articlesMax > 0 ? (articlesUsed / articlesMax * 100) : 0;
+                const articlesColor = articlesPercent >= 90 ? 'danger' : articlesPercent >= 70 ? 'warning' : 'success';
+
+                // Status icons with tooltips
+                const allowArticlesIcon = (siteType === 'wordpress' && s.allow_articles !== false)
+                    ? '<i class="bi bi-check-circle-fill text-success" style="font-size: 1.2rem;" title="Статьи разрешены"></i>'
+                    : '<i class="bi bi-x-circle-fill text-secondary" style="font-size: 1.2rem;" title="Статьи запрещены"></i>';
+
+                const isPublicIcon = s.is_public === true
+                    ? '<i class="bi bi-globe text-primary" style="font-size: 1.2rem;" title="Публичный сайт - другие пользователи могут размещать контент"></i>'
+                    : '<i class="bi bi-lock-fill text-secondary" style="font-size: 1.2rem;" title="Приватный - только вы можете использовать"></i>';
+
+                const availableIcon = s.available_for_purchase !== false
+                    ? '<i class="bi bi-cart-check-fill text-success" style="font-size: 1.2rem;" title="Доступен для новых размещений"></i>'
+                    : '<i class="bi bi-cart-x-fill text-danger" style="font-size: 1.2rem;" title="Закрыт для новых размещений"></i>';
+
                 return `
-                <div class="col-md-6 col-lg-4 mb-3">
-                    <div class="card h-100" ${cardStyle}>
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <h5 class="card-title mb-0">${escapeHtml(s.site_name)}</h5>
-                                ${typeBadge}
-                            </div>
-                            <p class="card-text">
-                                <a href="${escapeHtml(s.site_url)}" target="_blank" class="text-decoration-none">
-                                    <i class="bi bi-globe"></i> ${escapeHtml(s.site_url)}
-                                </a>
-                            </p>
-                            <div class="mb-2">
-                                <small class="text-muted">
-                                    <i class="bi bi-link-45deg"></i> Links: ${s.used_links || 0}/${s.max_links || 0}
-                                </small>
-                            </div>
-                            ${siteType === 'wordpress' ? `
-                            <div class="mb-2">
-                                <small class="text-muted">
-                                    <i class="bi bi-file-text"></i> Articles: ${s.used_articles || 0}/${s.max_articles || 0}
-                                </small>
-                            </div>
-                            ` : ''}
-                            ${s.api_key ? `
-                            <div class="mb-2">
-                                <small class="text-muted d-flex align-items-center gap-1">
-                                    <i class="bi bi-key"></i>
-                                    <span class="font-monospace" style="font-size: 0.75rem;">${s.api_key.substring(0, 20)}...</span>
-                                    <button class="btn btn-sm btn-outline-secondary py-0 px-1" style="font-size: 0.7rem; line-height: 1;"
-                                            onclick="copyApiKey('${s.api_key}', event)" title="Copy API Key">
-                                        <i class="bi bi-clipboard"></i>
-                                    </button>
-                                </small>
-                            </div>
-                            ` : ''}
-                            <div class="mb-3">
-                                <span class="badge bg-${s.status === 'active' ? 'success' : 'secondary'}">
-                                    ${escapeHtml(s.status || 'active')}
-                                </span>
-                                ${s.is_public
-                                    ? '<span class="badge bg-info ms-1"><i class="bi bi-globe"></i> Публичный</span>'
-                                    : '<span class="badge bg-secondary ms-1"><i class="bi bi-lock-fill"></i> Приватный</span>'}
-                                ${s.available_for_purchase !== false
-                                    ? '<span class="badge bg-success ms-1"><i class="bi bi-cart-check"></i> Доступен</span>'
-                                    : '<span class="badge bg-secondary ms-1"><i class="bi bi-cart-x"></i> Закрыт</span>'}
-                            </div>
-                            <div class="d-flex gap-2">
-                                <button class="btn btn-sm btn-primary" onclick="editSite(${s.id})">
-                                    <i class="bi bi-pencil"></i> Edit
-                                </button>
-                                <button class="btn btn-sm btn-primary" onclick="deleteSite(${s.id})">
-                                    <i class="bi bi-trash"></i> Delete
-                                </button>
+                <tr class="${rowClass}">
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div>
+                                <div class="fw-semibold">${escapeHtml(s.site_name)}</div>
+                                <div class="mt-1">${typeBadge}</div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            `;
+                    </td>
+                    <td>
+                        <a href="${escapeHtml(s.site_url)}" target="_blank" class="text-decoration-none" title="Открыть сайт">
+                            <i class="bi bi-box-arrow-up-right"></i> ${escapeHtml(s.site_url)}
+                        </a>
+                    </td>
+                    <td>
+                        <div class="text-center fw-semibold mb-1">${linksUsed} / ${linksMax}</div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-${linksColor}" role="progressbar"
+                                 style="width: ${linksPercent}%"
+                                 aria-valuenow="${linksUsed}"
+                                 aria-valuemin="0"
+                                 aria-valuemax="${linksMax}"></div>
+                        </div>
+                    </td>
+                    <td>
+                        ${siteType === 'wordpress' ? `
+                            <div class="text-center fw-semibold mb-1">${articlesUsed} / ${articlesMax}</div>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar bg-${articlesColor}" role="progressbar"
+                                     style="width: ${articlesPercent}%"
+                                     aria-valuenow="${articlesUsed}"
+                                     aria-valuemin="0"
+                                     aria-valuemax="${articlesMax}"></div>
+                            </div>
+                        ` : '<span class="text-muted">N/A</span>'}
+                    </td>
+                    <td class="text-center">
+                        ${allowArticlesIcon}
+                    </td>
+                    <td class="text-center">
+                        ${isPublicIcon}
+                    </td>
+                    <td class="text-center">
+                        ${availableIcon}
+                    </td>
+                    <td>
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-sm btn-outline-primary" onclick="editSite(${s.id})" title="Edit">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteSite(${s.id})" title="Delete">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                `;
             }).join('');
         }
 
