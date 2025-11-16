@@ -11,7 +11,7 @@ const { validatePagination } = require('../utils/validators');
 const getSites = async (req, res) => {
   try {
     const { page, limit } = validatePagination(req.query, {
-      maxLimit: 100,
+      maxLimit: 500,
       defaultLimit: 20,
       defaultPage: 1
     });
