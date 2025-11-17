@@ -933,12 +933,10 @@ async function confirmPurchase() {
 function formatDate(dateString) {
     if (!dateString) return '—';
     const date = new Date(dateString);
-    return date.toLocaleString('ru-RU', {
+    return date.toLocaleDateString('ru-RU', {
         year: 'numeric',
         month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
+        day: '2-digit'
     });
 }
 
