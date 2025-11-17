@@ -86,7 +86,11 @@ const getContentByApiKey = async (apiKey) => {
         pl.id,
         pl.url,
         pl.anchor_text,
-        pl.html_context
+        pl.html_context,
+        pl.image_url,
+        pl.link_attributes,
+        pl.wrapper_config,
+        pl.custom_data
       FROM project_links pl
       JOIN placement_content pc ON pl.id = pc.link_id
       JOIN placements plc ON pc.placement_id = plc.id
