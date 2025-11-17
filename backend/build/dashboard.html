@@ -151,7 +151,7 @@
 
             try {
                 // Fetch all placements (with high limit to get all)
-                const response = await PlacementsAPI.getAll({ limit: 1000 });
+                const response = await PlacementsAPI.getAll({ limit: 5000 });
                 console.log('PlacementsAPI.getAll() response:', response);
 
                 // Extract array from response (handles both paginated and non-paginated responses)
