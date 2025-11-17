@@ -238,7 +238,7 @@ const adjustUserBalance = async (userId, amount, reason, adminId) => {
 
     // Update balance
     await client.query(
-      'UPDATE users SET balance = $1, updated_at = NOW() WHERE id = $2',
+      'UPDATE users SET balance = $1 WHERE id = $2',
       [newBalance, userId]
     );
 
