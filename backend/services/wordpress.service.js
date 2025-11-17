@@ -117,7 +117,7 @@ const getContentByApiKey = async (apiKey) => {
     const links = linksResult.rows.map(row => ({
       url: row.url,
       anchor_text: row.anchor_text,
-      html_context: row.html_context || null,
+      html_context: row.html_context || '',
       position: '' // Position can be added later if needed
     }));
 

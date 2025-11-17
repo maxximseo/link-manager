@@ -42,6 +42,67 @@
             opacity: 0.7;
             background: #f8f9fa;
         }
+
+        /* Tabs styling - seamless integration with card */
+        .tabs-card > .nav-tabs {
+            margin-bottom: 0;
+            border-bottom: 1px solid #dee2e6;
+            background: transparent;
+            padding-left: 1rem;
+            padding-right: 1rem;
+            padding-top: 0.5rem;
+        }
+
+        .tab-content > .tab-pane {
+            padding: 1.5rem;
+        }
+
+        /* Remove any extra styling from inner content */
+        .tab-pane .content-card {
+            box-shadow: none;
+        }
+
+        /* Sticky delete button */
+        .delete-selected-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1000;
+            padding: 12px 24px;
+            font-size: 16px;
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+            border-radius: 50px;
+            animation: slideInUp 0.3s ease-out;
+        }
+
+        .delete-selected-btn:hover {
+            box-shadow: 0 6px 16px rgba(220, 53, 69, 0.6);
+            transform: translateY(-2px);
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Highlight selected rows */
+        .table-active {
+            background-color: rgba(13, 110, 253, 0.1) !important;
+        }
+
+        /* Improve table readability */
+        .table th {
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
     </style>
 </head>
 <body>
@@ -61,56 +122,71 @@
             </button>
         </div>
 
-        <!-- Tabs -->
-        <ul class="nav nav-tabs mb-4" role="tablist">
-            <li class="nav-item">
-                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#linksTab">
-                    <i class="bi bi-link-45deg"></i> Ссылки <span class="badge bg-primary" id="linksCount">0</span>
-                </button>
-            </li>
-            <li class="nav-item">
-                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#articlesTab">
-                    <i class="bi bi-file-text"></i> Статьи <span class="badge bg-primary" id="articlesCount">0</span>
-                </button>
-            </li>
-        </ul>
+        <!-- Tabs and Content in Single Card -->
+        <div class="card tabs-card">
+            <!-- Tabs -->
+            <ul class="nav nav-tabs" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#linksTab">
+                        <i class="bi bi-link-45deg"></i> Ссылки <span class="badge bg-primary" id="linksCount">0</span>
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#articlesTab">
+                        <i class="bi bi-file-text"></i> Статьи <span class="badge bg-primary" id="articlesCount">0</span>
+                    </button>
+                </li>
+            </ul>
 
-        <!-- Tab Content -->
-        <div class="tab-content">
-            <!-- Links Tab -->
-            <div class="tab-pane fade show active" id="linksTab">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h4>Ссылки проекта</h4>
-                    <div class="btn-group">
-                        <button class="btn btn-primary" onclick="showAddLinkModal()">
-                            <i class="bi bi-plus-circle"></i> Добавить ссылку
-                        </button>
-                        <button class="btn btn-outline-primary" onclick="showBulkImportModal()">
-                            <i class="bi bi-file-earmark-text"></i> Массовое добавление
-                        </button>
+            <!-- Tab Content -->
+            <div class="tab-content">
+                <!-- Links Tab -->
+                <div class="tab-pane fade show active" id="linksTab">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4>Ссылки проекта</h4>
+                        <div class="btn-group">
+                            <button class="btn btn-primary" onclick="showAddLinkModal()">
+                                <i class="bi bi-plus-circle"></i> Добавить ссылку
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="showBulkImportModal()">
+                                <i class="bi bi-file-earmark-text"></i> Массовое добавление
+                            </button>
+                        </div>
                     </div>
-                </div>
-                <div id="linksList">
-                    <div class="text-center">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Загрузка...</span>
+
+                    <!-- Sticky Delete Button -->
+                    <button id="deleteSelectedBtn" class="btn btn-danger delete-selected-btn" style="display: none;" onclick="deleteSelectedLinks()">
+                        <i class="bi bi-trash"></i> Удалить выбранные (<span class="count">0</span>)
+                    </button>
+
+                    <div id="linksList">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Загрузка...</span>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Articles Tab -->
-            <div class="tab-pane fade" id="articlesTab">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h4>Статьи проекта</h4>
-                    <button class="btn btn-primary" onclick="showAddArticleModal()">
-                        <i class="bi bi-plus-circle"></i> Добавить статью
+                <!-- Articles Tab -->
+                <div class="tab-pane fade" id="articlesTab">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4>Статьи проекта</h4>
+                        <button class="btn btn-primary" onclick="showAddArticleModal()">
+                            <i class="bi bi-plus-circle"></i> Добавить статью
+                        </button>
+                    </div>
+
+                    <!-- Sticky Delete Button for Articles -->
+                    <button id="deleteSelectedArticlesBtn" class="btn btn-danger delete-selected-btn" style="display: none;" onclick="deleteSelectedArticles()">
+                        <i class="bi bi-trash"></i> Удалить выбранные (<span class="count">0</span>)
                     </button>
-                </div>
-                <div id="articlesList">
-                    <div class="text-center">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Загрузка...</span>
+
+                    <div id="articlesList">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Загрузка...</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -136,6 +212,16 @@
                         <div class="mb-3">
                             <label for="linkAnchor" class="form-label">Анкор (текст ссылки) *</label>
                             <input type="text" class="form-control" id="linkAnchor" required placeholder="Купить продукт">
+                        </div>
+                        <div class="mb-3">
+                            <label for="linkHtmlContext" class="form-label">
+                                HTML с окружающим текстом (опционально)
+                                <small class="text-muted d-block mt-1">Например: Вы можете &lt;a href="..."&gt;купить ссылки&lt;/a&gt; на нашем сайте</small>
+                            </label>
+                            <textarea class="form-control" id="linkHtmlContext" rows="3" placeholder='Введите полный HTML или оставьте пустым для простого анкора'></textarea>
+                            <small class="text-muted">
+                                Если заполнено, будет использоваться этот HTML вместо простого анкора. URL и анкор из полей выше будут игнорироваться.
+                            </small>
                         </div>
                         <div class="mb-3">
                             <label for="linkLimit" class="form-label">Лимит использования *</label>
@@ -301,13 +387,15 @@ If you want to explore reliable platforms, check out <a href="https://example.co
             }
         }
 
+        // Track selected links for deletion
+        let selectedLinks = new Set();
+
         // Display links
         function displayLinks() {
             const list = document.getElementById('linksList');
 
             // Check admin status BEFORE map (so it's available in template string scope)
             const userIsAdmin = typeof isAdmin === 'function' ? isAdmin() : false;
-            console.log('displayLinks: userIsAdmin =', userIsAdmin, 'user:', getCurrentUser());
 
             if (links.length === 0) {
                 list.innerHTML = `
@@ -318,41 +406,127 @@ If you want to explore reliable platforms, check out <a href="https://example.co
                 return;
             }
 
-            list.innerHTML = links.map(link => {
-                const percent = (link.usage_count / link.usage_limit) * 100;
-                const isExhausted = link.usage_count >= link.usage_limit;
-                let barClass = 'success';
-                if (percent >= 90 || isExhausted) barClass = 'exhausted';
-                else if (percent >= 70) barClass = 'danger';
-                else if (percent >= 50) barClass = 'warning';
+            list.innerHTML = `
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 40px;">
+                                    <input type="checkbox" class="form-check-input" id="selectAllLinks" onchange="toggleAllLinks(this.checked)">
+                                </th>
+                                <th style="width: 60px;">ID</th>
+                                <th style="width: 250px;">Анкор</th>
+                                <th>HTML контекст</th>
+                                <th style="width: 150px;">Использований</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${links.map(link => {
+                                const percent = (link.usage_count / link.usage_limit) * 100;
+                                const isExhausted = link.usage_count >= link.usage_limit;
+                                let barClass = 'success';
+                                if (percent >= 90 || isExhausted) barClass = 'exhausted';
+                                else if (percent >= 70) barClass = 'danger';
+                                else if (percent >= 50) barClass = 'warning';
 
-                return `
-                    <div class="content-card ${isExhausted ? 'exhausted' : ''}">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div class="flex-grow-1">
-                                <h5 class="mb-1">
-                                    <i class="bi bi-link-45deg text-primary"></i> ${escapeHtml(link.anchor_text)}
-                                    ${isExhausted ? '<span class="badge bg-secondary ms-2">Исчерпано</span>' : '<span class="badge bg-success ms-2">Активно</span>'}
-                                </h5>
-                                <div class="text-muted small mb-2">${escapeHtml(link.url)}</div>
-                            </div>
-                            <div class="btn-group btn-group-sm">
-                                ${!isExhausted ? `<button class="btn btn-outline-primary" onclick="editLink(${link.id})" title="Редактировать"><i class="bi bi-pencil"></i></button>` : ''}
-                                ${(userIsAdmin || link.usage_count === 0) ? `<button class="btn btn-outline-danger" onclick="deleteLink(${link.id})" title="Удалить"><i class="bi bi-trash"></i></button>` : ''}
-                            </div>
-                        </div>
-                        <div>
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <small class="text-muted">Использовано:</small>
-                                <strong>${link.usage_count} / ${link.usage_limit}</strong>
-                            </div>
-                            <div class="usage-bar">
-                                <div class="usage-fill ${barClass}" style="width: ${Math.min(percent, 100)}%"></div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
+                                return `
+                                    <tr class="${isExhausted ? 'table-secondary' : ''} ${selectedLinks.has(link.id) ? 'table-active' : ''}" style="cursor: pointer;">
+                                        <td>
+                                            <input type="checkbox" class="form-check-input link-checkbox"
+                                                   data-link-id="${link.id}"
+                                                   ${selectedLinks.has(link.id) ? 'checked' : ''}
+                                                   onchange="toggleLinkSelection(${link.id}, this.checked)">
+                                        </td>
+                                        <td><code class="small">${link.id}</code></td>
+                                        <td>
+                                            <strong class="small">${escapeHtml(link.anchor_text)}</strong>
+                                            ${isExhausted ? '<span class="badge bg-secondary ms-1" style="font-size: 0.7rem;">Исчерпано</span>' : ''}
+                                        </td>
+                                        <td>
+                                            ${link.html_context ? `
+                                                <span class="badge bg-info me-1" style="font-size: 0.7rem;">HTML</span>
+                                                <span class="text-muted small" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 500px; display: inline-block;">
+                                                    ${escapeHtml(link.html_context.substring(0, 120))}${link.html_context.length > 120 ? '...' : ''}
+                                                </span>
+                                            ` : '<span class="text-muted small">—</span>'}
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <small><strong>${link.usage_count}</strong> / ${link.usage_limit}</small>
+                                                <div class="progress flex-grow-1" style="height: 4px;">
+                                                    <div class="progress-bar bg-${barClass === 'success' ? 'success' : barClass === 'warning' ? 'warning' : barClass === 'danger' ? 'danger' : 'secondary'}"
+                                                         style="width: ${Math.min(percent, 100)}%"></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            updateDeleteButton();
+        }
+
+        // Toggle individual link selection
+        function toggleLinkSelection(linkId, isChecked) {
+            if (isChecked) {
+                selectedLinks.add(linkId);
+            } else {
+                selectedLinks.delete(linkId);
+                // Uncheck "select all" if any item is unchecked
+                const selectAllCheckbox = document.getElementById('selectAllLinks');
+                if (selectAllCheckbox) selectAllCheckbox.checked = false;
+            }
+            updateDeleteButton();
+            displayLinks(); // Re-render to update row highlighting
+        }
+
+        // Toggle all links selection
+        function toggleAllLinks(isChecked) {
+            if (isChecked) {
+                links.forEach(link => selectedLinks.add(link.id));
+            } else {
+                selectedLinks.clear();
+            }
+            updateDeleteButton();
+            displayLinks();
+        }
+
+        // Update delete button visibility and count
+        function updateDeleteButton() {
+            const deleteBtn = document.getElementById('deleteSelectedBtn');
+            if (!deleteBtn) return;
+
+            if (selectedLinks.size > 0) {
+                deleteBtn.style.display = 'block';
+                deleteBtn.querySelector('.count').textContent = selectedLinks.size;
+            } else {
+                deleteBtn.style.display = 'none';
+            }
+        }
+
+        // Delete selected links
+        async function deleteSelectedLinks() {
+            if (selectedLinks.size === 0) return;
+
+            if (!confirm(`Удалить ${selectedLinks.size} выбранных ссылок?`)) return;
+
+            try {
+                const deletePromises = Array.from(selectedLinks).map(linkId =>
+                    ProjectsAPI.deleteLink(projectId, linkId)
+                );
+
+                await Promise.all(deletePromises);
+                showNotification(`Успешно удалено ${selectedLinks.size} ссылок`, 'success');
+                selectedLinks.clear();
+                await loadLinks();
+            } catch (error) {
+                console.error('Error deleting links:', error);
+                showNotification('Ошибка при удалении ссылок', 'error');
+            }
         }
 
         // Load articles
@@ -369,12 +543,14 @@ If you want to explore reliable platforms, check out <a href="https://example.co
         }
 
         // Display articles
+        // Track selected articles for deletion
+        let selectedArticles = new Set();
+
         function displayArticles() {
             const list = document.getElementById('articlesList');
 
             // Check admin status BEFORE map (so it's available in template string scope)
             const userIsAdmin = typeof isAdmin === 'function' ? isAdmin() : false;
-            console.log('displayArticles: userIsAdmin =', userIsAdmin, 'user:', getCurrentUser());
 
             if (articles.length === 0) {
                 list.innerHTML = `
@@ -385,33 +561,117 @@ If you want to explore reliable platforms, check out <a href="https://example.co
                 return;
             }
 
-            list.innerHTML = articles.map(article => {
-                const isExhausted = article.usage_count >= 1;
-                const wordCount = article.content.split(/\s+/).length;
+            list.innerHTML = `
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 40px;">
+                                    <input type="checkbox" class="form-check-input" id="selectAllArticles" onchange="toggleAllArticles(this.checked)">
+                                </th>
+                                <th style="width: 60px;">ID</th>
+                                <th>Заголовок</th>
+                                <th style="width: 100px;">Слов</th>
+                                <th style="width: 150px;">Использований</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${articles.map(article => {
+                                const isExhausted = article.usage_count >= 1;
+                                const wordCount = article.content.split(/\s+/).length;
 
-                return `
-                    <div class="content-card ${isExhausted ? 'exhausted' : ''}">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div class="flex-grow-1">
-                                <h5 class="mb-2">
-                                    <i class="bi bi-file-text text-success"></i> ${escapeHtml(article.title)}
-                                    ${isExhausted ? '<span class="badge bg-secondary ms-2">Использована</span>' : '<span class="badge bg-success ms-2">Доступна</span>'}
-                                </h5>
-                                <div class="text-muted small">
-                                    <i class="bi bi-fonts"></i> ${wordCount} слов
-                                    ${isExhausted ? ' • <i class="bi bi-lock-fill"></i> Нельзя использовать повторно' : ' • <i class="bi bi-unlock-fill"></i> Можно использовать'}
-                                </div>
-                            </div>
-                            <div class="btn-group btn-group-sm">
-                                <button class="btn btn-outline-info" onclick="viewArticle(${article.id})" title="Просмотр"><i class="bi bi-eye"></i></button>
-                                ${!isExhausted ? `<button class="btn btn-outline-primary" onclick="editArticle(${article.id})" title="Редактировать"><i class="bi bi-pencil"></i></button>` : ''}
-                                <button class="btn btn-outline-secondary" onclick="duplicateArticle(${article.id})" title="Создать копию"><i class="bi bi-files"></i></button>
-                                ${(userIsAdmin || article.usage_count === 0) ? `<button class="btn ${isExhausted ? 'btn-outline-secondary disabled' : 'btn-outline-danger'}" onclick="deleteArticle(${article.id})" title="${isExhausted ? 'Нельзя удалить использованную статью' : 'Удалить статью'}"><i class="bi bi-trash"></i></button>` : ''}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
+                                return `
+                                    <tr class="${isExhausted ? 'table-secondary' : ''} ${selectedArticles.has(article.id) ? 'table-active' : ''}" style="cursor: pointer;">
+                                        <td>
+                                            <input type="checkbox" class="form-check-input article-checkbox"
+                                                   data-article-id="${article.id}"
+                                                   ${selectedArticles.has(article.id) ? 'checked' : ''}
+                                                   onchange="toggleArticleSelection(${article.id}, this.checked)">
+                                        </td>
+                                        <td><code class="small">${article.id}</code></td>
+                                        <td>
+                                            <strong class="small">${escapeHtml(article.title)}</strong>
+                                            ${isExhausted ? '<span class="badge bg-secondary ms-2" style="font-size: 0.7rem;">Использована</span>' : '<span class="badge bg-success ms-2" style="font-size: 0.7rem;">Доступна</span>'}
+                                        </td>
+                                        <td>
+                                            <small><i class="bi bi-fonts"></i> ${wordCount}</small>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <small><strong>${article.usage_count}</strong> / 1</small>
+                                                <div class="progress flex-grow-1" style="height: 4px;">
+                                                    <div class="progress-bar bg-${isExhausted ? 'secondary' : 'success'}"
+                                                         style="width: ${isExhausted ? '100' : '0'}%"></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            updateDeleteArticlesButton();
+        }
+
+        // Toggle individual article selection
+        function toggleArticleSelection(articleId, isChecked) {
+            if (isChecked) {
+                selectedArticles.add(articleId);
+            } else {
+                selectedArticles.delete(articleId);
+                const selectAllCheckbox = document.getElementById('selectAllArticles');
+                if (selectAllCheckbox) selectAllCheckbox.checked = false;
+            }
+            updateDeleteArticlesButton();
+            displayArticles();
+        }
+
+        // Toggle all articles selection
+        function toggleAllArticles(isChecked) {
+            if (isChecked) {
+                articles.forEach(article => selectedArticles.add(article.id));
+            } else {
+                selectedArticles.clear();
+            }
+            updateDeleteArticlesButton();
+            displayArticles();
+        }
+
+        // Update delete articles button
+        function updateDeleteArticlesButton() {
+            const deleteBtn = document.getElementById('deleteSelectedArticlesBtn');
+            if (!deleteBtn) return;
+
+            if (selectedArticles.size > 0) {
+                deleteBtn.style.display = 'block';
+                deleteBtn.querySelector('.count').textContent = selectedArticles.size;
+            } else {
+                deleteBtn.style.display = 'none';
+            }
+        }
+
+        // Delete selected articles
+        async function deleteSelectedArticles() {
+            if (selectedArticles.size === 0) return;
+
+            if (!confirm(`Удалить ${selectedArticles.size} выбранных статей?`)) return;
+
+            try {
+                const deletePromises = Array.from(selectedArticles).map(articleId =>
+                    ProjectsAPI.deleteArticle(projectId, articleId)
+                );
+
+                await Promise.all(deletePromises);
+                showNotification(`Успешно удалено ${selectedArticles.size} статей`, 'success');
+                selectedArticles.clear();
+                await loadArticles();
+            } catch (error) {
+                console.error('Error deleting articles:', error);
+                showNotification('Ошибка при удалении статей', 'error');
+            }
         }
 
         // Modal functions
@@ -420,6 +680,7 @@ If you want to explore reliable platforms, check out <a href="https://example.co
             document.getElementById('linkForm').reset();
             document.getElementById('linkId').value = '';
             document.getElementById('linkLimit').value = '999';
+            document.getElementById('linkHtmlContext').value = '';
             new bootstrap.Modal(document.getElementById('linkModal')).show();
         }
 
@@ -431,6 +692,7 @@ If you want to explore reliable platforms, check out <a href="https://example.co
             document.getElementById('linkId').value = link.id;
             document.getElementById('linkUrl').value = link.url;
             document.getElementById('linkAnchor').value = link.anchor_text;
+            document.getElementById('linkHtmlContext').value = link.html_context || '';
             document.getElementById('linkLimit').value = link.usage_limit;
             new bootstrap.Modal(document.getElementById('linkModal')).show();
         }
@@ -439,6 +701,7 @@ If you want to explore reliable platforms, check out <a href="https://example.co
             const id = document.getElementById('linkId').value;
             const url = document.getElementById('linkUrl').value.trim();
             const anchor = document.getElementById('linkAnchor').value.trim();
+            const htmlContext = document.getElementById('linkHtmlContext').value.trim();
             const limit = parseInt(document.getElementById('linkLimit').value);
 
             if (!url || !anchor || !limit) {
@@ -447,7 +710,12 @@ If you want to explore reliable platforms, check out <a href="https://example.co
             }
 
             try {
-                const data = { url, anchor_text: anchor, usage_limit: limit };
+                const data = {
+                    url,
+                    anchor_text: anchor,
+                    html_context: htmlContext || null,
+                    usage_limit: limit
+                };
 
                 if (id) {
                     await ProjectsAPI.updateLink(projectId, id, data);

@@ -3,7 +3,7 @@
  * Plugin Name: Link Manager Widget Pro
  * Plugin URI: https://github.com/maxximseo/link-manager
  * Description: Display placed links and articles from Link Manager system
- * Version: 2.4.5
+ * Version: 2.4.6
  * Author: Link Manager Team
  * License: GPL v2 or later
  */
@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('LMW_VERSION', '2.4.5');
+define('LMW_VERSION', '2.4.6');
 define('LMW_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('LMW_PLUGIN_PATH', plugin_dir_path(__FILE__));
 
@@ -555,9 +555,23 @@ class LinkManagerWidget {
         // Clean output without wrappers (like static widget)
         $output = '';
         foreach ($links as $link) {
-            $output .= '<a href="' . esc_url($link['url']) . '" target="_blank">';
-            $output .= esc_html($link['anchor_text']);
-            $output .= '</a><br>' . "\n";
+            // If html_context exists, use it with safe HTML tags
+            if (!empty($link['html_context'])) {
+                // Allow basic HTML tags for safety
+                $allowed_tags = array(
+                    'a' => array('href' => array(), 'target' => array(), 'rel' => array()),
+                    'strong' => array(),
+                    'em' => array(),
+                    'b' => array(),
+                    'i' => array()
+                );
+                $output .= wp_kses($link['html_context'], $allowed_tags) . '<br>' . "\n";
+            } else {
+                // Fallback: simple anchor if no html_context
+                $output .= '<a href="' . esc_url($link['url']) . '" target="_blank">';
+                $output .= esc_html($link['anchor_text']);
+                $output .= '</a><br>' . "\n";
+            }
         }
 
         return $output;
