@@ -102,8 +102,14 @@ async function loadActivePlacements() {
         const result = await response.json();
         const placements = Array.isArray(result.data) ? result.data : result;
 
+        console.log('=== PLACEMENTS MANAGER DEBUG ===');
+        console.log('API response:', result);
+        console.log('Placements array length:', placements.length);
+        console.log('First 5 placements:', placements.slice(0, 5));
+
         // Cache all placements
         allActivePlacements = placements.filter(p => p.status === 'placed');
+        console.log('Filtered active placements:', allActivePlacements.length);
 
         // Apply filters and render
         const filtered = applyPlacementFilters(allActivePlacements);
