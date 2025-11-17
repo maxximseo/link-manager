@@ -3,7 +3,7 @@
  * Plugin Name: Link Manager Widget Pro
  * Plugin URI: https://github.com/maxximseo/link-manager
  * Description: Display placed links and articles from Link Manager system
- * Version: 2.4.6
+ * Version: 2.5.0
  * Author: Link Manager Team
  * License: GPL v2 or later
  */
@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('LMW_VERSION', '2.4.6');
+define('LMW_VERSION', '2.5.0');
 define('LMW_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('LMW_PLUGIN_PATH', plugin_dir_path(__FILE__));
 
@@ -260,11 +260,29 @@ class LinkManagerWidget {
             
             <h2>Usage</h2>
             <p>Use these shortcodes to display content:</p>
+
+            <h3>Basic Usage</h3>
             <ul>
-                <li><code>[lm_links]</code> - <strong>Display links on homepage only (default)</strong></li>
+                <li><code>[lm_links]</code> - <strong>Display links on homepage only (default template)</strong></li>
                 <li><code>[lm_links home_only="false"]</code> - Display links on all pages</li>
-                <li><code>[lm_links style="inline"]</code> - Display as inline links (list|inline)</li>
                 <li><code>[lm_links limit="5"]</code> - Limit number of links</li>
+            </ul>
+
+            <h3>Templates (NEW in v2.5.0)</h3>
+            <ul>
+                <li><code>[lm_links template="default"]</code> - Default rendering (html_context or simple anchor)</li>
+                <li><code>[lm_links template="with_image"]</code> - Display with image (if image_url provided)</li>
+                <li><code>[lm_links template="card"]</code> - Card layout with image and description</li>
+                <li><code>[lm_links template="custom"]</code> - Fully custom HTML (via custom_data)</li>
+            </ul>
+
+            <h3>Extended Fields Support</h3>
+            <p>Version 2.5.0+ supports flexible content through API:</p>
+            <ul>
+                <li><strong>image_url</strong> - Add images to links</li>
+                <li><strong>link_attributes</strong> - Custom class, style, rel, target, data-* attributes</li>
+                <li><strong>wrapper_config</strong> - Wrap links in custom HTML tags with classes/styles</li>
+                <li><strong>custom_data</strong> - Any additional data (description, category, etc.)</li>
             </ul>
             <p><strong>Default behavior:</strong> Links show only on homepage with 5 minutes cache.</p>
             
@@ -533,7 +551,8 @@ class LinkManagerWidget {
     // Articles are now only published as WordPress posts, not as shortcodes
     
     /**
-     * Render links (clean output without wrappers - matches static widget)
+     * Render links with flexible template support (v2.5.0+)
+     * Supports extended fields: image_url, link_attributes, wrapper_config, custom_data
      */
     private function render_links($links, $atts) {
         if (empty($links)) {
@@ -552,29 +571,154 @@ class LinkManagerWidget {
             $links = array_slice($links, 0, $atts['limit']);
         }
 
-        // Clean output without wrappers (like static widget)
+        // Get template from attributes (default, with_image, card, custom)
+        $template = isset($atts['template']) ? $atts['template'] : 'default';
+
+        // Render each link with template
         $output = '';
         foreach ($links as $link) {
-            // If html_context exists, use it with safe HTML tags
-            if (!empty($link['html_context'])) {
-                // Allow basic HTML tags for safety
-                $allowed_tags = array(
-                    'a' => array('href' => array(), 'target' => array(), 'rel' => array()),
-                    'strong' => array(),
-                    'em' => array(),
-                    'b' => array(),
-                    'i' => array()
-                );
-                $output .= wp_kses($link['html_context'], $allowed_tags) . '<br>' . "\n";
-            } else {
-                // Fallback: simple anchor if no html_context
-                $output .= '<a href="' . esc_url($link['url']) . '" target="_blank">';
-                $output .= esc_html($link['anchor_text']);
-                $output .= '</a><br>' . "\n";
-            }
+            $output .= $this->render_single_link($link, $template);
         }
 
         return $output;
+    }
+
+    /**
+     * Render a single link with template support
+     */
+    private function render_single_link($link, $template = 'default') {
+        switch ($template) {
+            case 'with_image':
+                return $this->render_link_with_image($link);
+            case 'card':
+                return $this->render_link_card($link);
+            case 'custom':
+                return $this->render_custom_link($link);
+            default:
+                return $this->render_default_link($link);
+        }
+    }
+
+    /**
+     * Render default link (html_context or simple anchor)
+     */
+    private function render_default_link($link) {
+        $output = '';
+
+        // Wrapper start (if configured)
+        if (!empty($link['wrapper_config']) && !empty($link['wrapper_config']['wrapper_tag'])) {
+            $wrapper_tag = esc_attr($link['wrapper_config']['wrapper_tag']);
+            $wrapper_class = !empty($link['wrapper_config']['wrapper_class']) ? ' class="' . esc_attr($link['wrapper_config']['wrapper_class']) . '"' : '';
+            $wrapper_style = !empty($link['wrapper_config']['wrapper_style']) ? ' style="' . esc_attr($link['wrapper_config']['wrapper_style']) . '"' : '';
+            $output .= '<' . $wrapper_tag . $wrapper_class . $wrapper_style . '>';
+        }
+
+        // If html_context exists, use it with safe HTML tags
+        if (!empty($link['html_context'])) {
+            $allowed_tags = array(
+                'a' => array('href' => array(), 'target' => array(), 'rel' => array(), 'class' => array(), 'style' => array(), 'title' => array()),
+                'strong' => array(), 'em' => array(), 'b' => array(), 'i' => array(),
+                'span' => array('class' => array(), 'style' => array()),
+                'img' => array('src' => array(), 'alt' => array(), 'class' => array(), 'style' => array())
+            );
+            $output .= wp_kses($link['html_context'], $allowed_tags);
+        } else {
+            // Fallback: build anchor with custom attributes
+            $output .= $this->build_anchor_tag($link);
+        }
+
+        // Wrapper end
+        if (!empty($link['wrapper_config']) && !empty($link['wrapper_config']['wrapper_tag'])) {
+            $output .= '</' . esc_attr($link['wrapper_config']['wrapper_tag']) . '>';
+        }
+
+        $output .= '<br>' . "\n";
+        return $output;
+    }
+
+    /**
+     * Render link with image
+     */
+    private function render_link_with_image($link) {
+        $output = '<div class="lmw-link-with-image">';
+
+        if (!empty($link['image_url'])) {
+            $output .= '<img src="' . esc_url($link['image_url']) . '" alt="' . esc_attr($link['anchor_text']) . '" class="lmw-link-image" /> ';
+        }
+
+        $output .= $this->build_anchor_tag($link);
+        $output .= '</div>' . "\n";
+
+        return $output;
+    }
+
+    /**
+     * Render link as card
+     */
+    private function render_link_card($link) {
+        $output = '<div class="lmw-link-card">';
+
+        if (!empty($link['image_url'])) {
+            $output .= '<div class="lmw-card-image"><img src="' . esc_url($link['image_url']) . '" alt="' . esc_attr($link['anchor_text']) . '" /></div>';
+        }
+
+        $output .= '<div class="lmw-card-content">';
+        $output .= '<h4 class="lmw-card-title">' . $this->build_anchor_tag($link) . '</h4>';
+
+        if (!empty($link['custom_data']['description'])) {
+            $output .= '<p class="lmw-card-description">' . esc_html($link['custom_data']['description']) . '</p>';
+        }
+
+        $output .= '</div></div>' . "\n";
+
+        return $output;
+    }
+
+    /**
+     * Render completely custom link (full control via custom_data)
+     */
+    private function render_custom_link($link) {
+        if (!empty($link['custom_data']['html'])) {
+            // If custom HTML provided, use it (with safe tags)
+            $allowed_tags = array(
+                'div' => array('class' => array(), 'style' => array(), 'data-*' => array()),
+                'span' => array('class' => array(), 'style' => array()),
+                'a' => array('href' => array(), 'target' => array(), 'rel' => array(), 'class' => array(), 'style' => array(), 'title' => array()),
+                'img' => array('src' => array(), 'alt' => array(), 'class' => array(), 'style' => array()),
+                'strong' => array(), 'em' => array(), 'b' => array(), 'i' => array()
+            );
+            return wp_kses($link['custom_data']['html'], $allowed_tags) . "\n";
+        }
+
+        // Fallback to default rendering
+        return $this->render_default_link($link);
+    }
+
+    /**
+     * Build anchor tag with custom attributes
+     */
+    private function build_anchor_tag($link) {
+        $attrs = '';
+
+        // URL
+        $attrs .= ' href="' . esc_url($link['url']) . '"';
+
+        // Custom attributes from link_attributes field
+        if (!empty($link['link_attributes'])) {
+            foreach ($link['link_attributes'] as $key => $value) {
+                if (in_array($key, array('class', 'style', 'rel', 'target', 'title', 'id'))) {
+                    $attrs .= ' ' . esc_attr($key) . '="' . esc_attr($value) . '"';
+                } elseif (strpos($key, 'data-') === 0) {
+                    // Allow data-* attributes
+                    $attrs .= ' ' . esc_attr($key) . '="' . esc_attr($value) . '"';
+                }
+            }
+        } else {
+            // Default target="_blank" if no custom attributes
+            $attrs .= ' target="_blank"';
+        }
+
+        return '<a' . $attrs . '>' . esc_html($link['anchor_text']) . '</a>';
     }
     
     /**

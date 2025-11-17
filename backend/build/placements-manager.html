@@ -8,14 +8,29 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="/css/styles.css">
     <style>
-        /* Tabs styling - remove extra borders and spacing */
+        /* Tabs styling - visual separation between tabs and content */
         .card > .nav-tabs {
             margin-bottom: 0;
-            border-bottom: 1px solid #dee2e6;
-            background: transparent;
-            padding-left: 1rem;  /* Align with card body padding */
-            padding-right: 1rem;
-            padding-top: 0.5rem;
+            border-bottom: 1px solid #dee2e6;  /* Border under tabs */
+            border-top: none;  /* Remove top border */
+            background: #f8f9fa;  /* Light gray background for tab area */
+            padding: 0.5rem 1rem 0 1rem;  /* Padding around tabs */
+        }
+
+        /* Active tab styling */
+        .card > .nav-tabs .nav-link.active {
+            background: white;  /* White background for active tab */
+            border-bottom-color: white;  /* Hide bottom border on active tab */
+        }
+
+        /* Inactive tabs styling */
+        .card > .nav-tabs .nav-link {
+            background: transparent;  /* Transparent background for inactive tabs */
+        }
+
+        /* Tab content area with white background */
+        .tab-content {
+            background: white;
         }
 
         /* Remove borders from inner cards in tab panes */
@@ -36,6 +51,29 @@
         /* Ensure card-body has proper padding */
         .tab-content > .tab-pane > .card > .card-body {
             padding: 1.5rem;
+        }
+
+        /* Outer card border styling to match sites.html */
+        .container > .card {
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+        }
+
+        /* Table styling - hover effects only */
+        .table thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .table tbody tr:hover {
+            transform: scale(1.01);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
     </style>
 </head>
