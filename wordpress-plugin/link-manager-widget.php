@@ -632,7 +632,7 @@ class LinkManagerWidget {
             $output .= '</' . esc_attr($link['wrapper_config']['wrapper_tag']) . '>';
         }
 
-        $output .= '<br>' . "\n";
+        $output .= '<br><br>' . "\n";
         return $output;
     }
 
