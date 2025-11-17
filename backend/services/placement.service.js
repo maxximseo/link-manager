@@ -58,7 +58,7 @@ const getUserPlacements = async (userId, page = 0, limit = 0, filters = {}) => {
       FROM placements p
       LEFT JOIN sites s ON p.site_id = s.id
       LEFT JOIN projects proj ON p.project_id = proj.id
-      WHERE (s.user_id = $1 OR proj.user_id = $1)
+      WHERE p.user_id = $1
     `;
 
     const queryParams = [userId];
