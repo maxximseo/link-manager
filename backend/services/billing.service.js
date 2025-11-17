@@ -462,15 +462,21 @@ const purchasePlacement = async ({
 
     await client.query('COMMIT');
 
-    // Clear cache
-    await cache.delPattern(`placements:user:${userId}:*`);
-    await cache.delPattern(`projects:user:${userId}:*`);
+    // OPTIMIZATION: Async cache invalidation (don't await - save 60-150ms)
+    // Cache staleness is acceptable (2 min TTL)
+    cache.delPattern(`placements:user:${userId}:*`).catch(err =>
+      logger.error('Cache invalidation failed (placements)', { userId, err })
+    );
+    cache.delPattern(`projects:user:${userId}:*`).catch(err =>
+      logger.error('Cache invalidation failed (projects)', { userId, err })
+    );
 
     // CRITICAL FIX: Invalidate WordPress/Static content cache for this site
     // This ensures the plugin/widget shows updated content immediately
     if (site.site_type === 'wordpress' && site.api_key) {
-      await cache.del(`wp:content:${site.api_key}`);
-      logger.debug('WordPress content cache invalidated', { apiKey: site.api_key });
+      cache.del(`wp:content:${site.api_key}`).catch(err =>
+        logger.error('Cache invalidation failed (wp content)', { apiKey: site.api_key, err })
+      );
     } else if (site.site_type === 'static_php' && site.site_url) {
       // Normalize domain for cache key
       const normalizedDomain = site.site_url
@@ -478,8 +484,23 @@ const purchasePlacement = async ({
         .replace(/^https?:\/\//, '')
         .replace(/^www\./, '')
         .replace(/\/.*$/, '');
-      await cache.del(`static:content:${normalizedDomain}`);
-      logger.debug('Static content cache invalidated', { domain: normalizedDomain });
+      cache.del(`static:content:${normalizedDomain}`).catch(err =>
+        logger.error('Cache invalidation failed (static content)', { domain: normalizedDomain, err })
+      );
+    }
+
+    // OPTIMIZATION: Async WordPress publication (after commit)
+    // Don't block response - publish in background
+    if (status === 'pending') {
+      publishPlacementAsync(placement.id, site).catch(publishError => {
+        logger.error('Async publication failed - placement remains pending', {
+          placementId: placement.id,
+          userId,
+          error: publishError.message
+        });
+        // NOTE: User has been charged, placement marked as 'pending'
+        // Admin can manually retry publication from UI
+      });
     }
 
     logger.info('Placement purchased successfully', {
