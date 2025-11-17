@@ -734,8 +734,6 @@ const getStatistics = async (userId) => {
         COALESCE(SUM(pc.link_count), 0) as total_links_placed,
         COALESCE(SUM(pc.article_count), 0) as total_articles_placed
       FROM placements p
-      LEFT JOIN sites s ON p.site_id = s.id
-      LEFT JOIN projects proj ON p.project_id = proj.id
       LEFT JOIN LATERAL (
         SELECT
           COUNT(DISTINCT link_id) as link_count,
@@ -743,7 +741,7 @@ const getStatistics = async (userId) => {
         FROM placement_content
         WHERE placement_id = p.id
       ) pc ON true
-      WHERE s.user_id = $1 OR proj.user_id = $1
+      WHERE p.user_id = $1
     `, [userId]);
 
     return result.rows[0];
