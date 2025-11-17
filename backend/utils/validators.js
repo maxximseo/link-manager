@@ -10,7 +10,7 @@
  */
 const validatePagination = (query, options = {}) => {
   const {
-    maxLimit = 100,
+    maxLimit = 5000,
     defaultLimit = 20,
     defaultPage = 1,
     maxPage = 10000
