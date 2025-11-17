@@ -501,6 +501,37 @@ const cancelJob = async (req, res) => {
   }
 };
 
+// Publish scheduled placement NOW (manual trigger)
+const publishScheduledPlacement = async (req, res) => {
+  try {
+    const placementId = parseInt(req.params.id);
+    const userId = req.user.id;
+
+    if (isNaN(placementId)) {
+      return res.status(400).json({ error: 'Invalid placement ID' });
+    }
+
+    const billingService = require('../services/billing.service');
+    const result = await billingService.publishScheduledPlacement(placementId, userId);
+
+    res.json(result);
+  } catch (error) {
+    logger.error('Publish scheduled placement error:', error);
+
+    if (error.message.includes('not found')) {
+      return res.status(404).json({ error: 'Placement not found' });
+    }
+    if (error.message.includes('Unauthorized')) {
+      return res.status(403).json({ error: 'Unauthorized to publish this placement' });
+    }
+    if (error.message.includes('not \'scheduled\'')) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.status(500).json({ error: 'Failed to publish scheduled placement' });
+  }
+};
+
 module.exports = {
   getPlacements,
   getPlacementsBySite,
@@ -511,5 +542,6 @@ module.exports = {
   cancelJob,
   deletePlacement,
   getStatistics,
-  getAvailableSites
+  getAvailableSites,
+  publishScheduledPlacement
 };
