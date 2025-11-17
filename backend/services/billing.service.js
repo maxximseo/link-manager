@@ -1510,12 +1510,13 @@ const deleteAndRefundPlacement = async (placementId, userId, userRole = 'user') 
     // 5. Audit log for deletion (track admin who deleted)
     await client.query(`
       INSERT INTO audit_log (
-        user_id, action, entity_type, entity_id, details
-      ) VALUES ($1, 'placement_delete', 'placement', $2, $3)
+        user_id, action, details
+      ) VALUES ($1, 'placement_delete', $2)
     `, [
       userId, // Admin who performed the deletion
-      placementId,
       JSON.stringify({
+        entity_type: 'placement',
+        entity_id: placementId,
         placement_owner_id: refundUserId,
         placement_type: placement.type,
         site_name: placement.site_name,
