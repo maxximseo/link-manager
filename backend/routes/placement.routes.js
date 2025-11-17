@@ -49,6 +49,8 @@ router.get('/:id', generalLimiter, placementController.getPlacement);
 // USE INSTEAD: POST /api/billing/purchase for paid placements
 router.get('/job/:jobId', generalLimiter, placementController.getJobStatus);
 router.post('/job/:jobId/cancel', generalLimiter, placementController.cancelJob);
+// Publish scheduled placement NOW (manual trigger)
+router.post('/:id/publish-now', generalLimiter, placementController.publishScheduledPlacement);
 // ADMIN ONLY: Only administrators can delete placements (with refund)
 router.delete('/:id', generalLimiter, adminMiddleware, placementController.deletePlacement);
 
