@@ -80,7 +80,7 @@ const getUserPlacements = async (userId, page = 0, limit = 0, filters = {}) => {
 
     placementsQuery += ' ORDER BY p.placed_at DESC';
 
-    const DEFAULT_MAX_RESULTS = 1000; // Prevent unbounded queries
+    const DEFAULT_MAX_RESULTS = 10000; // Prevent unbounded queries
 
     if (usePagination) {
       const offset = (page - 1) * limit;
