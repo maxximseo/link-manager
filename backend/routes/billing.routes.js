@@ -13,10 +13,10 @@ const exportService = require('../services/export.service');
 const logger = require('../config/logger');
 const { handleError, handleSmartError } = require('../utils/errorHandler');
 
-// Strict rate limiting for financial operations
+// Rate limiting for financial operations (adjusted for bulk purchases)
 const financialLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 20, // 20 financial operations per hour
+  windowMs: 60 * 1000, // 1 minute
+  max: 50, // 50 financial operations per minute (allows bulk purchases)
   message: 'Too many financial operations, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
