@@ -124,6 +124,28 @@
                             <input type="datetime-local" class="form-control" id="scheduledDateInput">
                             <small class="text-muted">Максимум 90 дней от сегодня</small>
                         </div>
+                        <div class="mb-2">
+                            <input class="form-check-input" type="radio" name="publishType" id="publishDistributed" value="distributed">
+                            <label class="form-check-label" for="publishDistributed">
+                                <i class="bi bi-calendar-range"></i> Распределенная публикация (период)
+                            </label>
+                        </div>
+                        <div id="distributedPeriodDiv" style="display: none;" class="mt-2">
+                            <label for="distributionPeriod" class="form-label">Период распределения:</label>
+                            <select class="form-select" id="distributionPeriod">
+                                <option value="2">2 недели</option>
+                                <option value="4">4 недели</option>
+                                <option value="6">6 недель</option>
+                                <option value="8" selected>8 недель</option>
+                                <option value="10">10 недель</option>
+                                <option value="12">12 недель</option>
+                            </select>
+                            <div id="distributionPreview" class="mt-2 p-2 bg-light rounded" style="display: none;">
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i> <span id="distributionPreviewText"></span>
+                                </small>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -449,9 +471,21 @@
             // Add event listeners for publication type radio buttons
             document.getElementById('publishImmediate').addEventListener('change', () => {
                 document.getElementById('scheduledDateDiv').style.display = 'none';
+                document.getElementById('distributedPeriodDiv').style.display = 'none';
             });
             document.getElementById('publishScheduled').addEventListener('change', () => {
                 document.getElementById('scheduledDateDiv').style.display = 'block';
+                document.getElementById('distributedPeriodDiv').style.display = 'none';
+            });
+            document.getElementById('publishDistributed').addEventListener('change', () => {
+                document.getElementById('scheduledDateDiv').style.display = 'none';
+                document.getElementById('distributedPeriodDiv').style.display = 'block';
+                updateDistributionPreview();
+            });
+
+            // Add event listener for distribution period selector
+            document.getElementById('distributionPeriod').addEventListener('change', () => {
+                updateDistributionPreview();
             });
 
             // Load projects and sites - auto-selection happens in loadProjects()
@@ -949,6 +983,11 @@
             // Update create button state and list button counts
             updateCreateButtonState();
             updateListButtonCounts();
+
+            // Update distribution preview if distributed mode is active
+            if (document.getElementById('publishDistributed').checked) {
+                updateDistributionPreview();
+            }
         }
 
         function updateCreateButtonState() {
@@ -1077,6 +1116,7 @@
             // Extract and validate scheduled publication date
             const publishType = document.querySelector('input[name="publishType"]:checked').value;
             let scheduledDate = null;
+            let distributedDates = [];
 
             if (publishType === 'scheduled') {
                 const dateInput = document.getElementById('scheduledDateInput').value;
@@ -1100,10 +1140,25 @@
                 }
 
                 scheduledDate = dateInput; // ISO format for API
+            } else if (publishType === 'distributed') {
+                const periodWeeks = parseInt(document.getElementById('distributionPeriod').value);
+                const totalSites = Object.keys(siteAssignments).length;
+
+                // Validate period
+                const maxDays = periodWeeks * 7;
+                if (maxDays > 90) {
+                    showNotification('Период распределения не может превышать 90 дней', 'error');
+                    return;
+                }
+
+                // Calculate distributed dates
+                distributedDates = calculateDistributedDates(totalSites, periodWeeks);
+                console.log(`📅 Distributed ${totalSites} sites over ${periodWeeks} weeks:`, distributedDates);
             }
 
             // Build placement purchases with specific assignments
             const purchases = [];
+            let dateIndex = 0;
             for (const [siteId, assignment] of Object.entries(siteAssignments)) {
                 const purchaseData = {
                     projectId: projectId,
@@ -1112,9 +1167,11 @@
                     contentIds: [assignment.contentId]
                 };
 
-                // Add scheduled date if set
-                if (scheduledDate) {
+                // Add scheduled date based on publish type
+                if (publishType === 'scheduled' && scheduledDate) {
                     purchaseData.scheduledDate = scheduledDate;
+                } else if (publishType === 'distributed' && distributedDates.length > 0) {
+                    purchaseData.scheduledDate = distributedDates[dateIndex++];
                 }
 
                 purchases.push(purchaseData);
@@ -1699,6 +1756,48 @@
             } else {
                 infoSpan.innerHTML = '';
             }
+        }
+
+        /**
+         * Calculate evenly distributed dates over a period
+         * @param {number} totalSites - Number of sites to distribute
+         * @param {number} periodWeeks - Period in weeks
+         * @returns {Array<string>} Array of ISO date strings
+         */
+        function calculateDistributedDates(totalSites, periodWeeks) {
+            const now = new Date();
+            const periodDays = periodWeeks * 7;
+            const daysBetween = periodDays / totalSites;
+
+            const dates = [];
+            for (let i = 0; i < totalSites; i++) {
+                const date = new Date(now);
+                date.setDate(date.getDate() + Math.round(i * daysBetween));
+                dates.push(date.toISOString());
+            }
+
+            return dates;
+        }
+
+        /**
+         * Update the distribution preview text
+         */
+        function updateDistributionPreview() {
+            const selectedCount = selectedSitesForList.size;
+            const periodWeeks = parseInt(document.getElementById('distributionPeriod').value);
+            const previewDiv = document.getElementById('distributionPreview');
+            const previewText = document.getElementById('distributionPreviewText');
+
+            if (selectedCount === 0) {
+                previewDiv.style.display = 'none';
+                return;
+            }
+
+            const periodDays = periodWeeks * 7;
+            const daysBetween = (periodDays / selectedCount).toFixed(1);
+
+            previewText.textContent = `${selectedCount} ${selectedCount === 1 ? 'сайт' : selectedCount < 5 ? 'сайта' : 'сайтов'} / ${periodWeeks} ${periodWeeks === 1 ? 'неделя' : periodWeeks < 5 ? 'недели' : 'недель'} = публикация каждые ${daysBetween} ${daysBetween == 1 ? 'день' : 'дня/дней'}`;
+            previewDiv.style.display = 'block';
         }
 
         function buyLinks() {
