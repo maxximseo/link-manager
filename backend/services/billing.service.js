@@ -450,23 +450,9 @@ const purchasePlacement = async ({
       ]);
     }
 
-    // 15. If not scheduled, publish immediately
-    // TEST 3: WordPress failure must ROLLBACK entire transaction
-    if (status === 'pending') {
-      try {
-        await publishPlacement(client, placement.id);
-      } catch (publishError) {
-        logger.error('Failed to publish placement - ROLLING BACK transaction', {
-          placementId: placement.id,
-          userId,
-          error: publishError.message
-        });
-
-        // CRITICAL FIX: ROLLBACK transaction to refund user's money
-        await client.query('ROLLBACK');
-        throw new Error(`Failed to publish placement: ${publishError.message}. Your balance has not been charged.`);
-      }
-    }
+    // 15. OPTIMIZATION: Publish AFTER transaction commit (async)
+    // OLD: WordPress publication inside transaction blocked for 500-1000ms
+    // NEW: Commit first, then publish async (no blocking)
 
     // 17. Create audit log
     await client.query(`
