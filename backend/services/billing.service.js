@@ -612,6 +612,60 @@ const publishPlacementAsync = async (placementId, site) => {
 };
 
 /**
+ * Publish scheduled placement NOW (manual trigger or cron)
+ * Changes status from 'scheduled' to 'pending' or 'placed'
+ */
+const publishScheduledPlacement = async (placementId, userId = null) => {
+  try {
+    // Get placement with site info
+    const placementResult = await query(`
+      SELECT p.*, s.api_key, s.site_url, s.site_type
+      FROM placements p
+      JOIN sites s ON p.site_id = s.id
+      WHERE p.id = $1
+    `, [placementId]);
+
+    if (placementResult.rows.length === 0) {
+      throw new Error('Placement not found');
+    }
+
+    const placement = placementResult.rows[0];
+
+    // Validate status
+    if (placement.status !== 'scheduled') {
+      throw new Error(`Placement status is '${placement.status}', not 'scheduled'. Cannot publish.`);
+    }
+
+    // Authorization check (if userId provided)
+    if (userId && placement.user_id !== userId) {
+      throw new Error('Unauthorized: You can only publish your own placements');
+    }
+
+    // Create site object for publishPlacementAsync
+    const site = {
+      id: placement.site_id,
+      api_key: placement.api_key,
+      site_url: placement.site_url,
+      site_type: placement.site_type
+    };
+
+    // Trigger async publication
+    await publishPlacementAsync(placementId, site);
+
+    logger.info('Scheduled placement published', { placementId, userId });
+
+    return {
+      success: true,
+      placementId,
+      message: 'Placement is being published'
+    };
+  } catch (error) {
+    logger.error('Failed to publish scheduled placement', { placementId, userId, error: error.message });
+    throw error;
+  }
+};
+
+/**
  * Publish placement to WordPress (internal helper) - DEPRECATED
  * Use publishPlacementAsync instead for better performance
  */
