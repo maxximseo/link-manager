@@ -731,16 +731,9 @@ const getStatistics = async (userId) => {
     const result = await query(`
       SELECT
         COUNT(DISTINCT p.id) as total_placements,
-        COALESCE(SUM(pc.link_count), 0) as total_links_placed,
-        COALESCE(SUM(pc.article_count), 0) as total_articles_placed
+        COUNT(DISTINCT CASE WHEN p.type = 'link' THEN p.id END) as total_links_placed,
+        COUNT(DISTINCT CASE WHEN p.type = 'article' THEN p.id END) as total_articles_placed
       FROM placements p
-      LEFT JOIN LATERAL (
-        SELECT
-          COUNT(DISTINCT link_id) as link_count,
-          COUNT(DISTINCT article_id) as article_count
-        FROM placement_content
-        WHERE placement_id = p.id
-      ) pc ON true
       WHERE p.user_id = $1
     `, [userId]);
 
