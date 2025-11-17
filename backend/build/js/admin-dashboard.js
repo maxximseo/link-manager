@@ -2,6 +2,20 @@
  * Admin Dashboard with Charts
  */
 
+// Initialize navbar
+initNavbar('admin', 'dashboard');
+
+// Check authentication
+if (!isAuthenticated()) {
+    window.location.href = '/index.html';
+}
+
+// Check admin role
+const user = getCurrentUser();
+if (user && user.role !== 'admin') {
+    window.location.href = '/dashboard.html';
+}
+
 let revenueByTypeChart = null;
 let revenueTimelineChart = null;
 
