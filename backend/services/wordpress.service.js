@@ -85,7 +85,8 @@ const getContentByApiKey = async (apiKey) => {
       SELECT
         pl.id,
         pl.url,
-        pl.anchor_text
+        pl.anchor_text,
+        pl.html_context
       FROM project_links pl
       JOIN placement_content pc ON pl.id = pc.link_id
       JOIN placements plc ON pc.placement_id = plc.id
@@ -178,7 +179,8 @@ const getContentByDomain = async (domain) => {
       SELECT
         pl.id,
         pl.url,
-        pl.anchor_text
+        pl.anchor_text,
+        pl.html_context
       FROM project_links pl
       JOIN placement_content pc ON pl.id = pc.link_id
       JOIN placements plc ON pc.placement_id = plc.id
