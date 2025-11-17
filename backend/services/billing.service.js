@@ -1414,12 +1414,13 @@ const deleteAndRefundPlacement = async (placementId, userId, userRole = 'user') 
       // Audit log for refund (for placement owner)
       await client.query(`
         INSERT INTO audit_log (
-          user_id, action, entity_type, entity_id, details
-        ) VALUES ($1, 'placement_refund', 'placement', $2, $3)
+          user_id, action, details
+        ) VALUES ($1, 'placement_refund', $2)
       `, [
         refundUserId,
-        placementId,
         JSON.stringify({
+          entity_type: 'placement',
+          entity_id: placementId,
           refund_amount: finalPrice,
           original_price: placement.original_price,
           discount_applied: placement.discount_applied,
