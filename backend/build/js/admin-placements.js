@@ -1,4 +1,19 @@
 // Admin Placements Management
+
+// Initialize navbar
+initNavbar('admin', 'placements');
+
+// Check authentication
+if (!isAuthenticated()) {
+    window.location.href = '/index.html';
+}
+
+// Check admin role
+const user = getCurrentUser();
+if (user && user.role !== 'admin') {
+    window.location.href = '/dashboard.html';
+}
+
 let placements = [];
 let filteredPlacements = [];
 let currentPage = 1;
