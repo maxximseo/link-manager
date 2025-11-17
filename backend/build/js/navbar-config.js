@@ -9,10 +9,9 @@ const NavbarConfig = {
         brandText: '🔗 Link Manager',
         brandLink: '/dashboard.html',
         menuItems: [
-            { text: 'Dashboard', href: '/dashboard.html', page: 'dashboard' },
+            { text: 'Мои Проекты', href: '/dashboard.html', page: 'dashboard' },
             { text: 'Купить ссылки', href: '/placements.html', page: 'placements' },
             { text: 'Мои ссылки', href: '/placements-manager.html', page: 'placements-manager' },
-            { text: 'Мои Проекты', href: '/projects.html', page: 'projects' },
             { text: 'Баланс', href: '/balance.html', page: 'balance' },
             { text: 'Сайты', href: '/sites.html', page: 'sites' }
         ],
