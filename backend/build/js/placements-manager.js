@@ -425,7 +425,7 @@ function renderHistoryPlacements(placements) {
  */
 async function updateTabCounts() {
     try {
-        const response = await fetch('/api/placements', {
+        const response = await fetch('/api/placements?limit=5000', {
             headers: { 'Authorization': `Bearer ${getToken()}` }
         });
 
