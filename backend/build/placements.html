@@ -1128,23 +1128,24 @@
                         return `• ${siteName}: ${e.error}`;
                     }).join('\n');
 
-                    // Show summary notification
-                    const summaryMsg = successful > 0
-                        ? `Размещений: ${successful} успешно, ${failed} провалено`
-                        : `Все ${failed} размещений провалены`;
-                    showNotification(summaryMsg, failed > 0 ? 'error' : 'warning');
-
                     // Log detailed errors to console
                     console.error('=== ОШИБКИ РАЗМЕЩЕНИЙ ===');
                     console.error(errorDetails);
                     console.error('========================');
 
-                    // Also show detailed alert if all failed
-                    if (successful === 0) {
-                        alert(`Все размещения провалены:\n\n${errorDetails}\n\nПроверьте, что ссылки не исчерпаны (не использованы ранее).`);
+                    // Show appropriate notification based on results
+                    if (successful > 0) {
+                        // Mixed results - show success count with warning about failures
+                        showNotification(`✅ ${successful} размещений создано успешно. ⚠️ ${failed} провалено (см. консоль для деталей)`, 'warning');
+                    } else {
+                        // All failed - show first unique error message (most common error)
+                        const uniqueErrors = [...new Set(errors.map(e => e.error))];
+                        const mainError = uniqueErrors[0];
+                        const additionalCount = uniqueErrors.length > 1 ? ` (+${uniqueErrors.length - 1} других ошибок)` : '';
+                        showNotification(`❌ Все ${failed} размещений провалены: ${mainError}${additionalCount}`, 'error');
                     }
                 } else {
-                    showNotification(`Successfully created ${successful} placements! Sites table refreshed.`, 'success');
+                    showNotification(`✅ Успешно создано ${successful} размещений! Таблица сайтов обновлена.`, 'success');
                 }
 
                 // Clear site selections but keep project and content type selected
@@ -1167,7 +1168,9 @@
                     await loadSitesForPlacement(projectId, selectedContentType);
                 }
             } catch (error) {
-                showNotification('Failed to create placements: ' + error.message, 'error');
+                // Critical error (not purchase failure, but system error)
+                console.error('Critical error in createPlacements:', error);
+                showNotification('Критическая ошибка при создании размещений: ' + error.message, 'error');
             }
         }
 

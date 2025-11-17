@@ -37,11 +37,16 @@ async function apiCall(endpoint, options = {}) {
             if (isJson && text) {
                 try {
                     const error = JSON.parse(text);
-                    throw new Error(error.error || 'Request failed');
+                    // Throw error with actual server message
+                    throw new Error(error.error || error.message || 'Request failed');
                 } catch (parseError) {
-                    // JSON parsing failed
-                    console.error('Failed to parse error JSON:', text);
-                    throw new Error(`Server error (${response.status}): ${response.statusText}`);
+                    // If parseError is because we already parsed, rethrow original
+                    if (parseError instanceof SyntaxError) {
+                        console.error('Failed to parse error JSON:', text);
+                        throw new Error(`Server error (${response.status}): ${response.statusText}`);
+                    }
+                    // Otherwise it's our thrown Error, rethrow it
+                    throw parseError;
                 }
             } else {
                 // Non-JSON error response
