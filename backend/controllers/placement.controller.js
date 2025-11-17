@@ -136,9 +136,9 @@ const createBatchPlacement = async (req, res) => {
     }
 
     // Validate array length limits to prevent DoS
-    const MAX_SITES_PER_BATCH = 100;
-    const MAX_LINKS_PER_BATCH = 500;
-    const MAX_ARTICLES_PER_BATCH = 100;
+    const MAX_SITES_PER_BATCH = 1000;
+    const MAX_LINKS_PER_BATCH = 5000;
+    const MAX_ARTICLES_PER_BATCH = 1000;
 
     if (site_ids.length > MAX_SITES_PER_BATCH) {
       return res.status(400).json({
