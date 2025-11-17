@@ -140,6 +140,16 @@
                         <span id="activeFiltersInfo"></span>
                     </div>
 
+                    <!-- Hide Already Purchased Filter -->
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="hideAlreadyPurchasedCheckbox" checked>
+                            <label class="form-check-label" for="hideAlreadyPurchasedCheckbox">
+                                Не показывать купленные сайты
+                            </label>
+                        </div>
+                    </div>
+
                     <!-- Pagination Controls -->
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <div class="d-flex align-items-center gap-2">
@@ -401,6 +411,7 @@
         let blacklist = new Set(); // Set of site IDs in blacklist (stored but not auto-applied)
         let whitelistActive = false; // Whether to apply whitelist filter
         let blacklistActive = false; // Whether to apply blacklist filter
+        let hideAlreadyPurchased = true; // Whether to hide already purchased sites (default: active)
         let selectedSitesForList = new Set(); // Track selected sites (not for placement, but for list operations)
         let currentImportTarget = 'whitelist'; // 'whitelist' or 'blacklist'
         let importListModal;
@@ -421,6 +432,18 @@
                     currentPage = 1; // Reset to first page
                     renderSitesTable(); // Re-render with new page size
                 });
+            });
+
+            // Add event listener for hide already purchased checkbox
+            document.getElementById('hideAlreadyPurchasedCheckbox').addEventListener('change', async (e) => {
+                hideAlreadyPurchased = e.target.checked;
+                currentPage = 1; // Reset to first page
+
+                // Re-load sites with filter if project and content type are selected
+                const projectId = document.getElementById('projectSelect').value;
+                if (projectId && selectedContentType) {
+                    await loadSitesForPlacement(projectId, selectedContentType);
+                }
             });
 
             // Add event listeners for publication type radio buttons
@@ -584,6 +607,15 @@
                 // If blacklist is ACTIVE and not empty, exclude blacklist sites
                 if (blacklistActive && blacklist.size > 0) {
                     sitesToShow = sitesToShow.filter(site => !blacklist.has(site.id));
+                }
+
+                // If hideAlreadyPurchased is active, filter out already purchased sites
+                if (hideAlreadyPurchased) {
+                    sitesToShow = sitesToShow.filter(site => {
+                        const status = sitesStatus.get(site.id) || { hasLinks: false, hasArticles: false };
+                        const alreadyPurchased = status.hasLinks || status.hasArticles;
+                        return !alreadyPurchased; // Exclude already purchased sites
+                    });
                 }
 
                 // Prepare filtered sites with their status
@@ -1657,6 +1689,9 @@
             }
             if (blacklistActive && blacklist.size > 0) {
                 filters.push(`<span class="badge bg-danger">Blacklist Active: ${blacklist.size} sites</span>`);
+            }
+            if (hideAlreadyPurchased) {
+                filters.push(`<span class="badge bg-secondary">Скрыть купленные</span>`);
             }
 
             if (filters.length > 0) {

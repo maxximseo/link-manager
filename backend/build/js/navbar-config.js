@@ -11,8 +11,8 @@ const NavbarConfig = {
         menuItems: [
             { text: 'Dashboard', href: '/dashboard.html', page: 'dashboard' },
             { text: 'Проекты', href: '/projects.html', page: 'projects' },
-            { text: 'Купить размещение', href: '/placements.html', page: 'placements' },
-            { text: 'Мои размещения', href: '/placements-manager.html', page: 'placements-manager' },
+            { text: 'Купить ссылки', href: '/placements.html', page: 'placements' },
+            { text: 'Мои ссылки', href: '/placements-manager.html', page: 'placements-manager' },
             { text: 'Баланс', href: '/balance.html', page: 'balance' },
             { text: 'Сайты', href: '/sites.html', page: 'sites' }
         ],

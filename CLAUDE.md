@@ -466,6 +466,88 @@ Redis Configuration (optional, graceful degradation):
 Optional:
 - `BCRYPT_ROUNDS` - 8 for dev, 10 for prod
 
+## Pagination Limits (Updated January 2025)
+
+**CRITICAL**: System-wide pagination limits increased to support high-volume operations (5000+ placements).
+
+### Configuration Files
+
+**backend/config/constants.js**:
+```javascript
+PAGINATION: {
+  DEFAULT_PAGE: 1,
+  DEFAULT_LIMIT: 20,      // Default for API responses (keeps light load)
+  MAX_LIMIT: 5000         // Maximum allowed limit (increased from 100)
+}
+```
+
+**backend/utils/validators.js**:
+- `validatePagination()` default `maxLimit`: 5000 (was 100)
+- All controllers use this validator for consistent limits
+
+### Controller Limits
+
+All controllers updated to support `maxLimit: 5000`:
+- `backend/controllers/placement.controller.js` - Line 16
+- `backend/controllers/project.controller.js` - Line 16
+- `backend/controllers/site.controller.js` - Line 15
+
+**Batch Operation Limits** (placement.controller.js):
+- `MAX_SITES_PER_BATCH: 1000` (was 100)
+- `MAX_LINKS_PER_BATCH: 5000` (was 500)
+- `MAX_ARTICLES_PER_BATCH: 1000` (was 100)
+
+### Service Safety Limits
+
+**backend/services/placement.service.js**:
+- `DEFAULT_MAX_RESULTS: 10000` - Prevents unbounded queries (was 1000)
+- Applied when no pagination parameters provided
+
+### Frontend API Calls
+
+**CRITICAL**: Frontend must explicitly request high limits to fetch all data:
+
+```javascript
+// backend/build/dashboard.html (line 154)
+PlacementsAPI.getAll({ limit: 5000 })
+
+// backend/build/js/placements-manager.js (line 96, 428)
+fetch('/api/placements?status=placed&limit=5000')
+fetch('/api/placements?limit=5000')  // For updateTabCounts()
+```
+
+**Common Bug**: Forgetting `limit` parameter causes default limit of 20, resulting in incomplete data display.
+
+### Frontend Functions Requiring Explicit Limits
+
+1. **updateTabCounts()** - Must include `?limit=5000` to count all placements
+2. **loadActivePlacements()** - Must include `?limit=5000` to display all
+3. **Dashboard stats** - Must include `{ limit: 5000 }` in API call
+
+**Example of Missing Limit Bug**:
+```javascript
+// WRONG - gets only 20 records
+fetch('/api/placements')
+
+// CORRECT - gets up to 5000 records
+fetch('/api/placements?limit=5000')
+```
+
+### Debugging Pagination Issues
+
+**Symptom**: Frontend displays 20 items then resets or shows wrong count
+
+**Root Cause**: API call missing `limit` parameter, receiving default 20 records
+
+**Fix**: Add `?limit=5000` or `{ limit: 5000 }` to all frontend API calls that need full data
+
+**Check console logs**:
+```javascript
+console.log('API response:', result);
+console.log('Array length:', placements.length);
+// If shows 20 when expecting more, check if limit param was sent
+```
+
 ## Recent Critical Fixes (2025-01)
 
 ### Transaction Implementation
