@@ -63,7 +63,8 @@ async function apiCall(endpoint, options = {}) {
             throw new Error('Server returned non-JSON response');
         }
     } catch (error) {
-        showNotification(error.message, 'error');
+        // Don't show notification here - let caller decide whether to show
+        // This prevents duplicate notifications when using Promise.allSettled
         throw error;
     }
 }
