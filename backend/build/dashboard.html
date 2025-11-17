@@ -120,6 +120,12 @@
                     PlacementsAPI.getStatistics()
                 ]);
 
+                console.log('=== DASHBOARD STATISTICS DEBUG ===');
+                console.log('Placements response:', placements);
+                console.log('total_placements:', placements.total_placements);
+                console.log('total_links_placed:', placements.total_links_placed);
+                console.log('total_articles_placed:', placements.total_articles_placed);
+
                 document.getElementById('totalProjects').textContent = projects.length || 0;
                 document.getElementById('totalSites').textContent = sites.length || 0;
                 document.getElementById('totalPlacements').textContent = placements.total_placements || 0;
@@ -144,8 +150,8 @@
             tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Загрузка статистики по проектам...</td></tr>';
 
             try {
-                // Fetch all placements (without pagination to get all)
-                const response = await PlacementsAPI.getAll();
+                // Fetch all placements (with high limit to get all)
+                const response = await PlacementsAPI.getAll({ limit: 1000 });
                 console.log('PlacementsAPI.getAll() response:', response);
 
                 // Extract array from response (handles both paginated and non-paginated responses)
