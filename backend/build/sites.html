@@ -126,6 +126,7 @@
                         <thead class="table-light sticky-top">
                             <tr>
                                 <th>Site Name</th>
+                                <th class="text-center" style="width: 80px;">Тип</th>
                                 <th class="text-center" style="width: 60px;" title="Открыть сайт">
                                     <i class="bi bi-box-arrow-up-right"></i>
                                 </th>
@@ -466,12 +467,10 @@
                 return `
                 <tr class="${rowClass}">
                     <td>
-                        <div class="d-flex align-items-center gap-2">
-                            <div>
-                                <div class="fw-semibold">${escapeHtml(s.site_name)}</div>
-                                <div class="mt-1">${typeBadge}</div>
-                            </div>
-                        </div>
+                        <div class="fw-semibold">${escapeHtml(s.site_name)}</div>
+                    </td>
+                    <td class="text-center">
+                        ${typeBadge}
                     </td>
                     <td>
                         <a href="${escapeHtml(s.site_url)}" target="_blank" class="btn btn-sm btn-outline-secondary" title="${escapeHtml(s.site_url)}">
