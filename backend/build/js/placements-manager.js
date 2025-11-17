@@ -962,3 +962,75 @@ function showAlert(message, type = 'info') {
 function getToken() {
     return localStorage.getItem('token') || localStorage.getItem('authToken');
 }
+
+/**
+ * Publish scheduled placement NOW
+ */
+async function publishNow(placementId) {
+    if (!confirm('Опубликовать это размещение сейчас? Оно будет опубликовано на сайте немедленно.')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/placements/${placementId}/publish-now`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${getToken()}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to publish placement');
+        }
+
+        showAlert('Размещение публикуется! Обновите страницу через несколько секунд.', 'success');
+
+        // Reload placements after short delay
+        setTimeout(() => {
+            loadAllPlacements();
+        }, 2000);
+    } catch (error) {
+        console.error('Publish placement error:', error);
+        showAlert(error.message || 'Ошибка публикации размещения', 'danger');
+    }
+}
+
+/**
+ * Cancel (delete) scheduled placement
+ */
+async function cancelScheduledPlacement(placementId) {
+    if (!confirm('Отменить это размещение? Оно будет удалено, и средства вернутся на баланс.')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/placements/${placementId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${getToken()}`
+            }
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to cancel placement');
+        }
+
+        showAlert(
+            data.refund
+                ? `Размещение отменено. Возврат: $${data.refund.amount.toFixed(2)}`
+                : 'Размещение отменено',
+            'success'
+        );
+
+        // Reload placements
+        loadAllPlacements();
+    } catch (error) {
+        console.error('Cancel placement error:', error);
+        showAlert(error.message || 'Ошибка отмены размещения', 'danger');
+    }
+}
