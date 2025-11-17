@@ -191,7 +191,7 @@ function renderPlacements() {
 
         // Type badge
         const typeBadge = placement.type === 'link'
-            ? '<span class="badge bg-primary">Ссылка</span>'
+            ? '<span class="badge bg-primary">Главная</span>'
             : '<span class="badge bg-success">Статья</span>';
 
         // Status badge
@@ -345,7 +345,7 @@ function viewPlacementDetails(placementId) {
         <div class="row">
             <div class="col-md-6">
                 <h6 class="text-muted">Статус и настройки</h6>
-                <p><strong>Тип:</strong> ${placement.type === 'link' ? 'Ссылка' : 'Статья'}</p>
+                <p><strong>Тип:</strong> ${placement.type === 'link' ? 'Главная' : 'Статья'}</p>
                 <p><strong>Статус:</strong> ${placement.status}</p>
                 ${placement.type === 'link' ? `<p><strong>Автопродление:</strong> ${placement.auto_renewal ? '✅ Включено' : '❌ Выключено'}</p>` : ''}
                 ${placement.wordpress_post_id ? `<p><strong>WordPress Post ID:</strong> ${placement.wordpress_post_id}</p>` : ''}

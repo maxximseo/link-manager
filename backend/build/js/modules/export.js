@@ -200,7 +200,7 @@ window.ExportModule = {
                     if (placement.links && placement.links.length > 0) {
                         for (const link of placement.links) {
                             csvContent += `"${this.escapeCsv(project.name)}",`;
-                            csvContent += `"Ссылка",`;
+                            csvContent += `"Главная",`;
                             csvContent += `"${this.escapeCsv(link.anchor_text || '')}",`;
                             csvContent += `"${this.escapeCsv(link.target_url || '')}",`;
                             csvContent += `"${this.escapeCsv(siteUrl)}",`;

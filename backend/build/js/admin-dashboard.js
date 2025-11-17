@@ -343,7 +343,7 @@ function renderRecentPurchases(purchases) {
         const row = document.createElement('tr');
 
         const typeBadge = p.type === 'link'
-            ? '<span class="badge bg-primary">Ссылка</span>'
+            ? '<span class="badge bg-primary">Главная</span>'
             : '<span class="badge bg-success">Статья</span>';
 
         const statusBadges = {

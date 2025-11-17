@@ -127,7 +127,7 @@ function renderActivePlacements(placements) {
 
         // Type badge
         const typeBadge = p.type === 'link'
-            ? '<span class="badge bg-primary">Ссылка</span>'
+            ? '<span class="badge bg-primary">Главная</span>'
             : '<span class="badge bg-success">Статья</span>';
 
         // Auto-renewal toggle
@@ -225,7 +225,7 @@ function renderScheduledPlacements(placements) {
         const row = document.createElement('tr');
 
         const typeBadge = p.type === 'link'
-            ? '<span class="badge bg-primary">Ссылка</span>'
+            ? '<span class="badge bg-primary">Главная</span>'
             : '<span class="badge bg-success">Статья</span>';
 
         // For articles, show full WordPress post URL; for links, show site URL
