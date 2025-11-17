@@ -154,11 +154,6 @@
                         </div>
                     </div>
 
-                    <!-- Sticky Delete Button -->
-                    <button id="deleteSelectedBtn" class="btn btn-danger delete-selected-btn" style="display: none;" onclick="deleteSelectedLinks()">
-                        <i class="bi bi-trash"></i> Удалить выбранные (<span class="count">0</span>)
-                    </button>
-
                     <div id="linksList">
                         <div class="text-center">
                             <div class="spinner-border text-primary" role="status">
@@ -176,11 +171,6 @@
                             <i class="bi bi-plus-circle"></i> Добавить статью
                         </button>
                     </div>
-
-                    <!-- Sticky Delete Button for Articles -->
-                    <button id="deleteSelectedArticlesBtn" class="btn btn-danger delete-selected-btn" style="display: none;" onclick="deleteSelectedArticles()">
-                        <i class="bi bi-trash"></i> Удалить выбранные (<span class="count">0</span>)
-                    </button>
 
                     <div id="articlesList">
                         <div class="text-center">
@@ -338,6 +328,14 @@ If you want to explore reliable platforms, check out <a href="https://example.co
         </div>
     </div>
 
+    <!-- Sticky Delete Buttons (positioned fixed at bottom-right) -->
+    <button id="deleteSelectedBtn" class="btn btn-danger delete-selected-btn" style="display: none;" onclick="deleteSelectedLinks()">
+        <i class="bi bi-trash"></i> Удалить выбранные (<span class="count">0</span>)
+    </button>
+    <button id="deleteSelectedArticlesBtn" class="btn btn-danger delete-selected-btn" style="display: none;" onclick="deleteSelectedArticles()">
+        <i class="bi bi-trash"></i> Удалить выбранные (<span class="count">0</span>)
+    </button>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/js/auth.js"></script>
     <script src="/js/api.js"></script>
@@ -415,23 +413,20 @@ If you want to explore reliable platforms, check out <a href="https://example.co
                                     <input type="checkbox" class="form-check-input" id="selectAllLinks" onchange="toggleAllLinks(this.checked)">
                                 </th>
                                 <th style="width: 60px;">ID</th>
-                                <th style="width: 250px;">Анкор</th>
+                                <th style="width: 200px;">Анкор</th>
                                 <th>HTML контекст</th>
-                                <th style="width: 150px;">Использований</th>
+                                <th style="width: 120px;">Использований</th>
                             </tr>
                         </thead>
                         <tbody>
                             ${links.map(link => {
-                                const percent = (link.usage_count / link.usage_limit) * 100;
                                 const isExhausted = link.usage_count >= link.usage_limit;
-                                let barClass = 'success';
-                                if (percent >= 90 || isExhausted) barClass = 'exhausted';
-                                else if (percent >= 70) barClass = 'danger';
-                                else if (percent >= 50) barClass = 'warning';
 
                                 return `
-                                    <tr class="${isExhausted ? 'table-secondary' : ''} ${selectedLinks.has(link.id) ? 'table-active' : ''}" style="cursor: pointer;">
-                                        <td>
+                                    <tr class="${isExhausted ? 'table-secondary' : ''} ${selectedLinks.has(link.id) ? 'table-active' : ''}"
+                                        style="cursor: pointer;"
+                                        onclick="toggleRowSelection(${link.id}, 'link', event)">
+                                        <td onclick="event.stopPropagation()">
                                             <input type="checkbox" class="form-check-input link-checkbox"
                                                    data-link-id="${link.id}"
                                                    ${selectedLinks.has(link.id) ? 'checked' : ''}
@@ -440,24 +435,16 @@ If you want to explore reliable platforms, check out <a href="https://example.co
                                         <td><code class="small">${link.id}</code></td>
                                         <td>
                                             <strong class="small">${escapeHtml(link.anchor_text)}</strong>
-                                            ${isExhausted ? '<span class="badge bg-secondary ms-1" style="font-size: 0.7rem;">Исчерпано</span>' : ''}
                                         </td>
                                         <td>
                                             ${link.html_context ? `
-                                                <span class="badge bg-info me-1" style="font-size: 0.7rem;">HTML</span>
-                                                <span class="text-muted small" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 500px; display: inline-block;">
-                                                    ${escapeHtml(link.html_context.substring(0, 120))}${link.html_context.length > 120 ? '...' : ''}
+                                                <span class="text-muted small" style="overflow: hidden; text-overflow: ellipsis; max-width: 500px; display: inline-block;">
+                                                    ${link.html_context}
                                                 </span>
                                             ` : '<span class="text-muted small">—</span>'}
                                         </td>
                                         <td>
-                                            <div class="d-flex align-items-center gap-2">
-                                                <small><strong>${link.usage_count}</strong> / ${link.usage_limit}</small>
-                                                <div class="progress flex-grow-1" style="height: 4px;">
-                                                    <div class="progress-bar bg-${barClass === 'success' ? 'success' : barClass === 'warning' ? 'warning' : barClass === 'danger' ? 'danger' : 'secondary'}"
-                                                         style="width: ${Math.min(percent, 100)}%"></div>
-                                                </div>
-                                            </div>
+                                            <small>${link.usage_count}/${link.usage_limit}</small>
                                         </td>
                                     </tr>
                                 `;
@@ -495,14 +482,33 @@ If you want to explore reliable platforms, check out <a href="https://example.co
             displayLinks();
         }
 
+        // Toggle row selection on click (universal function for links and articles)
+        function toggleRowSelection(itemId, type, event) {
+            // Prevent triggering when clicking on checkbox cell
+            if (event.target.tagName === 'INPUT') {
+                return;
+            }
+
+            if (type === 'link') {
+                const isCurrentlySelected = selectedLinks.has(itemId);
+                toggleLinkSelection(itemId, !isCurrentlySelected);
+            } else if (type === 'article') {
+                const isCurrentlySelected = selectedArticles.has(itemId);
+                toggleArticleSelection(itemId, !isCurrentlySelected);
+            }
+        }
+
         // Update delete button visibility and count
         function updateDeleteButton() {
             const deleteBtn = document.getElementById('deleteSelectedBtn');
+            const deleteArticlesBtn = document.getElementById('deleteSelectedArticlesBtn');
             if (!deleteBtn) return;
 
             if (selectedLinks.size > 0) {
                 deleteBtn.style.display = 'block';
                 deleteBtn.querySelector('.count').textContent = selectedLinks.size;
+                // Hide articles button when links button is shown
+                if (deleteArticlesBtn) deleteArticlesBtn.style.display = 'none';
             } else {
                 deleteBtn.style.display = 'none';
             }
@@ -572,7 +578,7 @@ If you want to explore reliable platforms, check out <a href="https://example.co
                                 <th style="width: 60px;">ID</th>
                                 <th>Заголовок</th>
                                 <th style="width: 100px;">Слов</th>
-                                <th style="width: 150px;">Использований</th>
+                                <th style="width: 120px;">Использований</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -581,8 +587,10 @@ If you want to explore reliable platforms, check out <a href="https://example.co
                                 const wordCount = article.content.split(/\s+/).length;
 
                                 return `
-                                    <tr class="${isExhausted ? 'table-secondary' : ''} ${selectedArticles.has(article.id) ? 'table-active' : ''}" style="cursor: pointer;">
-                                        <td>
+                                    <tr class="${isExhausted ? 'table-secondary' : ''} ${selectedArticles.has(article.id) ? 'table-active' : ''}"
+                                        style="cursor: pointer;"
+                                        onclick="toggleRowSelection(${article.id}, 'article', event)">
+                                        <td onclick="event.stopPropagation()">
                                             <input type="checkbox" class="form-check-input article-checkbox"
                                                    data-article-id="${article.id}"
                                                    ${selectedArticles.has(article.id) ? 'checked' : ''}
@@ -591,19 +599,12 @@ If you want to explore reliable platforms, check out <a href="https://example.co
                                         <td><code class="small">${article.id}</code></td>
                                         <td>
                                             <strong class="small">${escapeHtml(article.title)}</strong>
-                                            ${isExhausted ? '<span class="badge bg-secondary ms-2" style="font-size: 0.7rem;">Использована</span>' : '<span class="badge bg-success ms-2" style="font-size: 0.7rem;">Доступна</span>'}
                                         </td>
                                         <td>
                                             <small><i class="bi bi-fonts"></i> ${wordCount}</small>
                                         </td>
                                         <td>
-                                            <div class="d-flex align-items-center gap-2">
-                                                <small><strong>${article.usage_count}</strong> / 1</small>
-                                                <div class="progress flex-grow-1" style="height: 4px;">
-                                                    <div class="progress-bar bg-${isExhausted ? 'secondary' : 'success'}"
-                                                         style="width: ${isExhausted ? '100' : '0'}%"></div>
-                                                </div>
-                                            </div>
+                                            <small>${article.usage_count}/1</small>
                                         </td>
                                     </tr>
                                 `;
@@ -643,11 +644,14 @@ If you want to explore reliable platforms, check out <a href="https://example.co
         // Update delete articles button
         function updateDeleteArticlesButton() {
             const deleteBtn = document.getElementById('deleteSelectedArticlesBtn');
+            const deleteLinksBtn = document.getElementById('deleteSelectedBtn');
             if (!deleteBtn) return;
 
             if (selectedArticles.size > 0) {
                 deleteBtn.style.display = 'block';
                 deleteBtn.querySelector('.count').textContent = selectedArticles.size;
+                // Hide links button when articles button is shown
+                if (deleteLinksBtn) deleteLinksBtn.style.display = 'none';
             } else {
                 deleteBtn.style.display = 'none';
             }
