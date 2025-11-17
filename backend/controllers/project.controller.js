@@ -12,7 +12,7 @@ const { handleError, handleSmartError, handleValidationError } = require('../uti
 const getProjects = async (req, res) => {
   try {
     const { page, limit } = validatePagination(req.query, {
-      maxLimit: 500,
+      maxLimit: 5000,
       defaultLimit: 20,
       defaultPage: 1
     });
