@@ -530,7 +530,87 @@ const purchasePlacement = async ({
 };
 
 /**
- * Publish placement to WordPress (internal helper)
+ * Publish placement to WordPress ASYNC (after transaction commit)
+ * OPTIMIZATION: Runs in background, doesn't block purchase response
+ */
+const publishPlacementAsync = async (placementId, site) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    // Get placement details
+    const placementResult = await client.query(`
+      SELECT p.*
+      FROM placements p
+      WHERE p.id = $1
+    `, [placementId]);
+
+    const placement = placementResult.rows[0];
+
+    if (!placement) {
+      throw new Error(`Placement ${placementId} not found`);
+    }
+
+    // Get content
+    const contentResult = await client.query(`
+      SELECT
+        pc.*,
+        pl.url, pl.anchor_text,
+        pa.title, pa.content
+      FROM placement_content pc
+      LEFT JOIN project_links pl ON pc.link_id = pl.id
+      LEFT JOIN project_articles pa ON pc.article_id = pa.id
+      WHERE pc.placement_id = $1
+    `, [placementId]);
+
+    const content = contentResult.rows[0];
+
+    // Publish to WordPress
+    if (placement.type === 'article' && content.article_id) {
+      const result = await wordpressService.publishArticle(
+        site.site_url,
+        site.api_key,
+        {
+          title: content.title,
+          content: content.content,
+          slug: content.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+        }
+      );
+
+      await client.query(`
+        UPDATE placements
+        SET status = 'placed',
+            published_at = NOW(),
+            wordpress_post_id = $1
+        WHERE id = $2
+      `, [result.post_id, placementId]);
+
+      logger.info('Article published successfully (async)', { placementId, wordpressPostId: result.post_id });
+    } else {
+      // For links, mark as placed (actual publication handled by plugin)
+      await client.query(`
+        UPDATE placements
+        SET status = 'placed', published_at = NOW()
+        WHERE id = $1
+      `, [placementId]);
+
+      logger.info('Link placement marked as placed (async)', { placementId });
+    }
+
+    await client.query('COMMIT');
+  } catch (error) {
+    await client.query('ROLLBACK');
+    logger.error('Async publication failed', { placementId, error: error.message });
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+/**
+ * Publish placement to WordPress (internal helper) - DEPRECATED
+ * Use publishPlacementAsync instead for better performance
  */
 const publishPlacement = async (client, placementId) => {
   // Get placement details
