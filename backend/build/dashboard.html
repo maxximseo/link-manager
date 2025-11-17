@@ -35,6 +35,38 @@
             border: 1px solid #dee2e6;
             border-radius: 0.375rem;
         }
+
+        /* Extra small buttons for management column */
+        .btn-xs {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8rem;
+            line-height: 1.2;
+        }
+
+        /* Purple theme buttons */
+        .btn-purple {
+            background-color: #6f42c1;
+            border-color: #6f42c1;
+            color: white;
+        }
+
+        .btn-purple:hover {
+            background-color: #5a32a3;
+            border-color: #5a32a3;
+            color: white;
+        }
+
+        .btn-purple-outline {
+            background-color: transparent;
+            border-color: #6f42c1;
+            color: #6f42c1;
+        }
+
+        .btn-purple-outline:hover {
+            background-color: #6f42c1;
+            border-color: #6f42c1;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -95,6 +127,9 @@
                                 <th>Дата создания</th>
                                 <th>Тексты ссылок</th>
                                 <th>Тексты статей</th>
+                                <th>Потрачено ($)</th>
+                                <th>Размещено</th>
+                                <th>Запланировано</th>
                                 <th>Управление</th>
                             </tr>
                         </thead>
@@ -108,17 +143,26 @@
                                 <td><div class="skeleton skeleton-text"></div></td>
                                 <td><div class="skeleton skeleton-text"></div></td>
                                 <td><div class="skeleton skeleton-text"></div></td>
-                            </tr>
-                            <tr>
-                                <td><div class="skeleton skeleton-text"></div></td>
-                                <td><div class="skeleton skeleton-text"></div></td>
-                                <td><div class="skeleton skeleton-text"></div></td>
-                                <td><div class="skeleton skeleton-text"></div></td>
                                 <td><div class="skeleton skeleton-text"></div></td>
                                 <td><div class="skeleton skeleton-text"></div></td>
                                 <td><div class="skeleton skeleton-text"></div></td>
                             </tr>
                             <tr>
+                                <td><div class="skeleton skeleton-text"></div></td>
+                                <td><div class="skeleton skeleton-text"></div></td>
+                                <td><div class="skeleton skeleton-text"></div></td>
+                                <td><div class="skeleton skeleton-text"></div></td>
+                                <td><div class="skeleton skeleton-text"></div></td>
+                                <td><div class="skeleton skeleton-text"></div></td>
+                                <td><div class="skeleton skeleton-text"></div></td>
+                                <td><div class="skeleton skeleton-text"></div></td>
+                                <td><div class="skeleton skeleton-text"></div></td>
+                                <td><div class="skeleton skeleton-text"></div></td>
+                            </tr>
+                            <tr>
+                                <td><div class="skeleton skeleton-text"></div></td>
+                                <td><div class="skeleton skeleton-text"></div></td>
+                                <td><div class="skeleton skeleton-text"></div></td>
                                 <td><div class="skeleton skeleton-text"></div></td>
                                 <td><div class="skeleton skeleton-text"></div></td>
                                 <td><div class="skeleton skeleton-text"></div></td>
@@ -196,9 +240,9 @@
                 document.getElementById('totalPlacements').textContent = placements.total_placements || 0;
                 document.getElementById('totalLinks').textContent = placements.total_links_placed || 0;
 
-                // Load projects table
+                // Load projects table with detailed stats
                 projects = projectsData;
-                displayProjects();
+                await loadProjectsTable();
             } catch (error) {
                 console.error('Error loading statistics:', error);
                 showNotification('Ошибка загрузки статистики', 'error');
@@ -208,23 +252,23 @@
         async function loadProjects() {
             try {
                 projects = await ProjectsAPI.getAll();
-                displayProjects();
+                await loadProjectsTable();
                 // Update project count in stats
                 document.getElementById('totalProjects').textContent = projects.length || 0;
             } catch (error) {
                 console.error('Error loading projects:', error);
                 const tbody = document.getElementById('projectsTableBody');
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger py-4">Ошибка загрузки проектов</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="10" class="text-center text-danger py-4">Ошибка загрузки проектов</td></tr>';
             }
         }
 
-        function displayProjects() {
+        async function loadProjectsTable() {
             const tbody = document.getElementById('projectsTableBody');
 
             if (!projects || projects.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="7" class="text-center text-muted py-4">
+                        <td colspan="10" class="text-center text-muted py-4">
                             <i class="bi bi-info-circle"></i>
                             Проектов пока нет. Создайте первый проект!
                         </td>
@@ -233,41 +277,69 @@
                 return;
             }
 
-            tbody.innerHTML = projects.map(p => {
-                const createdDate = new Date(p.created_at).toLocaleDateString('ru-RU');
-                const mainUrl = p.main_site_url ?
-                    `<a href="${escapeHtml(p.main_site_url)}" target="_blank" title="${escapeHtml(p.main_site_url)}" class="text-decoration-none">
-                        <i class="bi bi-link-45deg fs-5"></i>
-                    </a>`
-                    : '<span class="text-muted">—</span>';
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">Загрузка статистики...</td></tr>';
 
-                return `
-                    <tr>
-                        <td>#${p.id}</td>
-                        <td>
-                            <a href="/project-detail.html?id=${p.id}" class="text-decoration-none fw-bold">
-                                ${escapeHtml(p.name)}
-                            </a>
-                        </td>
-                        <td>${mainUrl}</td>
-                        <td>${createdDate}</td>
-                        <td>
-                            <span class="badge bg-primary">${p.links_count || 0}</span>
-                        </td>
-                        <td>
-                            <span class="badge bg-success">${p.articles_count || 0}</span>
-                        </td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-primary me-1" onclick="editProject(${p.id})" title="Редактировать">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteProject(${p.id})" title="Удалить">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
+            try {
+                // Fetch all placements with high limit
+                const response = await PlacementsAPI.getAll({ limit: 5000 });
+
+                // Extract array from response
+                let placementsArray = [];
+                if (Array.isArray(response)) {
+                    placementsArray = response;
+                } else if (response && Array.isArray(response.data)) {
+                    placementsArray = response.data;
+                }
+
+                // Calculate statistics per project
+                tbody.innerHTML = projects.map(p => {
+                    const createdDate = new Date(p.created_at).toLocaleDateString('ru-RU');
+                    const mainUrl = p.main_site_url ?
+                        `<a href="${escapeHtml(p.main_site_url)}" target="_blank" title="${escapeHtml(p.main_site_url)}" class="text-decoration-none">
+                            <i class="bi bi-link-45deg fs-5"></i>
+                        </a>`
+                        : '<span class="text-muted">—</span>';
+
+                    // Calculate placement statistics for this project
+                    const projectPlacements = placementsArray.filter(pl => pl.project_id === p.id);
+                    const totalSpent = projectPlacements.reduce((sum, pl) => sum + parseFloat(pl.final_price || 0), 0);
+                    const activePlacements = projectPlacements.filter(pl => pl.status === 'placed' && !pl.scheduled_publish_date).length;
+                    const scheduledPlacements = projectPlacements.filter(pl => pl.scheduled_publish_date).length;
+
+                    return `
+                        <tr>
+                            <td>#${p.id}</td>
+                            <td>
+                                <a href="/project-detail.html?id=${p.id}" class="text-decoration-none fw-bold">
+                                    ${escapeHtml(p.name)}
+                                </a>
+                            </td>
+                            <td>${mainUrl}</td>
+                            <td>${createdDate}</td>
+                            <td>
+                                <span class="badge bg-primary">${p.links_count || 0}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-success">${p.articles_count || 0}</span>
+                            </td>
+                            <td>$${totalSpent.toFixed(2)}</td>
+                            <td><span class="badge bg-success">${activePlacements}</span></td>
+                            <td><span class="badge bg-warning text-dark">${scheduledPlacements}</span></td>
+                            <td>
+                                <button class="btn btn-xs btn-purple me-1" onclick="editProject(${p.id})" title="Редактировать">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-xs btn-purple" onclick="deleteProject(${p.id})" title="Удалить">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading project stats:', error);
+                tbody.innerHTML = '<tr><td colspan="10" class="text-center text-danger">Ошибка загрузки статистики</td></tr>';
+            }
         }
 
         function escapeHtml(text) {

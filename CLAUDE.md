@@ -53,6 +53,42 @@ TOKEN=$(curl -X POST http://localhost:3003/api/auth/login \
 curl -H "Authorization: Bearer $TOKEN" http://localhost:3003/api/projects
 ```
 
+### Development Scripts
+
+**Auto-restart with kill on port change** (recommended for development):
+```bash
+npm run dev:auto
+```
+This script:
+1. Kills any existing process on port 3003
+2. Starts server with nodemon in watch mode
+3. Auto-restarts on file changes
+4. Ideal for rapid development iteration
+
+**Manual server control**:
+```bash
+# Start development server
+npm run dev
+
+# Start production server
+npm start
+
+# Kill process manually
+lsof -ti:3003 | xargs kill -9
+```
+
+**Quick testing scripts** (root directory):
+```bash
+# Test static PHP sites functionality
+node test-static-sites.js
+
+# Test critical billing features
+node test-billing-critical.js
+
+# Quick test script (custom tests)
+./quick-test.sh
+```
+
 ## Architecture Overview
 
 ### Request Flow
@@ -106,6 +142,15 @@ const getSomething = async (id, userId) => {
 - `project_articles`: `usage_limit` (default 1), `usage_count`, `status`
 - Articles are single-use only (limit=1)
 - Used articles (usage_count >= 1) cannot be deleted
+
+**Extended Fields (v2.5.0+)** (added via migration):
+- `project_links` JSONB columns:
+  - `image_url` - Image URL for link display
+  - `link_attributes` - JSON object with HTML attributes (class, style, rel, target, data-*)
+  - `wrapper_config` - JSON object with wrapper element config (wrapper_tag, wrapper_class, wrapper_style)
+  - `custom_data` - JSON object with any additional custom data
+- All fields are OPTIONAL (nullable)
+- No uniqueness constraint on `anchor_text` (removed January 2025)
 
 ### Route Parameter Conventions
 **CRITICAL**: Route definitions use `:id` for project ID, NOT `:projectId`:
@@ -233,15 +278,101 @@ Articles can be duplicated to reuse content with a new usage count:
 POST /api/projects/:id/articles/:articleId/duplicate
 ```
 
-### WordPress Plugin Integration (v2.2.2)
+### Allow Duplicate Anchor Texts (Updated January 2025)
+
+**BREAKING CHANGE**: The UNIQUE constraint on `project_links.anchor_text` has been REMOVED.
+
+**Previous Behavior** (Before January 2025):
+- Each anchor text could only be used ONCE per project
+- Attempting to create duplicate anchor caused database error
+- `UNIQUE (project_id, anchor_text)` constraint enforced uniqueness
+
+**Current Behavior** (January 2025+):
+- Same anchor text can be used MULTIPLE times in same project
+- No uniqueness validation on anchor text
+- Allows flexibility for common anchors (e.g., "click here", "read more")
+
+**Migration Required**:
+```bash
+node database/run_remove_anchor_constraint.js
+```
+
+**SQL executed**:
+```sql
+ALTER TABLE project_links
+  DROP CONSTRAINT IF EXISTS project_links_project_id_anchor_text_key;
+```
+
+**Impact on Existing Code**:
+- ✅ No API changes required - endpoints work identically
+- ✅ Frontend forms work without modification
+- ✅ Validation logic removed from `project.service.js`
+- ⚠️ Old error handling for "duplicate anchor" no longer needed
+
+**Use Cases Enabled**:
+1. Multiple links with same anchor to different URLs
+2. A/B testing same anchor with different destinations
+3. Common anchors like "Learn More", "Buy Now" across multiple links
+4. Seasonal campaigns reusing same anchor text
+
+**Example** (now allowed):
+```javascript
+// Link 1
+POST /api/projects/123/links
+{ "anchor_text": "Buy Now", "url": "https://shop1.com" }
+
+// Link 2 - SAME anchor, different URL
+POST /api/projects/123/links
+{ "anchor_text": "Buy Now", "url": "https://shop2.com" }
+
+// Both succeed - no duplicate error
+```
+
+**Database Schema Before/After**:
+```sql
+-- BEFORE (constraint exists)
+CREATE TABLE project_links (
+  ...
+  UNIQUE (project_id, anchor_text)  -- This prevented duplicates
+);
+
+-- AFTER (constraint removed)
+CREATE TABLE project_links (
+  ...
+  -- No anchor_text uniqueness constraint
+  -- Only PRIMARY KEY on id remains
+);
+```
+
+### WordPress Plugin Integration (v2.4.5)
+**Current Version**: 2.4.5 (January 2025)
+
 - Plugin generates API token (not username/password)
 - Token must be added to site record via `api_key` field
 - **Plugin structure**:
-  - `wordpress-plugin/link-manager-widget.php` - Main plugin file
+  - `wordpress-plugin/link-manager-widget.php` - Main plugin file (v2.4.5)
   - `wordpress-plugin/assets/styles.css` - Frontend styles for links and articles
+  - `wordpress-plugin/CHANGELOG.md` - Version history
 - **Download**: Available as ZIP at `backend/build/link-manager-widget.zip`
 - **Security**: CSRF-protected settings form with WordPress nonce verification
 - **Repository**: https://github.com/maxximseo/link-manager (unified repo, no separate plugin repo)
+
+**Version History**:
+- **v2.4.5** (Jan 2025): Extended fields support (image_url, link_attributes, wrapper_config, custom_data), multiple templates
+- **v2.4.4** (Jan 2025): Display available content statistics in admin
+- **v2.4.3** (Dec 2024): Remove "Number of links" field from widget
+- **v2.4.2** (Dec 2024): Fix browser autofill issue in registration form
+- **v2.4.1** (Dec 2024): Improve registration form UX
+- **v2.4.0** (Nov 2025): Bulk registration support with tokens
+- **v2.2.2** (Oct 2024): Initial stable release
+
+**Features in v2.4.5**:
+- Template system: default, with_image, card, custom
+- JSONB extended fields rendering
+- Dynamic link attribute injection
+- Wrapper element configuration
+- Custom HTML support with XSS protection
+- Shortcode parameters: template, limit, home_only
 
 **API Response Format:**
 WordPress service `publishArticle()` returns:
@@ -362,11 +493,14 @@ The placements creation interface (`placements.html`) uses a streamlined 3-step 
 - Cache: `backend/services/cache.service.js` (Redis wrapper with graceful degradation)
 
 ### Frontend Pages
-- Dashboard: `backend/build/dashboard.html`
-- Projects list: `backend/build/projects.html`
+- Dashboard (merged with projects list): `backend/build/dashboard.html` - Title: "Мои Проекты"
 - Project detail (links/articles management): `backend/build/project-detail.html`
 - Sites: `backend/build/sites.html`
-- Placements: `backend/build/placements.html`
+- Placements (purchase): `backend/build/placements.html`
+- Placements manager (view/manage): `backend/build/placements-manager.html`
+- Balance: `backend/build/balance.html`
+
+**Note**: `projects.html` was merged into `dashboard.html` (January 2025). Navigation menu shows "Мои Проекты" → dashboard.html.
 
 ### Database
 - Schema: `database/init.sql`
@@ -1061,11 +1195,24 @@ psql -d linkmanager -f database/migrate_add_wordpress_post_id.sql
 # 6. Install billing system (optional)
 node database/run_billing_migration.js
 
-# 7. Seed data
+# 7. Add registration tokens table (optional, for bulk registration)
+node database/run_registration_tokens_migration.js
+
+# 8. Remove anchor_text uniqueness constraint (REQUIRED for v2.5.0+)
+node database/run_remove_anchor_constraint.js
+
+# 9. Add extended fields to project_links (REQUIRED for v2.5.0+)
+node database/run_extended_fields_migration.js
+
+# 10. Seed data
 psql -d linkmanager -f database/seed.sql
 ```
 
-**DO NOT SKIP** migrations #2, #3, or #4 - system will not work without them.
+**DO NOT SKIP** migrations #2, #3, #4, #8, or #9 - system will not work without them.
+
+**Optional migrations**: #6 (billing), #7 (bulk registration)
+
+**New in v2.5.0**: Migrations #8 and #9 add support for duplicate anchor texts and extended JSONB fields.
 
 ## Bulk WordPress Site Registration (NEW - November 2025)
 
@@ -1249,3 +1396,224 @@ When adding features to bulk registration:
 4. Copy to build: `cp -r wordpress-plugin/* backend/build/wordpress-plugin/`
 5. Create ZIP: `zip -r backend/build/link-manager-widget.zip wordpress-plugin/ -x "*.DS_Store"`
 6. Test on WordPress site before deployment
+
+## Extended Fields System (v2.5.0+)
+
+**Status**: Active since January 2025
+
+The Extended Fields System allows passing ANY custom data to WordPress sites without modifying plugin code.
+
+### New JSONB Columns in project_links Table
+
+Added via `database/migrate_extended_fields.sql`:
+
+1. **image_url** (JSONB) - URL for link images
+2. **link_attributes** (JSONB) - Custom HTML attributes (class, style, rel, target, data-*)
+3. **wrapper_config** (JSONB) - Wrapper element configuration (tag, class, style)
+4. **custom_data** (JSONB) - Any additional custom data
+
+### Migration
+
+```bash
+node database/run_extended_fields_migration.js
+```
+
+**SQL Schema**:
+```sql
+ALTER TABLE project_links
+  ADD COLUMN IF NOT EXISTS image_url JSONB,
+  ADD COLUMN IF NOT EXISTS link_attributes JSONB,
+  ADD COLUMN IF NOT EXISTS wrapper_config JSONB,
+  ADD COLUMN IF NOT EXISTS custom_data JSONB;
+```
+
+### API Usage
+
+**Creating link with extended fields**:
+```javascript
+POST /api/projects/:id/links
+{
+  "anchor_text": "Download Game",
+  "url": "https://example.com",
+  "image_url": "https://example.com/icon.png",
+  "link_attributes": {
+    "class": "btn btn-primary",
+    "style": "color: red; font-weight: bold;",
+    "rel": "nofollow",
+    "target": "_blank"
+  },
+  "wrapper_config": {
+    "wrapper_tag": "div",
+    "wrapper_class": "special-offer highlighted",
+    "wrapper_style": "border: 2px solid gold; padding: 15px;"
+  },
+  "custom_data": {
+    "description": "Best service for your business",
+    "category": "premium"
+  }
+}
+```
+
+### WordPress Plugin Templates
+
+WordPress plugin (v2.4.5+) supports multiple display templates via shortcode:
+
+**Default Template** (existing behavior):
+```
+[lm_links]
+```
+Outputs: `html_context` or simple anchor
+
+**With Image Template**:
+```
+[lm_links template="with_image"]
+```
+Outputs:
+```html
+<div class="lmw-link-with-image">
+  <img src="IMAGE_URL" alt="ANCHOR" class="lmw-link-image" />
+  <a href="URL">ANCHOR</a>
+</div>
+```
+
+**Card Template**:
+```
+[lm_links template="card"]
+```
+Outputs:
+```html
+<div class="lmw-link-card">
+  <div class="lmw-card-image"><img src="IMAGE_URL" /></div>
+  <div class="lmw-card-content">
+    <h4 class="lmw-card-title"><a href="URL">ANCHOR</a></h4>
+    <p class="lmw-card-description">CUSTOM_DATA.description</p>
+  </div>
+</div>
+```
+
+**Custom Template**:
+```
+[lm_links template="custom"]
+```
+Outputs: Raw HTML from `custom_data.html` field (XSS-protected via `wp_kses_post()`)
+
+**Additional Shortcode Parameters**:
+```
+[lm_links template="card" limit="3" home_only="false"]
+```
+- `template`: default|with_image|card|custom
+- `limit`: Maximum links to display (default: all)
+- `home_only`: true|false (default: true, only show on homepage)
+
+### Link Attributes Rendering
+
+When `link_attributes` is provided, plugin automatically applies to `<a>` tag:
+
+**Example**:
+```json
+{
+  "link_attributes": {
+    "class": "btn btn-primary custom-link",
+    "style": "color: blue;",
+    "data-category": "featured"
+  }
+}
+```
+
+**Renders as**:
+```html
+<a href="URL" class="btn btn-primary custom-link" style="color: blue;" data-category="featured">Text</a>
+```
+
+### Wrapper Configuration
+
+When `wrapper_config` is provided, link is wrapped in custom element:
+
+**Example**:
+```json
+{
+  "wrapper_config": {
+    "wrapper_tag": "div",
+    "wrapper_class": "featured-box premium",
+    "wrapper_style": "background: #f0f0f0; padding: 20px;"
+  }
+}
+```
+
+**Renders as**:
+```html
+<div class="featured-box premium" style="background: #f0f0f0; padding: 20px;">
+  <a href="URL">Text</a>
+</div>
+```
+
+### Frontend CSS Styling
+
+Add to WordPress theme's `style.css`:
+
+```css
+/* Link with image */
+.lmw-link-with-image {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.lmw-link-image {
+  max-width: 50px;
+  height: auto;
+  border-radius: 5px;
+}
+
+/* Card template */
+.lmw-link-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 15px 0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.lmw-card-image img {
+  width: 100%;
+  height: auto;
+}
+
+.lmw-card-content {
+  padding: 15px;
+}
+
+.lmw-card-title {
+  margin: 0 0 10px 0;
+  font-size: 18px;
+}
+
+.lmw-card-description {
+  color: #666;
+  font-size: 14px;
+}
+```
+
+### Backward Compatibility
+
+**CRITICAL**: All extended fields are OPTIONAL. Existing links without these fields continue to work with default template.
+
+- Links without `image_url`: Image not displayed
+- Links without `link_attributes`: Uses default `<a>` tag styling
+- Links without `wrapper_config`: No wrapper element
+- Links without `custom_data`: Template-specific fallbacks used
+
+### Security
+
+**XSS Protection**:
+- `image_url`: Validated as URL, escaped via `esc_url()`
+- `link_attributes`: Keys whitelisted, values escaped via `esc_attr()`
+- `wrapper_config`: Tag whitelisted (div, span, section), attributes escaped
+- `custom_data.html`: Sanitized via `wp_kses_post()` (allows safe HTML only)
+
+**Allowed HTML tags in custom HTML**:
+- Text: `<p>`, `<span>`, `<div>`, `<h1>`-`<h6>`
+- Links: `<a>` (with href, class, style, target attributes)
+- Formatting: `<strong>`, `<em>`, `<br>`, `<ul>`, `<ol>`, `<li>`
+- NOT allowed: `<script>`, `<iframe>`, `<object>`, event handlers (onclick, etc.)
