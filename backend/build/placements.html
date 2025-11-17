@@ -536,30 +536,29 @@
 
         async function loadSitesForPlacement(projectId, contentType) {
             try {
-                // Get all placements and filter by project
-                const placementsResponse = await fetch(`/api/placements`, {
+                // Get placements for this specific project with high limit to ensure we get ALL of them
+                const placementsResponse = await fetch(`/api/placements?project_id=${projectId}&limit=9999`, {
                     headers: { 'Authorization': `Bearer ${getAuthToken()}` }
                 });
                 const placementsData = await placementsResponse.json();
-                const allPlacements = placementsData.data || placementsData; // Extract data array if paginated
+                const projectPlacements = placementsData.data || placementsData; // Extract data array if paginated
 
-                console.log('All placements:', allPlacements);
-                console.log('Looking for project_id:', projectId);
-
-                // Filter placements for this project
-                const projectPlacements = allPlacements.filter(p => p.project_id == projectId);
+                console.log('Project placements loaded:', projectPlacements.length);
+                console.log('Project ID:', projectId);
 
                 console.log('Project placements:', projectPlacements);
 
                 // Build map of sites with their content status (links and articles)
+                // CRITICAL: Mark sites that already have placements for this project
                 const sitesStatus = new Map();
                 for (const placement of projectPlacements) {
                     if (!sitesStatus.has(placement.site_id)) {
                         sitesStatus.set(placement.site_id, { hasLinks: false, hasArticles: false });
                     }
                     const status = sitesStatus.get(placement.site_id);
-                    if (placement.link_count > 0) status.hasLinks = true;
-                    if (placement.article_count > 0) status.hasArticles = true;
+                    // Use placement.type for reliable detection (link_count/article_count might be 0 in some cases)
+                    if (placement.type === 'link' || placement.link_count > 0) status.hasLinks = true;
+                    if (placement.type === 'article' || placement.article_count > 0) status.hasArticles = true;
                 }
 
                 // Get available content
