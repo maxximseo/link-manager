@@ -127,6 +127,7 @@ async function loadActivePlacements() {
  * Render active placements
  */
 function renderActivePlacements(placements) {
+    console.log('renderActivePlacements called with:', placements.length, 'placements');
     const tbody = document.getElementById('activePlacementsTable');
     tbody.innerHTML = '';
 
