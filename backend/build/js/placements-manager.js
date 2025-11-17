@@ -124,6 +124,56 @@ async function loadActivePlacements() {
 }
 
 /**
+ * Apply placement filters
+ */
+function applyPlacementFilters(placements) {
+    return placements.filter(p => {
+        // Project filter
+        if (activeFilters.projectId && p.project_id != activeFilters.projectId) {
+            return false;
+        }
+
+        // Type filter
+        if (activeFilters.type && p.type !== activeFilters.type) {
+            return false;
+        }
+
+        // Date range filter
+        if (activeFilters.dateFrom || activeFilters.dateTo) {
+            const placementDate = new Date(p.purchased_at);
+
+            if (activeFilters.dateFrom) {
+                const fromDate = new Date(activeFilters.dateFrom);
+                if (placementDate < fromDate) return false;
+            }
+
+            if (activeFilters.dateTo) {
+                const toDate = new Date(activeFilters.dateTo);
+                toDate.setHours(23, 59, 59, 999); // End of day
+                if (placementDate > toDate) return false;
+            }
+        }
+
+        return true;
+    });
+}
+
+/**
+ * Apply filters from UI inputs
+ */
+function applyFilters() {
+    // Update filter state from UI
+    activeFilters.projectId = document.getElementById('projectFilter').value;
+    activeFilters.type = document.getElementById('typeFilter').value;
+    activeFilters.dateFrom = document.getElementById('dateFrom').value;
+    activeFilters.dateTo = document.getElementById('dateTo').value;
+
+    // Re-filter and re-render active placements
+    const filtered = applyPlacementFilters(allActivePlacements);
+    renderActivePlacements(filtered);
+}
+
+/**
  * Render active placements
  */
 function renderActivePlacements(placements) {
