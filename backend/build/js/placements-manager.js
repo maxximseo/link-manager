@@ -113,6 +113,7 @@ async function loadActivePlacements() {
 
         // Apply filters and render
         const filtered = applyPlacementFilters(allActivePlacements);
+        console.log('After filtering:', filtered.length);
         renderActivePlacements(filtered);
 
     } catch (error) {
