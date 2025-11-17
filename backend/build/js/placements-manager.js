@@ -93,7 +93,7 @@ async function loadBalance() {
  */
 async function loadActivePlacements() {
     try {
-        const response = await fetch('/api/placements?status=placed&limit=500', {
+        const response = await fetch('/api/placements?status=placed&limit=5000', {
             headers: { 'Authorization': `Bearer ${getToken()}` }
         });
 
