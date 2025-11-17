@@ -389,6 +389,7 @@
         let selectedSitesForList = new Set(); // Track selected sites (not for placement, but for list operations)
         let currentImportTarget = 'whitelist'; // 'whitelist' or 'blacklist'
         let importListModal;
+        let hasAvailableContent = false; // Whether project has links/articles to purchase
 
         document.addEventListener('DOMContentLoaded', async () => {
             progressModal = new bootstrap.Modal(document.getElementById('progressModal'));
@@ -549,13 +550,10 @@
                 // Get available content
                 const availableContent = contentType === 'links' ? projectLinks : projectArticles;
 
-                if (availableContent.length === 0) {
-                    document.getElementById('sitesTableBody').innerHTML = `
-                        <tr><td colspan="5" class="text-center text-danger">
-                            No available ${contentType} in this project
-                        </td></tr>
-                    `;
-                    return;
+                // Show warning if no content, but don't block site loading
+                hasAvailableContent = availableContent.length > 0;
+                if (!hasAvailableContent) {
+                    showNotification(`Сначала добавьте ${contentType === 'links' ? 'ссылки' : 'статьи'} в проект`, 'warning');
                 }
 
                 // Apply whitelist/blacklist filtering ONLY if activated
@@ -930,8 +928,8 @@
                 whitelistBadge.textContent = selectedCount;
                 blacklistBadge.textContent = selectedCount;
 
-                // Enable/disable buttons based on content assignment
-                purchaseBtn.disabled = !allHaveContent;
+                // Enable/disable buttons based on content assignment AND project content availability
+                purchaseBtn.disabled = !allHaveContent || !hasAvailableContent;
                 whitelistBtn.disabled = false;
                 blacklistBtn.disabled = false;
             } else {
