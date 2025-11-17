@@ -537,7 +537,7 @@
         async function loadSitesForPlacement(projectId, contentType) {
             try {
                 // Get placements for this specific project with high limit to ensure we get ALL of them
-                const placementsResponse = await fetch(`/api/placements?project_id=${projectId}&limit=9999`, {
+                const placementsResponse = await fetch(`/api/placements?project_id=${projectId}&limit=500`, {
                     headers: { 'Authorization': `Bearer ${getAuthToken()}` }
                 });
                 const placementsData = await placementsResponse.json();
