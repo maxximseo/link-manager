@@ -122,7 +122,13 @@ const getContentByApiKey = async (apiKey) => {
       url: row.url,
       anchor_text: row.anchor_text,
       html_context: row.html_context || '',
-      position: '' // Position can be added later if needed
+      position: '', // Position can be added later if needed
+
+      // Extended fields for flexible rendering
+      image_url: row.image_url || '',
+      link_attributes: row.link_attributes || {},
+      wrapper_config: row.wrapper_config || {},
+      custom_data: row.custom_data || {}
     }));
 
     const articles = articlesResult.rows.map(row => ({
