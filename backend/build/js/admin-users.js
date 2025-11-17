@@ -1,4 +1,19 @@
 // Admin Users Management
+
+// Initialize navbar
+initNavbar('admin', 'users');
+
+// Check authentication
+if (!isAuthenticated()) {
+    window.location.href = '/index.html';
+}
+
+// Check admin role
+const user = getCurrentUser();
+if (user && user.role !== 'admin') {
+    window.location.href = '/dashboard.html';
+}
+
 let users = [];
 let filteredUsers = [];
 let currentPage = 1;
