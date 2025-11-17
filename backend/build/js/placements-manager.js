@@ -333,8 +333,11 @@ function renderScheduledPlacements(placements) {
             <td>${formatDate(p.purchased_at)}</td>
             <td>$${parseFloat(p.final_price || 0).toFixed(2)}</td>
             <td>
-                <button class="btn btn-sm btn-outline-danger" onclick="cancelScheduledPlacement(${p.id})">
-                    Отменить
+                <button class="btn btn-sm btn-success" onclick="publishNow(${p.id})" title="Опубликовать сейчас">
+                    <i class="bi bi-send-fill"></i> Опубликовать
+                </button>
+                <button class="btn btn-sm btn-outline-danger ms-1" onclick="cancelScheduledPlacement(${p.id})" title="Удалить размещение">
+                    <i class="bi bi-trash"></i>
                 </button>
             </td>
         `;
