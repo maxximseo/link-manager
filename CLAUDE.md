@@ -2,6 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 📚 Documentation Index
+
+- **[ADR.md](ADR.md)** - Architecture Decision Records (all major design decisions)
+- **[README.md](README.md)** - Quick start guide and project overview
+- **[EXTENDED_FIELDS_GUIDE.md](EXTENDED_FIELDS_GUIDE.md)** - Extended fields system documentation
+- **[database/MIGRATION_INSTRUCTIONS.md](database/MIGRATION_INSTRUCTIONS.md)** - Database migration guide
+
+**IMPORTANT**: Before making architectural changes, consult [ADR.md](ADR.md) for context on existing decisions.
+
 ## Development Commands
 
 ### Running the Server
@@ -1617,3 +1626,108 @@ Add to WordPress theme's `style.css`:
 - Links: `<a>` (with href, class, style, target attributes)
 - Formatting: `<strong>`, `<em>`, `<br>`, `<ul>`, `<ol>`, `<li>`
 - NOT allowed: `<script>`, `<iframe>`, `<object>`, event handlers (onclick, etc.)
+
+---
+
+## 📐 Architecture Decision Records (ADR)
+
+**See [ADR.md](ADR.md) for comprehensive documentation of all architectural decisions.**
+
+### Quick Reference of Active ADRs
+
+The following major architectural decisions govern this codebase:
+
+1. **[ADR-001: No ORM - Direct SQL Queries](ADR.md#adr-001-no-orm---direct-sql-queries)**
+   - Use parameterized SQL queries via `pg` driver, no ORM layer
+   - Performance-first approach with full SQL control
+
+2. **[ADR-002: JWT Authentication Without Database Lookups](ADR.md#adr-002-jwt-authentication-without-database-lookups)**
+   - All user info embedded in JWT payload
+   - 0ms auth overhead (no database queries in middleware)
+
+3. **[ADR-003: Redis Cache with Graceful Degradation](ADR.md#adr-003-redis-cache-with-graceful-degradation)**
+   - Optional Redis caching with automatic fallback
+   - 10-19x performance boost when available
+
+4. **[ADR-004: Transaction-Wrapped Multi-Step Operations](ADR.md#adr-004-transaction-wrapped-multi-step-operations)**
+   - All multi-table operations wrapped in PostgreSQL transactions
+   - Row-level locking to prevent race conditions
+
+5. **[ADR-005: Modular Frontend (Vanilla JS)](ADR.md#adr-005-modular-frontend-vanilla-js)**
+   - No framework overhead (React/Vue/Angular)
+   - Modular architecture with centralized API client
+
+6. **[ADR-006: 5-Tier Rate Limiting Strategy](ADR.md#adr-006-5-tier-rate-limiting-strategy)**
+   - Different limits for different operation types
+   - LOGIN (5/15min), API (100/min), CREATE (10/min), PLACEMENT (20/min), FINANCIAL (50/min)
+
+7. **[ADR-007: Parameterized Queries Only](ADR.md#adr-007-parameterized-queries-only)** ⚠️ CRITICAL
+   - NEVER concatenate user input into SQL
+   - Complete SQL injection protection
+
+8. **[ADR-008: Extended Fields System (JSONB)](ADR.md#adr-008-extended-fields-system-jsonb)**
+   - 4 JSONB columns for unlimited extensibility
+   - No schema migrations for new metadata fields
+
+9. **[ADR-009: Remove Anchor Text Uniqueness Constraint](ADR.md#adr-009-remove-anchor-text-uniqueness-constraint)**
+   - Allow duplicate anchor texts in same project
+   - Enables A/B testing and common CTAs
+
+10. **[ADR-010: Bull Queue Workers (Optional)](ADR.md#adr-010-bull-queue-workers-optional)**
+    - Background processing for heavy operations
+    - Graceful degradation without Redis
+
+11. **[ADR-011: Static PHP Sites Support](ADR.md#adr-011-static-php-sites-support)**
+    - Two site types: wordpress and static_php
+    - Domain-based authentication for static sites
+
+12. **[ADR-012: Billing System Architecture](ADR.md#adr-012-billing-system-architecture)**
+    - Transaction-based prepaid billing
+    - 5-tier discount system based on total_spent
+
+13. **[ADR-013: Bulk Registration via Tokens](ADR.md#adr-013-bulk-registration-via-tokens)**
+    - Token-based self-service site registration
+    - Scales to 1000+ WordPress installations
+
+14. **[ADR-014: COALESCE Pattern for Partial Updates](ADR.md#adr-014-coalesce-pattern-for-partial-updates)**
+    - All UPDATE queries use COALESCE for partial updates
+    - True REST PATCH semantics
+
+15. **[ADR-015: Pagination Limits (5000 Max)](ADR.md#adr-015-pagination-limits-5000-max)**
+    - MAX_LIMIT increased from 100 to 5000
+    - Supports high-volume bulk operations
+
+16. **[ADR-016: Winston Logging Strategy](ADR.md#adr-016-winston-logging-strategy)**
+    - Structured JSON logging with daily rotation
+    - Error logs: 14 days, Combined: 30 days
+
+### When to Consult ADR
+
+**Before making these changes, read relevant ADRs**:
+- ✅ Adding new database tables or columns → ADR-001, ADR-004, ADR-007
+- ✅ Changing authentication logic → ADR-002
+- ✅ Adding caching layer → ADR-003
+- ✅ Modifying frontend architecture → ADR-005
+- ✅ Adding new API endpoints → ADR-006, ADR-007
+- ✅ Database schema changes → ADR-001, ADR-008, ADR-014
+- ✅ Performance optimization → ADR-003, ADR-010, ADR-015
+- ✅ Security improvements → ADR-007, ADR-011
+
+**ADR Review Schedule**:
+- **Last Review**: January 2025
+- **Next Review**: June 2025
+- **Trigger**: Major version bump, security issues, or performance problems
+
+---
+
+## Git Workflow
+
+Repository: https://github.com/maxximseo/link-manager.git
+- Branch: `main`
+- Auto-deploy to DigitalOcean on push
+- Always commit with message ending in:
+  ```
+  🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+  Co-Authored-By: Claude <noreply@anthropic.com>
+  ```
