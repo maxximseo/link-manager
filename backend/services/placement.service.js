@@ -37,6 +37,7 @@ const getUserPlacements = async (userId, page = 0, limit = 0, filters = {}) => {
         p.placed_at,
         p.purchased_at,
         p.published_at,
+        p.scheduled_publish_date,
         p.expires_at,
         p.auto_renewal,
         p.renewal_price,
