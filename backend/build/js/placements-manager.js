@@ -312,6 +312,15 @@ function renderScheduledPlacements(placements) {
 
     document.getElementById('scheduledCount').textContent = placements.length;
 
+    // DEBUG: Log placement data to see what's coming from API
+    console.log('=== SCHEDULED PLACEMENTS DEBUG ===');
+    console.log('Total placements:', placements.length);
+    if (placements.length > 0) {
+        console.log('First placement data:', placements[0]);
+        console.log('scheduled_publish_date value:', placements[0]?.scheduled_publish_date);
+        console.log('scheduled_publish_date type:', typeof placements[0]?.scheduled_publish_date);
+    }
+
     placements.forEach(p => {
         const row = document.createElement('tr');
 
@@ -324,12 +333,17 @@ function renderScheduledPlacements(placements) {
             ? `${p.site_url}/?p=${p.wordpress_post_id}`
             : p.site_url;
 
+        // DEBUG: Log the date before formatting
+        console.log(`Placement #${p.id} scheduled_publish_date:`, p.scheduled_publish_date);
+        const formattedDate = formatDate(p.scheduled_publish_date);
+        console.log(`Placement #${p.id} formatted date:`, formattedDate);
+
         row.innerHTML = `
             <td>#${p.id}</td>
             <td>${p.project_name || '—'}</td>
             <td><a href="${displayUrl}" target="_blank">${displayUrl}</a></td>
             <td>${typeBadge}</td>
-            <td class="fw-bold text-primary">${formatDate(p.scheduled_publish_date)}</td>
+            <td class="fw-bold text-primary">${formattedDate}</td>
             <td>${formatDate(p.purchased_at)}</td>
             <td>$${parseFloat(p.final_price || 0).toFixed(2)}</td>
             <td>
