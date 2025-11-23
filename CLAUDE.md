@@ -4,12 +4,57 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 📚 Documentation Index
 
-- **[ADR.md](ADR.md)** - Architecture Decision Records (all major design decisions)
+### Core Documentation (Must Read)
+- **[CLAUDE.md](CLAUDE.md)** - This file: Complete development guide
+- **[ADR.md](ADR.md)** - Architecture Decision Records (16 major design decisions)
 - **[README.md](README.md)** - Quick start guide and project overview
-- **[EXTENDED_FIELDS_GUIDE.md](EXTENDED_FIELDS_GUIDE.md)** - Extended fields system documentation
-- **[database/MIGRATION_INSTRUCTIONS.md](database/MIGRATION_INSTRUCTIONS.md)** - Database migration guide
+- **[API_REFERENCE.md](API_REFERENCE.md)** - Complete API endpoint reference (60+ routes)
 
-**IMPORTANT**: Before making architectural changes, consult [ADR.md](ADR.md) for context on existing decisions.
+### Operational Documentation
+- **[RUNBOOK.md](RUNBOOK.md)** - Step-by-step procedures for common operations
+- **[CHANGELOG.md](CHANGELOG.md)** - Version history and all changes (v1.0.0 → v2.5.0)
+- **[DECISIONS.md](DECISIONS.md)** - Quick technical patterns and gotchas
+
+### Specialized Guides
+- **[EXTENDED_FIELDS_GUIDE.md](EXTENDED_FIELDS_GUIDE.md)** - Extended fields system (JSONB)
+- **[database/MIGRATION_INSTRUCTIONS.md](database/MIGRATION_INSTRUCTIONS.md)** - Database migration guide
+- **[wordpress-plugin/CHANGELOG.md](wordpress-plugin/CHANGELOG.md)** - Plugin version history
+
+### Documentation Hierarchy
+```
+┌─────────────────────────────────────────┐
+│ CLAUDE.md - Start here                  │
+│ ├─ Development commands                 │
+│ ├─ Architecture overview                │
+│ └─ Links to all other docs              │
+└─────────────────────────────────────────┘
+         ↓
+┌─────────────────────────────────────────┐
+│ ADR.md - Architectural decisions        │
+│ WHY things are built this way           │
+└─────────────────────────────────────────┘
+         ↓
+┌─────────────────────────────────────────┐
+│ API_REFERENCE.md - API contracts        │
+│ HOW to use the system                   │
+└─────────────────────────────────────────┘
+         ↓
+┌─────────────────────────────────────────┐
+│ RUNBOOK.md - Operations                 │
+│ WHAT to do when issues arise            │
+└─────────────────────────────────────────┘
+         ↓
+┌─────────────────────────────────────────┐
+│ DECISIONS.md - Quick patterns           │
+│ Daily development shortcuts             │
+└─────────────────────────────────────────┘
+```
+
+**IMPORTANT**:
+- Before architectural changes → Read [ADR.md](ADR.md)
+- Before API changes → Read [API_REFERENCE.md](API_REFERENCE.md)
+- Before deployment → Read [RUNBOOK.md](RUNBOOK.md)
+- Quick coding questions → Read [DECISIONS.md](DECISIONS.md)
 
 ## Development Commands
 
