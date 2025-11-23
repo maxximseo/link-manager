@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 30
+    },
+    "auditLog": "/Users/Maximios/Library/Mobile Documents/com~apple~CloudDocs/Claude/LINK/link-manager/backend/logs/.dad9fc8a5a79af7c6f68db9f62d16588f41dc62a-audit.json",
+    "files": [
+        {
+            "date": 1762942012095,
+            "name": "/Users/Maximios/Library/Mobile Documents/com~apple~CloudDocs/Claude/LINK/link-manager/backend/logs/application-2025-11-12.log",
+            "hash": "41c63bae920a152151a65caf5f26628162bc84ccdbe98268f67145232749f465"
+        }
+    ],
+    "hashType": "sha256"
+}
