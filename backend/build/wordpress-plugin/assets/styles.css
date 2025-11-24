@@ -19,23 +19,23 @@
     margin: 8px 0;
     padding: 8px 12px;
     background: #f8f9fa;
-    border-left: 3px solid #007bff;
+    border-left: 3px solid #667eea;
     transition: all 0.3s ease;
 }
 
 .lmw-style-list .lmw-link-list li:hover {
     background: #e9ecef;
-    border-left-color: #0056b3;
+    border-left-color: #5568d3;
 }
 
 .lmw-style-list .lmw-link-list a {
-    color: #007bff;
+    color: #667eea;
     text-decoration: none;
     font-weight: 500;
 }
 
 .lmw-style-list .lmw-link-list a:hover {
-    color: #0056b3;
+    color: #5568d3;
     text-decoration: underline;
 }
 
@@ -45,13 +45,13 @@
 }
 
 .lmw-style-inline a {
-    color: #007bff;
+    color: #667eea;
     text-decoration: none;
     padding: 0 8px;
 }
 
 .lmw-style-inline a:hover {
-    color: #0056b3;
+    color: #5568d3;
     text-decoration: underline;
 }
 
