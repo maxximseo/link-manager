@@ -254,7 +254,7 @@ window.NotificationsComponent = {
             }
             
             .notification.info {
-                background: linear-gradient(45deg, #3b82f6, #2563eb);
+                background: linear-gradient(45deg, #667eea, #764ba2);
             }
             
             .notification:not(:last-child) {
