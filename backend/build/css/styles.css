@@ -598,7 +598,7 @@ body {
 }
 
 .notification.info {
-    background: #3b82f6;
+    background: #667eea;
 }
 
 /* Loading Spinner */
@@ -745,7 +745,7 @@ body {
 
 /* Batch Mode Styles */
 .btn-small {
-    background: #3b82f6;
+    background: #667eea;
     color: white;
     border: none;
     padding: 6px 12px;
@@ -756,7 +756,7 @@ body {
 }
 
 .btn-small:hover {
-    background: #2563eb;
+    background: #5568d3;
 }
 
 .site-checkbox-label {
@@ -823,7 +823,7 @@ body {
 .queue-stat-number {
     font-size: 24px;
     font-weight: bold;
-    color: #2563eb;
+    color: #667eea;
 }
 
 .queue-stat-label {
@@ -1038,6 +1038,11 @@ p {
 }
 
 /* Outline button variants with gradient on hover */
+.btn-outline-primary {
+    color: #667eea;
+    border-color: #667eea;
+}
+
 .btn-outline-primary:hover {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border-color: transparent;
