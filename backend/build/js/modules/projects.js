@@ -50,7 +50,7 @@ window.ProjectsModule = {
                 <div class="project-card">
                     <div class="project-info">
                         <div class="project-header">
-                            <h4 onclick="ProjectsModule.openProject(${project.id})" style="cursor: pointer; color: #3182ce;">
+                            <h4 onclick="ProjectsModule.openProject(${project.id})" style="cursor: pointer; color: #667eea;">
                                 ${AppUtils.escapeHtml(project.name)}
                             </h4>
                             <div class="project-actions">

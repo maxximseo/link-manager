@@ -194,14 +194,14 @@ body {
 }
 
 .nav-btn:hover {
-    color: #3182ce;
-    background: rgba(49, 130, 206, 0.05);
+    color: #667eea;
+    background: rgba(102, 126, 234, 0.05);
 }
 
 .nav-btn.active {
-    color: #3182ce;
-    border-bottom-color: #3182ce;
-    background: rgba(49, 130, 206, 0.1);
+    color: #667eea;
+    border-bottom-color: #667eea;
+    background: rgba(102, 126, 234, 0.1);
 }
 
 /* Content Area */
@@ -274,7 +274,7 @@ body {
 .form-group select:focus,
 .form-group textarea:focus {
     outline: none;
-    border-color: #3182ce;
+    border-color: #667eea;
     box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
 }
 
@@ -293,7 +293,7 @@ body {
 
 /* Button Styles */
 .btn {
-    background: #3182ce;
+    background: #667eea;
     color: white;
     border: none;
     padding: 12px 24px;
@@ -311,7 +311,7 @@ body {
 }
 
 .btn:hover {
-    background: #2c5aa0;
+    background: #5568d3;
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(49, 130, 206, 0.4);
 }
@@ -328,7 +328,7 @@ body {
 
 .btn-outline:hover {
     background: white;
-    color: #3182ce;
+    color: #667eea;
 }
 
 /* Button color styles moved to gradient section below (lines 1022+) */
@@ -519,7 +519,7 @@ body {
 }
 
 .pagination-btn {
-    background: #3182ce;
+    background: #667eea;
     color: white;
     border: none;
     padding: 8px 16px;
@@ -531,7 +531,7 @@ body {
 }
 
 .pagination-btn:hover:not(:disabled) {
-    background: #2c5aa0;
+    background: #5568d3;
     transform: translateY(-1px);
 }
 
@@ -607,7 +607,7 @@ body {
     width: 20px;
     height: 20px;
     border: 2px solid #f3f3f3;
-    border-top: 2px solid #3182ce;
+    border-top: 2px solid #667eea;
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
@@ -770,7 +770,7 @@ body {
 /* Batch Progress Styles */
 .spinner {
     border: 2px solid #e5e7eb;
-    border-top: 2px solid #0ea5e9;
+    border-top: 2px solid #667eea;
     border-radius: 50%;
     width: 20px;
     height: 20px;
@@ -779,7 +779,7 @@ body {
 
 #batchProgress {
     background: #f0f9ff;
-    border: 1px solid #0ea5e9;
+    border: 1px solid #667eea;
     border-radius: 5px;
     padding: 15px;
     margin-top: 15px;
@@ -795,7 +795,7 @@ body {
 
 #batchProgressFill {
     height: 100%;
-    background: #0ea5e9;
+    background: #667eea;
     width: 0%;
     transition: width 0.3s ease;
 }
@@ -1071,6 +1071,34 @@ p {
     background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
     border-color: transparent;
     color: white;
+}
+
+/* Complete btn-outline-primary state overrides to fix blue button issue */
+.btn-outline-primary:focus {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: #667eea;
+    color: white;
+    box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.5);
+}
+
+.btn-outline-primary:active,
+.btn-outline-primary.active {
+    background: linear-gradient(135deg, #5568d3 0%, #643a8c 100%) !important;
+    border-color: #5568d3 !important;
+    color: white !important;
+}
+
+.btn-outline-primary:disabled,
+.btn-outline-primary.disabled {
+    color: #667eea;
+    border-color: #667eea;
+    opacity: 0.65;
+}
+
+/* Override Bootstrap CSS variables for complete theme control */
+:root {
+    --bs-primary: #667eea;
+    --bs-primary-rgb: 102, 126, 234;
 }
 
 /* Form inputs focus */
