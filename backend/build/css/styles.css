@@ -1,3 +1,17 @@
+/* Bootstrap CSS Variable Overrides - MUST BE FIRST */
+:root {
+    --bs-primary: #667eea !important;
+    --bs-primary-rgb: 102, 126, 234 !important;
+    --bs-btn-color: #667eea !important;
+    --bs-btn-border-color: #667eea !important;
+    --bs-btn-hover-color: #fff !important;
+    --bs-btn-hover-bg: #667eea !important;
+    --bs-btn-hover-border-color: #667eea !important;
+    --bs-btn-active-color: #fff !important;
+    --bs-btn-active-bg: #5568d3 !important;
+    --bs-btn-active-border-color: #5568d3 !important;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -1039,14 +1053,16 @@ p {
 
 /* Outline button variants with gradient on hover */
 .btn-outline-primary {
-    color: #667eea;
-    border-color: #667eea;
+    color: #667eea !important;
+    border-color: #667eea !important;
+    border-width: 2px !important;
+    font-weight: 500 !important;
 }
 
 .btn-outline-primary:hover {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-color: transparent;
-    color: white;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border-color: #667eea !important;
+    color: white !important;
 }
 
 .btn-outline-success:hover {
@@ -1093,12 +1109,6 @@ p {
     color: #667eea;
     border-color: #667eea;
     opacity: 0.65;
-}
-
-/* Override Bootstrap CSS variables for complete theme control */
-:root {
-    --bs-primary: #667eea;
-    --bs-primary-rgb: 102, 126, 234;
 }
 
 /* Form inputs focus */
