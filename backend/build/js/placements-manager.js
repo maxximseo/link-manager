@@ -224,22 +224,22 @@ function renderActivePlacements(placements) {
                </div>`
             : '—';
 
-        // Actions
+        // Actions - using btn-xs for 3x smaller buttons
         const renewBtn = p.type === 'link' && p.renewal_price
-            ? `<button class="btn btn-sm btn-success me-1" onclick="renewPlacement(${p.id})">
-                 Продлить ($${parseFloat(p.renewal_price).toFixed(2)})
+            ? `<button class="btn btn-xs btn-success me-1" onclick="renewPlacement(${p.id})" title="Продлить за $${parseFloat(p.renewal_price).toFixed(2)}">
+                 <i class="bi bi-arrow-repeat"></i> Продлить
                </button>`
             : '';
 
         const viewBtn = p.wordpress_post_id
-            ? `<a href="${p.site_url}/?p=${p.wordpress_post_id}" target="_blank" class="btn btn-sm btn-outline-primary me-1">
+            ? `<a href="${p.site_url}/?p=${p.wordpress_post_id}" target="_blank" class="btn btn-xs btn-outline-primary me-1" title="Просмотреть">
                  <i class="bi bi-eye"></i>
                </a>`
             : '';
 
         // Delete button - only for admins
         const deleteBtn = isAdmin()
-            ? `<button class="btn btn-sm btn-outline-danger" onclick="deletePlacement(${p.id})" title="Удалить размещение">
+            ? `<button class="btn btn-xs btn-outline-danger" onclick="deletePlacement(${p.id})" title="Удалить размещение">
                  <i class="bi bi-trash"></i>
                </button>`
             : '';
