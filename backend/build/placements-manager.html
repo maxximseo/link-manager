@@ -216,8 +216,14 @@
                                         <th>Проект</th>
                                         <th>Сайт</th>
                                         <th>Тип</th>
-                                        <th>Опубликовано</th>
-                                        <th>Истекает</th>
+                                        <th class="sortable-header" onclick="sortActiveBy('published')">
+                                            Опубликовано
+                                            <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
+                                        </th>
+                                        <th class="sortable-header" onclick="sortActiveBy('expires')">
+                                            Истекает
+                                            <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
+                                        </th>
                                         <th>Цена</th>
                                         <th>Автопродление</th>
                                         <th>Действия</th>
@@ -249,8 +255,14 @@
                                         <th>Проект</th>
                                         <th>Сайт</th>
                                         <th>Тип</th>
-                                        <th>Дата публикации</th>
-                                        <th>Куплено</th>
+                                        <th class="sortable-header" onclick="sortScheduledBy('scheduled')">
+                                            Дата публикации
+                                            <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
+                                        </th>
+                                        <th class="sortable-header" onclick="sortScheduledBy('purchased')">
+                                            Куплено
+                                            <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
+                                        </th>
                                         <th>Цена</th>
                                         <th>Действия</th>
                                     </tr>
