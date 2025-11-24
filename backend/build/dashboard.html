@@ -67,6 +67,17 @@
             border-color: #6f42c1;
             color: white;
         }
+
+        /* Clickable badge hover effects */
+        a .badge {
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        a:hover .badge {
+            transform: scale(1.15);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
     </style>
 </head>
 <body>
@@ -323,8 +334,20 @@
                                 <span class="badge bg-success">${p.articles_count || 0}</span>
                             </td>
                             <td>$${totalSpent.toFixed(2)}</td>
-                            <td><span class="badge bg-success">${activePlacements}</span></td>
-                            <td><span class="badge bg-warning text-dark">${scheduledPlacements}</span></td>
+                            <td>
+                                <a href="/placements-manager.html?projectId=${p.id}&tab=active"
+                                   class="text-decoration-none"
+                                   title="Просмотреть размещения для проекта ${escapeHtml(p.name)}">
+                                    <span class="badge bg-success">${activePlacements}</span>
+                                </a>
+                            </td>
+                            <td>
+                                <a href="/placements-manager.html?projectId=${p.id}&tab=scheduled"
+                                   class="text-decoration-none"
+                                   title="Просмотреть запланированные размещения для проекта ${escapeHtml(p.name)}">
+                                    <span class="badge bg-warning text-dark">${scheduledPlacements}</span>
+                                </a>
+                            </td>
                             <td>
                                 <button class="btn btn-xs btn-purple me-1" onclick="editProject(${p.id})" title="Редактировать">
                                     <i class="bi bi-pencil"></i>

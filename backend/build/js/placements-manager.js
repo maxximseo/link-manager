@@ -34,7 +34,35 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('projectFilter').value = projectId;
     }
 
-    await loadActivePlacements();
+    // Check for tab parameter and switch to that tab
+    const tabParam = urlParams.get('tab');
+    if (tabParam && ['active', 'scheduled', 'history'].includes(tabParam)) {
+        // Get tab elements
+        const tabButton = document.getElementById(`${tabParam}-tab`);
+        const tabPane = document.getElementById(tabParam);
+
+        if (tabButton && tabPane) {
+            // Remove active class from all tabs
+            document.querySelectorAll('.nav-link').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(pane => {
+                pane.classList.remove('show', 'active');
+            });
+
+            // Activate target tab
+            tabButton.classList.add('active');
+            tabPane.classList.add('show', 'active');
+        }
+    }
+
+    // Load data for the active tab
+    if (tabParam === 'scheduled') {
+        await loadScheduledPlacements();
+    } else if (tabParam === 'history') {
+        await loadHistoryPlacements();
+    } else {
+        // Default: load active placements
+        await loadActivePlacements();
+    }
     await updateTabCounts();
 
     // Tab change listeners
