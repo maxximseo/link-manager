@@ -1008,13 +1008,13 @@ p {
 }
 
 .btn-info {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border: none;
     color: white;
 }
 
 .btn-info:hover {
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    background: linear-gradient(135deg, #5568d3 0%, #643a8c 100%);
 }
 
 .btn-warning {
@@ -1057,7 +1057,7 @@ p {
 }
 
 .btn-outline-info:hover {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border-color: transparent;
     color: white;
 }
@@ -1294,4 +1294,14 @@ p {
     color: #6c757d !important;
     background-color: #fff !important;
     border-color: #dee2e6 !important;
+}
+
+/* Purple badge and text utilities */
+.bg-purple {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+}
+
+.text-purple {
+    color: #667eea !important;
 }
