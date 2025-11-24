@@ -977,6 +977,123 @@ function getToken() {
     return localStorage.getItem('token') || localStorage.getItem('authToken');
 }
 
+// ============================================
+// Sorting Functions
+// ============================================
+
+let activeSortColumn = null;
+let activeSortDirection = 'asc';
+let scheduledSortColumn = null;
+let scheduledSortDirection = 'asc';
+
+/**
+ * Sort active placements by column
+ */
+function sortActiveBy(column) {
+    // Toggle direction if same column, otherwise default to ascending
+    if (activeSortColumn === column) {
+        activeSortDirection = activeSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        activeSortColumn = column;
+        activeSortDirection = 'asc';
+    }
+
+    // Sort the array
+    const sorted = [...allActivePlacements].sort((a, b) => {
+        let aVal, bVal;
+
+        if (column === 'published') {
+            aVal = new Date(a.published_at || a.placed_at || 0);
+            bVal = new Date(b.published_at || b.placed_at || 0);
+        } else if (column === 'expires') {
+            aVal = new Date(a.expires_at || 0);
+            bVal = new Date(b.expires_at || 0);
+        }
+
+        if (aVal < bVal) return activeSortDirection === 'asc' ? -1 : 1;
+        if (aVal > bVal) return activeSortDirection === 'asc' ? 1 : -1;
+        return 0;
+    });
+
+    // Update sort icons
+    document.querySelectorAll('#activePlacementsTable').forEach(table => {
+        table.closest('.table-responsive').querySelectorAll('.sortable-header').forEach(th => {
+            th.classList.remove('sorted');
+            const icon = th.querySelector('.sort-icon i');
+            if (icon) {
+                icon.className = 'bi bi-arrow-down-up';
+            }
+        });
+    });
+
+    const activeHeader = document.querySelector(`.sortable-header[onclick="sortActiveBy('${column}')"]`);
+    if (activeHeader) {
+        activeHeader.classList.add('sorted');
+        const icon = activeHeader.querySelector('.sort-icon i');
+        if (icon) {
+            icon.className = activeSortDirection === 'asc' ? 'bi bi-arrow-up' : 'bi bi-arrow-down';
+        }
+    }
+
+    // Re-render
+    const filtered = applyPlacementFilters(sorted);
+    renderActivePlacements(filtered);
+}
+
+/**
+ * Sort scheduled placements by column
+ */
+function sortScheduledBy(column) {
+    // Toggle direction if same column, otherwise default to ascending
+    if (scheduledSortColumn === column) {
+        scheduledSortDirection = scheduledSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        scheduledSortColumn = column;
+        scheduledSortDirection = 'asc';
+    }
+
+    // Sort the array
+    const sorted = [...allScheduledPlacements].sort((a, b) => {
+        let aVal, bVal;
+
+        if (column === 'scheduled') {
+            aVal = new Date(a.scheduled_publish_date || 0);
+            bVal = new Date(b.scheduled_publish_date || 0);
+        } else if (column === 'purchased') {
+            aVal = new Date(a.purchased_at || 0);
+            bVal = new Date(b.purchased_at || 0);
+        }
+
+        if (aVal < bVal) return scheduledSortDirection === 'asc' ? -1 : 1;
+        if (aVal > bVal) return scheduledSortDirection === 'asc' ? 1 : -1;
+        return 0;
+    });
+
+    // Update sort icons
+    document.querySelectorAll('#scheduledPlacementsTable').forEach(table => {
+        table.closest('.table-responsive').querySelectorAll('.sortable-header').forEach(th => {
+            th.classList.remove('sorted');
+            const icon = th.querySelector('.sort-icon i');
+            if (icon) {
+                icon.className = 'bi bi-arrow-down-up';
+            }
+        });
+    });
+
+    const scheduledHeader = document.querySelector(`.sortable-header[onclick="sortScheduledBy('${column}')"]`);
+    if (scheduledHeader) {
+        scheduledHeader.classList.add('sorted');
+        const icon = scheduledHeader.querySelector('.sort-icon i');
+        if (icon) {
+            icon.className = scheduledSortDirection === 'asc' ? 'bi bi-arrow-up' : 'bi bi-arrow-down';
+        }
+    }
+
+    // Re-render
+    const filtered = applyPlacementFilters(sorted);
+    renderScheduledPlacements(filtered);
+}
+
 /**
  * Publish scheduled placement NOW
  */
