@@ -1752,7 +1752,9 @@
             const dates = [];
             for (let i = 0; i < totalSites; i++) {
                 const date = new Date(now);
-                date.setDate(date.getDate() + Math.round(i * daysBetween));
+                // Start from day 1 (i+1) to ensure all dates are in the future
+                // For 2 sites over 5 days: site 1 = day 2.5, site 2 = day 5
+                date.setDate(date.getDate() + Math.round((i + 1) * daysBetween));
                 dates.push(date.toISOString());
             }
 
