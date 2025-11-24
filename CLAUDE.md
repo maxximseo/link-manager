@@ -854,6 +854,7 @@ See `database/MIGRATION_INSTRUCTIONS.md` for detailed instructions and troublesh
 
 Repository: https://github.com/maxximseo/link-manager.git
 - Branch: `main`
+- **Auto-commit on file changes**: Nodemon automatically commits and pushes changes when files are modified
 - Auto-deploy to DigitalOcean on push
 - Always commit with message ending in:
   ```
@@ -861,6 +862,30 @@ Repository: https://github.com/maxximseo/link-manager.git
 
   Co-Authored-By: Claude <noreply@anthropic.com>
   ```
+
+### Automatic Git Commits
+
+The development server (`npm run dev`) has auto-commit functionality built-in:
+
+1. **On file changes**: Nodemon detects file modifications and triggers auto-commit
+2. **Commit message format**: `Auto-commit: Development changes at YYYY-MM-DD HH:MM:SS`
+3. **Auto-push**: Changes are automatically pushed to GitHub after commit
+4. **Status messages**:
+   - `✅ Changes committed and pushed successfully!` - Changes uploaded
+   - `✨ No changes to commit` - Working tree clean
+
+**Manual commits** (when needed):
+```bash
+git add -A
+git commit -m "Your message here
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+git push
+```
+
+**IMPORTANT**: Auto-commit is for development convenience. For production/feature releases, use manual commits with descriptive messages.
 
 ## Common Debugging
 
@@ -1769,6 +1794,7 @@ The following major architectural decisions govern this codebase:
 
 Repository: https://github.com/maxximseo/link-manager.git
 - Branch: `main`
+- **Auto-commit on file changes**: Nodemon automatically commits and pushes changes when files are modified
 - Auto-deploy to DigitalOcean on push
 - Always commit with message ending in:
   ```
@@ -1776,3 +1802,27 @@ Repository: https://github.com/maxximseo/link-manager.git
 
   Co-Authored-By: Claude <noreply@anthropic.com>
   ```
+
+### Automatic Git Commits
+
+The development server (`npm run dev`) has auto-commit functionality built-in:
+
+1. **On file changes**: Nodemon detects file modifications and triggers auto-commit
+2. **Commit message format**: `Auto-commit: Development changes at YYYY-MM-DD HH:MM:SS`
+3. **Auto-push**: Changes are automatically pushed to GitHub after commit
+4. **Status messages**:
+   - `✅ Changes committed and pushed successfully!` - Changes uploaded
+   - `✨ No changes to commit` - Working tree clean
+
+**Manual commits** (when needed):
+```bash
+git add -A
+git commit -m "Your message here
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+git push
+```
+
+**IMPORTANT**: Auto-commit is for development convenience. For production/feature releases, use manual commits with descriptive messages.
