@@ -566,6 +566,287 @@ const refundPlacement = async (placementId, reason, adminId, deleteWordPressPost
   }
 };
 
+/**
+ * Get placements pending admin approval (moderation queue)
+ */
+const getPendingApprovals = async () => {
+  try {
+    const result = await query(`
+      SELECT
+        p.*,
+        u.username as buyer_username,
+        u.email as buyer_email,
+        pr.name as project_name,
+        s.site_name,
+        s.site_url,
+        s.user_id as site_owner_id,
+        owner.username as site_owner_username,
+        pc.link_id,
+        pc.article_id,
+        COALESCE(pl.anchor_text, pa.title) as content_title,
+        COALESCE(pl.url, '') as link_url,
+        COALESCE(pl.html_context, '') as link_context,
+        pa.content as article_content
+      FROM placements p
+      JOIN users u ON p.user_id = u.id
+      JOIN projects pr ON p.project_id = pr.id
+      JOIN sites s ON p.site_id = s.id
+      JOIN users owner ON s.user_id = owner.id
+      LEFT JOIN placement_content pc ON pc.placement_id = p.id
+      LEFT JOIN project_links pl ON pc.link_id = pl.id
+      LEFT JOIN project_articles pa ON pc.article_id = pa.id
+      WHERE p.status = 'pending_approval'
+      ORDER BY p.purchased_at DESC
+    `);
+
+    return result.rows;
+
+  } catch (error) {
+    logger.error('Failed to get pending approvals', { error: error.message });
+    throw error;
+  }
+};
+
+/**
+ * Get count of placements pending approval
+ */
+const getPendingApprovalsCount = async () => {
+  try {
+    const result = await query(
+      "SELECT COUNT(*) as count FROM placements WHERE status = 'pending_approval'"
+    );
+    return parseInt(result.rows[0].count);
+  } catch (error) {
+    logger.error('Failed to get pending approvals count', { error: error.message });
+    throw error;
+  }
+};
+
+/**
+ * Approve a placement and trigger publication
+ */
+const approvePlacement = async (placementId, adminId) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    // Get placement with site info
+    const placementResult = await client.query(`
+      SELECT p.*, s.site_url, s.api_key, s.site_type
+      FROM placements p
+      JOIN sites s ON p.site_id = s.id
+      WHERE p.id = $1
+      FOR UPDATE OF p
+    `, [placementId]);
+
+    if (placementResult.rows.length === 0) {
+      throw new Error('Placement not found');
+    }
+
+    const placement = placementResult.rows[0];
+
+    if (placement.status !== 'pending_approval') {
+      throw new Error(`Placement is not pending approval (current status: ${placement.status})`);
+    }
+
+    // Determine new status: scheduled or pending (for publication)
+    let newStatus = 'pending';
+    if (placement.scheduled_publish_date && new Date(placement.scheduled_publish_date) > new Date()) {
+      newStatus = 'scheduled';
+    }
+
+    // Update placement status
+    await client.query(`
+      UPDATE placements
+      SET status = $1, approved_at = NOW(), approved_by = $2
+      WHERE id = $3
+    `, [newStatus, adminId, placementId]);
+
+    // Audit log
+    await client.query(`
+      INSERT INTO audit_log (user_id, action, entity_type, entity_id, details)
+      VALUES ($1, 'approve_placement', 'placement', $2, $3)
+    `, [
+      adminId,
+      placementId,
+      JSON.stringify({ newStatus, userId: placement.user_id })
+    ]);
+
+    // Notify user
+    await client.query(`
+      INSERT INTO notifications (user_id, type, title, message)
+      VALUES ($1, 'placement_approved', $2, $3)
+    `, [
+      placement.user_id,
+      'Размещение одобрено',
+      `Ваше размещение #${placementId} было одобрено администратором и будет опубликовано.`
+    ]);
+
+    await client.query('COMMIT');
+
+    // Trigger async publication if status is 'pending' (not scheduled)
+    if (newStatus === 'pending') {
+      const site = {
+        site_url: placement.site_url,
+        api_key: placement.api_key,
+        site_type: placement.site_type
+      };
+
+      // Import publishPlacementAsync from billing service
+      const { publishPlacementAsync } = require('./billing.service');
+
+      publishPlacementAsync(placementId, site).catch(publishError => {
+        logger.error('Publication after approval failed', {
+          placementId,
+          adminId,
+          error: publishError.message
+        });
+      });
+    }
+
+    logger.info('Placement approved by admin', {
+      placementId,
+      adminId,
+      newStatus,
+      userId: placement.user_id
+    });
+
+    return { success: true, newStatus };
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    logger.error('Failed to approve placement', { placementId, adminId, error: error.message });
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+/**
+ * Reject a placement and refund the user
+ */
+const rejectPlacement = async (placementId, adminId, reason = 'Rejected by admin') => {
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    // Get placement details
+    const placementResult = await client.query(`
+      SELECT p.*, s.site_name, pr.name as project_name
+      FROM placements p
+      JOIN sites s ON p.site_id = s.id
+      JOIN projects pr ON p.project_id = pr.id
+      WHERE p.id = $1
+      FOR UPDATE OF p
+    `, [placementId]);
+
+    if (placementResult.rows.length === 0) {
+      throw new Error('Placement not found');
+    }
+
+    const placement = placementResult.rows[0];
+
+    if (placement.status !== 'pending_approval') {
+      throw new Error(`Placement is not pending approval (current status: ${placement.status})`);
+    }
+
+    const finalPrice = parseFloat(placement.final_price || 0);
+
+    // 1. Refund user balance
+    if (finalPrice > 0) {
+      await client.query(`
+        UPDATE users
+        SET balance = balance + $1, total_spent = total_spent - $1
+        WHERE id = $2
+      `, [finalPrice, placement.user_id]);
+
+      // Create refund transaction
+      await client.query(`
+        INSERT INTO transactions (user_id, type, amount, description, metadata)
+        VALUES ($1, 'refund', $2, $3, $4)
+      `, [
+        placement.user_id,
+        finalPrice,
+        `Refund: Placement #${placementId} rejected`,
+        JSON.stringify({ placementId, reason, adminId })
+      ]);
+    }
+
+    // 2. Update rejection reason
+    await client.query(`
+      UPDATE placements
+      SET status = 'rejected', rejection_reason = $1, approved_by = $2
+      WHERE id = $3
+    `, [reason, adminId, placementId]);
+
+    // 3. Restore usage counts
+    await billingService.restoreUsageCountsInTransaction(client, placementId);
+
+    // 4. Restore site quotas
+    if (placement.type === 'link') {
+      await client.query(
+        'UPDATE sites SET used_links = GREATEST(0, used_links - 1) WHERE id = $1',
+        [placement.site_id]
+      );
+    } else {
+      await client.query(
+        'UPDATE sites SET used_articles = GREATEST(0, used_articles - 1) WHERE id = $1',
+        [placement.site_id]
+      );
+    }
+
+    // 5. Audit log
+    await client.query(`
+      INSERT INTO audit_log (user_id, action, entity_type, entity_id, details)
+      VALUES ($1, 'reject_placement', 'placement', $2, $3)
+    `, [
+      adminId,
+      placementId,
+      JSON.stringify({ reason, refundAmount: finalPrice, userId: placement.user_id })
+    ]);
+
+    // 6. Notify user
+    await client.query(`
+      INSERT INTO notifications (user_id, type, title, message)
+      VALUES ($1, 'placement_rejected', $2, $3)
+    `, [
+      placement.user_id,
+      'Размещение отклонено',
+      `Ваше размещение #${placementId} было отклонено. Причина: ${reason}. Средства возвращены на баланс.`
+    ]);
+
+    await client.query('COMMIT');
+
+    // Clear cache
+    const cache = require('./cache.service');
+    await cache.delPattern(`placements:user:${placement.user_id}:*`);
+    await cache.delPattern(`projects:user:${placement.user_id}:*`);
+
+    logger.info('Placement rejected by admin', {
+      placementId,
+      adminId,
+      reason,
+      refundAmount: finalPrice,
+      userId: placement.user_id
+    });
+
+    return {
+      success: true,
+      refundAmount: finalPrice,
+      reason
+    };
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    logger.error('Failed to reject placement', { placementId, adminId, error: error.message });
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
 module.exports = {
   getAdminStats,
   getRevenueBreakdown,
@@ -574,5 +855,10 @@ module.exports = {
   getRecentPurchases,
   getAdminPlacements,
   getMultiPeriodRevenue,
-  refundPlacement
+  refundPlacement,
+  // Moderation functions
+  getPendingApprovals,
+  getPendingApprovalsCount,
+  approvePlacement,
+  rejectPlacement
 };
