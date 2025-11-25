@@ -2,7 +2,7 @@
 
 Fast reference for day-to-day technical decisions and patterns. For major architectural decisions, see [ADR.md](ADR.md).
 
-**Last Updated**: January 2025
+**Last Updated**: November 2025
 
 ---
 
@@ -85,6 +85,32 @@ await query(`SELECT * FROM users WHERE username = '${username}'`);
 ---
 
 ## API Patterns
+
+### ✅ Context-Aware Validation
+
+```javascript
+// ✅ CORRECT - Different validation rules per parameter type
+// Express-validator for basic validation
+body('updates.*.value').isInt({ min: 0 })
+
+// Context-aware validation in controller
+if (parameter === 'dr' || parameter === 'da') {
+  const invalidValues = updates.filter(u => u.value > 100);
+  if (invalidValues.length > 0) {
+    return res.status(400).json({
+      error: `${parameter.toUpperCase()} values must be between 0 and 100`
+    });
+  }
+}
+// ref_domains, rd_main, norm: no upper limit - proceed
+
+// ❌ WRONG - Same validation for all parameter types
+body('updates.*.value').isInt({ min: 0, max: 100 })  // Blocks ref_domains=5000!
+```
+
+**See**: [ADR-017](ADR.md#adr-017-context-aware-validation-for-site-parameters)
+
+---
 
 ### ✅ Error Response Format
 

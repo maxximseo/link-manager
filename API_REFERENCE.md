@@ -1095,6 +1095,104 @@ Clear all Redis cache (admin only).
 
 ---
 
+### GET /api/admin/sites/with-zero-param
+
+Get sites where a specific parameter is 0 or null.
+
+**Query Parameters:**
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| parameter | string | `dr` | Parameter name: `dr`, `da`, `ref_domains`, `rd_main`, `norm` |
+
+**Response** (200 OK):
+```json
+{
+  "success": true,
+  "data": {
+    "count": 5,
+    "parameter": "ref_domains",
+    "sites": [
+      {
+        "id": 1,
+        "site_name": "Example Site",
+        "site_url": "https://example.com",
+        "dr": 45,
+        "da": 30,
+        "ref_domains": 0,
+        "rd_main": 0,
+        "norm": 0
+      }
+    ]
+  }
+}
+```
+
+---
+
+### POST /api/admin/sites/bulk-update-params
+
+Bulk update site parameters (DR, DA, Ref Domains, RD Main, Norm).
+
+**Request Body:**
+```json
+{
+  "parameter": "ref_domains",
+  "updates": [
+    { "domain": "example.com", "value": 5432 },
+    { "domain": "site.org", "value": 1200 }
+  ]
+}
+```
+
+**Parameters:**
+| Field | Type | Description |
+|-------|------|-------------|
+| parameter | string | One of: `dr`, `da`, `ref_domains`, `rd_main`, `norm` |
+| updates | array | Array of domain/value pairs |
+| updates[].domain | string | Domain name (without protocol) |
+| updates[].value | integer | New value (min: 0) |
+
+**Validation Rules:**
+- `dr`, `da`: Values must be 0-100 (ratings)
+- `ref_domains`, `rd_main`, `norm`: No upper limit (counts)
+
+**Response** (200 OK):
+```json
+{
+  "success": true,
+  "data": {
+    "total": 10,
+    "updated": 8,
+    "notFound": 2,
+    "errors": 0,
+    "details": [
+      {
+        "domain": "example.com",
+        "siteUrl": "https://example.com",
+        "status": "updated",
+        "oldValue": 0,
+        "newValue": 5432,
+        "message": "Updated successfully"
+      },
+      {
+        "domain": "unknown.com",
+        "status": "not_found",
+        "message": "Site not found"
+      }
+    ]
+  }
+}
+```
+
+**Error Response** (400 Bad Request):
+```json
+{
+  "error": "DR values must be between 0 and 100. Found invalid values for: example.com, site.org"
+}
+```
+
+---
+
 ## Error Codes
 
 ### HTTP Status Codes

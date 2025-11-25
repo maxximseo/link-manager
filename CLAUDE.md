@@ -6,17 +6,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Core Documentation (Must Read)
 - **[CLAUDE.md](CLAUDE.md)** - This file: Complete development guide
-- **[ADR.md](ADR.md)** - Architecture Decision Records (16 major design decisions)
+- **[ADR.md](ADR.md)** - Architecture Decision Records (17 major design decisions)
 - **[README.md](README.md)** - Quick start guide and project overview
 - **[API_REFERENCE.md](API_REFERENCE.md)** - Complete API endpoint reference (60+ routes)
 
 ### Operational Documentation
 - **[RUNBOOK.md](RUNBOOK.md)** - Step-by-step procedures for common operations
-- **[CHANGELOG.md](CHANGELOG.md)** - Version history and all changes (v1.0.0 → v2.5.0)
+- **[CHANGELOG.md](CHANGELOG.md)** - Version history and all changes (v1.0.0 → v2.5.1)
 - **[DECISIONS.md](DECISIONS.md)** - Quick technical patterns and gotchas
 
 ### Specialized Guides
 - **[EXTENDED_FIELDS_GUIDE.md](EXTENDED_FIELDS_GUIDE.md)** - Extended fields system (JSONB)
+- **[OPTIMIZATION_PRINCIPLES.md](OPTIMIZATION_PRINCIPLES.md)** - Code optimization framework (LEVER methodology)
 - **[database/MIGRATION_INSTRUCTIONS.md](database/MIGRATION_INSTRUCTIONS.md)** - Database migration guide
 - **[wordpress-plugin/CHANGELOG.md](wordpress-plugin/CHANGELOG.md)** - Plugin version history
 
@@ -1770,6 +1771,10 @@ The following major architectural decisions govern this codebase:
 16. **[ADR-016: Winston Logging Strategy](ADR.md#adr-016-winston-logging-strategy)**
     - Structured JSON logging with daily rotation
     - Error logs: 14 days, Combined: 30 days
+
+17. **[ADR-017: Context-Aware Validation for Site Parameters](ADR.md#adr-017-context-aware-validation-for-site-parameters)**
+    - DR/DA: validation 0-100 (ratings)
+    - ref_domains, rd_main, norm: validation min 0, no max limit (counts)
 
 ### When to Consult ADR
 
