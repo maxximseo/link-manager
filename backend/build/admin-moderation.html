@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Модерация - Link Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        .moderation-card {
+            border-left: 4px solid #6f42c1;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+        .moderation-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .moderation-card .card-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+        .content-preview {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .user-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            background: #e9ecef;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+        .site-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            background: #d1e7dd;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+        .type-link {
+            color: #0d6efd;
+        }
+        .type-article {
+            color: #198754;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #6c757d;
+        }
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        .reject-reason-input {
+            display: none;
+        }
+        .reject-reason-input.show {
+            display: block;
+        }
+        .price-info {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #198754;
+        }
+        .meta-info {
+            font-size: 0.875rem;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar Container (injected by navbar.js) -->
+    <div id="navbar-container"></div>
+
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1><i class="bi bi-shield-check text-primary"></i> Модерация размещений</h1>
+                <p class="text-muted mb-0">
+                    На модерации: <span id="pendingCount" class="badge bg-primary">0</span> размещений
+                </p>
+            </div>
+            <button class="btn btn-outline-primary" onclick="loadPendingApprovals()">
+                <i class="bi bi-arrow-clockwise"></i> Обновить
+            </button>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Загрузка...</span>
+            </div>
+            <p class="mt-2 text-muted">Загрузка размещений...</p>
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="empty-state" style="display: none;">
+            <i class="bi bi-check-circle"></i>
+            <h3>Все размещения проверены!</h3>
+            <p>Нет размещений, ожидающих модерации</p>
+        </div>
+
+        <!-- Placements List -->
+        <div id="placementsList"></div>
+    </div>
+
+    <!-- Reject Modal -->
+    <div class="modal fade" id="rejectModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-x-circle text-danger"></i> Отклонить размещение</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="rejectPlacementId">
+                    <div class="mb-3">
+                        <label class="form-label">Причина отклонения</label>
+                        <textarea class="form-control" id="rejectReason" rows="3"
+                            placeholder="Укажите причину отклонения (будет отправлена пользователю)"></textarea>
+                    </div>
+                    <div class="alert alert-warning">
+                        <i class="bi bi-info-circle"></i> Пользователю будет возвращена полная стоимость размещения
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmReject()">
+                        <i class="bi bi-x-circle"></i> Отклонить и вернуть деньги
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/navbar-config.js"></script>
+    <script src="/js/navbar.js"></script>
+    <script src="/js/api.js"></script>
+    <script>
+        let rejectModal;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check auth
+            const user = Auth.getUser();
+            if (!user || user.role !== 'admin') {
+                window.location.href = '/dashboard.html';
+                return;
+            }
+
+            rejectModal = new bootstrap.Modal(document.getElementById('rejectModal'));
+            loadPendingApprovals();
+        });
+
+        async function loadPendingApprovals() {
+            const loadingState = document.getElementById('loadingState');
+            const emptyState = document.getElementById('emptyState');
+            const placementsList = document.getElementById('placementsList');
+            const pendingCount = document.getElementById('pendingCount');
+
+            loadingState.style.display = 'block';
+            emptyState.style.display = 'none';
+            placementsList.innerHTML = '';
+
+            try {
+                const token = Auth.getToken();
+                const response = await fetch('/api/admin/moderation', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load pending approvals');
+                }
+
+                const result = await response.json();
+                const placements = result.data || [];
+
+                loadingState.style.display = 'none';
+                pendingCount.textContent = placements.length;
+
+                if (placements.length === 0) {
+                    emptyState.style.display = 'block';
+                    return;
+                }
+
+                placementsList.innerHTML = placements.map(p => renderPlacementCard(p)).join('');
+
+            } catch (error) {
+                console.error('Error loading placements:', error);
+                loadingState.style.display = 'none';
+                placementsList.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i> Ошибка загрузки: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function renderPlacementCard(placement) {
+            const isLink = placement.type === 'link';
+            const typeIcon = isLink ? 'bi-link-45deg' : 'bi-file-text';
+            const typeClass = isLink ? 'type-link' : 'type-article';
+            const typeName = isLink ? 'Ссылка' : 'Статья';
+
+            const createdAt = new Date(placement.created_at).toLocaleString('ru-RU', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            let contentPreview = '';
+            if (isLink) {
+                contentPreview = `
+                    <div class="content-preview">
+                        <p class="mb-1"><strong>Анкор:</strong> ${escapeHtml(placement.anchor_text || '-')}</p>
+                        <p class="mb-0"><strong>URL:</strong> <a href="${escapeHtml(placement.url || '')}" target="_blank">${escapeHtml(placement.url || '-')}</a></p>
+                    </div>
+                `;
+            } else {
+                contentPreview = `
+                    <div class="content-preview">
+                        <p class="mb-1"><strong>Заголовок:</strong> ${escapeHtml(placement.title || '-')}</p>
+                        <p class="mb-0"><strong>Контент:</strong> ${escapeHtml((placement.content || '').substring(0, 300))}${(placement.content || '').length > 300 ? '...' : ''}</p>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="card moderation-card" id="placement-${placement.id}">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="user-badge">
+                                <i class="bi bi-person"></i> ${escapeHtml(placement.username)}
+                            </span>
+                            <i class="bi bi-arrow-right mx-2"></i>
+                            <span class="site-badge">
+                                <i class="bi bi-globe"></i> ${escapeHtml(placement.site_url)}
+                            </span>
+                        </div>
+                        <span class="price-info">$${parseFloat(placement.price).toFixed(2)}</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <p class="mb-1">
+                                    <i class="${typeIcon} ${typeClass}"></i>
+                                    <strong>Тип:</strong> ${typeName}
+                                </p>
+                                <p class="mb-1">
+                                    <i class="bi bi-folder"></i>
+                                    <strong>Проект:</strong> ${escapeHtml(placement.project_name)}
+                                </p>
+                            </div>
+                            <div class="col-md-6 text-md-end">
+                                <p class="meta-info mb-0">
+                                    <i class="bi bi-clock"></i> ${createdAt}
+                                </p>
+                            </div>
+                        </div>
+
+                        ${contentPreview}
+
+                        <div class="d-flex justify-content-end gap-2 mt-3">
+                            <button class="btn btn-outline-danger" onclick="showRejectModal(${placement.id})">
+                                <i class="bi bi-x-circle"></i> Отклонить
+                            </button>
+                            <button class="btn btn-success" onclick="approvePlacement(${placement.id})">
+                                <i class="bi bi-check-circle"></i> Одобрить
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function approvePlacement(placementId) {
+            if (!confirm('Одобрить это размещение? Контент будет опубликован.')) {
+                return;
+            }
+
+            try {
+                const token = Auth.getToken();
+                const response = await fetch(`/api/admin/moderation/${placementId}/approve`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'Failed to approve placement');
+                }
+
+                // Animate removal
+                const card = document.getElementById(`placement-${placementId}`);
+                if (card) {
+                    card.style.transition = 'all 0.3s ease';
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateX(100px)';
+                    setTimeout(() => {
+                        card.remove();
+                        updatePendingCount(-1);
+                    }, 300);
+                }
+
+                showNotification('Размещение одобрено и опубликовано', 'success');
+
+            } catch (error) {
+                console.error('Error approving placement:', error);
+                showNotification(error.message, 'danger');
+            }
+        }
+
+        function showRejectModal(placementId) {
+            document.getElementById('rejectPlacementId').value = placementId;
+            document.getElementById('rejectReason').value = '';
+            rejectModal.show();
+        }
+
+        async function confirmReject() {
+            const placementId = document.getElementById('rejectPlacementId').value;
+            const reason = document.getElementById('rejectReason').value.trim() || 'Отклонено администратором';
+
+            try {
+                const token = Auth.getToken();
+                const response = await fetch(`/api/admin/moderation/${placementId}/reject`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ reason })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'Failed to reject placement');
+                }
+
+                rejectModal.hide();
+
+                // Animate removal
+                const card = document.getElementById(`placement-${placementId}`);
+                if (card) {
+                    card.style.transition = 'all 0.3s ease';
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateX(-100px)';
+                    setTimeout(() => {
+                        card.remove();
+                        updatePendingCount(-1);
+                    }, 300);
+                }
+
+                showNotification(`Размещение отклонено. Возврат: $${parseFloat(result.data.refundAmount).toFixed(2)}`, 'warning');
+
+            } catch (error) {
+                console.error('Error rejecting placement:', error);
+                showNotification(error.message, 'danger');
+            }
+        }
+
+        function updatePendingCount(delta) {
+            const pendingCount = document.getElementById('pendingCount');
+            const currentCount = parseInt(pendingCount.textContent) || 0;
+            const newCount = Math.max(0, currentCount + delta);
+            pendingCount.textContent = newCount;
+
+            if (newCount === 0) {
+                document.getElementById('emptyState').style.display = 'block';
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            alertDiv.style.cssText = 'top: 80px; right: 20px; z-index: 9999; min-width: 300px;';
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(alertDiv);
+
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
