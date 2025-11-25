@@ -36,7 +36,8 @@ const NavbarConfig = {
     adminDropdown: [
         { icon: 'bi-speedometer2', text: 'Dashboard', href: '/admin-dashboard.html' },
         { icon: 'bi-people', text: 'Пользователи', href: '/admin-users.html' },
-        { icon: 'bi-bookmark-star', text: 'Размещения', href: '/admin-placements.html' }
+        { icon: 'bi-bookmark-star', text: 'Размещения', href: '/admin-placements.html' },
+        { icon: 'bi-sliders', text: 'Параметры сайтов', href: '/admin-site-params.html' }
     ],
 
     // Special pages configuration (for pages with unique navbar needs)
