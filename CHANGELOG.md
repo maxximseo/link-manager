@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.5.2] - 2025-11-25
+
+### 📦 Database
+- **ADDED** New site parameter columns to `sites` table:
+  - `tf INTEGER DEFAULT 0` - Trust Flow (Majestic), 0-100
+  - `cf INTEGER DEFAULT 0` - Citation Flow (Majestic), 0-100
+  - `keywords INTEGER DEFAULT 0` - Keyword count (Ahrefs)
+  - `traffic INTEGER DEFAULT 0` - Traffic estimate (Ahrefs)
+- **ADDED** Migration: `database/migrate_add_tf_cf_keywords_traffic.sql`
+
+### 📊 API
+- **UPDATED** `POST /api/admin/sites/bulk-update-params` - Now supports 9 parameters:
+  - `dr` (Domain Rating) - Validation: 0-100
+  - `da` (Domain Authority) - Validation: 0-100
+  - `tf` (Trust Flow) - Validation: 0-100
+  - `cf` (Citation Flow) - Validation: 0-100
+  - `ref_domains` - No upper limit (count)
+  - `rd_main` - No upper limit (count)
+  - `norm` - No upper limit (count)
+  - `keywords` - No upper limit (count)
+  - `traffic` - No upper limit (count)
+- **UPDATED** Context-aware validation: DR/DA/TF/CF limited to 0-100, other parameters unlimited
+
+### 🎨 Frontend
+- **UPDATED** Admin site params page with 9 parameter options
+- **UPDATED** Sites table with TF, CF, Keywords, Traffic columns
+- **UPDATED** Export functions (CSV, TSV, JSON, PlainText) with new columns
+
+---
+
 ## [2.5.1] - 2025-11-25
 
 ### 📦 Database

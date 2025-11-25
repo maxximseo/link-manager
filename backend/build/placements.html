@@ -208,16 +208,20 @@
                                     <th>Сайт</th>
                                     <th>DR</th>
                                     <th>DA</th>
+                                    <th>TF</th>
+                                    <th>CF</th>
                                     <th>RD</th>
                                     <th>RDm</th>
                                     <th>Norm</th>
+                                    <th>KW</th>
+                                    <th>Traf</th>
                                     <th>Статус</th>
                                     <th>Контент</th>
                                 </tr>
                             </thead>
                             <tbody id="sitesTableBody">
                                 <tr>
-                                    <td colspan="9" class="text-center text-muted">
+                                    <td colspan="13" class="text-center text-muted">
                                         Выберите проект и тип контента выше
                                     </td>
                                 </tr>
@@ -815,10 +819,22 @@
                 const daValue = site.da || 0;
                 const daClass = daValue >= 50 ? 'text-success fw-bold' : daValue >= 20 ? 'text-primary' : 'text-muted';
 
+                // TF value with color coding (Majestic Trust Flow, 0-100)
+                const tfValue = site.tf || 0;
+                const tfClass = tfValue >= 50 ? 'text-success fw-bold' : tfValue >= 20 ? 'text-primary' : 'text-muted';
+
+                // CF value with color coding (Majestic Citation Flow, 0-100)
+                const cfValue = site.cf || 0;
+                const cfClass = cfValue >= 50 ? 'text-success fw-bold' : cfValue >= 20 ? 'text-primary' : 'text-muted';
+
                 // Ref Domains, RD Main, Norm values
                 const refDomainsValue = site.ref_domains || 0;
                 const rdMainValue = site.rd_main || 0;
                 const normValue = site.norm || 0;
+
+                // Keywords and Traffic values (Ahrefs)
+                const keywordsValue = site.keywords || 0;
+                const trafficValue = site.traffic || 0;
 
                 return `
                     <tr class="${site.statusClass}">
@@ -836,9 +852,13 @@
                         </td>
                         <td class="${drClass}">${drValue}</td>
                         <td class="${daClass}">${daValue}</td>
+                        <td class="${tfClass}">${tfValue}</td>
+                        <td class="${cfClass}">${cfValue}</td>
                         <td class="text-muted">${refDomainsValue}</td>
                         <td class="text-muted">${rdMainValue}</td>
                         <td class="text-muted">${normValue}</td>
+                        <td class="text-muted">${keywordsValue}</td>
+                        <td class="text-muted">${trafficValue}</td>
                         <td>${site.statusBadge}</td>
                         <td id="assigned_${site.id}">${dropdownHtml}</td>
                     </tr>
