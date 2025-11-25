@@ -274,6 +274,34 @@ router.post('/placements/:id/refund',
 );
 
 /**
+ * GET /api/admin/sites/with-zero-param
+ * Get sites where a specific parameter is 0 or null
+ * Query: parameter=dr
+ */
+router.get('/sites/with-zero-param', async (req, res) => {
+  try {
+    const { parameter = 'dr' } = req.query;
+
+    const result = await siteService.getSitesWithZeroParam(parameter);
+
+    res.json({
+      success: true,
+      data: result
+    });
+
+  } catch (error) {
+    logger.error('Failed to get sites with zero param', {
+      adminId: req.user.id,
+      parameter: req.query.parameter,
+      error: error.message
+    });
+    res.status(400).json({
+      error: error.message || 'Failed to get sites'
+    });
+  }
+});
+
+/**
  * POST /api/admin/sites/bulk-update-params
  * Bulk update site parameters (DR, etc.)
  *
