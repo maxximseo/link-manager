@@ -355,7 +355,7 @@ async function loadScheduledPlacements() {
     } catch (error) {
         console.error('Failed to load scheduled placements:', error);
         document.getElementById('scheduledPlacementsTable').innerHTML =
-            '<tr><td colspan="13" class="text-center text-danger">Ошибка загрузки</td></tr>';
+            '<tr><td colspan="17" class="text-center text-danger">Ошибка загрузки</td></tr>';
     }
 }
 
@@ -367,7 +367,7 @@ function renderScheduledPlacements(placements) {
     tbody.innerHTML = '';
 
     if (placements.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="13" class="text-center text-muted">Нет запланированных размещений</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="17" class="text-center text-muted">Нет запланированных размещений</td></tr>';
         document.getElementById('scheduledCount').textContent = '0';
         return;
     }
