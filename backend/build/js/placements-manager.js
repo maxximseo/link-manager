@@ -210,7 +210,7 @@ function renderActivePlacements(placements) {
     tbody.innerHTML = '';
 
     if (placements.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">Нет активных размещений</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">Нет активных размещений</td></tr>';
         document.getElementById('activeCount').textContent = '0';
         return;
     }
