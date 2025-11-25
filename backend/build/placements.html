@@ -215,6 +215,7 @@
                                     <th>Norm</th>
                                     <th>KW</th>
                                     <th>Traf</th>
+                                    <th>GEO</th>
                                     <th>Слоты</th>
                                     <th>Статус</th>
                                     <th>Контент</th>
@@ -222,7 +223,7 @@
                             </thead>
                             <tbody id="sitesTableBody">
                                 <tr>
-                                    <td colspan="14" class="text-center text-muted">
+                                    <td colspan="15" class="text-center text-muted">
                                         Выберите проект и тип контента выше
                                     </td>
                                 </tr>
@@ -736,7 +737,7 @@
 
             if (filteredSites.length === 0) {
                 document.getElementById('sitesTableBody').innerHTML = `
-                    <tr><td colspan="14" class="text-center text-warning">
+                    <tr><td colspan="15" class="text-center text-warning">
                         No sites match current filters. Try clearing whitelist/blacklist.
                     </td></tr>
                 `;
@@ -837,6 +838,9 @@
                 const keywordsValue = site.keywords || 0;
                 const trafficValue = site.traffic || 0;
 
+                // GEO value (country code, default EN)
+                const geoValue = site.geo || 'EN';
+
                 // Slot availability display (dynamic based on content type)
                 let slotsDisplay = '';
                 let slotsClass = 'text-muted';
@@ -886,6 +890,7 @@
                         <td class="text-muted">${normValue}</td>
                         <td class="text-muted">${keywordsValue}</td>
                         <td class="text-muted">${trafficValue}</td>
+                        <td class="text-muted">${geoValue}</td>
                         <td class="${slotsClass} text-nowrap"><small>${slotsDisplay}</small></td>
                         <td>${site.statusBadge}</td>
                         <td id="assigned_${site.id}">${dropdownHtml}</td>
