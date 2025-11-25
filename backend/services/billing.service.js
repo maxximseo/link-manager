@@ -383,9 +383,16 @@ const purchasePlacement = async ({
       }
     }
 
-    // 11. Parse scheduled date
+    // 11. Parse scheduled date and determine moderation status
     let scheduledPublishDate = null;
     let status = 'pending';
+
+    // MODERATION LOGIC:
+    // - Admin (role='admin') → no moderation needed
+    // - User on OWN site (site.user_id === userId) → no moderation needed
+    // - User on SOMEONE ELSE's site → requires admin approval
+    const isAdmin = user.role === 'admin';
+    const needsApproval = !isAdmin && !isOwnSite;
 
     if (scheduledDate) {
       scheduledPublishDate = new Date(scheduledDate);
@@ -401,6 +408,17 @@ const purchasePlacement = async ({
       if (scheduledPublishDate > new Date()) {
         status = 'scheduled';
       }
+    }
+
+    // Override status if moderation is required
+    if (needsApproval) {
+      status = 'pending_approval';
+      logger.info('Placement requires admin approval', {
+        userId,
+        siteId,
+        siteName: site.site_name,
+        siteOwner: site.user_id
+      });
     }
 
     // 12. Create placement
