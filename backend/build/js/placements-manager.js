@@ -147,7 +147,7 @@ async function loadActivePlacements() {
     } catch (error) {
         console.error('Failed to load active placements:', error);
         document.getElementById('activePlacementsTable').innerHTML =
-            '<tr><td colspan="9" class="text-center text-danger">Ошибка загрузки</td></tr>';
+            '<tr><td colspan="11" class="text-center text-danger">Ошибка загрузки</td></tr>';
     }
 }
 
