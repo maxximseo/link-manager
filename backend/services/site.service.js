@@ -822,5 +822,6 @@ module.exports = {
   getSiteByUrlForUser,
   getUserTokens,
   // Bulk update methods
-  bulkUpdateSiteParams
+  bulkUpdateSiteParams,
+  getSitesWithZeroParam
 };
