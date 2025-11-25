@@ -3,19 +3,18 @@
  * Run with: node database/run_ref_domains_migration.js
  */
 
+require('dotenv').config();
 const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 
-// Load environment variables
-require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
-
 async function runMigration() {
   console.log('Starting ref_domains/rd_main/norm migration...');
 
+  // Create connection pool (always use SSL for remote databases)
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: { rejectUnauthorized: false }
   });
 
   try {

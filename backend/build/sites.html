@@ -133,6 +133,9 @@
                                 <th>Site Name</th>
                                 <th class="text-center" style="width: 50px;">DR</th>
                                 <th class="text-center" style="width: 50px;">DA</th>
+                                <th class="text-center" style="width: 50px;">RD</th>
+                                <th class="text-center" style="width: 50px;">RDm</th>
+                                <th class="text-center" style="width: 50px;">Norm</th>
                                 <th class="text-center" style="width: 80px;">Тип</th>
                                 <th class="text-center" style="width: 60px;" title="Открыть сайт">
                                     <i class="bi bi-box-arrow-up-right"></i>
@@ -532,6 +535,11 @@
                 const daValue = s.da || 0;
                 const daClass = daValue >= 50 ? 'text-success fw-bold' : daValue >= 20 ? 'text-primary' : 'text-muted';
 
+                // Ref Domains, RD Main, Norm values
+                const refDomainsValue = s.ref_domains || 0;
+                const rdMainValue = s.rd_main || 0;
+                const normValue = s.norm || 0;
+
                 return `
                 <tr class="${rowClass}">
                     <td>
@@ -539,6 +547,9 @@
                     </td>
                     <td class="text-center ${drClass}">${drValue}</td>
                     <td class="text-center ${daClass}">${daValue}</td>
+                    <td class="text-center text-muted">${refDomainsValue}</td>
+                    <td class="text-center text-muted">${rdMainValue}</td>
+                    <td class="text-center text-muted">${normValue}</td>
                     <td class="text-center">
                         ${typeBadge}
                     </td>
@@ -1057,12 +1068,15 @@
         }
 
         function generateCSV() {
-            const headers = ['Site Name', 'Site URL', 'DR', 'DA', 'Type', 'API Key', 'Links', 'Articles', 'Allow Articles', 'Public', 'Available'];
+            const headers = ['Site Name', 'Site URL', 'DR', 'DA', 'RD', 'RDm', 'Norm', 'Type', 'API Key', 'Links', 'Articles', 'Allow Articles', 'Public', 'Available'];
             const rows = sites.map(s => [
                 `"${(s.site_name || '').replace(/"/g, '""')}"`,
                 `"${(s.site_url || '').replace(/"/g, '""')}"`,
                 s.dr || 0,
                 s.da || 0,
+                s.ref_domains || 0,
+                s.rd_main || 0,
+                s.norm || 0,
                 s.site_type || 'wordpress',
                 s.api_key ? `"${s.api_key.substring(0, 8)}..."` : 'N/A',
                 `${s.used_links || 0}/${s.max_links || 0}`,
@@ -1076,12 +1090,15 @@
         }
 
         function generateTSV() {
-            const headers = ['Site Name', 'Site URL', 'DR', 'DA', 'Type', 'API Key', 'Links', 'Articles', 'Allow Articles', 'Public', 'Available'];
+            const headers = ['Site Name', 'Site URL', 'DR', 'DA', 'RD', 'RDm', 'Norm', 'Type', 'API Key', 'Links', 'Articles', 'Allow Articles', 'Public', 'Available'];
             const rows = sites.map(s => [
                 s.site_name || '',
                 s.site_url || '',
                 s.dr || 0,
                 s.da || 0,
+                s.ref_domains || 0,
+                s.rd_main || 0,
+                s.norm || 0,
                 s.site_type || 'wordpress',
                 s.api_key ? `${s.api_key.substring(0, 8)}...` : 'N/A',
                 `${s.used_links || 0}/${s.max_links || 0}`,
@@ -1101,6 +1118,9 @@ Name: ${s.site_name || 'N/A'}
 URL: ${s.site_url || 'N/A'}
 DR: ${s.dr || 0}
 DA: ${s.da || 0}
+Ref Domains: ${s.ref_domains || 0}
+RD Main: ${s.rd_main || 0}
+Norm: ${s.norm || 0}
 Type: ${s.site_type || 'wordpress'}
 API Key: ${s.api_key ? `${s.api_key.substring(0, 8)}...` : 'N/A'}
 Links: ${s.used_links || 0}/${s.max_links || 0}
@@ -1119,6 +1139,9 @@ ${'='.repeat(50)}`;
                 site_url: s.site_url,
                 dr: s.dr || 0,
                 da: s.da || 0,
+                ref_domains: s.ref_domains || 0,
+                rd_main: s.rd_main || 0,
+                norm: s.norm || 0,
                 site_type: s.site_type || 'wordpress',
                 api_key: s.api_key ? `${s.api_key.substring(0, 8)}...` : null,
                 links_usage: `${s.used_links || 0}/${s.max_links || 0}`,
