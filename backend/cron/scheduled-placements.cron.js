@@ -71,11 +71,15 @@ async function processScheduledPlacements() {
             siteUrl: placement.site_url
           });
 
+          // FIXED: Correct parameter order for publishArticle(siteUrl, apiKey, articleData)
           const publishResult = await wordpressService.publishArticle(
+            placement.site_url,
             placement.api_key,
-            content.title,
-            content.content,
-            placement.site_url
+            {
+              title: content.title,
+              content: content.content,
+              slug: content.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+            }
           );
 
           // Update placement status

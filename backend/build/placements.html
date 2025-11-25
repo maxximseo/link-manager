@@ -8,15 +8,16 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="/css/styles.css">
     <style>
-        /* Sticky action bar (like the screenshot - purple bar at bottom) */
+        /* Sticky action bar (neutral gray bar at bottom) */
         #stickyActionBar {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
             z-index: 1000;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            box-shadow: 0 -4px 12px rgba(0,0,0,0.15);
+            background: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.1);
             padding: 15px 0;
             display: none; /* Hidden by default */
             transition: all 0.3s ease;
@@ -59,6 +60,22 @@
         /* Add bottom padding to body to prevent content hiding behind bar */
         body.sticky-bar-active {
             padding-bottom: 80px;
+        }
+
+        /* Pagination buttons - white when not selected */
+        .btn-group .btn-check + .btn-outline-dark {
+            background-color: #fff;
+            color: #212529;
+            border-color: #dee2e6;
+        }
+        .btn-group .btn-check + .btn-outline-dark:hover {
+            background-color: #f8f9fa;
+            border-color: #adb5bd;
+        }
+        .btn-group .btn-check:checked + .btn-outline-dark {
+            background-color: #212529;
+            color: #fff;
+            border-color: #212529;
         }
     </style>
 </head>
@@ -166,13 +183,13 @@
                         <div class="d-flex align-items-center gap-2">
                             <div class="btn-group" role="group">
                                 <input type="radio" class="btn-check" name="sitesPerPage" id="sites100" value="100" checked>
-                                <label class="btn btn-primary btn-sm" for="sites100">100</label>
+                                <label class="btn btn-outline-dark btn-sm" for="sites100">100</label>
 
                                 <input type="radio" class="btn-check" name="sitesPerPage" id="sites300" value="300">
-                                <label class="btn btn-primary btn-sm" for="sites300">300</label>
+                                <label class="btn btn-outline-dark btn-sm" for="sites300">300</label>
 
                                 <input type="radio" class="btn-check" name="sitesPerPage" id="sites500" value="500">
-                                <label class="btn btn-primary btn-sm" for="sites500">500</label>
+                                <label class="btn btn-outline-dark btn-sm" for="sites500">500</label>
                             </div>
                             <span class="text-muted" id="sitesCountInfo"></span>
                         </div>
@@ -188,16 +205,15 @@
                                     <th style="width: 50px;">
                                         <input type="checkbox" id="selectAllSites" onclick="toggleAllSites()">
                                     </th>
-                                    <th>Site Name</th>
-                                    <th>Site URL</th>
-                                    <th>Status</th>
-                                    <th>Assigned Content</th>
+                                    <th>Сайт</th>
+                                    <th>Статус</th>
+                                    <th>Контент</th>
                                 </tr>
                             </thead>
                             <tbody id="sitesTableBody">
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted">
-                                        Select a project and content type above
+                                    <td colspan="4" class="text-center text-muted">
+                                        Выберите проект и тип контента выше
                                     </td>
                                 </tr>
                             </tbody>
@@ -213,9 +229,9 @@
 
                     <!-- Bottom purchase button -->
                     <div class="text-center mt-4 mb-4" id="bottomPurchaseDiv" style="display: none;">
-                        <button type="button" class="btn btn-warning btn-lg" onclick="createPlacement()" id="bottomPurchaseBtn" disabled>
+                        <button type="button" class="btn btn-dark btn-lg" onclick="createPlacement()" id="bottomPurchaseBtn" disabled>
                             <i class="bi bi-cart-check-fill"></i> Купить
-                            <span class="badge bg-danger ms-2" id="bottomPurchaseBadge">0</span>
+                            <span class="badge bg-light text-dark ms-2" id="bottomPurchaseBadge">0</span>
                         </button>
                     </div>
 
@@ -226,77 +242,74 @@
         <!-- Sticky Action Bar (purple bar at bottom with 3 buttons) -->
         <div id="stickyActionBar">
             <div class="action-buttons">
-                <button type="button" class="btn btn-success btn-lg" id="stickyWhitelistBtn" onclick="addSelectedToWhitelist()" disabled>
+                <button type="button" class="btn btn-outline-dark btn-lg" id="stickyWhitelistBtn" onclick="addSelectedToWhitelist()" disabled>
                     <i class="bi bi-check-circle-fill"></i> Whitelist
-                    <span class="badge bg-light text-success" id="whitelistBadge">0</span>
+                    <span class="badge bg-dark" id="whitelistBadge">0</span>
                 </button>
-                <button type="button" class="btn btn-warning btn-lg" id="stickyPurchaseBtn" onclick="createPlacement()" disabled>
+                <button type="button" class="btn btn-dark btn-lg" id="stickyPurchaseBtn" onclick="createPlacement()" disabled>
                     <i class="bi bi-cart-check-fill"></i> Купить
-                    <span class="badge bg-danger" id="purchaseBadge">0</span>
+                    <span class="badge bg-light text-dark" id="purchaseBadge">0</span>
                 </button>
-                <button type="button" class="btn btn-danger btn-lg" id="stickyBlacklistBtn" onclick="addSelectedToBlacklist()" disabled>
+                <button type="button" class="btn btn-outline-dark btn-lg" id="stickyBlacklistBtn" onclick="addSelectedToBlacklist()" disabled>
                     <i class="bi bi-x-circle-fill"></i> Blacklist
-                    <span class="badge bg-light text-danger" id="blacklistBadge">0</span>
+                    <span class="badge bg-dark" id="blacklistBadge">0</span>
                 </button>
             </div>
         </div>
 
             <!-- Whitelist/Blacklist Actions -->
             <div class="row mt-4" id="listActionsDiv" style="display: none;">
-                <div class="col-md-12 mb-3">
-                    <div class="card">
-                        <div class="card-header bg-purple text-white">
-                            <i class="bi bi-cart-plus"></i> Actions with Selected Sites
+                <div class="col-12">
+                    <div class="card border">
+                        <div class="card-header bg-light border-bottom">
+                            <span><i class="bi bi-gear"></i> Управление списками</span>
                         </div>
                         <div class="card-body">
-                            <button type="button" class="btn btn-primary" id="buyLinksBtn" onclick="buyLinks()" disabled>
-                                <i class="bi bi-cart-plus"></i> Купить ссылку (<span id="buyLinksCount">0</span>)
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header bg-success text-white">
-                            <i class="bi bi-check-circle"></i> Whitelist
-                        </div>
-                        <div class="card-body">
-                            <div class="d-flex gap-2 mb-3 flex-wrap">
-                                <button type="button" class="btn btn-success btn-sm" id="addToWhitelistBtn" onclick="addSelectedToWhitelist()" disabled>
-                                    <i class="bi bi-plus-circle"></i> Add to Whitelist (<span id="whitelistCount">0</span>)
-                                </button>
-                                <button type="button" class="btn btn-outline-success btn-sm" onclick="importWhitelist()">
-                                    <i class="bi bi-upload"></i> Import List
-                                </button>
-                                <button type="button" class="btn btn-outline-success btn-sm" onclick="toggleWhitelistView()">
-                                    <i class="bi bi-eye"></i> Show (<span id="whitelistTotal">0</span>)
-                                </button>
-                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="clearWhitelist()">
-                                    <i class="bi bi-trash"></i> Clear All
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header bg-danger text-white">
-                            <i class="bi bi-x-circle"></i> Blacklist
-                        </div>
-                        <div class="card-body">
-                            <div class="d-flex gap-2 mb-3 flex-wrap">
-                                <button type="button" class="btn btn-danger btn-sm" id="addToBlacklistBtn" onclick="addSelectedToBlacklist()" disabled>
-                                    <i class="bi bi-plus-circle"></i> Add to Blacklist (<span id="blacklistCount">0</span>)
-                                </button>
-                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="importBlacklist()">
-                                    <i class="bi bi-upload"></i> Import List
-                                </button>
-                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="toggleBlacklistView()">
-                                    <i class="bi bi-eye"></i> Show (<span id="blacklistTotal">0</span>)
-                                </button>
-                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="clearBlacklist()">
-                                    <i class="bi bi-trash"></i> Clear All
-                                </button>
+                            <div class="row">
+                                <!-- Whitelist Section -->
+                                <div class="col-md-6 mb-3 mb-md-0">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="bi bi-check-circle text-secondary me-2"></i>
+                                        <strong>Whitelist</strong>
+                                        <span class="badge bg-secondary ms-2" id="whitelistTotal">0</span>
+                                    </div>
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <button type="button" class="btn btn-outline-dark btn-sm" id="addToWhitelistBtn" onclick="addSelectedToWhitelist()" disabled>
+                                            <i class="bi bi-plus"></i> Добавить (<span id="whitelistCount">0</span>)
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="importWhitelist()">
+                                            <i class="bi bi-upload"></i> Импорт
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleWhitelistView()">
+                                            <i class="bi bi-eye"></i> Показать
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearWhitelist()">
+                                            <i class="bi bi-trash"></i> Очистить
+                                        </button>
+                                    </div>
+                                </div>
+                                <!-- Blacklist Section -->
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="bi bi-x-circle text-secondary me-2"></i>
+                                        <strong>Blacklist</strong>
+                                        <span class="badge bg-secondary ms-2" id="blacklistTotal">0</span>
+                                    </div>
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <button type="button" class="btn btn-outline-dark btn-sm" id="addToBlacklistBtn" onclick="addSelectedToBlacklist()" disabled>
+                                            <i class="bi bi-plus"></i> Добавить (<span id="blacklistCount">0</span>)
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="importBlacklist()">
+                                            <i class="bi bi-upload"></i> Импорт
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleBlacklistView()">
+                                            <i class="bi bi-eye"></i> Показать
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearBlacklist()">
+                                            <i class="bi bi-trash"></i> Очистить
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -676,7 +689,7 @@
                         disableReason = 'Владелец сайта отключил размещение статей';
                     } else {
                         // Site available for purchase
-                        statusClass = 'table-success';
+                        statusClass = '';
                         statusBadge = '<span class="badge bg-success">Доступно</span>';
                         isDisabled = false;
                         disableReason = '';
@@ -773,18 +786,21 @@
                 // Site type badge
                 const siteType = site.siteType || 'wordpress';
                 const siteTypeBadge = siteType === 'wordpress'
-                    ? '<span class="badge bg-purple ms-1"><i class="bi bi-wordpress"></i> WP</span>'
+                    ? '<span class="badge bg-secondary ms-1"><i class="bi bi-wordpress"></i> WP</span>'
                     : '<span class="badge bg-success ms-1"><i class="bi bi-filetype-php"></i> PHP</span>';
 
                 // Visibility badge
                 const visibilityBadge = site.is_public
                     ? '<span class="badge bg-info ms-1"><i class="bi bi-globe"></i> Публичный</span>'
-                    : '<span class="badge bg-secondary ms-1"><i class="bi bi-lock-fill"></i> Приватный</span>';
+                    : '<span class="badge bg-secondary ms-1"><i class="bi bi-lock-fill"></i> Личный сайт</span>';
 
                 // Disable reason tooltip
                 const tooltipAttr = site.disableReason
                     ? `title="${escapeHtml(site.disableReason)}" data-bs-toggle="tooltip"`
                     : '';
+
+                // Clean URL - remove https:// and trailing slash
+                const cleanUrl = site.site_url.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
                 return `
                     <tr class="${site.statusClass}">
@@ -796,11 +812,10 @@
                                    ${tooltipAttr}>
                         </td>
                         <td>
-                            ${escapeHtml(site.site_name)}
+                            ${escapeHtml(cleanUrl)}
                             ${siteTypeBadge}
                             ${visibilityBadge}
                         </td>
-                        <td>${escapeHtml(site.site_url)}</td>
                         <td>${site.statusBadge}</td>
                         <td id="assigned_${site.id}">${dropdownHtml}</td>
                     </tr>
@@ -1043,42 +1058,17 @@
             const count = selectedSitesForList.size;
             document.getElementById('whitelistCount').textContent = count;
             document.getElementById('blacklistCount').textContent = count;
-            document.getElementById('buyLinksCount').textContent = count;
 
             const addToWhitelistBtn = document.getElementById('addToWhitelistBtn');
             const addToBlacklistBtn = document.getElementById('addToBlacklistBtn');
-            const buyLinksBtn = document.getElementById('buyLinksBtn');
 
             if (count > 0) {
                 addToWhitelistBtn.disabled = false;
                 addToBlacklistBtn.disabled = false;
-                buyLinksBtn.disabled = false;
                 document.getElementById('listActionsDiv').style.display = 'block';
             } else {
                 addToWhitelistBtn.disabled = true;
                 addToBlacklistBtn.disabled = true;
-                buyLinksBtn.disabled = true;
-            }
-
-            // Update button text based on publication type
-            updatePurchaseButton();
-        }
-
-        /**
-         * Update purchase button text based on selected publication type
-         */
-        function updatePurchaseButton() {
-            const publishType = document.querySelector('input[name="publishType"]:checked')?.value;
-            const count = selectedSitesForList.size;
-
-            // Find the button by ID
-            const btn = document.getElementById('buyLinksBtn');
-            if (!btn) return;
-
-            if (publishType === 'distributed') {
-                btn.innerHTML = `<i class="bi bi-cart-plus"></i> Купить с отложенной публикацией (<span id="buyLinksCount">${count}</span>)`;
-            } else {
-                btn.innerHTML = `<i class="bi bi-cart-plus"></i> Купить ссылку (<span id="buyLinksCount">${count}</span>)`;
             }
         }
 
@@ -1779,21 +1769,6 @@
 
             previewText.textContent = `${selectedCount} ${selectedCount === 1 ? 'сайт' : selectedCount < 5 ? 'сайта' : 'сайтов'} / ${periodDays} ${periodDays === 1 ? 'день' : periodDays < 5 ? 'дня' : 'дней'} = публикация каждые ${daysBetween} ${daysBetween == 1 ? 'день' : 'дня/дней'}`;
             previewDiv.style.display = 'block';
-        }
-
-        function buyLinks() {
-            if (selectedSitesForList.size === 0) {
-                showNotification('Please select sites first', 'error');
-                return;
-            }
-
-            const selectedSites = sites.filter(s => selectedSitesForList.has(s.id));
-            const siteNames = selectedSites.map(s => s.site_name).join(', ');
-
-            showNotification(`Функция "Купить ссылку" для сайтов: ${siteNames}. Эта функция будет реализована позже.`, 'info');
-
-            // TODO: Implement link buying functionality
-            // This could open a modal, redirect to external service, or create an order
         }
 
     </script>
