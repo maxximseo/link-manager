@@ -320,10 +320,10 @@ const purchasePlacement = async ({
     let basePrice, discount, finalPrice;
 
     if (isOwnSite) {
-      // Owner's special rate: $0.10 for both links and articles
-      basePrice = 0.10;
+      // Owner's special rate for both links and articles
+      basePrice = PRICING.OWNER_RATE;
       discount = 0;
-      finalPrice = 0.10;
+      finalPrice = PRICING.OWNER_RATE;
       logger.info('Owner pricing applied', { userId, siteId, siteName: site.site_name, price: finalPrice });
     } else {
       // Standard pricing with user's discount tier
