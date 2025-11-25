@@ -448,7 +448,7 @@ async function loadHistoryPlacements(page = 1) {
     } catch (error) {
         console.error('Failed to load history:', error);
         document.getElementById('historyPlacementsTable').innerHTML =
-            '<tr><td colspan="11" class="text-center text-danger">Ошибка загрузки</td></tr>';
+            '<tr><td colspan="14" class="text-center text-danger">Ошибка загрузки</td></tr>';
     }
 }
 
@@ -460,7 +460,7 @@ function renderHistoryPlacements(placements) {
     tbody.innerHTML = '';
 
     if (placements.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted">Нет размещений</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="14" class="text-center text-muted">Нет размещений</td></tr>';
         return;
     }
 
