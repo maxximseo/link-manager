@@ -62,6 +62,43 @@
                     <button class="btn btn-outline-info" onclick="showExample()">
                         <i class="bi bi-info-circle"></i> Пример
                     </button>
+                    <button class="btn btn-warning" onclick="showSitesWithZeroParam()">
+                        <i class="bi bi-search"></i> Показать сайты без параметра
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sites with Zero Parameter -->
+        <div class="card mb-4" id="zeroParamCard" style="display: none;">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-list-ul"></i> Сайты без <span id="zeroParamName">DR</span></span>
+                <div>
+                    <span class="badge bg-warning" id="zeroParamCount">0</span>
+                    <button class="btn btn-sm btn-outline-secondary ms-2" onclick="hideZeroParamCard()">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <button class="btn btn-sm btn-success" onclick="copyZeroParamDomains()">
+                        <i class="bi bi-clipboard"></i> Копировать домены
+                    </button>
+                </div>
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-sm table-hover">
+                        <thead class="sticky-top bg-white">
+                            <tr>
+                                <th>#</th>
+                                <th>Название</th>
+                                <th>URL</th>
+                                <th>Текущее значение</th>
+                            </tr>
+                        </thead>
+                        <tbody id="zeroParamTableBody">
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -312,6 +349,103 @@ mywebsite.io 88`;
             };
             document.getElementById('paramDescription').textContent = descriptions[this.value] || '';
         });
+
+        // Store zero param sites for copy function
+        let zeroParamSites = [];
+
+        // Show sites with zero parameter value
+        async function showSitesWithZeroParam() {
+            const parameter = document.getElementById('paramSelect').value;
+
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`/api/admin/sites/with-zero-param?parameter=${parameter}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Ошибка получения данных');
+                }
+
+                displayZeroParamSites(data.data, parameter);
+
+            } catch (error) {
+                alert('Ошибка: ' + error.message);
+            }
+        }
+
+        // Display sites with zero parameter
+        function displayZeroParamSites(result, parameter) {
+            document.getElementById('zeroParamCard').style.display = 'block';
+            document.getElementById('zeroParamName').textContent = parameter.toUpperCase();
+            document.getElementById('zeroParamCount').textContent = result.count;
+
+            zeroParamSites = result.sites;
+
+            const tbody = document.getElementById('zeroParamTableBody');
+            tbody.innerHTML = '';
+
+            if (result.sites.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-success">Все сайты имеют заполненный параметр!</td></tr>';
+                return;
+            }
+
+            result.sites.forEach((site, index) => {
+                const row = document.createElement('tr');
+                const cleanUrl = site.site_url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${escapeHtml(site.site_name || cleanUrl)}</td>
+                    <td><a href="${escapeHtml(site.site_url)}" target="_blank">${escapeHtml(cleanUrl)}</a></td>
+                    <td><span class="badge bg-secondary">${site[parameter] ?? 0}</span></td>
+                `;
+
+                tbody.appendChild(row);
+            });
+
+            // Scroll to card
+            document.getElementById('zeroParamCard').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Hide zero param card
+        function hideZeroParamCard() {
+            document.getElementById('zeroParamCard').style.display = 'none';
+            zeroParamSites = [];
+        }
+
+        // Copy domains to clipboard (ready for pasting into input)
+        function copyZeroParamDomains() {
+            if (zeroParamSites.length === 0) {
+                alert('Нет сайтов для копирования');
+                return;
+            }
+
+            // Format: domain (without value, user will add values later)
+            const domains = zeroParamSites.map(site => {
+                return site.site_url
+                    .replace(/^https?:\/\//, '')
+                    .replace(/^www\./, '')
+                    .replace(/\/.*$/, '');
+            }).join('\n');
+
+            navigator.clipboard.writeText(domains).then(() => {
+                alert(`Скопировано ${zeroParamSites.length} доменов!\n\nТеперь добавьте значения в формате:\nsite.com 10`);
+            }).catch(err => {
+                // Fallback for older browsers
+                const textarea = document.createElement('textarea');
+                textarea.value = domains;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert(`Скопировано ${zeroParamSites.length} доменов!`);
+            });
+        }
     </script>
 </body>
 </html>
