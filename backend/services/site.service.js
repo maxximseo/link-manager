@@ -18,7 +18,7 @@ const getUserSites = async (userId, page = 0, limit = 0, recalculate = false) =>
     }
     
     // Fetch sites data
-    let sitesQuery = 'SELECT id, user_id, site_name, site_url, api_key, site_type, max_links, max_articles, used_links, used_articles, allow_articles, is_public, available_for_purchase, dr, da, ref_domains, rd_main, norm, tf, cf, keywords, traffic, created_at FROM sites WHERE user_id = $1 ORDER BY created_at DESC';
+    let sitesQuery = 'SELECT id, user_id, site_name, site_url, api_key, site_type, max_links, max_articles, used_links, used_articles, allow_articles, is_public, available_for_purchase, dr, da, ref_domains, rd_main, norm, tf, cf, keywords, traffic, geo, created_at FROM sites WHERE user_id = $1 ORDER BY created_at DESC';
     const queryParams = [userId];
     
     if (usePagination) {
