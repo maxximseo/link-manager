@@ -323,8 +323,8 @@ router.post('/sites/bulk-update-params',
     try {
       const { parameter, updates } = req.body;
 
-      // DR/DA: validate 0-100 range
-      if (parameter === 'dr' || parameter === 'da') {
+      // DR/DA/TF/CF: validate 0-100 range (ratings)
+      if (['dr', 'da', 'tf', 'cf'].includes(parameter)) {
         const invalidValues = updates.filter(u => u.value > 100);
         if (invalidValues.length > 0) {
           return res.status(400).json({
@@ -332,6 +332,7 @@ router.post('/sites/bulk-update-params',
           });
         }
       }
+      // ref_domains, rd_main, norm, keywords, traffic: no upper limit (counts)
 
       logger.info('Bulk site params update requested', {
         adminId: req.user.id,
