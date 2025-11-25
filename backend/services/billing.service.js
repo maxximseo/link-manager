@@ -533,6 +533,7 @@ const purchasePlacement = async ({
 
     // OPTIMIZATION: Async WordPress publication (after commit)
     // Don't block response - publish in background
+    // NOTE: Placements with status 'pending_approval' skip publication until admin approves
     if (status === 'pending') {
       publishPlacementAsync(placement.id, site).catch(publishError => {
         logger.error('Async publication failed - placement remains pending', {
@@ -542,6 +543,12 @@ const purchasePlacement = async ({
         });
         // NOTE: User has been charged, placement marked as 'pending'
         // Admin can manually retry publication from UI
+      });
+    } else if (status === 'pending_approval') {
+      logger.info('Placement awaiting admin approval - publication deferred', {
+        placementId: placement.id,
+        userId,
+        siteId
       });
     }
 
