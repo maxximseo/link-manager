@@ -305,6 +305,12 @@ function renderActivePlacements(placements) {
         // GEO value
         const geoValue = p.site_geo || 'EN';
 
+        // Site type badge (WP/PHP)
+        const siteType = p.site_type || 'wordpress';
+        const siteTypeBadge = siteType === 'wordpress'
+            ? '<span class="badge bg-secondary"><i class="bi bi-wordpress"></i> WP</span>'
+            : '<span class="badge bg-success"><i class="bi bi-filetype-php"></i> PHP</span>';
+
         row.innerHTML = `
             <td>#${p.id}</td>
             <td>${p.project_name || '—'}</td>
@@ -319,6 +325,7 @@ function renderActivePlacements(placements) {
             <td class="text-muted">${keywordsValue}</td>
             <td class="text-muted">${trafficValue}</td>
             <td class="text-muted">${geoValue}</td>
+            <td>${siteTypeBadge}</td>
             <td>${typeBadge}</td>
             <td>${formatDate(p.published_at || p.placed_at)}</td>
             <td class="${expiryClass}">${expiryText}</td>
