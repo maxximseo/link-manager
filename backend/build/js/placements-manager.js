@@ -550,6 +550,9 @@ function renderHistoryPlacements(placements) {
         const keywordsValue = p.site_keywords || 0;
         const trafficValue = p.site_traffic || 0;
 
+        // GEO value
+        const geoValue = p.site_geo || 'EN';
+
         row.innerHTML = `
             <td>#${p.id}</td>
             <td>${p.project_name || '—'}</td>
@@ -563,6 +566,7 @@ function renderHistoryPlacements(placements) {
             <td class="text-muted">${normValue}</td>
             <td class="text-muted">${keywordsValue}</td>
             <td class="text-muted">${trafficValue}</td>
+            <td class="text-muted">${geoValue}</td>
             <td>${typeBadge}</td>
             <td>${statusBadges[p.status] || p.status}</td>
             <td>${formatDate(p.published_at || p.placed_at)}</td>
