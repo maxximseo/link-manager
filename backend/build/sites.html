@@ -109,6 +109,40 @@
             </div>
         </div>
 
+        <!-- Bulk Actions Bar (скрыта по умолчанию) -->
+        <div id="bulkActionsBar" class="alert alert-primary py-1 d-none mb-2" style="font-size: 10px;">
+            <div class="d-flex align-items-center flex-wrap gap-2">
+                <strong class="me-2">Выбрано: <span id="selectedCount">0</span></strong>
+                <div class="btn-group btn-group-sm" role="group">
+                    <button class="btn btn-success py-1 px-2" onclick="bulkSetField('allow_articles', true)">
+                        <i class="bi bi-file-text-fill"></i> Статьи ВКЛ
+                    </button>
+                    <button class="btn btn-outline-secondary py-1 px-2" onclick="bulkSetField('allow_articles', false)">
+                        <i class="bi bi-file-text"></i> ВЫКЛ
+                    </button>
+                </div>
+                <div class="btn-group btn-group-sm" role="group">
+                    <button class="btn btn-primary py-1 px-2" onclick="bulkSetField('is_public', true)">
+                        <i class="bi bi-globe"></i> Публичные
+                    </button>
+                    <button class="btn btn-outline-secondary py-1 px-2" onclick="bulkSetField('is_public', false)">
+                        <i class="bi bi-lock-fill"></i> Личные
+                    </button>
+                </div>
+                <div class="btn-group btn-group-sm" role="group">
+                    <button class="btn btn-success py-1 px-2" onclick="bulkSetField('available_for_purchase', true)">
+                        <i class="bi bi-cart-check-fill"></i> Покупка ВКЛ
+                    </button>
+                    <button class="btn btn-outline-danger py-1 px-2" onclick="bulkSetField('available_for_purchase', false)">
+                        <i class="bi bi-cart-x-fill"></i> ВЫКЛ
+                    </button>
+                </div>
+                <button class="btn btn-sm btn-secondary py-1 px-2" onclick="clearBulkSelection()">
+                    <i class="bi bi-x-lg"></i> Отмена
+                </button>
+            </div>
+        </div>
+
         <!-- Sites Table Card -->
         <div class="card">
             <div class="card-body">
@@ -127,10 +161,13 @@
                 </div>
 
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle">
+                    <table class="table table-hover align-middle" style="font-size: 12px;">
                         <thead class="table-light sticky-top">
                             <tr>
-                                <th>Site Name</th>
+                                <th class="text-center" style="width: 40px;">
+                                    <input type="checkbox" class="form-check-input" id="selectAllSites" onchange="toggleSelectAll()">
+                                </th>
+                                <th style="max-width: 200px;">Site Name</th>
                                 <th class="text-center" style="width: 40px;">DR</th>
                                 <th class="text-center" style="width: 40px;">DA</th>
                                 <th class="text-center" style="width: 40px;">TF</th>
@@ -147,14 +184,14 @@
                                 </th>
                                 <th style="width: 120px;">Links</th>
                                 <th style="width: 120px;">Articles</th>
-                                <th class="text-center" style="width: 60px;" title="Разрешить размещение статей">
-                                    <i class="bi bi-file-text"></i>
+                                <th class="text-center" style="width: 60px;">
+                                    <i class="bi bi-file-text" data-bs-toggle="tooltip" data-bs-placement="top" title="Разрешить размещение статей"></i>
                                 </th>
-                                <th class="text-center" style="width: 60px;" title="Публичные покупки">
-                                    <i class="bi bi-globe"></i>
+                                <th class="text-center" style="width: 60px;">
+                                    <i class="bi bi-globe" data-bs-toggle="tooltip" data-bs-placement="top" title="Публичный сайт"></i>
                                 </th>
-                                <th class="text-center" style="width: 60px;" title="Доступен для покупки">
-                                    <i class="bi bi-cart-check"></i>
+                                <th class="text-center" style="width: 60px;">
+                                    <i class="bi bi-cart-check" data-bs-toggle="tooltip" data-bs-placement="top" title="Доступен для покупки"></i>
                                 </th>
                                 <th style="width: 80px;">Actions</th>
                             </tr>
@@ -440,6 +477,10 @@
             modal = new bootstrap.Modal(document.getElementById('siteModal'));
             exportModal = new bootstrap.Modal(document.getElementById('exportModal'));
 
+            // Initialize Bootstrap tooltips
+            const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+            tooltipTriggerList.forEach(el => new bootstrap.Tooltip(el));
+
             // Load saved limit preference
             const savedLimit = parseInt(localStorage.getItem('sitesPageLimit')) || 100;
             currentLimit = savedLimit;
@@ -519,19 +560,6 @@
                 const articlesPercent = articlesMax > 0 ? (articlesUsed / articlesMax * 100) : 0;
                 const articlesColor = articlesPercent >= 90 ? 'danger' : articlesPercent >= 70 ? 'warning' : 'success';
 
-                // Status icons with tooltips
-                const allowArticlesIcon = (siteType === 'wordpress' && s.allow_articles !== false)
-                    ? '<i class="bi bi-check-circle-fill text-success" style="font-size: 1.2rem;" title="Статьи разрешены"></i>'
-                    : '<i class="bi bi-x-circle-fill text-secondary" style="font-size: 1.2rem;" title="Статьи запрещены"></i>';
-
-                const isPublicIcon = s.is_public === true
-                    ? '<i class="bi bi-globe text-primary" style="font-size: 1.2rem;" title="Публичный сайт - другие пользователи могут размещать контент"></i>'
-                    : '<i class="bi bi-lock-fill text-secondary" style="font-size: 1.2rem;" title="Приватный - только вы можете использовать"></i>';
-
-                const availableIcon = s.available_for_purchase !== false
-                    ? '<i class="bi bi-cart-check-fill text-success" style="font-size: 1.2rem;" title="Доступен для новых размещений"></i>'
-                    : '<i class="bi bi-cart-x-fill text-danger" style="font-size: 1.2rem;" title="Закрыт для новых размещений"></i>';
-
                 // DR value with color coding
                 const drValue = s.dr || 0;
                 const drClass = drValue >= 50 ? 'text-success fw-bold' : drValue >= 20 ? 'text-primary' : 'text-muted';
@@ -558,10 +586,16 @@
                 // GEO value
                 const geoValue = s.geo || 'EN';
 
+                // Clean site name - remove https:// and trailing slash
+                const cleanSiteName = (s.site_name || '').replace(/^https?:\/\//, '').replace(/\/$/, '');
+
                 return `
-                <tr class="${rowClass}">
-                    <td>
-                        <div class="fw-semibold">${escapeHtml(s.site_name)}</div>
+                <tr class="${rowClass}" data-site-id="${s.id}">
+                    <td class="text-center">
+                        <input type="checkbox" class="form-check-input site-checkbox" data-site-id="${s.id}" onchange="updateBulkSelection()">
+                    </td>
+                    <td style="max-width: 200px;">
+                        <div class="fw-semibold text-truncate" title="${escapeHtml(s.site_name)}">${escapeHtml(cleanSiteName)}</div>
                     </td>
                     <td class="text-center ${drClass}">${drValue}</td>
                     <td class="text-center ${daClass}">${daValue}</td>
@@ -604,13 +638,29 @@
                         ` : '<span class="text-muted">N/A</span>'}
                     </td>
                     <td class="text-center">
-                        ${allowArticlesIcon}
+                        <div class="form-check form-switch d-inline-block">
+                            <input class="form-check-input" type="checkbox" role="switch"
+                                   id="allowArticles_${s.id}"
+                                   ${(siteType === 'wordpress' && s.allow_articles !== false) ? 'checked' : ''}
+                                   ${siteType !== 'wordpress' ? 'disabled' : ''}
+                                   onchange="toggleSiteField(${s.id}, 'allow_articles', this.checked)">
+                        </div>
                     </td>
                     <td class="text-center">
-                        ${isPublicIcon}
+                        <div class="form-check form-switch d-inline-block">
+                            <input class="form-check-input" type="checkbox" role="switch"
+                                   id="isPublic_${s.id}"
+                                   ${s.is_public === true ? 'checked' : ''}
+                                   onchange="toggleSiteField(${s.id}, 'is_public', this.checked)">
+                        </div>
                     </td>
                     <td class="text-center">
-                        ${availableIcon}
+                        <div class="form-check form-switch d-inline-block">
+                            <input class="form-check-input" type="checkbox" role="switch"
+                                   id="available_${s.id}"
+                                   ${s.available_for_purchase !== false ? 'checked' : ''}
+                                   onchange="toggleSiteField(${s.id}, 'available_for_purchase', this.checked)">
+                        </div>
                     </td>
                     <td>
                         <div class="d-flex gap-1">
@@ -1224,6 +1274,162 @@ ${'='.repeat(50)}`;
             URL.revokeObjectURL(url);
 
             showNotification(`File "${filename}" downloaded successfully!`, 'success');
+        }
+
+        // ========== Bulk Selection & Toggle Functions ==========
+
+        // Состояние выбора
+        let selectedSiteIds = new Set();
+
+        // Toggle одного поля сайта
+        async function toggleSiteField(siteId, field, value) {
+            try {
+                const data = {};
+                data[field] = value;
+
+                await SitesAPI.update(siteId, data);
+
+                // Обновляем локальные данные
+                const site = sites.find(s => s.id === siteId);
+                if (site) site[field] = value;
+
+                // Обновляем цвет строки
+                updateRowStyle(siteId);
+
+                const fieldNames = {
+                    'allow_articles': 'Статьи',
+                    'is_public': 'Публичность',
+                    'available_for_purchase': 'Доступность'
+                };
+                showNotification(`${fieldNames[field]} ${value ? 'включено' : 'отключено'}`, 'success');
+            } catch (error) {
+                // Откатываем переключатель
+                const fieldId = field === 'allow_articles' ? 'allowArticles' :
+                               field === 'is_public' ? 'isPublic' : 'available';
+                const checkbox = document.getElementById(`${fieldId}_${siteId}`);
+                if (checkbox) checkbox.checked = !value;
+                showNotification('Ошибка обновления: ' + error.message, 'error');
+            }
+        }
+
+        // Обновить стиль строки на основе данных
+        function updateRowStyle(siteId) {
+            const site = sites.find(s => s.id === siteId);
+            if (!site) return;
+
+            const row = document.querySelector(`tr[data-site-id="${siteId}"]`);
+            if (!row) return;
+
+            row.classList.remove('table-danger', 'table-success');
+            if (site.available_for_purchase === false) {
+                row.classList.add('table-danger');
+            } else if (site.is_public === true) {
+                row.classList.add('table-success');
+            }
+        }
+
+        // Выбрать/снять выбор со всех
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAllSites');
+            const checkboxes = document.querySelectorAll('.site-checkbox');
+
+            selectedSiteIds.clear();
+            checkboxes.forEach(cb => {
+                cb.checked = selectAll.checked;
+                if (selectAll.checked) {
+                    selectedSiteIds.add(parseInt(cb.dataset.siteId));
+                }
+            });
+
+            updateBulkActionsBar();
+        }
+
+        // Обновить состояние выбора
+        function updateBulkSelection() {
+            selectedSiteIds.clear();
+            document.querySelectorAll('.site-checkbox:checked').forEach(cb => {
+                selectedSiteIds.add(parseInt(cb.dataset.siteId));
+            });
+
+            // Обновить "Select All" чекбокс
+            const allCheckboxes = document.querySelectorAll('.site-checkbox');
+            const selectAll = document.getElementById('selectAllSites');
+            selectAll.checked = allCheckboxes.length > 0 &&
+                                selectedSiteIds.size === allCheckboxes.length;
+            selectAll.indeterminate = selectedSiteIds.size > 0 &&
+                                      selectedSiteIds.size < allCheckboxes.length;
+
+            updateBulkActionsBar();
+        }
+
+        // Показать/скрыть панель массового редактирования
+        function updateBulkActionsBar() {
+            const bar = document.getElementById('bulkActionsBar');
+            const count = document.getElementById('selectedCount');
+
+            if (selectedSiteIds.size > 0) {
+                bar.classList.remove('d-none');
+                count.textContent = selectedSiteIds.size;
+            } else {
+                bar.classList.add('d-none');
+            }
+        }
+
+        // Массовое изменение поля
+        async function bulkSetField(field, value) {
+            if (selectedSiteIds.size === 0) return;
+
+            const fieldNames = {
+                'allow_articles': 'Разрешить статьи',
+                'is_public': 'Публичный',
+                'available_for_purchase': 'Доступен для покупки'
+            };
+
+            if (!confirm(`Изменить "${fieldNames[field]}" на "${value ? 'Да' : 'Нет'}" для ${selectedSiteIds.size} сайтов?`)) {
+                return;
+            }
+
+            try {
+                let successCount = 0;
+                let errorCount = 0;
+
+                for (const siteId of selectedSiteIds) {
+                    try {
+                        const data = {};
+                        data[field] = value;
+                        await SitesAPI.update(siteId, data);
+
+                        // Обновляем локальные данные
+                        const site = sites.find(s => s.id === siteId);
+                        if (site) site[field] = value;
+
+                        successCount++;
+                    } catch (e) {
+                        errorCount++;
+                    }
+                }
+
+                // Перерисовываем таблицу
+                displaySites();
+                clearBulkSelection();
+
+                if (errorCount === 0) {
+                    showNotification(`Обновлено ${successCount} сайтов`, 'success');
+                } else {
+                    showNotification(`Обновлено ${successCount}, ошибок: ${errorCount}`, 'warning');
+                }
+            } catch (error) {
+                showNotification('Ошибка массового обновления: ' + error.message, 'error');
+            }
+        }
+
+        // Очистить выбор
+        function clearBulkSelection() {
+            selectedSiteIds.clear();
+            document.querySelectorAll('.site-checkbox').forEach(cb => cb.checked = false);
+            document.getElementById('selectAllSites').checked = false;
+            document.getElementById('selectAllSites').indeterminate = false;
+            updateBulkActionsBar();
         }
     </script>
 </body>

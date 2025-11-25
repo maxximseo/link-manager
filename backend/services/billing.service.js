@@ -313,9 +313,23 @@ const purchasePlacement = async ({
     }
 
     // 5. Calculate price
-    const basePrice = type === 'link' ? PRICING.LINK_HOMEPAGE : PRICING.ARTICLE_GUEST_POST;
-    const discount = user.current_discount || 0;
-    const finalPrice = basePrice * (1 - discount / 100);
+    // SPECIAL PRICING: If user owns the site, flat rate of $0.10 (no discounts applied)
+    const isOwnSite = site.user_id === userId;
+
+    let basePrice, discount, finalPrice;
+
+    if (isOwnSite) {
+      // Owner's special rate: $0.10 for both links and articles
+      basePrice = 0.10;
+      discount = 0;
+      finalPrice = 0.10;
+      logger.info('Owner pricing applied', { userId, siteId, siteName: site.site_name, price: finalPrice });
+    } else {
+      // Standard pricing with user's discount tier
+      basePrice = type === 'link' ? PRICING.LINK_HOMEPAGE : PRICING.ARTICLE_GUEST_POST;
+      discount = user.current_discount || 0;
+      finalPrice = basePrice * (1 - discount / 100);
+    }
 
     // 7. Check balance
     if (parseFloat(user.balance) < finalPrice) {

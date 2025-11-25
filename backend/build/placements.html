@@ -229,12 +229,13 @@
                                     <th>Слоты</th>
                                     <th>Цена</th>
                                     <th>Статус</th>
+                                    <th>Видимость</th>
                                     <th>Контент</th>
                                 </tr>
                             </thead>
                             <tbody id="sitesTableBody">
                                 <tr>
-                                    <td colspan="17" class="text-center text-muted">
+                                    <td colspan="18" class="text-center text-muted">
                                         Выберите проект и тип контента выше
                                     </td>
                                 </tr>
@@ -807,7 +808,7 @@
 
             if (filteredSites.length === 0) {
                 document.getElementById('sitesTableBody').innerHTML = `
-                    <tr><td colspan="17" class="text-center text-warning">
+                    <tr><td colspan="18" class="text-center text-warning">
                         No sites match current filters. Try clearing whitelist/blacklist.
                     </td></tr>
                 `;
@@ -953,7 +954,6 @@
                         </td>
                         <td>
                             ${escapeHtml(cleanUrl)}
-                            ${visibilityBadge}
                         </td>
                         <td class="${drClass} text-center">${drValue}</td>
                         <td class="${daClass} text-center">${daValue}</td>
@@ -969,6 +969,7 @@
                         <td class="${slotsClass} text-nowrap text-center"><small>${slotsDisplay}</small></td>
                         <td class="text-success fw-bold text-center">$${price.toFixed(2)}</td>
                         <td class="text-center">${site.statusBadge}</td>
+                        <td class="text-center">${visibilityBadge}</td>
                         <td id="assigned_${site.id}">${dropdownHtml}</td>
                     </tr>
                 `;
