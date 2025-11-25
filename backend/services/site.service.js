@@ -72,7 +72,7 @@ const getMarketplaceSites = async (userId) => {
       SELECT
         id, user_id, site_name, site_url, site_type,
         max_links, max_articles, used_links, used_articles,
-        allow_articles, is_public, available_for_purchase, dr, da, ref_domains, rd_main, norm, created_at,
+        allow_articles, is_public, available_for_purchase, dr, da, ref_domains, rd_main, norm, tf, cf, keywords, traffic, created_at,
         CASE
           WHEN user_id = $1 THEN api_key
           ELSE NULL
