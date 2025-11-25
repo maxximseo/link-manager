@@ -185,22 +185,23 @@
     <script src="/js/navbar.js"></script>
 
     <script>
-        // Check authentication on page load
+        // Initialize navbar first (same pattern as other admin pages)
+        initNavbar('admin', 'admin-site-params');
+
+        // Check authentication
+        if (!isAuthenticated()) {
+            window.location.href = '/index.html';
+        }
+
+        // Check admin role
+        const currentUser = getCurrentUser();
+        if (currentUser && currentUser.role !== 'admin') {
+            alert('Доступ запрещён. Требуются права администратора.');
+            window.location.href = '/dashboard.html';
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
-            const user = await checkAuth();
-            if (!user) {
-                window.location.href = '/index.html';
-                return;
-            }
-
-            // Check admin role
-            if (user.role !== 'admin') {
-                alert('Доступ запрещён. Требуются права администратора.');
-                window.location.href = '/dashboard.html';
-                return;
-            }
-
-            setupNavbar(user);
+            // Page initialization code goes here
         });
 
         // Parse input text into updates array
