@@ -378,4 +378,118 @@ router.post('/sites/bulk-update-params',
   }
 );
 
+// ==================== MODERATION ENDPOINTS ====================
+
+/**
+ * GET /api/admin/moderation
+ * Get all placements pending admin approval
+ */
+router.get('/moderation', async (req, res) => {
+  try {
+    const pendingApprovals = await adminService.getPendingApprovals();
+
+    res.json({
+      success: true,
+      data: pendingApprovals
+    });
+
+  } catch (error) {
+    logger.error('Failed to get pending approvals', { error: error.message });
+    res.status(500).json({ error: 'Failed to get pending approvals' });
+  }
+});
+
+/**
+ * GET /api/admin/moderation/count
+ * Get count of placements pending approval (for badge)
+ */
+router.get('/moderation/count', async (req, res) => {
+  try {
+    const count = await adminService.getPendingApprovalsCount();
+
+    res.json({
+      success: true,
+      count
+    });
+
+  } catch (error) {
+    logger.error('Failed to get moderation count', { error: error.message });
+    res.status(500).json({ error: 'Failed to get count' });
+  }
+});
+
+/**
+ * POST /api/admin/moderation/:id/approve
+ * Approve a placement and trigger publication
+ */
+router.post('/moderation/:id/approve', async (req, res) => {
+  try {
+    const placementId = parseInt(req.params.id);
+
+    if (isNaN(placementId)) {
+      return res.status(400).json({ error: 'Invalid placement ID' });
+    }
+
+    const result = await adminService.approvePlacement(placementId, req.user.id);
+
+    res.json({
+      success: true,
+      message: 'Placement approved successfully',
+      data: {
+        placementId,
+        newStatus: result.newStatus
+      }
+    });
+
+  } catch (error) {
+    logger.error('Failed to approve placement', {
+      adminId: req.user.id,
+      placementId: req.params.id,
+      error: error.message
+    });
+    res.status(400).json({ error: error.message || 'Failed to approve placement' });
+  }
+});
+
+/**
+ * POST /api/admin/moderation/:id/reject
+ * Reject a placement and refund the user
+ */
+router.post('/moderation/:id/reject',
+  [
+    body('reason').optional().isString().trim().withMessage('Reason must be a string')
+  ],
+  validateRequest,
+  async (req, res) => {
+    try {
+      const placementId = parseInt(req.params.id);
+      const { reason = 'Отклонено администратором' } = req.body;
+
+      if (isNaN(placementId)) {
+        return res.status(400).json({ error: 'Invalid placement ID' });
+      }
+
+      const result = await adminService.rejectPlacement(placementId, req.user.id, reason);
+
+      res.json({
+        success: true,
+        message: 'Placement rejected and refunded',
+        data: {
+          placementId,
+          refundAmount: result.refundAmount,
+          reason: result.reason
+        }
+      });
+
+    } catch (error) {
+      logger.error('Failed to reject placement', {
+        adminId: req.user.id,
+        placementId: req.params.id,
+        error: error.message
+      });
+      res.status(400).json({ error: error.message || 'Failed to reject placement' });
+    }
+  }
+);
+
 module.exports = router;
