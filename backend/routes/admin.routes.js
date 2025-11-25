@@ -316,20 +316,39 @@ router.post('/sites/bulk-update-params',
     body('parameter').isString().trim().notEmpty().withMessage('Parameter name is required'),
     body('updates').isArray({ min: 1 }).withMessage('Updates array is required and must not be empty'),
     body('updates.*.domain').isString().trim().notEmpty().withMessage('Domain is required for each update'),
-    body('updates.*.value').isInt({ min: 0 }).withMessage('Value must be a non-negative integer')
+    body('updates.*.value').notEmpty().withMessage('Value is required for each update')
   ],
   validateRequest,
   async (req, res) => {
     try {
       const { parameter, updates } = req.body;
 
-      // DR/DA/TF/CF: validate 0-100 range (ratings)
-      if (['dr', 'da', 'tf', 'cf'].includes(parameter)) {
-        const invalidValues = updates.filter(u => u.value > 100);
+      // GEO: string parameter (country code like "PL", "EN", "RU")
+      if (parameter === 'geo') {
+        // For GEO, value should be a string (2-10 chars)
+        const invalidValues = updates.filter(u => typeof u.value !== 'string' || u.value.length > 10);
         if (invalidValues.length > 0) {
           return res.status(400).json({
-            error: `${parameter.toUpperCase()} values must be between 0 and 100. Found invalid values for: ${invalidValues.map(u => u.domain).join(', ')}`
+            error: `GEO values must be strings up to 10 characters. Found invalid values for: ${invalidValues.map(u => u.domain).join(', ')}`
           });
+        }
+      } else {
+        // For numeric parameters, validate as integers
+        const nonIntegerValues = updates.filter(u => !Number.isInteger(Number(u.value)) || Number(u.value) < 0);
+        if (nonIntegerValues.length > 0) {
+          return res.status(400).json({
+            error: `Values must be non-negative integers. Found invalid values for: ${nonIntegerValues.map(u => u.domain).join(', ')}`
+          });
+        }
+
+        // DR/DA/TF/CF: validate 0-100 range (ratings)
+        if (['dr', 'da', 'tf', 'cf'].includes(parameter)) {
+          const invalidValues = updates.filter(u => Number(u.value) > 100);
+          if (invalidValues.length > 0) {
+            return res.status(400).json({
+              error: `${parameter.toUpperCase()} values must be between 0 and 100. Found invalid values for: ${invalidValues.map(u => u.domain).join(', ')}`
+            });
+          }
         }
       }
       // ref_domains, rd_main, norm, keywords, traffic: no upper limit (counts)
