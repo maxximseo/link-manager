@@ -786,9 +786,9 @@ const renewPlacement = async (placementId, userId, isAutoRenewal = false) => {
     let basePrice, baseRenewalDiscount, personalDiscount;
 
     if (isOwnSite) {
-      // Owner's renewal price: flat $0.10
-      finalRenewalPrice = 0.10;
-      basePrice = 0.10;
+      // Owner's renewal price: flat rate
+      finalRenewalPrice = PRICING.OWNER_RATE;
+      basePrice = PRICING.OWNER_RATE;
       baseRenewalDiscount = 0;
       personalDiscount = 0;
       logger.info('Owner renewal pricing applied', { userId, placementId, price: finalRenewalPrice });
