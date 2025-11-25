@@ -1086,6 +1086,139 @@ node database/run_ref_domains_migration.js
 
 ---
 
+## ADR-018: GEO Parameter System
+
+**Status**: ✅ ACTIVE
+**Date**: November 2025
+
+### Context
+Need to add geographic targeting capability to sites for filtering placements by country.
+
+### Decision
+Extend the existing `sites` table with a `geo` column and implement client-side filtering on placements page.
+
+### Rationale
+**Why extend sites table**:
+- ✅ Follows LEVER framework - Leverage existing patterns
+- ✅ No new table required
+- ✅ Single-column addition, minimal migration
+- ✅ Reuses existing bulk update infrastructure
+
+**Why client-side filtering**:
+- ✅ Sites data already loaded in memory
+- ✅ No additional API calls
+- ✅ Instant response on filter change
+- ✅ Pattern matches existing whitelist/blacklist filters
+
+**Why VARCHAR(10) for GEO**:
+- ✅ ISO country codes are 2-3 characters
+- ✅ Room for future expansion (regions, multi-geo)
+- ✅ Default 'EN' for backward compatibility
+- ✅ String type allows flexible geo codes (EN, PL, RU, DE, US-CA)
+
+### Implementation
+
+**Database Migration**:
+```sql
+ALTER TABLE sites ADD COLUMN IF NOT EXISTS geo VARCHAR(10) DEFAULT 'EN';
+```
+
+**Service Layer** (site.service.js):
+```javascript
+// Add to SELECT queries
+'SELECT id, ..., geo FROM sites WHERE ...'
+
+// Add to allowed params whitelist
+const allowedParams = ['dr', 'da', ..., 'geo'];
+
+// String handling in bulk update
+if (parameter === 'geo') {
+  value = value.toUpperCase();
+}
+```
+
+**Frontend Filter** (placements.html):
+```javascript
+// State variable
+let selectedGeo = '';
+
+// Filter chain addition
+if (selectedGeo) {
+  sitesToShow = sitesToShow.filter(site => (site.geo || 'EN') === selectedGeo);
+}
+
+// Dynamic dropdown population
+function updateGeoFilterOptions() {
+  const uniqueGeos = [...new Set(sites.map(site => site.geo || 'EN'))];
+  uniqueGeos.sort();
+  // Rebuild dropdown options
+}
+```
+
+### Files Modified
+1. `database/migrate_add_geo.sql` - Migration script
+2. `database/run_geo_migration.js` - Migration runner
+3. `backend/services/site.service.js` - Add geo to queries, whitelist
+4. `backend/build/sites.html` - Display GEO column
+5. `backend/build/placements.html` - GEO filter dropdown
+6. `backend/build/placements-manager.html` - Display GEO in tables
+7. `backend/build/js/placements-manager.js` - Render GEO values
+8. `backend/build/admin-site-params.html` - Bulk GEO update
+9. `backend/services/export.service.js` - Export GEO field
+10. `backend/services/placement.service.js` - Include GEO in queries
+
+### Consequences
+- ✅ Zero new tables, zero new endpoints
+- ✅ Reuses existing bulk update pattern
+- ✅ Client-side filtering is fast and responsive
+- ✅ Default 'EN' prevents NULL handling issues
+- ⚠️ GEO values must be managed manually (no predefined list)
+- ⚠️ Case sensitivity resolved by uppercase conversion
+
+---
+
+## ADR-019: Optimization Principles Documentation
+
+**Status**: ✅ ACTIVE
+**Date**: November 2025
+
+### Context
+Need to document code optimization principles and extended thinking framework for consistent development practices.
+
+### Decision
+Create **OPTIMIZATION_PRINCIPLES.md** as a standalone document and reference it from CLAUDE.md.
+
+### Rationale
+- ✅ Separates concerns - CLAUDE.md for dev commands, OPTIMIZATION for methodology
+- ✅ LEVER framework provides clear decision criteria
+- ✅ Scoring system makes extend-vs-create decisions objective
+- ✅ Three-pass approach ensures thorough analysis
+
+### Key Principles
+
+**LEVER Framework**:
+- **L**everage existing patterns
+- **E**xtend before creating
+- **V**erify through reactivity
+- **E**liminate duplication
+- **R**educe complexity
+
+**Success Metrics**:
+| Metric | Target |
+|--------|--------|
+| Code reduction | >50% |
+| Pattern reuse | >70% |
+| New files | <3 per feature |
+| New tables | 0 |
+
+### Consequences
+- ✅ Consistent decision-making across team
+- ✅ Measurable optimization targets
+- ✅ Clear anti-patterns documented
+- ⚠️ Requires discipline to follow checklist
+
+---
+
 ## Summary of Active ADRs
 
 | ADR | Title | Impact | Status |
@@ -1107,6 +1240,8 @@ node database/run_ref_domains_migration.js
 | 015 | Pagination 5000 Max | Low | ✅ Active |
 | 016 | Winston Logging Strategy | Low | ✅ Active |
 | 017 | Context-Aware Validation | Medium | ✅ Active |
+| 018 | GEO Parameter System | Medium | ✅ Active |
+| 019 | Optimization Principles Doc | Low | ✅ Active |
 
 ---
 

@@ -108,11 +108,17 @@ node database/run_nullable_migration.js
 node database/run_remove_anchor_unique.js
 node database/run_extended_fields_migration.js
 
-# 3. Optional migrations
+# 3. Site parameters migrations
+node database/run_da_migration.js
+node database/run_ref_domains_migration.js
+node database/run_tf_cf_keywords_traffic_migration.js
+node database/run_geo_migration.js
+
+# 4. Optional migrations
 node database/run_billing_migration.js
 node database/run_registration_tokens_migration.js
 
-# 4. Seed data
+# 5. Seed data
 psql -d linkmanager -f database/seed.sql
 ```
 
@@ -193,6 +199,44 @@ PGPASSWORD="$DB_PASSWORD" pg_restore \
 ```
 
 **⚠️ Warning**: This will overwrite existing data!
+
+---
+
+### Add GEO Column to Sites (v2.5.3+)
+
+**Purpose**: Add geographic targeting to sites for country-based filtering.
+
+```bash
+# Run migration
+node database/run_geo_migration.js
+```
+
+**Expected output**:
+```
+Starting GEO migration...
+Executing migration...
+✅ Migration completed successfully!
+Column details: [ { column_name: 'geo', data_type: 'character varying', column_default: "'EN'::character varying" } ]
+Total sites in database: 1234
+Sample sites with GEO: [ { site_url: 'example.com', geo: 'EN' }, ... ]
+```
+
+**Verification**:
+```bash
+# Check column exists
+psql -c "SELECT column_name, data_type, column_default FROM information_schema.columns WHERE table_name = 'sites' AND column_name = 'geo';"
+
+# Check sample data
+psql -c "SELECT site_url, geo FROM sites LIMIT 5;"
+```
+
+**Bulk update GEO values**:
+Navigate to Admin → Site Params → Select "GEO" parameter → Paste data:
+```
+example.com PL
+another-site.de DE
+russian-site.ru RU
+```
 
 ---
 
