@@ -339,7 +339,7 @@ async function loadScheduledPlacements() {
     } catch (error) {
         console.error('Failed to load scheduled placements:', error);
         document.getElementById('scheduledPlacementsTable').innerHTML =
-            '<tr><td colspan="10" class="text-center text-danger">Ошибка загрузки</td></tr>';
+            '<tr><td colspan="13" class="text-center text-danger">Ошибка загрузки</td></tr>';
     }
 }
 
