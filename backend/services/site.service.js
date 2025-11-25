@@ -507,7 +507,7 @@ const getSiteByDomain = async (domain) => {
     // Try to find site by exact domain match
     // Normalize site_url the same way: remove protocol, www, and path
     const result = await query(
-      `SELECT id, user_id, site_name, site_url, site_type, max_links, max_articles, used_links, used_articles, allow_articles, created_at
+      `SELECT id, user_id, site_name, site_url, site_type, max_links, max_articles, used_links, used_articles, allow_articles, dr, created_at
        FROM sites
        WHERE LOWER(
          REGEXP_REPLACE(
