@@ -47,6 +47,7 @@ const getUserPlacements = async (userId, page = 0, limit = 0, filters = {}) => {
         p.status,
         s.site_url,
         s.site_name,
+        s.dr as site_dr,
         proj.name as project_name,
         (SELECT COUNT(*) FROM placement_content pc WHERE pc.placement_id = p.id AND pc.link_id IS NOT NULL) as link_count,
         (SELECT COUNT(*) FROM placement_content pc WHERE pc.placement_id = p.id AND pc.article_id IS NOT NULL) as article_count,
