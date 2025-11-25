@@ -273,4 +273,51 @@ router.post('/placements/:id/refund',
   }
 );
 
+/**
+ * POST /api/admin/sites/bulk-update-params
+ * Bulk update site parameters (DR, etc.)
+ *
+ * Body:
+ * - parameter: String ('dr', etc.)
+ * - updates: Array of {domain, value} objects
+ *
+ * Input format in frontend: "site.com 10\nexample.org 25"
+ */
+router.post('/sites/bulk-update-params',
+  [
+    body('parameter').isString().trim().notEmpty().withMessage('Parameter name is required'),
+    body('updates').isArray({ min: 1 }).withMessage('Updates array is required and must not be empty'),
+    body('updates.*.domain').isString().trim().notEmpty().withMessage('Domain is required for each update'),
+    body('updates.*.value').isInt({ min: 0, max: 100 }).withMessage('Value must be an integer between 0 and 100')
+  ],
+  validateRequest,
+  async (req, res) => {
+    try {
+      const { parameter, updates } = req.body;
+
+      logger.info('Bulk site params update requested', {
+        adminId: req.user.id,
+        parameter,
+        updatesCount: updates.length
+      });
+
+      const result = await siteService.bulkUpdateSiteParams(parameter, updates);
+
+      res.json({
+        success: true,
+        data: result
+      });
+
+    } catch (error) {
+      logger.error('Failed to bulk update site params', {
+        adminId: req.user.id,
+        error: error.message
+      });
+      res.status(400).json({
+        error: error.message || 'Failed to bulk update site params'
+      });
+    }
+  }
+);
+
 module.exports = router;
