@@ -480,7 +480,7 @@ async function loadHistoryPlacements(page = 1) {
     } catch (error) {
         console.error('Failed to load history:', error);
         document.getElementById('historyPlacementsTable').innerHTML =
-            '<tr><td colspan="14" class="text-center text-danger">Ошибка загрузки</td></tr>';
+            '<tr><td colspan="18" class="text-center text-danger">Ошибка загрузки</td></tr>';
     }
 }
 
@@ -492,7 +492,7 @@ function renderHistoryPlacements(placements) {
     tbody.innerHTML = '';
 
     if (placements.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="14" class="text-center text-muted">Нет размещений</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="18" class="text-center text-muted">Нет размещений</td></tr>';
         return;
     }
 
@@ -525,10 +525,22 @@ function renderHistoryPlacements(placements) {
         const daValue = p.site_da || 0;
         const daClass = daValue >= 50 ? 'text-success fw-bold' : daValue >= 20 ? 'text-primary' : 'text-muted';
 
+        // TF value with color coding (Majestic Trust Flow, 0-100)
+        const tfValue = p.site_tf || 0;
+        const tfClass = tfValue >= 50 ? 'text-success fw-bold' : tfValue >= 20 ? 'text-primary' : 'text-muted';
+
+        // CF value with color coding (Majestic Citation Flow, 0-100)
+        const cfValue = p.site_cf || 0;
+        const cfClass = cfValue >= 50 ? 'text-success fw-bold' : cfValue >= 20 ? 'text-primary' : 'text-muted';
+
         // Ref Domains, RD Main, Norm values
         const refDomainsValue = p.site_ref_domains || 0;
         const rdMainValue = p.site_rd_main || 0;
         const normValue = p.site_norm || 0;
+
+        // Keywords and Traffic values (Ahrefs)
+        const keywordsValue = p.site_keywords || 0;
+        const trafficValue = p.site_traffic || 0;
 
         row.innerHTML = `
             <td>#${p.id}</td>
@@ -536,9 +548,13 @@ function renderHistoryPlacements(placements) {
             <td><a href="${displayUrl}" target="_blank">${displayUrl}</a></td>
             <td class="${drClass}">${drValue}</td>
             <td class="${daClass}">${daValue}</td>
+            <td class="${tfClass}">${tfValue}</td>
+            <td class="${cfClass}">${cfValue}</td>
             <td class="text-muted">${refDomainsValue}</td>
             <td class="text-muted">${rdMainValue}</td>
             <td class="text-muted">${normValue}</td>
+            <td class="text-muted">${keywordsValue}</td>
+            <td class="text-muted">${trafficValue}</td>
             <td>${typeBadge}</td>
             <td>${statusBadges[p.status] || p.status}</td>
             <td>${formatDate(p.published_at || p.placed_at)}</td>
