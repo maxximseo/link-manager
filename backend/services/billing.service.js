@@ -756,11 +756,12 @@ const renewPlacement = async (placementId, userId, isAutoRenewal = false) => {
   try {
     await client.query('BEGIN');
 
-    // 1. Get placement and user with lock
+    // 1. Get placement, user, and site with lock
     const placementResult = await client.query(`
-      SELECT p.*, u.balance, u.current_discount
+      SELECT p.*, u.balance, u.current_discount, u.total_spent, s.user_id as site_owner_id
       FROM placements p
       JOIN users u ON p.user_id = u.id
+      JOIN sites s ON p.site_id = s.id
       WHERE p.id = $1 AND p.user_id = $2
       FOR UPDATE OF p, u
     `, [placementId, userId]);
@@ -777,13 +778,29 @@ const renewPlacement = async (placementId, userId, isAutoRenewal = false) => {
     }
 
     // 3. Calculate renewal price
-    const basePrice = PRICING.LINK_HOMEPAGE;
-    const baseRenewalDiscount = PRICING.BASE_RENEWAL_DISCOUNT;
-    const personalDiscount = placement.current_discount || 0;
+    // SPECIAL PRICING: If user owns the site, flat rate of $0.10
+    const isOwnSite = placement.site_owner_id === userId;
 
-    // Apply both discounts sequentially
-    const priceAfterBaseDiscount = basePrice * (1 - baseRenewalDiscount / 100);
-    const finalRenewalPrice = priceAfterBaseDiscount * (1 - personalDiscount / 100);
+    let finalRenewalPrice;
+    let basePrice, baseRenewalDiscount, personalDiscount;
+
+    if (isOwnSite) {
+      // Owner's renewal price: flat $0.10
+      finalRenewalPrice = 0.10;
+      basePrice = 0.10;
+      baseRenewalDiscount = 0;
+      personalDiscount = 0;
+      logger.info('Owner renewal pricing applied', { userId, placementId, price: finalRenewalPrice });
+    } else {
+      // Standard renewal pricing
+      basePrice = PRICING.LINK_HOMEPAGE;
+      baseRenewalDiscount = PRICING.BASE_RENEWAL_DISCOUNT;
+      personalDiscount = placement.current_discount || 0;
+
+      // Apply both discounts sequentially
+      const priceAfterBaseDiscount = basePrice * (1 - baseRenewalDiscount / 100);
+      finalRenewalPrice = priceAfterBaseDiscount * (1 - personalDiscount / 100);
+    }
 
     // 4. Check balance
     if (parseFloat(placement.balance) < finalRenewalPrice) {
