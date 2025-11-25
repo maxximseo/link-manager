@@ -666,7 +666,7 @@ const getUserTokens = async (userId) => {
  * @returns {Object} - Results with success/failure counts
  */
 const bulkUpdateSiteParams = async (parameter, updates) => {
-  const allowedParams = ['dr', 'da', 'ref_domains', 'rd_main', 'norm']; // Whitelist of allowed parameters
+  const allowedParams = ['dr', 'da', 'ref_domains', 'rd_main', 'norm', 'tf', 'cf', 'keywords', 'traffic']; // Whitelist of allowed parameters
 
   if (!allowedParams.includes(parameter)) {
     throw new Error(`Parameter '${parameter}' is not allowed. Allowed: ${allowedParams.join(', ')}`);
