@@ -176,4 +176,45 @@ function initNavbar(type, activePage, options = {}) {
     const navbar = new Navbar(type, activePage, options);
     navbar.inject();
     Navbar.initAdminMenu();
+
+    // Load moderation badge count for admin users
+    Navbar.loadModerationBadge();
 }
+
+/**
+ * Load moderation badge count for admin users
+ * Updates all moderation-related badges in navbar
+ */
+Navbar.loadModerationBadge = async function() {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.role !== 'admin') return;
+
+        const response = await fetch('/api/admin/moderation/count', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) return;
+
+        const result = await response.json();
+        const count = result.count || 0;
+
+        // Update all moderation badges
+        const badgeIds = ['moderation-badge', 'moderation-dropdown-badge', 'admin-menu-badge'];
+        badgeIds.forEach(id => {
+            const badge = document.getElementById(id);
+            if (badge) {
+                badge.textContent = count;
+                badge.style.display = count > 0 ? 'inline-block' : 'none';
+            }
+        });
+
+    } catch (e) {
+        console.error('Error loading moderation badge:', e);
+    }
+};
