@@ -913,9 +913,14 @@
                 const geoValue = site.geo || 'EN';
 
                 // Price based on content type (with user's discount)
-                const price = contentType === 'links'
-                    ? (userPricing?.link?.finalPrice || 25.00)
-                    : (userPricing?.article?.finalPrice || 15.00);
+                // SPECIAL: $0.10 for user's own sites
+                const currentUser = getCurrentUser();
+                const isOwnSite = site.user_id === currentUser?.id;
+                const price = isOwnSite
+                    ? 0.10
+                    : (contentType === 'links'
+                        ? (userPricing?.link?.finalPrice || 25.00)
+                        : (userPricing?.article?.finalPrice || 15.00));
 
                 // Slot availability display (dynamic based on content type)
                 let slotsDisplay = '';
@@ -1183,11 +1188,21 @@
                 // Show bottom purchase button
                 bottomPurchaseDiv.style.display = 'block';
 
-                // Calculate total price based on content type
-                const pricePerItem = selectedContentType === 'links'
+                // Calculate total price - check each site's ownership for pricing
+                const currentUser = getCurrentUser();
+                const standardPrice = selectedContentType === 'links'
                     ? (userPricing?.link?.finalPrice || 25.00)
                     : (userPricing?.article?.finalPrice || 15.00);
-                const totalPrice = selectedCount * pricePerItem;
+
+                let totalPrice = 0;
+                selectedSites.forEach(siteId => {
+                    const site = sites.find(s => s.id === siteId);
+                    if (site) {
+                        // $0.10 for own sites, standard price for others
+                        const isOwnSite = site.user_id === currentUser?.id;
+                        totalPrice += isOwnSite ? 0.10 : standardPrice;
+                    }
+                });
 
                 // Update all badges
                 purchaseBadge.textContent = selectedCount;

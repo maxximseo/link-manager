@@ -12,6 +12,7 @@ const wordpressService = require('./wordpress.service');
 const PRICING = {
   LINK_HOMEPAGE: 25.00,      // Homepage link placement
   ARTICLE_GUEST_POST: 15.00, // Guest post article placement
+  OWNER_RATE: 0.10,          // Special rate for placing content on own sites
   BASE_RENEWAL_DISCOUNT: 30, // Base discount for link renewals (30%)
   RENEWAL_PERIOD_DAYS: 365   // Renewal period (1 year)
 };
