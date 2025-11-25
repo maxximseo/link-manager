@@ -372,8 +372,14 @@ const purchasePlacement = async ({
       expiryDate.setDate(expiryDate.getDate() + PRICING.RENEWAL_PERIOD_DAYS);
       expiresAt = expiryDate.toISOString();
 
-      // Calculate renewal price: base * (1 - 0.30) * (1 - personalDiscount/100)
-      renewalPrice = basePrice * (1 - PRICING.BASE_RENEWAL_DISCOUNT / 100) * (1 - discount / 100);
+      // Calculate renewal price
+      if (isOwnSite) {
+        // Owner's renewal price: same flat rate $0.10
+        renewalPrice = 0.10;
+      } else {
+        // Standard renewal: base * (1 - 0.30) * (1 - personalDiscount/100)
+        renewalPrice = basePrice * (1 - PRICING.BASE_RENEWAL_DISCOUNT / 100) * (1 - discount / 100);
+      }
     }
 
     // 11. Parse scheduled date
