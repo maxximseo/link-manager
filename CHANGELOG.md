@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.5.1] - 2025-11-25
+
+### 📦 Database
+- **ADDED** New site parameter columns to `sites` table:
+  - `ref_domains INTEGER DEFAULT 0` - Number of referring domains (Ahrefs)
+  - `rd_main INTEGER DEFAULT 0` - Referring domains to homepage
+  - `norm INTEGER DEFAULT 0` - Norm links count
+- **ADDED** `da INTEGER DEFAULT 0` - Domain Authority (MOZ) column
+
+### 📊 API
+- **UPDATED** `POST /api/admin/sites/bulk-update-params` - Now supports 5 parameters:
+  - `dr` (Domain Rating) - Validation: 0-100
+  - `da` (Domain Authority) - Validation: 0-100
+  - `ref_domains` - No upper limit (count)
+  - `rd_main` - No upper limit (count)
+  - `norm` - No upper limit (count)
+- **ADDED** Context-aware validation: DR/DA limited to 0-100, other parameters unlimited
+
+### 🎨 Frontend
+- **UPDATED** Admin site params page (`admin-site-params.html`) with 5 parameter options
+- **ADDED** Parameter descriptions in Russian
+
+### 📚 Documentation
+- **ADDED** OPTIMIZATION_PRINCIPLES.md - Code optimization framework (LEVER methodology)
+- **UPDATED** CLAUDE.md with optimization principles reference
+
+---
+
 ## [2.5.0] - 2025-01-23
 
 ### 📚 Documentation

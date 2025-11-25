@@ -999,6 +999,93 @@ if (duration > 1000) {
 
 ---
 
+## ADR-017: Context-Aware Validation for Site Parameters
+
+**Status**: ✅ ACTIVE
+**Date**: November 2025 (v2.5.1)
+
+### Context
+Bulk update endpoint for site parameters needs different validation rules:
+- `dr` (Domain Rating) and `da` (Domain Authority) are ratings: 0-100
+- `ref_domains`, `rd_main`, `norm` are counts: 0 to unlimited
+
+### Previous Behavior
+```javascript
+// All parameters limited to 0-100 (INCORRECT)
+body('updates.*.value').isInt({ min: 0, max: 100 })
+```
+
+**Problem**: Cannot update ref_domains=5000 because max: 100 validation fails.
+
+### Decision
+Implement **context-aware validation** in controller rather than express-validator middleware.
+
+### Implementation
+```javascript
+// admin.routes.js
+
+// Basic validation (all parameters): min 0, no max limit
+body('updates.*.value').isInt({ min: 0 }).withMessage('Value must be a non-negative integer')
+
+// Context-aware validation in route handler
+async (req, res) => {
+  const { parameter, updates } = req.body;
+
+  // DR/DA: validate 0-100 range
+  if (parameter === 'dr' || parameter === 'da') {
+    const invalidValues = updates.filter(u => u.value > 100);
+    if (invalidValues.length > 0) {
+      return res.status(400).json({
+        error: `${parameter.toUpperCase()} values must be between 0 and 100. Found invalid values for: ${invalidValues.map(u => u.domain).join(', ')}`
+      });
+    }
+  }
+
+  // ref_domains, rd_main, norm: no upper limit
+  // ... proceed with update
+}
+```
+
+### Rationale
+**Why context-aware validation**:
+- ✅ Single endpoint for all parameters
+- ✅ Different validation rules per parameter type
+- ✅ Express-validator can't access `parameter` field during validation
+- ✅ Clear error messages with domain names
+
+**Why not separate endpoints**:
+- Code duplication across 5 endpoints
+- Frontend complexity (5 different API calls)
+- Same core logic with different validation
+
+### Allowed Parameters
+```javascript
+const allowedParams = ['dr', 'da', 'ref_domains', 'rd_main', 'norm'];
+
+// Validation rules:
+// dr        → 0-100 (Ahrefs Domain Rating)
+// da        → 0-100 (MOZ Domain Authority)
+// ref_domains → 0-∞ (referring domains count)
+// rd_main   → 0-∞ (domains linking to homepage)
+// norm      → 0-∞ (norm links count)
+```
+
+### Migration Required
+```bash
+# Add new columns to sites table
+node database/run_da_migration.js
+node database/run_ref_domains_migration.js
+```
+
+### Consequences
+- ✅ Flexible validation per parameter type
+- ✅ Single unified endpoint
+- ✅ Clear error reporting
+- ⚠️ Validation logic in two places (middleware + controller)
+- ⚠️ Must update allowed params list when adding new parameters
+
+---
+
 ## Summary of Active ADRs
 
 | ADR | Title | Impact | Status |
@@ -1019,6 +1106,7 @@ if (duration > 1000) {
 | 014 | COALESCE Partial Updates | Low | ✅ Active |
 | 015 | Pagination 5000 Max | Low | ✅ Active |
 | 016 | Winston Logging Strategy | Low | ✅ Active |
+| 017 | Context-Aware Validation | Medium | ✅ Active |
 
 ---
 
