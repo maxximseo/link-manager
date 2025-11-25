@@ -1153,6 +1153,48 @@ function isAdmin() {
     }
 }
 
+/**
+ * Load all placements (active, scheduled, history)
+ */
+async function loadAllPlacements() {
+    await Promise.all([
+        loadActivePlacements(),
+        loadScheduledPlacements(),
+        loadHistoryPlacements()
+    ]);
+    await updateTabCounts();
+}
+
+/**
+ * Load filter dropdowns (projects for filter selector)
+ */
+async function loadFilterDropdowns() {
+    try {
+        const response = await fetch('/api/projects', {
+            headers: { 'Authorization': `Bearer ${getToken()}` }
+        });
+
+        if (!response.ok) throw new Error('Failed to load projects');
+
+        const result = await response.json();
+        projects = Array.isArray(result.data) ? result.data : result;
+
+        const select = document.getElementById('projectFilter');
+        if (select) {
+            select.innerHTML = '<option value="">Все проекты</option>';
+            projects.forEach(p => {
+                const option = document.createElement('option');
+                option.value = p.id;
+                option.textContent = p.name;
+                select.appendChild(option);
+            });
+        }
+
+    } catch (error) {
+        console.error('Failed to load filter dropdowns:', error);
+    }
+}
+
 // ============================================
 // Sorting Functions
 // ============================================
