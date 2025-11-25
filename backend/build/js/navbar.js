@@ -73,16 +73,21 @@ class Navbar {
      * Generate admin dropdown menu HTML
      */
     renderAdminDropdown() {
-        const adminDropdownItems = NavbarConfig.adminDropdown.map(item =>
-            `<li><a class="dropdown-item" href="${item.href}">
-                <i class="bi ${item.icon}"></i> ${item.text}
-            </a></li>`
-        ).join('');
+        const adminDropdownItems = NavbarConfig.adminDropdown.map(item => {
+            let badgeHtml = '';
+            if (item.hasBadge && item.badgeId) {
+                badgeHtml = `<span class="badge bg-danger ms-1" id="${item.badgeId}" style="display: none;">0</span>`;
+            }
+            return `<li><a class="dropdown-item" href="${item.href}">
+                <i class="bi ${item.icon}"></i> ${item.text}${badgeHtml}
+            </a></li>`;
+        }).join('');
 
         return `<li class="nav-item dropdown" id="adminMenu" style="display: none;">
                     <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button"
                        data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-shield-lock"></i> Admin
+                        <span class="badge bg-danger ms-1" id="admin-menu-badge" style="display: none;">0</span>
                     </a>
                     <ul class="dropdown-menu" aria-labelledby="adminDropdown">
                         ${adminDropdownItems}
