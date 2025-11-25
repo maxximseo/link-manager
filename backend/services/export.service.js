@@ -90,6 +90,7 @@ const exportUserPlacements = async (userId, format = 'csv', projectId = null) =>
         s.norm as site_norm,
         s.keywords as site_keywords,
         s.traffic as site_traffic,
+        s.geo as site_geo,
         (SELECT pl.anchor_text FROM placement_content pc
          LEFT JOIN project_links pl ON pc.link_id = pl.id
          WHERE pc.placement_id = p.id AND pc.link_id IS NOT NULL LIMIT 1) as link_anchor,
