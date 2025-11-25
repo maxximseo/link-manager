@@ -11,10 +11,10 @@ const path = require('path');
 async function runMigration() {
   console.log('Starting DR migration...');
 
-  // Create connection pool
+  // Create connection pool (always use SSL for remote databases)
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: { rejectUnauthorized: false }
   });
 
   try {
