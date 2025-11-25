@@ -528,9 +528,11 @@ function renderHistoryPlacements(placements) {
         const statusBadges = {
             'placed': '<span class="badge bg-success">Размещено</span>',
             'pending': '<span class="badge bg-warning">Ожидание</span>',
+            'pending_approval': '<span class="badge bg-warning"><i class="bi bi-hourglass-split"></i> На модерации</span>',
             'scheduled': '<span class="badge bg-info">Запланировано</span>',
             'expired': '<span class="badge bg-secondary">Истекло</span>',
             'cancelled': '<span class="badge bg-danger">Отменено</span>',
+            'rejected': '<span class="badge bg-danger"><i class="bi bi-x-circle"></i> Отклонено</span>',
             'failed': '<span class="badge bg-danger">Ошибка</span>'
         };
 
