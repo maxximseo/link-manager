@@ -36,6 +36,7 @@
                             <option value="norm">Norm (Norm ссылки)</option>
                             <option value="keywords">Keywords (Ключевые слова)</option>
                             <option value="traffic">Traffic (Трафик)</option>
+                            <option value="geo">GEO (Геолокация)</option>
                         </select>
                     </div>
                     <div class="col-md-9">
@@ -180,6 +181,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/js/auth.js"></script>
+    <script src="/js/navbar-config.js"></script>
     <script src="/js/navbar.js"></script>
 
     <script>
@@ -205,6 +207,7 @@
         function parseInput(text) {
             const lines = text.split('\n').filter(line => line.trim());
             const updates = [];
+            const parameter = document.getElementById('paramSelect').value;
 
             for (const line of lines) {
                 const trimmed = line.trim();
@@ -214,10 +217,16 @@
                 const parts = trimmed.split(/\s+/);
                 if (parts.length >= 2) {
                     const domain = parts[0];
-                    const value = parseInt(parts[1], 10);
 
-                    if (!isNaN(value)) {
+                    // GEO is a string parameter, others are integers
+                    if (parameter === 'geo') {
+                        const value = parts[1].toUpperCase();
                         updates.push({ domain, value });
+                    } else {
+                        const value = parseInt(parts[1], 10);
+                        if (!isNaN(value)) {
+                            updates.push({ domain, value });
+                        }
                     }
                 }
             }
@@ -360,7 +369,8 @@ mywebsite.io 88`;
                 'rd_main': 'Количество доменов, ведущих на главную страницу.',
                 'norm': 'Количество Norm ссылок.',
                 'keywords': 'Количество ключевых слов по Ahrefs.',
-                'traffic': 'Traffic по Ahrefs.'
+                'traffic': 'Traffic по Ahrefs.',
+                'geo': 'Геолокация сайта (код страны). Например: EN, PL, RU, DE, FR и т.д.'
             };
             document.getElementById('paramDescription').textContent = descriptions[this.value] || '';
         });

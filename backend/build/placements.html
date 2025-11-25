@@ -173,9 +173,18 @@
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="hideAlreadyPurchasedCheckbox" checked>
                             <label class="form-check-label" for="hideAlreadyPurchasedCheckbox">
-                                Не показывать купленные сайты
+                                Скрыть купленные
                             </label>
                         </div>
+                    </div>
+
+                    <!-- GEO Filter -->
+                    <div class="mb-3">
+                        <label for="geoFilter" class="form-label">Фильтр по GEO:</label>
+                        <select class="form-select form-select-sm" id="geoFilter" style="max-width: 200px;">
+                            <option value="">Все регионы</option>
+                            <!-- Options will be populated dynamically -->
+                        </select>
                     </div>
 
                     <!-- Pagination Controls -->
@@ -447,6 +456,7 @@
         let whitelistActive = false; // Whether to apply whitelist filter
         let blacklistActive = false; // Whether to apply blacklist filter
         let hideAlreadyPurchased = true; // Whether to hide already purchased sites (default: active)
+        let selectedGeo = ''; // GEO filter value (empty = show all)
         let selectedSitesForList = new Set(); // Track selected sites (not for placement, but for list operations)
         let currentImportTarget = 'whitelist'; // 'whitelist' or 'blacklist'
         let importListModal;
@@ -481,6 +491,18 @@
                 }
             });
 
+            // Add event listener for GEO filter dropdown
+            document.getElementById('geoFilter').addEventListener('change', async (e) => {
+                selectedGeo = e.target.value;
+                currentPage = 1; // Reset to first page
+
+                // Re-load sites with filter if project and content type are selected
+                const projectId = document.getElementById('projectSelect').value;
+                if (projectId && selectedContentType) {
+                    await loadSitesForPlacement(projectId, selectedContentType);
+                }
+            });
+
             // Add event listeners for publication type radio buttons
             document.getElementById('publishImmediate').addEventListener('change', () => {
                 document.getElementById('distributedPeriodDiv').style.display = 'none';
@@ -505,6 +527,23 @@
             loadListsFromStorage();
         });
 
+        // Update GEO filter dropdown options from loaded sites
+        function updateGeoFilterOptions() {
+            const geoFilter = document.getElementById('geoFilter');
+            const currentValue = geoFilter.value;
+
+            // Collect unique GEO values from all sites
+            const uniqueGeos = [...new Set(sites.map(site => site.geo || 'EN'))];
+
+            // Sort alphabetically
+            uniqueGeos.sort();
+
+            // Rebuild options, preserving current selection
+            geoFilter.innerHTML = '<option value="">Все регионы</option>' +
+                uniqueGeos.map(geo =>
+                    `<option value="${geo}" ${geo === currentValue ? 'selected' : ''}>${geo}</option>`
+                ).join('');
+        }
 
         async function loadProjects() {
             try {
@@ -661,6 +700,14 @@
                         return !alreadyPurchased; // Exclude already purchased sites
                     });
                 }
+
+                // If GEO filter is active, filter by GEO value
+                if (selectedGeo) {
+                    sitesToShow = sitesToShow.filter(site => (site.geo || 'EN') === selectedGeo);
+                }
+
+                // Update GEO filter dropdown with available values
+                updateGeoFilterOptions();
 
                 // Prepare filtered sites with their status
                 // NEW LOGIC: Red = already purchased (link OR article), cannot buy again
@@ -1793,9 +1840,6 @@
             }
             if (blacklistActive && blacklist.size > 0) {
                 filters.push(`<span class="badge bg-danger">Blacklist Active: ${blacklist.size} sites</span>`);
-            }
-            if (hideAlreadyPurchased) {
-                filters.push(`<span class="badge bg-secondary">Скрыть купленные</span>`);
             }
 
             if (filters.length > 0) {
