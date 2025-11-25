@@ -316,7 +316,8 @@ router.post('/sites/bulk-update-params',
     body('parameter').isString().trim().notEmpty().withMessage('Parameter name is required'),
     body('updates').isArray({ min: 1 }).withMessage('Updates array is required and must not be empty'),
     body('updates.*.domain').isString().trim().notEmpty().withMessage('Domain is required for each update'),
-    body('updates.*.value').isInt({ min: 0, max: 100 }).withMessage('Value must be an integer between 0 and 100')
+    // DR/DA: 0-100, ref_domains/rd_main/norm: can be much larger (domain/link counts)
+    body('updates.*.value').isInt({ min: 0, max: 999999999 }).withMessage('Value must be a non-negative integer')
   ],
   validateRequest,
   async (req, res) => {
