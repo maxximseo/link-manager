@@ -36,6 +36,7 @@ const NavbarConfig = {
     // Admin dropdown menu (same for both user and admin navbars)
     adminDropdown: [
         { icon: 'bi-speedometer2', text: 'Dashboard', href: '/admin-dashboard.html' },
+        { icon: 'bi-shield-check', text: 'Модерация', href: '/admin-moderation.html', hasBadge: true, badgeId: 'moderation-dropdown-badge' },
         { icon: 'bi-people', text: 'Пользователи', href: '/admin-users.html' },
         { icon: 'bi-bookmark-star', text: 'Размещения', href: '/admin-placements.html' },
         { icon: 'bi-sliders', text: 'Параметры сайтов', href: '/admin-site-params.html' }
