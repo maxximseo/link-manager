@@ -429,6 +429,9 @@ function renderScheduledPlacements(placements) {
         const keywordsValue = p.site_keywords || 0;
         const trafficValue = p.site_traffic || 0;
 
+        // GEO value
+        const geoValue = p.site_geo || 'EN';
+
         row.innerHTML = `
             <td>#${p.id}</td>
             <td>${p.project_name || '—'}</td>
@@ -442,6 +445,7 @@ function renderScheduledPlacements(placements) {
             <td class="text-muted">${normValue}</td>
             <td class="text-muted">${keywordsValue}</td>
             <td class="text-muted">${trafficValue}</td>
+            <td class="text-muted">${geoValue}</td>
             <td>${typeBadge}</td>
             <td class="fw-bold text-primary">${formattedDate}</td>
             <td>${formatDate(p.purchased_at)}</td>
