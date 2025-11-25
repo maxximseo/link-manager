@@ -1693,5 +1693,6 @@ module.exports = {
   deleteAndRefundPlacement,
   refundPlacementInTransaction,
   restoreUsageCountsInTransaction,
-  publishScheduledPlacement
+  publishScheduledPlacement,
+  publishPlacementAsync
 };
