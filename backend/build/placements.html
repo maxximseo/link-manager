@@ -215,13 +215,14 @@
                                     <th>Norm</th>
                                     <th>KW</th>
                                     <th>Traf</th>
+                                    <th>Слоты</th>
                                     <th>Статус</th>
                                     <th>Контент</th>
                                 </tr>
                             </thead>
                             <tbody id="sitesTableBody">
                                 <tr>
-                                    <td colspan="13" class="text-center text-muted">
+                                    <td colspan="14" class="text-center text-muted">
                                         Выберите проект и тип контента выше
                                     </td>
                                 </tr>
@@ -735,7 +736,7 @@
 
             if (filteredSites.length === 0) {
                 document.getElementById('sitesTableBody').innerHTML = `
-                    <tr><td colspan="6" class="text-center text-warning">
+                    <tr><td colspan="14" class="text-center text-warning">
                         No sites match current filters. Try clearing whitelist/blacklist.
                     </td></tr>
                 `;
@@ -836,6 +837,32 @@
                 const keywordsValue = site.keywords || 0;
                 const trafficValue = site.traffic || 0;
 
+                // Slot availability display (dynamic based on content type)
+                let slotsDisplay = '';
+                let slotsClass = 'text-muted';
+                if (contentType === 'links') {
+                    // Main X/Y - used/total on main page
+                    const usedLinks = site.used_links || 0;
+                    const maxLinks = site.max_links || 0;
+                    slotsDisplay = `Main ${usedLinks}/${maxLinks}`;
+                    // Color coding: green if < 50% used, yellow if 50-80%, red if > 80%
+                    if (maxLinks > 0) {
+                        const usagePercent = (usedLinks / maxLinks) * 100;
+                        slotsClass = usagePercent < 50 ? 'text-success' : usagePercent < 80 ? 'text-warning' : 'text-danger';
+                    }
+                } else {
+                    // Articles X/Y - bought/remaining
+                    const usedArticles = site.used_articles || 0;
+                    const maxArticles = site.max_articles || 0;
+                    const remaining = maxArticles - usedArticles;
+                    slotsDisplay = `Art ${usedArticles}/${remaining}`;
+                    // Color coding based on remaining slots
+                    if (maxArticles > 0) {
+                        const usagePercent = (usedArticles / maxArticles) * 100;
+                        slotsClass = usagePercent < 50 ? 'text-success' : usagePercent < 80 ? 'text-warning' : 'text-danger';
+                    }
+                }
+
                 return `
                     <tr class="${site.statusClass}">
                         <td>
@@ -859,6 +886,7 @@
                         <td class="text-muted">${normValue}</td>
                         <td class="text-muted">${keywordsValue}</td>
                         <td class="text-muted">${trafficValue}</td>
+                        <td class="${slotsClass} text-nowrap"><small>${slotsDisplay}</small></td>
                         <td>${site.statusBadge}</td>
                         <td id="assigned_${site.id}">${dropdownHtml}</td>
                     </tr>
