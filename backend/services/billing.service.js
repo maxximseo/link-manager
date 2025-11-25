@@ -375,8 +375,8 @@ const purchasePlacement = async ({
 
       // Calculate renewal price
       if (isOwnSite) {
-        // Owner's renewal price: same flat rate $0.10
-        renewalPrice = 0.10;
+        // Owner's renewal price: same flat rate
+        renewalPrice = PRICING.OWNER_RATE;
       } else {
         // Standard renewal: base * (1 - 0.30) * (1 - personalDiscount/100)
         renewalPrice = basePrice * (1 - PRICING.BASE_RENEWAL_DISCOUNT / 100) * (1 - discount / 100);
