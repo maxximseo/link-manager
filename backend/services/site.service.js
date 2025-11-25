@@ -659,6 +659,116 @@ const getUserTokens = async (userId) => {
   }
 };
 
+/**
+ * Bulk update site parameters (DR, etc.)
+ * @param {string} parameter - Parameter name ('dr', etc.)
+ * @param {Array} updates - Array of {domain, value} objects
+ * @returns {Object} - Results with success/failure counts
+ */
+const bulkUpdateSiteParams = async (parameter, updates) => {
+  const allowedParams = ['dr']; // Whitelist of allowed parameters
+
+  if (!allowedParams.includes(parameter)) {
+    throw new Error(`Parameter '${parameter}' is not allowed. Allowed: ${allowedParams.join(', ')}`);
+  }
+
+  const results = {
+    total: updates.length,
+    updated: 0,
+    notFound: 0,
+    errors: 0,
+    details: []
+  };
+
+  for (const update of updates) {
+    const { domain, value } = update;
+
+    // Normalize domain
+    const normalizedDomain = domain
+      .toLowerCase()
+      .replace(/^https?:\/\//, '')
+      .replace(/^www\./, '')
+      .replace(/\/.*$/, '')
+      .trim();
+
+    if (!normalizedDomain) {
+      results.errors++;
+      results.details.push({
+        domain: domain,
+        status: 'error',
+        message: 'Empty domain'
+      });
+      continue;
+    }
+
+    try {
+      // Find site by normalized URL
+      const findResult = await query(
+        `SELECT id, site_url, ${parameter} as old_value
+         FROM sites
+         WHERE LOWER(
+           REGEXP_REPLACE(
+             REGEXP_REPLACE(
+               REGEXP_REPLACE(site_url, '^https?://', ''),
+               '^www\\.', ''
+             ),
+             '/.*$', ''
+           )
+         ) = $1
+         LIMIT 1`,
+        [normalizedDomain]
+      );
+
+      if (findResult.rows.length === 0) {
+        results.notFound++;
+        results.details.push({
+          domain: normalizedDomain,
+          status: 'not_found',
+          message: 'Site not found'
+        });
+        continue;
+      }
+
+      const site = findResult.rows[0];
+      const oldValue = site.old_value;
+
+      // Update the parameter
+      await query(
+        `UPDATE sites SET ${parameter} = $1 WHERE id = $2`,
+        [value, site.id]
+      );
+
+      results.updated++;
+      results.details.push({
+        domain: normalizedDomain,
+        siteUrl: site.site_url,
+        status: 'updated',
+        oldValue: oldValue,
+        newValue: value
+      });
+
+    } catch (error) {
+      results.errors++;
+      results.details.push({
+        domain: normalizedDomain,
+        status: 'error',
+        message: error.message
+      });
+      logger.error('Bulk update site param error:', { domain: normalizedDomain, error: error.message });
+    }
+  }
+
+  logger.info('Bulk site params update completed', {
+    parameter,
+    total: results.total,
+    updated: results.updated,
+    notFound: results.notFound,
+    errors: results.errors
+  });
+
+  return results;
+};
+
 module.exports = {
   getUserSites,
   getMarketplaceSites,
@@ -673,5 +783,7 @@ module.exports = {
   validateRegistrationToken,
   incrementTokenUsage,
   getSiteByUrlForUser,
-  getUserTokens
+  getUserTokens,
+  // Bulk update methods
+  bulkUpdateSiteParams
 };
