@@ -21,7 +21,11 @@ class Navbar {
     renderMenuItems() {
         return this.config.menuItems.map(item => {
             const activeClass = item.page === this.activePage ? 'active' : '';
-            return `<li class="nav-item"><a class="nav-link ${activeClass}" href="${item.href}">${item.text}</a></li>`;
+            let badgeHtml = '';
+            if (item.hasBadge && item.badgeId) {
+                badgeHtml = `<span class="badge bg-danger ms-1" id="${item.badgeId}" style="display: none;">0</span>`;
+            }
+            return `<li class="nav-item"><a class="nav-link ${activeClass}" href="${item.href}">${item.text}${badgeHtml}</a></li>`;
         }).join('');
     }
 
