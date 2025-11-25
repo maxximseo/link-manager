@@ -371,10 +371,15 @@ function renderScheduledPlacements(placements) {
         const formattedDate = formatDate(p.scheduled_publish_date);
         console.log(`Placement #${p.id} formatted date:`, formattedDate);
 
+        // DR value with color coding
+        const drValue = p.site_dr || 0;
+        const drClass = drValue >= 50 ? 'text-success fw-bold' : drValue >= 20 ? 'text-primary' : 'text-muted';
+
         row.innerHTML = `
             <td>#${p.id}</td>
             <td>${p.project_name || '—'}</td>
             <td><a href="${displayUrl}" target="_blank">${displayUrl}</a></td>
+            <td class="${drClass}">${drValue}</td>
             <td>${typeBadge}</td>
             <td class="fw-bold text-primary">${formattedDate}</td>
             <td>${formatDate(p.purchased_at)}</td>
