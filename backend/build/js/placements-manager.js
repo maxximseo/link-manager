@@ -1142,6 +1142,17 @@ function getToken() {
     return localStorage.getItem('token') || localStorage.getItem('authToken');
 }
 
+function isAdmin() {
+    const token = getToken();
+    if (!token) return false;
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.role === 'admin';
+    } catch (e) {
+        return false;
+    }
+}
+
 // ============================================
 // Sorting Functions
 // ============================================
