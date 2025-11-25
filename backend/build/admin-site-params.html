@@ -28,7 +28,7 @@
                         <label class="form-label">Параметр</label>
                         <select class="form-select" id="paramSelect">
                             <option value="dr" selected>DR (Domain Rating)</option>
-                            <!-- Future parameters can be added here -->
+                            <option value="da">DA (Domain Authority)</option>
                         </select>
                     </div>
                     <div class="col-md-9">
@@ -345,7 +345,8 @@ mywebsite.io 88`;
         // Update description when parameter changes
         document.getElementById('paramSelect').addEventListener('change', function() {
             const descriptions = {
-                'dr': 'Domain Rating от Ahrefs. Значение от 0 до 100.'
+                'dr': 'Domain Rating от Ahrefs. Значение от 0 до 100.',
+                'da': 'Domain Authority от MOZ. Значение от 0 до 100.'
             };
             document.getElementById('paramDescription').textContent = descriptions[this.value] || '';
         });
