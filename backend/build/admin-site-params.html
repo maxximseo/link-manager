@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Параметры сайтов - Link Manager Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <!-- Navbar Container (injected by navbar.js) -->
+    <div id="navbar-container"></div>
+
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-sliders"></i> Обновление параметров сайтов</h1>
+        </div>
+
+        <!-- Input Form -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-pencil-square"></i> Массовое обновление
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Параметр</label>
+                        <select class="form-select" id="paramSelect">
+                            <option value="dr" selected>DR (Domain Rating)</option>
+                            <!-- Future parameters can be added here -->
+                        </select>
+                    </div>
+                    <div class="col-md-9">
+                        <label class="form-label">Описание</label>
+                        <p class="text-muted mb-0" id="paramDescription">
+                            Domain Rating от Ahrefs. Значение от 0 до 100.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <label class="form-label">Данные для обновления</label>
+                    <textarea
+                        class="form-control font-monospace"
+                        id="bulkInput"
+                        rows="12"
+                        placeholder="Введите данные в формате:&#10;site.com 10&#10;example.org 25&#10;another-site.net 45&#10;&#10;Каждая строка: домен пробел значение"
+                    ></textarea>
+                    <div class="form-text">
+                        Формат: <code>домен значение</code> (одна строка на сайт). Пример: <code>site.com 10</code>
+                    </div>
+                </div>
+
+                <div class="mt-3 d-flex gap-2">
+                    <button class="btn btn-primary" onclick="updateParams()">
+                        <i class="bi bi-arrow-repeat"></i> Обновить
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="clearInput()">
+                        <i class="bi bi-x-circle"></i> Очистить
+                    </button>
+                    <button class="btn btn-outline-info" onclick="showExample()">
+                        <i class="bi bi-info-circle"></i> Пример
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div class="card" id="resultsCard" style="display: none;">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-list-check"></i> Результаты обновления</span>
+                <div>
+                    <span class="badge bg-success me-1" id="updatedCount">0</span>
+                    <span class="badge bg-warning me-1" id="notFoundCount">0</span>
+                    <span class="badge bg-danger" id="errorCount">0</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Summary -->
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <div class="border rounded p-2 text-center">
+                            <small class="text-muted d-block">Всего</small>
+                            <strong id="totalCount">0</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border rounded p-2 text-center border-success">
+                            <small class="text-muted d-block">Обновлено</small>
+                            <strong class="text-success" id="updatedCountText">0</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border rounded p-2 text-center border-warning">
+                            <small class="text-muted d-block">Не найдено</small>
+                            <strong class="text-warning" id="notFoundCountText">0</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border rounded p-2 text-center border-danger">
+                            <small class="text-muted d-block">Ошибки</small>
+                            <strong class="text-danger" id="errorCountText">0</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Details Table -->
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Домен</th>
+                                <th>URL сайта</th>
+                                <th>Статус</th>
+                                <th>Старое значение</th>
+                                <th>Новое значение</th>
+                                <th>Сообщение</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultsTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading -->
+        <div id="loadingSpinner" class="text-center py-4" style="display: none;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Загрузка...</span>
+            </div>
+            <p class="mt-2 text-muted">Обновление параметров...</p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/navbar.js"></script>
+
+    <script>
+        // Check authentication on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = await checkAuth();
+            if (!user) {
+                window.location.href = '/index.html';
+                return;
+            }
+
+            // Check admin role
+            if (user.role !== 'admin') {
+                alert('Доступ запрещён. Требуются права администратора.');
+                window.location.href = '/dashboard.html';
+                return;
+            }
+
+            setupNavbar(user);
+        });
+
+        // Parse input text into updates array
+        function parseInput(text) {
+            const lines = text.split('\n').filter(line => line.trim());
+            const updates = [];
+
+            for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed) continue;
+
+                // Split by whitespace (spaces or tabs)
+                const parts = trimmed.split(/\s+/);
+                if (parts.length >= 2) {
+                    const domain = parts[0];
+                    const value = parseInt(parts[1], 10);
+
+                    if (!isNaN(value)) {
+                        updates.push({ domain, value });
+                    }
+                }
+            }
+
+            return updates;
+        }
+
+        // Update parameters
+        async function updateParams() {
+            const parameter = document.getElementById('paramSelect').value;
+            const rawInput = document.getElementById('bulkInput').value;
+
+            if (!rawInput.trim()) {
+                alert('Введите данные для обновления');
+                return;
+            }
+
+            const updates = parseInput(rawInput);
+
+            if (updates.length === 0) {
+                alert('Не удалось распознать данные. Формат: "site.com 10"');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('loadingSpinner').style.display = 'block';
+            document.getElementById('resultsCard').style.display = 'none';
+
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/admin/sites/bulk-update-params', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ parameter, updates })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Ошибка обновления');
+                }
+
+                displayResults(data.data);
+
+            } catch (error) {
+                alert('Ошибка: ' + error.message);
+            } finally {
+                document.getElementById('loadingSpinner').style.display = 'none';
+            }
+        }
+
+        // Display results
+        function displayResults(results) {
+            document.getElementById('resultsCard').style.display = 'block';
+
+            // Update counts
+            document.getElementById('totalCount').textContent = results.total;
+            document.getElementById('updatedCount').textContent = results.updated;
+            document.getElementById('updatedCountText').textContent = results.updated;
+            document.getElementById('notFoundCount').textContent = results.notFound;
+            document.getElementById('notFoundCountText').textContent = results.notFound;
+            document.getElementById('errorCount').textContent = results.errors;
+            document.getElementById('errorCountText').textContent = results.errors;
+
+            // Build table
+            const tbody = document.getElementById('resultsTableBody');
+            tbody.innerHTML = '';
+
+            for (const detail of results.details) {
+                const row = document.createElement('tr');
+
+                let statusBadge = '';
+                let rowClass = '';
+                switch (detail.status) {
+                    case 'updated':
+                        statusBadge = '<span class="badge bg-success">Обновлено</span>';
+                        rowClass = 'table-success';
+                        break;
+                    case 'not_found':
+                        statusBadge = '<span class="badge bg-warning">Не найден</span>';
+                        rowClass = 'table-warning';
+                        break;
+                    case 'error':
+                        statusBadge = '<span class="badge bg-danger">Ошибка</span>';
+                        rowClass = 'table-danger';
+                        break;
+                }
+
+                row.className = rowClass;
+                row.innerHTML = `
+                    <td><code>${escapeHtml(detail.domain)}</code></td>
+                    <td>${detail.siteUrl ? escapeHtml(detail.siteUrl) : '-'}</td>
+                    <td>${statusBadge}</td>
+                    <td>${detail.oldValue !== undefined ? detail.oldValue : '-'}</td>
+                    <td>${detail.newValue !== undefined ? detail.newValue : '-'}</td>
+                    <td>${detail.message || '-'}</td>
+                `;
+
+                tbody.appendChild(row);
+            }
+
+            // Scroll to results
+            document.getElementById('resultsCard').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Clear input
+        function clearInput() {
+            document.getElementById('bulkInput').value = '';
+            document.getElementById('resultsCard').style.display = 'none';
+        }
+
+        // Show example
+        function showExample() {
+            document.getElementById('bulkInput').value =
+`example.com 45
+site.org 32
+another-site.net 67
+test-domain.ru 15
+mywebsite.io 88`;
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Update description when parameter changes
+        document.getElementById('paramSelect').addEventListener('change', function() {
+            const descriptions = {
+                'dr': 'Domain Rating от Ahrefs. Значение от 0 до 100.'
+            };
+            document.getElementById('paramDescription').textContent = descriptions[this.value] || '';
+        });
+    </script>
+</body>
+</html>

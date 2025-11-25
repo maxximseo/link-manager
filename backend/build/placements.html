@@ -206,13 +206,14 @@
                                         <input type="checkbox" id="selectAllSites" onclick="toggleAllSites()">
                                     </th>
                                     <th>Сайт</th>
+                                    <th>DR</th>
                                     <th>Статус</th>
                                     <th>Контент</th>
                                 </tr>
                             </thead>
                             <tbody id="sitesTableBody">
                                 <tr>
-                                    <td colspan="4" class="text-center text-muted">
+                                    <td colspan="5" class="text-center text-muted">
                                         Выберите проект и тип контента выше
                                     </td>
                                 </tr>
@@ -726,7 +727,7 @@
 
             if (filteredSites.length === 0) {
                 document.getElementById('sitesTableBody').innerHTML = `
-                    <tr><td colspan="5" class="text-center text-warning">
+                    <tr><td colspan="6" class="text-center text-warning">
                         No sites match current filters. Try clearing whitelist/blacklist.
                     </td></tr>
                 `;
@@ -802,6 +803,10 @@
                 // Clean URL - remove https:// and trailing slash
                 const cleanUrl = site.site_url.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
+                // DR value with color coding
+                const drValue = site.dr || 0;
+                const drClass = drValue >= 50 ? 'text-success fw-bold' : drValue >= 20 ? 'text-primary' : 'text-muted';
+
                 return `
                     <tr class="${site.statusClass}">
                         <td>
@@ -816,6 +821,7 @@
                             ${siteTypeBadge}
                             ${visibilityBadge}
                         </td>
+                        <td class="${drClass}">${drValue}</td>
                         <td>${site.statusBadge}</td>
                         <td id="assigned_${site.id}">${dropdownHtml}</td>
                     </tr>
