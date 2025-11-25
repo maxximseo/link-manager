@@ -769,6 +769,43 @@ const bulkUpdateSiteParams = async (parameter, updates) => {
   return results;
 };
 
+/**
+ * Get sites where a specific parameter is 0 or null
+ * @param {string} parameter - Parameter name ('dr', etc.)
+ * @returns {Array} - Array of sites with zero/null value
+ */
+const getSitesWithZeroParam = async (parameter) => {
+  const allowedParams = ['dr']; // Whitelist of allowed parameters
+
+  if (!allowedParams.includes(parameter)) {
+    throw new Error(`Parameter '${parameter}' is not allowed. Allowed: ${allowedParams.join(', ')}`);
+  }
+
+  try {
+    const result = await query(
+      `SELECT id, site_name, site_url, ${parameter}, created_at
+       FROM sites
+       WHERE ${parameter} IS NULL OR ${parameter} = 0
+       ORDER BY site_name ASC`
+    );
+
+    logger.info('Get sites with zero param', {
+      parameter,
+      count: result.rows.length
+    });
+
+    return {
+      parameter,
+      count: result.rows.length,
+      sites: result.rows
+    };
+
+  } catch (error) {
+    logger.error('Get sites with zero param error:', { parameter, error: error.message });
+    throw error;
+  }
+};
+
 module.exports = {
   getUserSites,
   getMarketplaceSites,
