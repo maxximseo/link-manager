@@ -126,6 +126,7 @@ const exportUserPlacements = async (userId, format = 'csv', projectId = null) =>
         'site_norm',
         'site_keywords',
         'site_traffic',
+        'site_geo',
         'link_anchor',
         'link_url',
         'article_title',
