@@ -502,7 +502,7 @@ async function loadHistoryPlacements(page = 1) {
     } catch (error) {
         console.error('Failed to load history:', error);
         document.getElementById('historyPlacementsTable').innerHTML =
-            '<tr><td colspan="19" class="text-center text-danger">Ошибка загрузки</td></tr>';
+            '<tr><td colspan="20" class="text-center text-danger">Ошибка загрузки</td></tr>';
     }
 }
 
@@ -514,7 +514,7 @@ function renderHistoryPlacements(placements) {
     tbody.innerHTML = '';
 
     if (placements.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="19" class="text-center text-muted">Нет размещений</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="20" class="text-center text-muted">Нет размещений</td></tr>';
         return;
     }
 
@@ -567,6 +567,12 @@ function renderHistoryPlacements(placements) {
         // GEO value
         const geoValue = p.site_geo || 'EN';
 
+        // Site type badge (WP/PHP)
+        const siteType = p.site_type || 'wordpress';
+        const siteTypeBadge = siteType === 'wordpress'
+            ? '<span class="badge bg-secondary"><i class="bi bi-wordpress"></i> WP</span>'
+            : '<span class="badge bg-success"><i class="bi bi-filetype-php"></i> PHP</span>';
+
         row.innerHTML = `
             <td>#${p.id}</td>
             <td>${p.project_name || '—'}</td>
@@ -581,6 +587,7 @@ function renderHistoryPlacements(placements) {
             <td class="text-muted">${keywordsValue}</td>
             <td class="text-muted">${trafficValue}</td>
             <td class="text-muted">${geoValue}</td>
+            <td>${siteTypeBadge}</td>
             <td>${typeBadge}</td>
             <td>${statusBadges[p.status] || p.status}</td>
             <td>${formatDate(p.published_at || p.placed_at)}</td>
