@@ -366,7 +366,7 @@ async function loadScheduledPlacements() {
     } catch (error) {
         console.error('Failed to load scheduled placements:', error);
         document.getElementById('scheduledPlacementsTable').innerHTML =
-            '<tr><td colspan="18" class="text-center text-danger">Ошибка загрузки</td></tr>';
+            '<tr><td colspan="19" class="text-center text-danger">Ошибка загрузки</td></tr>';
     }
 }
 
@@ -378,7 +378,7 @@ function renderScheduledPlacements(placements) {
     tbody.innerHTML = '';
 
     if (placements.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="18" class="text-center text-muted">Нет запланированных размещений</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="19" class="text-center text-muted">Нет запланированных размещений</td></tr>';
         document.getElementById('scheduledCount').textContent = '0';
         return;
     }
@@ -439,6 +439,12 @@ function renderScheduledPlacements(placements) {
         // GEO value
         const geoValue = p.site_geo || 'EN';
 
+        // Site type badge (WP/PHP)
+        const siteType = p.site_type || 'wordpress';
+        const siteTypeBadge = siteType === 'wordpress'
+            ? '<span class="badge bg-secondary"><i class="bi bi-wordpress"></i> WP</span>'
+            : '<span class="badge bg-success"><i class="bi bi-filetype-php"></i> PHP</span>';
+
         row.innerHTML = `
             <td>#${p.id}</td>
             <td>${p.project_name || '—'}</td>
@@ -453,6 +459,7 @@ function renderScheduledPlacements(placements) {
             <td class="text-muted">${keywordsValue}</td>
             <td class="text-muted">${trafficValue}</td>
             <td class="text-muted">${geoValue}</td>
+            <td>${siteTypeBadge}</td>
             <td>${typeBadge}</td>
             <td class="fw-bold text-primary">${formattedDate}</td>
             <td>${formatDate(p.purchased_at)}</td>
