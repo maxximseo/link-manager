@@ -225,14 +225,16 @@
                                     <th>KW</th>
                                     <th>Traf</th>
                                     <th>GEO</th>
+                                    <th>Тип</th>
                                     <th>Слоты</th>
+                                    <th>Цена</th>
                                     <th>Статус</th>
                                     <th>Контент</th>
                                 </tr>
                             </thead>
                             <tbody id="sitesTableBody">
                                 <tr>
-                                    <td colspan="15" class="text-center text-muted">
+                                    <td colspan="17" class="text-center text-muted">
                                         Выберите проект и тип контента выше
                                     </td>
                                 </tr>
@@ -252,6 +254,7 @@
                         <button type="button" class="btn btn-dark btn-lg" onclick="createPlacement()" id="bottomPurchaseBtn" disabled>
                             <i class="bi bi-cart-check-fill"></i> Купить
                             <span class="badge bg-light text-dark ms-2" id="bottomPurchaseBadge">0</span>
+                            <span class="badge bg-light text-dark ms-1" id="bottomPurchaseTotalBadge">$0.00</span>
                         </button>
                     </div>
 
@@ -269,6 +272,7 @@
                 <button type="button" class="btn btn-dark btn-lg" id="stickyPurchaseBtn" onclick="createPlacement()" disabled>
                     <i class="bi bi-cart-check-fill"></i> Купить
                     <span class="badge bg-light text-dark" id="purchaseBadge">0</span>
+                    <span class="badge bg-light text-dark ms-1" id="purchaseTotalBadge">$0.00</span>
                 </button>
                 <button type="button" class="btn btn-outline-dark btn-lg" id="stickyBlacklistBtn" onclick="addSelectedToBlacklist()" disabled>
                     <i class="bi bi-x-circle-fill"></i> Blacklist
@@ -461,6 +465,7 @@
         let currentImportTarget = 'whitelist'; // 'whitelist' or 'blacklist'
         let importListModal;
         let hasAvailableContent = false; // Whether project has links/articles to purchase
+        let userPricing = null; // Pricing data with user's discount
 
         document.addEventListener('DOMContentLoaded', async () => {
             progressModal = new bootstrap.Modal(document.getElementById('progressModal'));
@@ -521,7 +526,7 @@
             });
 
             // Load projects and sites - auto-selection happens in loadProjects()
-            await Promise.all([loadProjects(), loadSites()]);
+            await Promise.all([loadProjects(), loadSites(), loadPricing()]);
 
             // Load whitelist/blacklist from localStorage but DON'T apply filters
             loadListsFromStorage();
@@ -543,6 +548,24 @@
                 uniqueGeos.map(geo =>
                     `<option value="${geo}" ${geo === currentValue ? 'selected' : ''}>${geo}</option>`
                 ).join('');
+        }
+
+        async function loadPricing() {
+            try {
+                const response = await fetch('/api/billing/pricing', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                if (!response.ok) throw new Error('Failed to load pricing');
+                const result = await response.json();
+                userPricing = result.data;
+            } catch (error) {
+                console.error('Failed to load pricing:', error);
+                // Fallback to base prices without discount
+                userPricing = {
+                    link: { finalPrice: 25.00 },
+                    article: { finalPrice: 15.00 }
+                };
+            }
         }
 
         async function loadProjects() {
@@ -784,7 +807,7 @@
 
             if (filteredSites.length === 0) {
                 document.getElementById('sitesTableBody').innerHTML = `
-                    <tr><td colspan="15" class="text-center text-warning">
+                    <tr><td colspan="17" class="text-center text-warning">
                         No sites match current filters. Try clearing whitelist/blacklist.
                     </td></tr>
                 `;
@@ -888,6 +911,11 @@
                 // GEO value (country code, default EN)
                 const geoValue = site.geo || 'EN';
 
+                // Price based on content type (with user's discount)
+                const price = contentType === 'links'
+                    ? (userPricing?.link?.finalPrice || 25.00)
+                    : (userPricing?.article?.finalPrice || 15.00);
+
                 // Slot availability display (dynamic based on content type)
                 let slotsDisplay = '';
                 let slotsClass = 'text-muted';
@@ -925,21 +953,22 @@
                         </td>
                         <td>
                             ${escapeHtml(cleanUrl)}
-                            ${siteTypeBadge}
                             ${visibilityBadge}
                         </td>
-                        <td class="${drClass}">${drValue}</td>
-                        <td class="${daClass}">${daValue}</td>
-                        <td class="${tfClass}">${tfValue}</td>
-                        <td class="${cfClass}">${cfValue}</td>
-                        <td class="text-muted">${refDomainsValue}</td>
-                        <td class="text-muted">${rdMainValue}</td>
-                        <td class="text-muted">${normValue}</td>
-                        <td class="text-muted">${keywordsValue}</td>
-                        <td class="text-muted">${trafficValue}</td>
-                        <td class="text-muted">${geoValue}</td>
-                        <td class="${slotsClass} text-nowrap"><small>${slotsDisplay}</small></td>
-                        <td>${site.statusBadge}</td>
+                        <td class="${drClass} text-center">${drValue}</td>
+                        <td class="${daClass} text-center">${daValue}</td>
+                        <td class="${tfClass} text-center">${tfValue}</td>
+                        <td class="${cfClass} text-center">${cfValue}</td>
+                        <td class="text-muted text-center">${refDomainsValue}</td>
+                        <td class="text-muted text-center">${rdMainValue}</td>
+                        <td class="text-muted text-center">${normValue}</td>
+                        <td class="text-muted text-center">${keywordsValue}</td>
+                        <td class="text-muted text-center">${trafficValue}</td>
+                        <td class="text-muted text-center">${geoValue}</td>
+                        <td class="text-center">${siteTypeBadge}</td>
+                        <td class="${slotsClass} text-nowrap text-center"><small>${slotsDisplay}</small></td>
+                        <td class="text-success fw-bold text-center">$${price.toFixed(2)}</td>
+                        <td class="text-center">${site.statusBadge}</td>
                         <td id="assigned_${site.id}">${dropdownHtml}</td>
                     </tr>
                 `;
@@ -1141,6 +1170,10 @@
             const bottomPurchaseBtn = document.getElementById('bottomPurchaseBtn');
             const bottomPurchaseBadge = document.getElementById('bottomPurchaseBadge');
 
+            // Get total price badges
+            const purchaseTotalBadge = document.getElementById('purchaseTotalBadge');
+            const bottomPurchaseTotalBadge = document.getElementById('bottomPurchaseTotalBadge');
+
             if (selectedCount > 0) {
                 // Show sticky bar and add body padding
                 actionBar.classList.add('show');
@@ -1149,11 +1182,21 @@
                 // Show bottom purchase button
                 bottomPurchaseDiv.style.display = 'block';
 
+                // Calculate total price based on content type
+                const pricePerItem = selectedContentType === 'links'
+                    ? (userPricing?.link?.finalPrice || 25.00)
+                    : (userPricing?.article?.finalPrice || 15.00);
+                const totalPrice = selectedCount * pricePerItem;
+
                 // Update all badges
                 purchaseBadge.textContent = selectedCount;
                 whitelistBadge.textContent = selectedCount;
                 blacklistBadge.textContent = selectedCount;
                 bottomPurchaseBadge.textContent = selectedCount;
+
+                // Update total price badges
+                purchaseTotalBadge.textContent = `$${totalPrice.toFixed(2)}`;
+                bottomPurchaseTotalBadge.textContent = `$${totalPrice.toFixed(2)}`;
 
                 // Enable/disable buttons based on content assignment AND project content availability
                 const isEnabled = allHaveContent && hasAvailableContent;
@@ -1174,6 +1217,10 @@
                 bottomPurchaseBtn.disabled = true;
                 whitelistBtn.disabled = true;
                 blacklistBtn.disabled = true;
+
+                // Reset total price badges
+                purchaseTotalBadge.textContent = '$0.00';
+                bottomPurchaseTotalBadge.textContent = '$0.00';
             }
         }
 
