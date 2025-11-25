@@ -500,7 +500,7 @@ function renderHistoryPlacements(placements) {
     tbody.innerHTML = '';
 
     if (placements.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="18" class="text-center text-muted">Нет размещений</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="19" class="text-center text-muted">Нет размещений</td></tr>';
         return;
     }
 
