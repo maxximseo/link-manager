@@ -1131,7 +1131,7 @@ Get sites where a specific parameter is 0 or null.
 
 ### POST /api/admin/sites/bulk-update-params
 
-Bulk update site parameters (DR, DA, Ref Domains, RD Main, Norm).
+Bulk update site parameters (DR, DA, TF, CF, Ref Domains, RD Main, Norm, Keywords, Traffic).
 
 **Request Body:**
 ```json
@@ -1147,14 +1147,27 @@ Bulk update site parameters (DR, DA, Ref Domains, RD Main, Norm).
 **Parameters:**
 | Field | Type | Description |
 |-------|------|-------------|
-| parameter | string | One of: `dr`, `da`, `ref_domains`, `rd_main`, `norm` |
+| parameter | string | One of: `dr`, `da`, `tf`, `cf`, `ref_domains`, `rd_main`, `norm`, `keywords`, `traffic` |
 | updates | array | Array of domain/value pairs |
 | updates[].domain | string | Domain name (without protocol) |
 | updates[].value | integer | New value (min: 0) |
 
+**Supported Parameters:**
+| Parameter | Source | Range | Description |
+|-----------|--------|-------|-------------|
+| dr | Ahrefs | 0-100 | Domain Rating |
+| da | MOZ | 0-100 | Domain Authority |
+| tf | Majestic | 0-100 | Trust Flow |
+| cf | Majestic | 0-100 | Citation Flow |
+| ref_domains | Ahrefs | 0-∞ | Referring domains count |
+| rd_main | Ahrefs | 0-∞ | Referring domains to homepage |
+| norm | - | 0-∞ | Norm links count |
+| keywords | Ahrefs | 0-∞ | Keywords count |
+| traffic | Ahrefs | 0-∞ | Traffic estimate |
+
 **Validation Rules:**
-- `dr`, `da`: Values must be 0-100 (ratings)
-- `ref_domains`, `rd_main`, `norm`: No upper limit (counts)
+- `dr`, `da`, `tf`, `cf`: Values must be 0-100 (ratings)
+- `ref_domains`, `rd_main`, `norm`, `keywords`, `traffic`: No upper limit (counts)
 
 **Response** (200 OK):
 ```json
