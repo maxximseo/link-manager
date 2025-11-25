@@ -29,9 +29,13 @@
                         <select class="form-select" id="paramSelect">
                             <option value="dr" selected>DR (Domain Rating)</option>
                             <option value="da">DA (Domain Authority)</option>
+                            <option value="tf">TF (Trust Flow)</option>
+                            <option value="cf">CF (Citation Flow)</option>
                             <option value="ref_domains">Ref Domains (Ссылающиеся домены)</option>
                             <option value="rd_main">RD Main (Домены на главную)</option>
                             <option value="norm">Norm (Norm ссылки)</option>
+                            <option value="keywords">Keywords (Ключевые слова)</option>
+                            <option value="traffic">Traffic (Трафик)</option>
                         </select>
                     </div>
                     <div class="col-md-9">
@@ -350,9 +354,13 @@ mywebsite.io 88`;
             const descriptions = {
                 'dr': 'Domain Rating от Ahrefs. Значение от 0 до 100.',
                 'da': 'Domain Authority от MOZ. Значение от 0 до 100.',
+                'tf': 'Trust Flow от Majestic. Значение от 0 до 100.',
+                'cf': 'Citation Flow от Majestic. Значение от 0 до 100.',
                 'ref_domains': 'Количество ссылающихся доменов по Ahrefs.',
                 'rd_main': 'Количество доменов, ведущих на главную страницу.',
-                'norm': 'Количество Norm ссылок.'
+                'norm': 'Количество Norm ссылок.',
+                'keywords': 'Количество ключевых слов по Ahrefs.',
+                'traffic': 'Traffic по Ahrefs.'
             };
             document.getElementById('paramDescription').textContent = descriptions[this.value] || '';
         });
