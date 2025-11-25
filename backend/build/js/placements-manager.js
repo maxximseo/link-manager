@@ -277,10 +277,15 @@ function renderActivePlacements(placements) {
             ? `${p.site_url}/?p=${p.wordpress_post_id}`
             : p.site_url;
 
+        // DR value with color coding
+        const drValue = p.site_dr || 0;
+        const drClass = drValue >= 50 ? 'text-success fw-bold' : drValue >= 20 ? 'text-primary' : 'text-muted';
+
         row.innerHTML = `
             <td>#${p.id}</td>
             <td>${p.project_name || '—'}</td>
             <td><a href="${displayUrl}" target="_blank">${displayUrl}</a></td>
+            <td class="${drClass}">${drValue}</td>
             <td>${typeBadge}</td>
             <td>${formatDate(p.published_at || p.placed_at)}</td>
             <td class="${expiryClass}">${expiryText}</td>
