@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.5.3] - 2025-11-25
+
+### 🌍 GEO System
+- **ADDED** `geo VARCHAR(10) DEFAULT 'EN'` column to `sites` table
+- **ADDED** GEO filter dropdown on placements.html for filtering sites by country
+- **ADDED** Bulk GEO update via admin-site-params.html
+- **ADDED** GEO column display on sites.html, placements-manager.html
+- **ADDED** Migration: `database/migrate_add_geo.sql`
+- **ADDED** Migration runner: `database/run_geo_migration.js`
+
+### 📊 API
+- **UPDATED** `POST /api/admin/sites/bulk-update-params` - Now supports 10 parameters:
+  - `dr`, `da`, `tf`, `cf` (0-100 ratings)
+  - `ref_domains`, `rd_main`, `norm`, `keywords`, `traffic` (unlimited counts)
+  - `geo` (string, auto-uppercase conversion)
+
+### 🎨 Frontend
+- **ADDED** GEO filter dropdown on placements.html (dynamic population from site data)
+- **ADDED** GEO column to sites table (sites.html)
+- **ADDED** GEO column to placements manager tables (active, scheduled, history)
+- **FIXED** Admin site params page navbar (added missing navbar-config.js)
+- **REMOVED** "Скрыть купленные" badge from active filters info
+
+### 📚 Documentation
+- **ADDED** ADR-018: GEO Parameter System
+- **ADDED** ADR-019: Optimization Principles Documentation
+- **UPDATED** OPTIMIZATION_PRINCIPLES.md with GEO implementation example
+- **UPDATED** RUNBOOK.md with GEO migration procedure
+
+### 🔧 Export
+- **UPDATED** Export functions (CSV, TSV, JSON, PlainText) with GEO column
+
+---
+
 ## [2.5.2] - 2025-11-25
 
 ### 📦 Database

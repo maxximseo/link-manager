@@ -102,7 +102,12 @@ if (parameter === 'dr' || parameter === 'da') {
     });
   }
 }
-// ref_domains, rd_main, norm: no upper limit - proceed
+// ref_domains, rd_main, norm, keywords, traffic: no upper limit - proceed
+
+// GEO: string validation
+if (parameter === 'geo') {
+  value = value.toUpperCase();  // Auto-uppercase
+}
 
 // ❌ WRONG - Same validation for all parameter types
 body('updates.*.value').isInt({ min: 0, max: 100 })  // Blocks ref_domains=5000!
@@ -500,6 +505,8 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 4. **Security** → Check [ADR-007](ADR.md#adr-007-parameterized-queries-only), [ADR-011](ADR.md#adr-011-static-php-sites-support)
 5. **Frontend** → Check [ADR-005](ADR.md#adr-005-modular-frontend-vanilla-js)
 6. **Performance** → Check [RUNBOOK.md](RUNBOOK.md#monitoring--alerts)
+7. **Site parameters** → Check [ADR-018](ADR.md#adr-018-geo-parameter-system)
+8. **Optimization approach** → Check [OPTIMIZATION_PRINCIPLES.md](OPTIMIZATION_PRINCIPLES.md)
 
 ---
 

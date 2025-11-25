@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document establishes optimization principles based on successful patterns from our codebase. These principles leverage extended thinking methodologies to ensure thorough analysis before implementation.
+This document establishes optimization principles based on successful patterns from our codebase, particularly the 87% code reduction achieved in various optimization efforts. These principles leverage extended thinking methodologies to ensure thorough analysis before implementation.
 
 ## Core Philosophy
 
@@ -18,17 +18,17 @@ This document establishes optimization principles based on successful patterns f
 
 ## 🧠 Extended Thinking Process
 
-Always follow this decision tree:
+Based on [Anthropic's Extended Thinking methodology](https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking), always follow this decision tree:
 
 ```
 New Feature Request
     ↓
 Can existing code handle it?
-    ├─ Yes → Extend existing code
+    ├─ Yes → Extend existing code → Document extensions
     └─ No → Can we modify existing patterns?
-              ├─ Yes → Adapt and extend
+              ├─ Yes → Adapt and extend → Document extensions
               └─ No → Is the new code reusable?
-                        ├─ Yes → Create abstraction
+                        ├─ Yes → Create abstraction → Create new pattern
                         └─ No → Reconsider approach
 ```
 
@@ -78,7 +78,7 @@ If optimized < 50% of proposed, proceed with optimization.
 
 ### When to Extend vs Create New
 
-Use this scoring system:
+Use this scoring system (inspired by Extended Thinking with Tool Use):
 
 | Criteria | Extend Existing | Create New |
 |----------|----------------|------------|
@@ -126,8 +126,8 @@ function SiteStatus({ site }) {
       <SiteName>{site.name}</SiteName>
 
       {/* Conditionally show new features */}
-      {site.ref_domains > 0 && (
-        <RefDomainsBadge count={site.ref_domains} />
+      {site.geo && site.geo !== 'EN' && (
+        <GeoBadge geo={site.geo} />
       )}
     </>
   );
@@ -138,18 +138,31 @@ function SiteStatus({ site }) {
 
 ```sql
 -- ❌ Creating new table for related data
-CREATE TABLE site_metrics (
+CREATE TABLE site_geo_data (
   site_id INTEGER REFERENCES sites(id),
-  ref_domains INTEGER,
-  rd_main INTEGER,
-  norm INTEGER
+  geo VARCHAR(10),
+  traffic INTEGER
 );
 
 -- ✅ Adding columns to existing table
 ALTER TABLE sites
-  ADD COLUMN ref_domains INTEGER DEFAULT 0,
-  ADD COLUMN rd_main INTEGER DEFAULT 0,
-  ADD COLUMN norm INTEGER DEFAULT 0;
+  ADD COLUMN IF NOT EXISTS geo VARCHAR(10) DEFAULT 'EN',
+  ADD COLUMN IF NOT EXISTS traffic INTEGER DEFAULT 0;
+```
+
+#### Pattern: Extending Service Queries
+
+```javascript
+// ❌ Multiple queries
+const site = await getSite(id);
+const geoData = await getSiteGeo(id);
+const metrics = await getSiteMetrics(id);
+
+// ✅ Single query returning all data
+const siteWithDetails = await query(
+  'SELECT id, site_name, site_url, dr, da, tf, cf, geo, traffic FROM sites WHERE id = $1',
+  [id]
+);
 ```
 
 ## ⚡ Performance Optimization Rules
@@ -183,7 +196,7 @@ await bulkUpdateSiteParams(parameter, updates);
 
 ```javascript
 // ✅ Safe dynamic column selection
-const allowedParams = ['dr', 'da', 'ref_domains', 'rd_main', 'norm'];
+const allowedParams = ['dr', 'da', 'ref_domains', 'rd_main', 'norm', 'tf', 'cf', 'keywords', 'traffic', 'geo'];
 
 if (!allowedParams.includes(parameter)) {
   throw new Error(`Parameter '${parameter}' is not allowed`);
@@ -197,8 +210,8 @@ await query(`UPDATE sites SET ${parameter} = $1 WHERE id = $2`, [value, id]);
 
 ### 1. The "Similar But Different" Excuse
 
-Before creating `getSiteMetrics` when `getSite` exists:
-- Can getSite return metric fields?
+Before creating `getSiteGeoData` when `getSite` exists:
+- Can getSite return geo fields?
 - Can we add columns to sites table?
 - Can computed properties derive what we need?
 
@@ -218,8 +231,10 @@ body('value').isInt({ min: 0, max: 100 })  // DR/DA only!
 // ✅ Context-aware validation
 if (parameter === 'dr' || parameter === 'da') {
   // Validate 0-100 for ratings
+} else if (parameter === 'geo') {
+  // String validation, uppercase
 } else {
-  // No max limit for counts (ref_domains, etc.)
+  // No max limit for counts (ref_domains, traffic, etc.)
 }
 ```
 
@@ -253,21 +268,63 @@ Before submitting optimized code:
 
 ## 📚 Project-Specific Patterns
 
-### Adding New Site Parameters
+### Adding New Site Parameters (Example: GEO)
 
 1. **Database**: Add column to `sites` table with DEFAULT value
+   ```sql
+   ALTER TABLE sites ADD COLUMN IF NOT EXISTS geo VARCHAR(10) DEFAULT 'EN';
+   ```
+
 2. **Service**: Add to SELECT queries and whitelist
+   ```javascript
+   const allowedParams = ['dr', 'da', ..., 'geo'];
+   ```
+
 3. **Controller**: Update validation (if needed)
+   ```javascript
+   if (parameter === 'geo') {
+     value = value.toUpperCase();
+   }
+   ```
+
 4. **Frontend**: Add to table headers and rendering
-5. **Export**: Add to all export formats
+   ```javascript
+   const geoValue = site.geo || 'EN';
+   ```
+
+5. **Export**: Add to all export formats (CSV, TSV, JSON, TXT)
+
+6. **Filter**: Add dropdown filter populated from unique values
 
 ### Bulk Update Pattern
 
 1. Parse input (domain + value pairs)
 2. Validate parameter against whitelist
-3. Apply context-aware validation (0-100 for ratings, unlimited for counts)
+3. Apply context-aware validation (0-100 for ratings, string for geo, unlimited for counts)
 4. Update via parameterized query
 5. Return detailed results (updated/not_found/errors)
+
+### Client-Side Filtering Pattern
+
+```javascript
+// Filter chain pattern - add new filters at the end
+let sitesToShow = sites.filter(s => s.available_for_purchase !== false);
+
+// Whitelist filter
+if (whitelistActive) {
+  sitesToShow = sitesToShow.filter(s => whitelist.has(s.id));
+}
+
+// Blacklist filter
+if (blacklistActive) {
+  sitesToShow = sitesToShow.filter(s => !blacklist.has(s.id));
+}
+
+// GEO filter (new)
+if (selectedGeo) {
+  sitesToShow = sitesToShow.filter(s => (s.geo || 'EN') === selectedGeo);
+}
+```
 
 ---
 
@@ -276,6 +333,7 @@ Before submitting optimized code:
 - [ADR.md](ADR.md) - Architectural Decision Records
 - [CLAUDE.md](CLAUDE.md) - Development guide
 - [DECISIONS.md](DECISIONS.md) - Quick technical decisions
+- [RUNBOOK.md](RUNBOOK.md) - Operational procedures
 
 ---
 

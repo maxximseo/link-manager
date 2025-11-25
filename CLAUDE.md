@@ -6,13 +6,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Core Documentation (Must Read)
 - **[CLAUDE.md](CLAUDE.md)** - This file: Complete development guide
-- **[ADR.md](ADR.md)** - Architecture Decision Records (17 major design decisions)
+- **[ADR.md](ADR.md)** - Architecture Decision Records (19 major design decisions)
 - **[README.md](README.md)** - Quick start guide and project overview
 - **[API_REFERENCE.md](API_REFERENCE.md)** - Complete API endpoint reference (60+ routes)
 
 ### Operational Documentation
 - **[RUNBOOK.md](RUNBOOK.md)** - Step-by-step procedures for common operations
-- **[CHANGELOG.md](CHANGELOG.md)** - Version history and all changes (v1.0.0 → v2.5.1)
+- **[CHANGELOG.md](CHANGELOG.md)** - Version history and all changes (v1.0.0 → v2.5.3)
 - **[DECISIONS.md](DECISIONS.md)** - Quick technical patterns and gotchas
 
 ### Specialized Guides
