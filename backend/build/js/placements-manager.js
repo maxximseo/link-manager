@@ -285,12 +285,20 @@ function renderActivePlacements(placements) {
         const daValue = p.site_da || 0;
         const daClass = daValue >= 50 ? 'text-success fw-bold' : daValue >= 20 ? 'text-primary' : 'text-muted';
 
+        // Ref Domains, RD Main, Norm values
+        const refDomainsValue = p.site_ref_domains || 0;
+        const rdMainValue = p.site_rd_main || 0;
+        const normValue = p.site_norm || 0;
+
         row.innerHTML = `
             <td>#${p.id}</td>
             <td>${p.project_name || '—'}</td>
             <td><a href="${displayUrl}" target="_blank">${displayUrl}</a></td>
             <td class="${drClass}">${drValue}</td>
             <td class="${daClass}">${daValue}</td>
+            <td class="text-muted">${refDomainsValue}</td>
+            <td class="text-muted">${rdMainValue}</td>
+            <td class="text-muted">${normValue}</td>
             <td>${typeBadge}</td>
             <td>${formatDate(p.published_at || p.placed_at)}</td>
             <td class="${expiryClass}">${expiryText}</td>
