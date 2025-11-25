@@ -316,13 +316,22 @@ router.post('/sites/bulk-update-params',
     body('parameter').isString().trim().notEmpty().withMessage('Parameter name is required'),
     body('updates').isArray({ min: 1 }).withMessage('Updates array is required and must not be empty'),
     body('updates.*.domain').isString().trim().notEmpty().withMessage('Domain is required for each update'),
-    // All params: min 0, no max limit (ref_domains/rd_main/norm can be very large)
     body('updates.*.value').isInt({ min: 0 }).withMessage('Value must be a non-negative integer')
   ],
   validateRequest,
   async (req, res) => {
     try {
       const { parameter, updates } = req.body;
+
+      // DR/DA: validate 0-100 range
+      if (parameter === 'dr' || parameter === 'da') {
+        const invalidValues = updates.filter(u => u.value > 100);
+        if (invalidValues.length > 0) {
+          return res.status(400).json({
+            error: `${parameter.toUpperCase()} values must be between 0 and 100. Found invalid values for: ${invalidValues.map(u => u.domain).join(', ')}`
+          });
+        }
+      }
 
       logger.info('Bulk site params update requested', {
         adminId: req.user.id,
