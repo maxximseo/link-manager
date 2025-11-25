@@ -473,11 +473,16 @@ function renderHistoryPlacements(placements) {
         const drValue = p.site_dr || 0;
         const drClass = drValue >= 50 ? 'text-success fw-bold' : drValue >= 20 ? 'text-primary' : 'text-muted';
 
+        // DA value with color coding
+        const daValue = p.site_da || 0;
+        const daClass = daValue >= 50 ? 'text-success fw-bold' : daValue >= 20 ? 'text-primary' : 'text-muted';
+
         row.innerHTML = `
             <td>#${p.id}</td>
             <td>${p.project_name || '—'}</td>
             <td><a href="${displayUrl}" target="_blank">${displayUrl}</a></td>
             <td class="${drClass}">${drValue}</td>
+            <td class="${daClass}">${daValue}</td>
             <td>${typeBadge}</td>
             <td>${statusBadges[p.status] || p.status}</td>
             <td>${formatDate(p.published_at || p.placed_at)}</td>
