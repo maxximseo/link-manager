@@ -208,13 +208,16 @@
                                     <th>Сайт</th>
                                     <th>DR</th>
                                     <th>DA</th>
+                                    <th>RD</th>
+                                    <th>RDm</th>
+                                    <th>Norm</th>
                                     <th>Статус</th>
                                     <th>Контент</th>
                                 </tr>
                             </thead>
                             <tbody id="sitesTableBody">
                                 <tr>
-                                    <td colspan="6" class="text-center text-muted">
+                                    <td colspan="9" class="text-center text-muted">
                                         Выберите проект и тип контента выше
                                     </td>
                                 </tr>
@@ -812,6 +815,11 @@
                 const daValue = site.da || 0;
                 const daClass = daValue >= 50 ? 'text-success fw-bold' : daValue >= 20 ? 'text-primary' : 'text-muted';
 
+                // Ref Domains, RD Main, Norm values
+                const refDomainsValue = site.ref_domains || 0;
+                const rdMainValue = site.rd_main || 0;
+                const normValue = site.norm || 0;
+
                 return `
                     <tr class="${site.statusClass}">
                         <td>
@@ -828,6 +836,9 @@
                         </td>
                         <td class="${drClass}">${drValue}</td>
                         <td class="${daClass}">${daValue}</td>
+                        <td class="text-muted">${refDomainsValue}</td>
+                        <td class="text-muted">${rdMainValue}</td>
+                        <td class="text-muted">${normValue}</td>
                         <td>${site.statusBadge}</td>
                         <td id="assigned_${site.id}">${dropdownHtml}</td>
                     </tr>
