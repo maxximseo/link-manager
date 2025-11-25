@@ -26,7 +26,8 @@ const NavbarConfig = {
             { text: 'Админ Dashboard', href: '/admin-dashboard.html', page: 'admin-dashboard' },
             { text: 'Пользователи', href: '/admin-users.html', page: 'admin-users' },
             { text: 'Мои сайты', href: '/sites.html', page: 'sites' },
-            { text: 'Размещения', href: '/admin-placements.html', page: 'admin-placements' }
+            { text: 'Размещения', href: '/admin-placements.html', page: 'admin-placements' },
+            { text: 'Параметры сайтов', href: '/admin-site-params.html', page: 'admin-site-params' }
         ],
         rightSection: 'admin-badge' // Shows "Администратор" badge
     },
