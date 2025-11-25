@@ -775,7 +775,7 @@ const bulkUpdateSiteParams = async (parameter, updates) => {
  * @returns {Array} - Array of sites with zero/null value
  */
 const getSitesWithZeroParam = async (parameter) => {
-  const allowedParams = ['dr', 'da', 'ref_domains', 'rd_main', 'norm', 'tf', 'cf', 'keywords', 'traffic']; // Whitelist of allowed parameters
+  const allowedParams = ['dr', 'da', 'ref_domains', 'rd_main', 'norm', 'tf', 'cf', 'keywords', 'traffic', 'geo']; // Whitelist of allowed parameters
 
   if (!allowedParams.includes(parameter)) {
     throw new Error(`Parameter '${parameter}' is not allowed. Allowed: ${allowedParams.join(', ')}`);
