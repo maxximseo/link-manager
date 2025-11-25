@@ -338,7 +338,7 @@ function renderScheduledPlacements(placements) {
     tbody.innerHTML = '';
 
     if (placements.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Нет запланированных размещений</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">Нет запланированных размещений</td></tr>';
         document.getElementById('scheduledCount').textContent = '0';
         return;
     }
