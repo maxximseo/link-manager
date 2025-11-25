@@ -432,7 +432,7 @@ async function loadHistoryPlacements(page = 1) {
     } catch (error) {
         console.error('Failed to load history:', error);
         document.getElementById('historyPlacementsTable').innerHTML =
-            '<tr><td colspan="9" class="text-center text-danger">Ошибка загрузки</td></tr>';
+            '<tr><td colspan="11" class="text-center text-danger">Ошибка загрузки</td></tr>';
     }
 }
 
