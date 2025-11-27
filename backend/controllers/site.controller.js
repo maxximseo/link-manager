@@ -129,7 +129,12 @@ const updateSite = async (req, res) => {
   try {
     const siteId = req.params.id;
     const userId = req.user.id;
-    const { site_url, site_name, api_key, max_links, max_articles, site_type, allow_articles, is_public, available_for_purchase } = req.body;
+    let { site_url, site_name, api_key, max_links, max_articles, site_type, allow_articles, is_public, available_for_purchase } = req.body;
+
+    // RESTRICTION: Only admin can change is_public
+    if (is_public !== undefined && req.user.role !== 'admin') {
+      is_public = undefined; // Ignore is_public for non-admin users
+    }
 
     // Validate URL format if provided
     if (site_url) {
