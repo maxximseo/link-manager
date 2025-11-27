@@ -10,6 +10,8 @@ A powerful Node.js/Express application with modular architecture for managing SE
 - ✅ **Article Management** - Content publishing capabilities
 - ✅ **JWT Authentication** - Secure token-based auth
 - ✅ **Rate Limiting** - 5-tier protection system
+- ✅ **Billing System** - Prepaid balance with 5-tier discounts
+- ✅ **Admin Controls** - Admin-only public site management
 - ✅ **PostgreSQL Database** - Robust data persistence
 - ✅ **Modular Frontend** - 8 independent JavaScript modules
 - ✅ **WordPress Plugin** - Easy integration with WP sites
@@ -215,12 +217,13 @@ New sites should use API key authentication.
 - ✅ **SQL injection protection** (parameterized queries)
 - ✅ **CORS configuration**
 - ✅ **SSL support** (auto-detected for DigitalOcean)
+- ✅ **Admin-only public sites** - Only admins can make sites public (v2.5.4+)
 
 ## ⚡ Performance Optimizations
 
 - **Connection pooling** (25 max connections)
 - **Bcrypt warmup** (on server start)
-- **Pagination** (default 20, max 100 items)
+- **Pagination** (default 20, max 5000 items)
 - **Redis caching** (optional, graceful fallback)
 - **Modular frontend** (load only what you need)
 

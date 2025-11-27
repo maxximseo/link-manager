@@ -347,7 +347,7 @@ function renderActivePlacements(placements) {
  */
 async function loadScheduledPlacements() {
     try {
-        const response = await fetch('/api/placements?status=scheduled', {
+        const response = await fetch('/api/placements?status=scheduled&limit=5000', {
             headers: { 'Authorization': `Bearer ${getToken()}` }
         });
 

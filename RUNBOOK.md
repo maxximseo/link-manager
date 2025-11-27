@@ -2,7 +2,7 @@
 
 This document contains step-by-step procedures for common operational tasks in the Link Manager system.
 
-**Last Updated**: January 2025
+**Last Updated**: November 2025
 **Maintainer**: Development Team
 
 ---
@@ -596,6 +596,54 @@ grep "Database query error" backend/logs/error-*.log
 
 ---
 
+### Managing Public Sites (Admin Only)
+
+**Purpose**: Only admins can set `is_public = true` on sites. See [ADR-020](ADR.md#adr-020-admin-only-public-site-control).
+
+**View all sites (admin panel)**:
+```bash
+# Via API
+TOKEN=$(curl -s -X POST http://localhost:3003/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin123"}' | jq -r '.token')
+
+curl -s -H "Authorization: Bearer $TOKEN" \
+  "http://localhost:3003/api/admin/sites?limit=100" | jq '.data[] | {id, site_url, is_public, owner_username}'
+```
+
+**Make site public**:
+```bash
+# Via API (admin only)
+curl -X PUT "http://localhost:3003/api/admin/sites/123/public-status" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"is_public": true}'
+```
+
+**Make site private**:
+```bash
+curl -X PUT "http://localhost:3003/api/admin/sites/123/public-status" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"is_public": false}'
+```
+
+**Database direct check**:
+```sql
+-- List all public sites
+SELECT id, site_url, user_id FROM sites WHERE is_public = true;
+
+-- Emergency: Make all sites private
+UPDATE sites SET is_public = false WHERE is_public = true;
+```
+
+**Security Notes**:
+- Regular users CANNOT set is_public via API (server ignores the field)
+- UI controls hidden for non-admin users
+- All admin actions logged with timestamps
+
+---
+
 ### Rate Limit Violations
 
 ```bash
@@ -702,8 +750,10 @@ du -sh backend/logs/*.log | sort -h
 | Date | Change | Author |
 |------|--------|--------|
 | 2025-01-23 | Initial runbook creation | Development Team |
+| 2025-11-25 | Added GEO migration procedure | Development Team |
+| 2025-11-27 | Added admin-only public sites security procedure | Development Team |
 
 ---
 
 **Review Schedule**: Quarterly (March, June, September, December)
-**Next Review**: March 2025
+**Next Review**: March 2026

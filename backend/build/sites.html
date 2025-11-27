@@ -121,7 +121,7 @@
                         <i class="bi bi-file-text"></i> ВЫКЛ
                     </button>
                 </div>
-                <div class="btn-group btn-group-sm" role="group">
+                <div class="btn-group btn-group-sm admin-only-field" role="group" id="bulkPublicButtons" style="display: none;">
                     <button class="btn btn-primary py-1 px-2" onclick="bulkSetField('is_public', true)">
                         <i class="bi bi-globe"></i> Публичные
                     </button>
@@ -336,8 +336,8 @@
                             </small>
                         </div>
 
-                        <!-- Public Availability -->
-                        <div class="mb-3">
+                        <!-- Public Availability (Admin Only) -->
+                        <div class="mb-3 admin-only-field" id="isPublicFieldWrapper" style="display: none;">
                             <div class="form-check">
                                 <input type="checkbox" class="form-check-input" id="isPublic">
                                 <label class="form-check-label" for="isPublic">
@@ -345,7 +345,8 @@
                                 </label>
                             </div>
                             <small class="text-muted">
-                                Включите, чтобы другие пользователи могли размещать контент на вашем сайте. По умолчанию только вы можете использовать свой сайт.
+                                <span class="badge bg-warning text-dark">Только админ</span>
+                                Включите, чтобы другие пользователи могли размещать контент на вашем сайте.
                             </small>
                         </div>
 
@@ -488,6 +489,13 @@
 
             await loadSites();
             await loadActiveTokens(); // Load active registration tokens on page load
+
+            // Show admin-only fields if user is admin
+            if (isAdmin()) {
+                document.querySelectorAll('.admin-only-field').forEach(el => {
+                    el.style.display = '';
+                });
+            }
 
             // Event listeners
             document.getElementById('searchInput').addEventListener('input', debounce(() => {
@@ -646,13 +654,17 @@
                                    onchange="toggleSiteField(${s.id}, 'allow_articles', this.checked)">
                         </div>
                     </td>
-                    <td class="text-center">
+                    <td class="text-center is-public-cell">
+                        ${isAdmin() ? `
                         <div class="form-check form-switch d-inline-block">
                             <input class="form-check-input" type="checkbox" role="switch"
                                    id="isPublic_${s.id}"
                                    ${s.is_public === true ? 'checked' : ''}
                                    onchange="toggleSiteField(${s.id}, 'is_public', this.checked)">
                         </div>
+                        ` : `
+                        <span class="badge ${s.is_public === true ? 'bg-success' : 'bg-secondary'}">${s.is_public === true ? 'Да' : 'Нет'}</span>
+                        `}
                     </td>
                     <td class="text-center">
                         <div class="form-check form-switch d-inline-block">
