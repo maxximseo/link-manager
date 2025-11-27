@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.5.4] - 2025-11-27
+
+### 🔐 Security - Admin-Only Public Sites
+- **ADDED** Restriction: Only admin can set `is_public = true` on sites
+- **ADDED** New admin endpoint: `PUT /api/admin/sites/:id/public-status`
+- **ADDED** New admin endpoint: `GET /api/admin/sites` - view all sites with owner info
+- **ADDED** `setSitePublicStatus()` function in admin.service.js with audit logging
+- **ADDED** `getAllSites()` function in admin.service.js for admin panel
+- **MODIFIED** `site.controller.js` - `createSite()` forces `is_public = false` for non-admin
+- **MODIFIED** `site.controller.js` - `updateSite()` ignores `is_public` for non-admin
+- **MODIFIED** `sites.html` - Hidden Public checkbox and bulk buttons for non-admin users
+- **MODIFIED** `sites.html` - Table shows read-only badge instead of toggle for non-admin
+
+### 🐛 Bug Fixes
+- **FIXED** Critical bug in `placements.html` - `selectedSites` variable was undefined
+  - Changed `selectedSites.forEach()` to `Object.keys(siteAssignments).forEach()`
+  - Fixed purchase button not activating when selecting sites
+  - Fixed total price not calculating correctly
+- **FIXED** Calls to non-existent functions in `placements.html`:
+  - Changed `updatePurchaseButton()` to `updateCreateButtonState()`
+  - Changed `updatePurchaseButtonState()` to `updateCreateButtonState()`
+
+### 📚 Documentation
+- **ADDED** ADR-020: Admin-Only Public Site Control
+- **UPDATED** CHANGELOG.md with all November 27 changes
+
+---
+
 ## [2.5.3] - 2025-11-25
 
 ### 🌍 GEO System

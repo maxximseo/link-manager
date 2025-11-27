@@ -4,8 +4,8 @@ Complete reference for all API endpoints in Link Manager system.
 
 **Base URL**: `http://localhost:3003/api` (development)
 **Production URL**: `https://shark-app-9kv6u.ondigitalocean.app/api`
-**API Version**: 2.5.0
-**Last Updated**: January 2025
+**API Version**: 2.5.4
+**Last Updated**: November 2025
 
 ---
 
@@ -1203,6 +1203,86 @@ Bulk update site parameters (DR, DA, TF, CF, Ref Domains, RD Main, Norm, Keyword
   "error": "DR values must be between 0 and 100. Found invalid values for: example.com, site.org"
 }
 ```
+
+---
+
+### GET /api/admin/sites
+
+Get all sites from all users (admin only). Added in v2.5.4.
+
+**Query Parameters:**
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| page | integer | 1 | Page number |
+| limit | integer | 50 | Items per page (max: 5000) |
+| search | string | - | Search by site URL |
+| is_public | boolean | - | Filter by public status |
+
+**Response** (200 OK):
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "site_name": "Example Site",
+      "site_url": "https://example.com",
+      "is_public": true,
+      "user_id": 123,
+      "owner_username": "admin",
+      "dr": 45,
+      "da": 30,
+      "geo": "EN",
+      "created_at": "2025-01-15T10:00:00.000Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 50,
+    "total": 100,
+    "totalPages": 2
+  }
+}
+```
+
+**Security**: Admin can see ALL sites from ALL users (for marketplace management).
+
+---
+
+### PUT /api/admin/sites/:id/public-status
+
+Set site public status (admin only). Added in v2.5.4.
+
+**Only admin can make sites public** - regular users cannot set `is_public = true`.
+
+**Request Body:**
+```json
+{
+  "is_public": true
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "success": true,
+  "message": "Site made public successfully",
+  "data": {
+    "id": 1,
+    "site_url": "https://example.com",
+    "is_public": true
+  }
+}
+```
+
+**Errors:**
+- `400 Bad Request` - Invalid site ID
+- `403 Forbidden` - Not admin
+- `404 Not Found` - Site not found
+
+**Audit**: All changes logged with admin ID and timestamp.
+
+**See**: [ADR-020](ADR.md#adr-020-admin-only-public-site-control)
 
 ---
 

@@ -512,12 +512,12 @@
             // Add event listeners for publication type radio buttons
             document.getElementById('publishImmediate').addEventListener('change', () => {
                 document.getElementById('distributedPeriodDiv').style.display = 'none';
-                updatePurchaseButton();
+                updateCreateButtonState();
             });
             document.getElementById('publishDistributed').addEventListener('change', () => {
                 document.getElementById('distributedPeriodDiv').style.display = 'block';
                 updateDistributionPreview();
-                updatePurchaseButton();
+                updateCreateButtonState();
             });
 
             // Add event listener for distribution period slider (input event for real-time update)
@@ -1195,7 +1195,8 @@
                     : (userPricing?.article?.finalPrice || 15.00);
 
                 let totalPrice = 0;
-                selectedSites.forEach(siteId => {
+                Object.keys(siteAssignments).forEach(siteIdStr => {
+                    const siteId = parseInt(siteIdStr);
                     const site = sites.find(s => s.id === siteId);
                     if (site) {
                         // $0.10 for own sites, standard price for others
@@ -1335,63 +1336,77 @@
             }
 
             try {
-                // Process purchases IN PARALLEL using Promise.allSettled (much faster than sequential)
-                console.log(`⚡ Starting ${purchases.length} parallel purchase requests...`);
+                // Show progress modal for batch processing
+                const totalPurchases = purchases.length;
+                showPurchaseProgressModal(totalPurchases);
+
+                console.log(`⚡ Starting ${totalPurchases} batch purchase requests...`);
                 const startTime = performance.now();
 
-                const results = await Promise.allSettled(
-                    purchases.map(data => BillingAPI.purchase(data))
-                );
+                // Batch processing - process in groups of 5 for visual progress updates
+                const batchSize = 5;
+                let successful = 0;
+                let failed = 0;
+                const errors = [];
+                let processedCount = 0;
+
+                for (let i = 0; i < purchases.length; i += batchSize) {
+                    // Check if user cancelled
+                    if (purchaseCancelled) {
+                        console.log('⚠️ Purchase cancelled by user');
+                        break;
+                    }
+
+                    const batch = purchases.slice(i, i + batchSize);
+
+                    // Get first site name in batch for display
+                    const firstSiteId = batch[0]?.siteId;
+                    const firstSite = filteredSites.find(s => s.id === firstSiteId);
+                    const currentSiteName = firstSite ? firstSite.site_name : null;
+
+                    // Process batch in parallel
+                    const batchResults = await Promise.allSettled(
+                        batch.map(data => BillingAPI.purchase(data))
+                    );
+
+                    // Count results from this batch
+                    batchResults.forEach((result, index) => {
+                        const purchaseData = batch[index];
+                        processedCount++;
+
+                        if (result.status === 'fulfilled') {
+                            successful++;
+                            console.log('Purchase successful:', purchaseData.siteId, result.value);
+                        } else {
+                            failed++;
+                            const errorMessage = result.reason?.message || String(result.reason);
+                            errors.push({ site_id: purchaseData.siteId, error: errorMessage });
+                            console.error('Failed placement purchase for site', purchaseData.siteId, ':', errorMessage);
+                        }
+                    });
+
+                    // Update progress UI
+                    const progress = Math.round((processedCount / totalPurchases) * 100);
+                    updatePurchaseProgress(progress, successful, failed, totalPurchases, currentSiteName);
+                }
 
                 const endTime = performance.now();
                 console.log(`✅ Completed in ${((endTime - startTime) / 1000).toFixed(2)} seconds`);
 
-                // Count successes and failures
-                let successful = 0;
-                let failed = 0;
-                const errors = [];
+                // Complete progress modal
+                completePurchaseProgress(successful, failed, errors);
 
-                results.forEach((result, index) => {
-                    const purchaseData = purchases[index];
-
-                    if (result.status === 'fulfilled') {
-                        successful++;
-                        console.log('Purchase successful:', purchaseData.siteId, result.value);
-                    } else {
-                        failed++;
-                        const errorMessage = result.reason?.message || String(result.reason);
-                        errors.push({ siteId: purchaseData.siteId, error: errorMessage });
-                        console.error('Failed placement purchase for site', purchaseData.siteId, ':', errorMessage);
-                    }
-                });
-
-                // Show results
+                // Log detailed errors to console
                 if (errors.length > 0) {
-                    // Build detailed error message with site names
                     const errorDetails = errors.map(e => {
-                        const site = filteredSites.find(s => s.id === e.siteId);
-                        const siteName = site ? site.site_name : `ID ${e.siteId}`;
+                        const site = filteredSites.find(s => s.id === e.site_id);
+                        const siteName = site ? site.site_name : `ID ${e.site_id}`;
                         return `• ${siteName}: ${e.error}`;
                     }).join('\n');
 
-                    // Log detailed errors to console
                     console.error('=== ОШИБКИ РАЗМЕЩЕНИЙ ===');
                     console.error(errorDetails);
                     console.error('========================');
-
-                    // Show appropriate notification based on results
-                    if (successful > 0) {
-                        // Mixed results - show success count with warning about failures
-                        showNotification(`✅ ${successful} размещений создано успешно. ⚠️ ${failed} провалено (см. консоль для деталей)`, 'warning');
-                    } else {
-                        // All failed - show first unique error message (most common error)
-                        const uniqueErrors = [...new Set(errors.map(e => e.error))];
-                        const mainError = uniqueErrors[0];
-                        const additionalCount = uniqueErrors.length > 1 ? ` (+${uniqueErrors.length - 1} других ошибок)` : '';
-                        showNotification(`❌ Все ${failed} размещений провалены: ${mainError}${additionalCount}`, 'error');
-                    }
-                } else {
-                    showNotification(`✅ Успешно создано ${successful} размещений! Таблица сайтов обновлена.`, 'success');
                 }
 
                 // Clear site selections but keep project and content type selected
@@ -1416,6 +1431,7 @@
             } catch (error) {
                 // Critical error (not purchase failure, but system error)
                 console.error('Critical error in createPlacements:', error);
+                progressModal.hide();
                 showNotification('Критическая ошибка при создании размещений: ' + error.message, 'error');
             }
         }
@@ -1578,6 +1594,75 @@
             progressModal.hide();
         }
 
+        // === Purchase Progress Functions (Batch Processing) ===
+
+        let purchaseCancelled = false; // Flag to cancel batch processing
+
+        function showPurchaseProgressModal(total) {
+            // Reset cancel flag
+            purchaseCancelled = false;
+
+            // Reset progress UI
+            document.getElementById('progressStatus').textContent = 'Начинаем покупку...';
+            document.getElementById('progressPercent').textContent = '0%';
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('progressBar').classList.remove('bg-success', 'bg-danger');
+            document.getElementById('progressBar').classList.add('progress-bar-animated', 'progress-bar-striped');
+            document.getElementById('progressTotal').textContent = total;
+            document.getElementById('progressSuccessful').textContent = '0';
+            document.getElementById('progressFailed').textContent = '0';
+            document.getElementById('progressResults').style.display = 'none';
+            document.getElementById('progressErrors').style.display = 'none';
+            document.getElementById('cancelJobBtn').style.display = 'block';
+            document.getElementById('closeProgressBtn').style.display = 'none';
+
+            // Update cancel button to cancel purchases
+            document.getElementById('cancelJobBtn').onclick = () => {
+                if (confirm('Отменить оставшиеся покупки?')) {
+                    purchaseCancelled = true;
+                    document.getElementById('progressStatus').textContent = 'Отменено пользователем...';
+                }
+            };
+
+            progressModal.show();
+        }
+
+        function updatePurchaseProgress(percent, successful, failed, total, currentSiteName) {
+            document.getElementById('progressPercent').textContent = `${percent}%`;
+            document.getElementById('progressBar').style.width = `${percent}%`;
+            document.getElementById('progressTotal').textContent = total;
+            document.getElementById('progressSuccessful').textContent = successful;
+            document.getElementById('progressFailed').textContent = failed;
+            document.getElementById('progressStatus').textContent = currentSiteName
+                ? `Обрабатываем: ${currentSiteName}...`
+                : `Обработано ${successful + failed} из ${total}...`;
+        }
+
+        function completePurchaseProgress(successful, failed, errors) {
+            const progressBar = document.getElementById('progressBar');
+            progressBar.classList.remove('progress-bar-animated', 'progress-bar-striped');
+
+            if (failed === 0) {
+                progressBar.classList.add('bg-success');
+                document.getElementById('progressStatus').textContent = 'Все покупки успешны!';
+            } else if (successful === 0) {
+                progressBar.classList.add('bg-danger');
+                document.getElementById('progressStatus').textContent = 'Все покупки провалены';
+            } else {
+                progressBar.classList.add('bg-warning');
+                document.getElementById('progressStatus').textContent = `Завершено: ${successful} успешно, ${failed} провалено`;
+            }
+
+            // Show errors if any
+            if (errors && errors.length > 0) {
+                displayErrors(errors);
+            }
+
+            // Switch buttons
+            document.getElementById('cancelJobBtn').style.display = 'none';
+            document.getElementById('closeProgressBtn').style.display = 'block';
+        }
+
         // Whitelist/Blacklist Functions
 
         function loadListsFromStorage() {
@@ -1629,7 +1714,7 @@
 
             // Uncheck all sites and hide sticky bar
             checkedSites.forEach(cb => cb.checked = false);
-            updatePurchaseButtonState();
+            updateCreateButtonState();
 
             // Refresh sites table to apply filter
             const projectId = document.getElementById('projectSelect').value;
@@ -1658,7 +1743,7 @@
 
             // Uncheck all sites and hide sticky bar
             checkedSites.forEach(cb => cb.checked = false);
-            updatePurchaseButtonState();
+            updateCreateButtonState();
 
             // Refresh sites table to apply filter
             const projectId = document.getElementById('projectSelect').value;

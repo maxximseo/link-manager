@@ -6,13 +6,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Core Documentation (Must Read)
 - **[CLAUDE.md](CLAUDE.md)** - This file: Complete development guide
-- **[ADR.md](ADR.md)** - Architecture Decision Records (19 major design decisions)
+- **[ADR.md](ADR.md)** - Architecture Decision Records (20 major design decisions)
 - **[README.md](README.md)** - Quick start guide and project overview
 - **[API_REFERENCE.md](API_REFERENCE.md)** - Complete API endpoint reference (60+ routes)
 
 ### Operational Documentation
 - **[RUNBOOK.md](RUNBOOK.md)** - Step-by-step procedures for common operations
-- **[CHANGELOG.md](CHANGELOG.md)** - Version history and all changes (v1.0.0 → v2.5.3)
+- **[CHANGELOG.md](CHANGELOG.md)** - Version history and all changes (v1.0.0 → v2.5.4)
 - **[DECISIONS.md](DECISIONS.md)** - Quick technical patterns and gotchas
 
 ### Specialized Guides
@@ -1776,6 +1776,18 @@ The following major architectural decisions govern this codebase:
     - DR/DA: validation 0-100 (ratings)
     - ref_domains, rd_main, norm: validation min 0, no max limit (counts)
 
+18. **[ADR-018: GEO Parameter System](ADR.md#adr-018-geo-parameter-system)**
+    - Geographic targeting via `geo` column
+    - Client-side filtering on placements page
+
+19. **[ADR-019: Optimization Principles Documentation](ADR.md#adr-019-optimization-principles-documentation)**
+    - LEVER framework for code optimization
+    - Measurable targets: >50% code reduction, >70% pattern reuse
+
+20. **[ADR-020: Admin-Only Public Site Control](ADR.md#adr-020-admin-only-public-site-control)** ⚠️ SECURITY
+    - Only admin can set `is_public = true` on sites
+    - API validation + UI controls to prevent non-admin access
+
 ### When to Consult ADR
 
 **Before making these changes, read relevant ADRs**:
@@ -1786,11 +1798,12 @@ The following major architectural decisions govern this codebase:
 - ✅ Adding new API endpoints → ADR-006, ADR-007
 - ✅ Database schema changes → ADR-001, ADR-008, ADR-014
 - ✅ Performance optimization → ADR-003, ADR-010, ADR-015
-- ✅ Security improvements → ADR-007, ADR-011
+- ✅ Security improvements → ADR-007, ADR-011, ADR-020
+- ✅ Site public status changes → ADR-020
 
 **ADR Review Schedule**:
-- **Last Review**: January 2025
-- **Next Review**: June 2025
+- **Last Review**: November 2025
+- **Next Review**: April 2026
 - **Trigger**: Major version bump, security issues, or performance problems
 
 ---

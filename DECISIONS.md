@@ -337,6 +337,31 @@ router.post('/login', authController.login);  // Vulnerable to brute force!
 
 ---
 
+### ✅ Admin-Only Public Sites (v2.5.4+)
+
+```javascript
+// ✅ CORRECT - Strip is_public for non-admin users
+const createSite = async (req, res) => {
+  let { is_public, ...siteData } = req.body;
+
+  // Only admin can create public sites
+  if (req.user.role !== 'admin') {
+    is_public = false;  // Force private
+  }
+
+  const site = await siteService.createSite(req.user.id, { ...siteData, is_public });
+};
+
+// ❌ WRONG - Allow any user to make sites public
+const createSite = async (req, res) => {
+  const site = await siteService.createSite(req.user.id, req.body);  // User can set is_public!
+};
+```
+
+**See**: [ADR-020](ADR.md#adr-020-admin-only-public-site-control)
+
+---
+
 ## Logging Patterns
 
 ### ✅ Log Levels
@@ -502,11 +527,12 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 1. **Database operations** → Check [ADR-001](ADR.md#adr-001-no-orm---direct-sql-queries), [ADR-004](ADR.md#adr-004-transaction-wrapped-multi-step-operations)
 2. **Authentication** → Check [ADR-002](ADR.md#adr-002-jwt-authentication-without-database-lookups)
 3. **Caching** → Check [ADR-003](ADR.md#adr-003-redis-cache-with-graceful-degradation)
-4. **Security** → Check [ADR-007](ADR.md#adr-007-parameterized-queries-only), [ADR-011](ADR.md#adr-011-static-php-sites-support)
+4. **Security** → Check [ADR-007](ADR.md#adr-007-parameterized-queries-only), [ADR-011](ADR.md#adr-011-static-php-sites-support), [ADR-020](ADR.md#adr-020-admin-only-public-site-control)
 5. **Frontend** → Check [ADR-005](ADR.md#adr-005-modular-frontend-vanilla-js)
 6. **Performance** → Check [RUNBOOK.md](RUNBOOK.md#monitoring--alerts)
 7. **Site parameters** → Check [ADR-018](ADR.md#adr-018-geo-parameter-system)
 8. **Optimization approach** → Check [OPTIMIZATION_PRINCIPLES.md](OPTIMIZATION_PRINCIPLES.md)
+9. **Public sites access** → Check [ADR-020](ADR.md#adr-020-admin-only-public-site-control)
 
 ---
 
@@ -519,5 +545,5 @@ When adding new patterns:
 4. Group by category (Database, API, Frontend, etc.)
 
 **Review**: Monthly during team sync
-**Last Review**: January 2025
-**Next Review**: February 2025
+**Last Review**: November 2025
+**Next Review**: December 2025

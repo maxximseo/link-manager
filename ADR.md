@@ -1219,6 +1219,155 @@ Create **OPTIMIZATION_PRINCIPLES.md** as a standalone document and reference it 
 
 ---
 
+## ADR-020: Admin-Only Public Site Control
+
+**Status**: ✅ ACTIVE
+**Date**: November 2025 (v2.5.4)
+
+### Context
+Regular users could set `is_public = true` on their sites, making them visible to all users. This created a marketplace quality control issue and potential for abuse.
+
+### Decision
+**Restrict `is_public = true` to admin-only** through both API validation and UI controls.
+
+### Rationale
+**Why admin-only**:
+- ✅ Quality control - admin can verify sites meet standards
+- ✅ Prevents spam/low-quality sites in marketplace
+- ✅ Business model protection - admin controls site visibility
+- ✅ Audit trail via admin action logging
+
+**Why not automated approval**:
+- Manual review ensures quality
+- Admin can check site metrics (DR, DA, traffic)
+- Human judgment for edge cases
+
+### Implementation
+
+**Backend - site.controller.js**:
+```javascript
+// createSite() - force is_public = false for non-admin
+const createSite = async (req, res) => {
+  let { is_public, ...siteData } = req.body;
+
+  // Only admin can create public sites
+  if (req.user.role !== 'admin') {
+    is_public = false;
+  }
+
+  const site = await siteService.createSite(req.user.id, { ...siteData, is_public });
+  // ...
+};
+
+// updateSite() - strip is_public for non-admin
+const updateSite = async (req, res) => {
+  let updates = { ...req.body };
+
+  // Non-admin cannot change public status
+  if (req.user.role !== 'admin') {
+    delete updates.is_public;
+  }
+
+  const site = await siteService.updateSite(id, updates);
+  // ...
+};
+```
+
+**Backend - admin.routes.js**:
+```javascript
+// New admin-only endpoints
+router.get('/sites', async (req, res) => {
+  const sites = await adminService.getAllSites(filters);
+  // Returns ALL sites from ALL users with owner info
+});
+
+router.put('/sites/:id/public-status', async (req, res) => {
+  const { is_public } = req.body;
+  await adminService.setSitePublicStatus(siteId, is_public, req.user.id);
+  // Logs admin action
+});
+```
+
+**Backend - admin.service.js**:
+```javascript
+const setSitePublicStatus = async (siteId, isPublic, adminId) => {
+  // Verify site exists
+  const site = await query('SELECT * FROM sites WHERE id = $1', [siteId]);
+  if (!site.rows[0]) throw new Error('Site not found');
+
+  // Update public status
+  await query('UPDATE sites SET is_public = $1 WHERE id = $2', [isPublic, siteId]);
+
+  // Audit logging
+  logger.info('Admin changed site public status', {
+    adminId,
+    siteId,
+    newStatus: isPublic,
+    previousStatus: site.rows[0].is_public
+  });
+
+  return updatedSite;
+};
+
+const getAllSites = async (filters) => {
+  // Join with users to show owner info
+  return await query(`
+    SELECT s.*, u.username as owner_username
+    FROM sites s
+    LEFT JOIN users u ON s.user_id = u.id
+    WHERE ...
+  `);
+};
+```
+
+**Frontend - sites.html**:
+```html
+<!-- Hide controls for non-admin -->
+<% if (userRole !== 'admin') { %>
+  <style>
+    .public-checkbox, .bulk-public-buttons { display: none !important; }
+  </style>
+<% } %>
+
+<!-- Read-only badge for non-admin -->
+<td class="public-status">
+  <% if (userRole === 'admin') { %>
+    <input type="checkbox" class="public-toggle" data-site-id="<%= site.id %>">
+  <% } else { %>
+    <span class="badge <%= site.is_public ? 'bg-success' : 'bg-secondary' %>">
+      <%= site.is_public ? 'Публичный' : 'Приватный' %>
+    </span>
+  <% } %>
+</td>
+```
+
+### API Endpoints
+
+| Endpoint | Method | Access | Description |
+|----------|--------|--------|-------------|
+| `/api/sites` | POST | Auth | Create site (is_public forced to false for non-admin) |
+| `/api/sites/:id` | PUT | Auth | Update site (is_public ignored for non-admin) |
+| `/api/admin/sites` | GET | Admin | List all sites with owner info |
+| `/api/admin/sites/:id/public-status` | PUT | Admin | Set site public status |
+
+### Security Measures
+1. **Server-side validation** - API ignores is_public from non-admin
+2. **Frontend hiding** - UI controls hidden for non-admin
+3. **Audit logging** - All admin actions logged with timestamps
+4. **No escalation path** - Users cannot request public status via API
+
+### Migration
+No database migration required - uses existing `is_public` column.
+
+### Consequences
+- ✅ Full control over marketplace quality
+- ✅ Prevents abuse of public sites
+- ✅ Audit trail for admin actions
+- ⚠️ Users must contact admin to make sites public
+- ⚠️ Admin workload increases with more sites
+
+---
+
 ## Summary of Active ADRs
 
 | ADR | Title | Impact | Status |
@@ -1242,6 +1391,7 @@ Create **OPTIMIZATION_PRINCIPLES.md** as a standalone document and reference it 
 | 017 | Context-Aware Validation | Medium | ✅ Active |
 | 018 | GEO Parameter System | Medium | ✅ Active |
 | 019 | Optimization Principles Doc | Low | ✅ Active |
+| 020 | Admin-Only Public Site Control | High | ✅ Active |
 
 ---
 
@@ -1253,5 +1403,5 @@ ADRs should be reviewed when:
 - 🔄 Security vulnerabilities discovered
 - 🔄 Technology landscape changes (e.g., new PostgreSQL features)
 
-**Last Review**: January 2025
-**Next Review**: June 2025
+**Last Review**: November 2025
+**Next Review**: April 2026
