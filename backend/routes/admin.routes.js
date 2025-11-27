@@ -378,6 +378,75 @@ router.post('/sites/bulk-update-params',
   }
 );
 
+// ==================== SITE MANAGEMENT ENDPOINTS ====================
+
+/**
+ * GET /api/admin/sites
+ * Get all sites (admin can see all sites from all users)
+ */
+router.get('/sites', async (req, res) => {
+  try {
+    const { page = 1, limit = 50, search, is_public } = req.query;
+
+    const sites = await adminService.getAllSites({
+      page: parseInt(page),
+      limit: parseInt(limit),
+      search,
+      isPublic: is_public === 'true' ? true : is_public === 'false' ? false : null
+    });
+
+    res.json({
+      success: true,
+      data: sites.data,
+      pagination: sites.pagination
+    });
+
+  } catch (error) {
+    logger.error('Failed to get all sites', { error: error.message });
+    res.status(500).json({ error: 'Failed to get sites' });
+  }
+});
+
+/**
+ * PUT /api/admin/sites/:id/public-status
+ * Set site public status (only admin can make sites public)
+ *
+ * Body:
+ * - is_public: Boolean
+ */
+router.put('/sites/:id/public-status',
+  [
+    body('is_public').isBoolean().withMessage('is_public must be a boolean')
+  ],
+  validateRequest,
+  async (req, res) => {
+    try {
+      const siteId = parseInt(req.params.id);
+      const { is_public } = req.body;
+
+      if (isNaN(siteId)) {
+        return res.status(400).json({ error: 'Invalid site ID' });
+      }
+
+      const site = await adminService.setSitePublicStatus(siteId, is_public, req.user.id);
+
+      res.json({
+        success: true,
+        message: `Site ${is_public ? 'made public' : 'made private'} successfully`,
+        data: site
+      });
+
+    } catch (error) {
+      logger.error('Failed to set site public status', {
+        adminId: req.user.id,
+        siteId: req.params.id,
+        error: error.message
+      });
+      res.status(400).json({ error: error.message || 'Failed to update site' });
+    }
+  }
+);
+
 // ==================== MODERATION ENDPOINTS ====================
 
 /**
