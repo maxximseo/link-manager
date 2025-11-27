@@ -486,7 +486,7 @@ async function loadHistoryPlacements(page = 1) {
         const type = document.getElementById('historyTypeFilter').value;
         const status = document.getElementById('historyStatusFilter').value;
 
-        let url = `/api/placements?page=${page}&limit=50`;
+        let url = `/api/placements?page=${page}&limit=5000`;
         if (type) url += `&type=${type}`;
         if (status) url += `&status=${status}`;
 
