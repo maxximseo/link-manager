@@ -378,8 +378,11 @@ function renderScheduledPlacements(placements) {
     tbody.innerHTML = '';
 
     if (placements.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="19" class="text-center text-muted">Нет запланированных размещений</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="21" class="text-center text-muted">Нет запланированных размещений</td></tr>';
         document.getElementById('scheduledCount').textContent = '0';
+        // Hide bulk actions panel
+        document.getElementById('scheduledBulkActions').classList.add('d-none');
+        document.getElementById('selectAllScheduled').checked = false;
         return;
     }
 
