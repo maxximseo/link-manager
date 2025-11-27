@@ -448,7 +448,9 @@ function renderScheduledPlacements(placements) {
             ? '<span class="badge bg-secondary"><i class="bi bi-wordpress"></i> WP</span>'
             : '<span class="badge bg-success"><i class="bi bi-filetype-php"></i> PHP</span>';
 
+        const finalPrice = parseFloat(p.final_price || 0);
         row.innerHTML = `
+            <td><input type="checkbox" class="scheduled-checkbox" data-id="${p.id}" data-price="${finalPrice}" onchange="updateScheduledBulkActions()"></td>
             <td>#${p.id}</td>
             <td>${p.project_name || '—'}</td>
             <td><a href="${displayUrl}" target="_blank">${displayUrl}</a></td>
@@ -466,7 +468,7 @@ function renderScheduledPlacements(placements) {
             <td>${typeBadge}</td>
             <td class="fw-bold text-primary">${formattedDate}</td>
             <td>${formatDate(p.purchased_at)}</td>
-            <td>$${parseFloat(p.final_price || 0).toFixed(2)}</td>
+            <td>$${finalPrice.toFixed(2)}</td>
             <td>
                 <button class="btn btn-xs btn-success" onclick="publishNow(${p.id})" title="Опубликовать сейчас">
                     <i class="bi bi-send-fill"></i> Опубл.
