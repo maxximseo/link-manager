@@ -1388,3 +1388,262 @@ async function cancelScheduledPlacement(placementId) {
         showAlert(error.message || 'Ошибка отмены размещения', 'danger');
     }
 }
+
+// ==================== BULK CANCEL SCHEDULED PLACEMENTS ====================
+
+/**
+ * Toggle all scheduled placement checkboxes
+ */
+function toggleAllScheduled(checkbox) {
+    document.querySelectorAll('.scheduled-checkbox').forEach(cb => {
+        cb.checked = checkbox.checked;
+    });
+    updateScheduledBulkActions();
+}
+
+/**
+ * Update bulk actions panel based on selected checkboxes
+ */
+function updateScheduledBulkActions() {
+    const checked = document.querySelectorAll('.scheduled-checkbox:checked');
+    const count = checked.length;
+    const total = Array.from(checked).reduce((sum, cb) =>
+        sum + parseFloat(cb.dataset.price || 0), 0);
+
+    document.getElementById('scheduledSelectedCount').textContent = count;
+    document.getElementById('scheduledRefundTotal').textContent = `$${total.toFixed(2)}`;
+
+    const bulkPanel = document.getElementById('scheduledBulkActions');
+    if (count > 0) {
+        bulkPanel.classList.remove('d-none');
+    } else {
+        bulkPanel.classList.add('d-none');
+    }
+
+    // Update "select all" checkbox state
+    const allCheckboxes = document.querySelectorAll('.scheduled-checkbox');
+    const selectAllCheckbox = document.getElementById('selectAllScheduled');
+    if (allCheckboxes.length > 0 && count === allCheckboxes.length) {
+        selectAllCheckbox.checked = true;
+        selectAllCheckbox.indeterminate = false;
+    } else if (count > 0) {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = true;
+    } else {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = false;
+    }
+}
+
+// Track if bulk cancel was cancelled by user
+let bulkCancelAborted = false;
+
+/**
+ * Bulk cancel selected scheduled placements with progress
+ */
+async function bulkCancelScheduled() {
+    const checked = document.querySelectorAll('.scheduled-checkbox:checked');
+    const ids = Array.from(checked).map(cb => parseInt(cb.dataset.id));
+
+    if (ids.length === 0) return;
+
+    const totalEstimatedRefund = Array.from(checked).reduce((sum, cb) =>
+        sum + parseFloat(cb.dataset.price || 0), 0);
+
+    if (!confirm(`Отменить ${ids.length} размещений?\n\nОжидаемый возврат: $${totalEstimatedRefund.toFixed(2)}\n\nСредства будут возвращены на баланс.`)) {
+        return;
+    }
+
+    // Reset abort flag
+    bulkCancelAborted = false;
+
+    // Show progress modal
+    showBulkCancelProgress(ids.length);
+
+    let successful = 0;
+    let failed = 0;
+    let totalRefunded = 0;
+    const errors = [];
+
+    // Batch processing - 5 at a time for progress visibility
+    const batchSize = 5;
+    for (let i = 0; i < ids.length; i += batchSize) {
+        // Check if cancelled
+        if (bulkCancelAborted) {
+            console.log('⚠️ Bulk cancel aborted by user');
+            break;
+        }
+
+        const batch = ids.slice(i, i + batchSize);
+
+        const results = await Promise.allSettled(
+            batch.map(id => fetch(`/api/placements/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${getToken()}` }
+            }).then(r => r.json()))
+        );
+
+        results.forEach((result, index) => {
+            if (result.status === 'fulfilled' && result.value.refund) {
+                successful++;
+                totalRefunded += result.value.refund.amount;
+            } else if (result.status === 'fulfilled' && result.value.message) {
+                // Successful but no refund info (shouldn't happen normally)
+                successful++;
+            } else {
+                failed++;
+                const errorMsg = result.reason?.message || result.value?.error || 'Неизвестная ошибка';
+                errors.push({ id: batch[index], error: errorMsg });
+            }
+        });
+
+        // Update progress
+        const processedCount = Math.min(i + batchSize, ids.length);
+        const progress = Math.round((processedCount / ids.length) * 100);
+        updateBulkCancelProgress(progress, successful, failed, totalRefunded);
+    }
+
+    // Complete
+    completeBulkCancelProgress(successful, failed, totalRefunded, errors);
+
+    // Reload data
+    loadAllPlacements();
+}
+
+/**
+ * Show bulk cancel progress modal
+ */
+function showBulkCancelProgress(total) {
+    // Create modal if doesn't exist
+    let modal = document.getElementById('bulkCancelModal');
+    if (!modal) {
+        const modalHtml = `
+        <div class="modal fade" id="bulkCancelModal" tabindex="-1" data-bs-backdrop="static">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="bi bi-trash me-2"></i>Массовая отмена размещений</h5>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span id="bulkCancelStatus">Отменяем размещения...</span>
+                                <span id="bulkCancelPercent">0%</span>
+                            </div>
+                            <div class="progress" style="height: 25px;">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" id="bulkCancelProgressBar"
+                                     role="progressbar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <div class="fs-4 fw-bold" id="bulkCancelTotal">0</div>
+                                <small class="text-muted">Всего</small>
+                            </div>
+                            <div class="col-4">
+                                <div class="fs-4 fw-bold text-success" id="bulkCancelSuccessful">0</div>
+                                <small class="text-muted">Успешно</small>
+                            </div>
+                            <div class="col-4">
+                                <div class="fs-4 fw-bold text-danger" id="bulkCancelFailed">0</div>
+                                <small class="text-muted">Ошибки</small>
+                            </div>
+                        </div>
+                        <div class="mt-3 text-center">
+                            <span class="fs-5">Возвращено: <strong class="text-success" id="bulkCancelRefunded">$0.00</strong></span>
+                        </div>
+                        <div id="bulkCancelErrors" class="mt-3 d-none">
+                            <div class="alert alert-danger" style="max-height: 150px; overflow-y: auto;">
+                                <strong>Ошибки:</strong>
+                                <ul class="mb-0" id="bulkCancelErrorList"></ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="bulkCancelAbortBtn" onclick="abortBulkCancel()">
+                            <i class="bi bi-x-circle me-1"></i>Прервать
+                        </button>
+                        <button type="button" class="btn btn-primary d-none" id="bulkCancelCloseBtn" data-bs-dismiss="modal">
+                            <i class="bi bi-check-circle me-1"></i>Закрыть
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        modal = document.getElementById('bulkCancelModal');
+    }
+
+    // Reset state
+    document.getElementById('bulkCancelStatus').textContent = 'Отменяем размещения...';
+    document.getElementById('bulkCancelPercent').textContent = '0%';
+    document.getElementById('bulkCancelProgressBar').style.width = '0%';
+    document.getElementById('bulkCancelProgressBar').className = 'progress-bar progress-bar-striped progress-bar-animated';
+    document.getElementById('bulkCancelTotal').textContent = total;
+    document.getElementById('bulkCancelSuccessful').textContent = '0';
+    document.getElementById('bulkCancelFailed').textContent = '0';
+    document.getElementById('bulkCancelRefunded').textContent = '$0.00';
+    document.getElementById('bulkCancelErrors').classList.add('d-none');
+    document.getElementById('bulkCancelErrorList').innerHTML = '';
+    document.getElementById('bulkCancelAbortBtn').classList.remove('d-none');
+    document.getElementById('bulkCancelCloseBtn').classList.add('d-none');
+
+    // Show modal
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+}
+
+/**
+ * Update bulk cancel progress
+ */
+function updateBulkCancelProgress(percent, successful, failed, totalRefunded) {
+    document.getElementById('bulkCancelPercent').textContent = `${percent}%`;
+    document.getElementById('bulkCancelProgressBar').style.width = `${percent}%`;
+    document.getElementById('bulkCancelSuccessful').textContent = successful;
+    document.getElementById('bulkCancelFailed').textContent = failed;
+    document.getElementById('bulkCancelRefunded').textContent = `$${totalRefunded.toFixed(2)}`;
+}
+
+/**
+ * Complete bulk cancel progress
+ */
+function completeBulkCancelProgress(successful, failed, totalRefunded, errors) {
+    const progressBar = document.getElementById('bulkCancelProgressBar');
+    progressBar.classList.remove('progress-bar-striped', 'progress-bar-animated');
+    progressBar.style.width = '100%';
+
+    if (failed === 0 && !bulkCancelAborted) {
+        progressBar.classList.add('bg-success');
+        document.getElementById('bulkCancelStatus').textContent = 'Все размещения отменены!';
+    } else if (successful === 0) {
+        progressBar.classList.add('bg-danger');
+        document.getElementById('bulkCancelStatus').textContent = 'Все попытки провалены';
+    } else if (bulkCancelAborted) {
+        progressBar.classList.add('bg-warning');
+        document.getElementById('bulkCancelStatus').textContent = `Прервано: ${successful} отменено, ${failed} ошибок`;
+    } else {
+        progressBar.classList.add('bg-warning');
+        document.getElementById('bulkCancelStatus').textContent = `Завершено: ${successful} успешно, ${failed} ошибок`;
+    }
+
+    // Show errors if any
+    if (errors && errors.length > 0) {
+        const errorList = document.getElementById('bulkCancelErrorList');
+        errorList.innerHTML = errors.map(e => `<li>ID #${e.id}: ${e.error}</li>`).join('');
+        document.getElementById('bulkCancelErrors').classList.remove('d-none');
+    }
+
+    // Switch buttons
+    document.getElementById('bulkCancelAbortBtn').classList.add('d-none');
+    document.getElementById('bulkCancelCloseBtn').classList.remove('d-none');
+}
+
+/**
+ * Abort bulk cancel operation
+ */
+function abortBulkCancel() {
+    if (confirm('Прервать отмену? Уже отменённые размещения останутся отменёнными.')) {
+        bulkCancelAborted = true;
+        document.getElementById('bulkCancelStatus').textContent = 'Прерываем...';
+    }
+}
