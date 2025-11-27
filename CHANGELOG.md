@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.5.4] - 2025-11-27
 
+### 🚀 Features - Progress Indicator for Bulk Purchases
+- **ADDED** Visual progress indicator when purchasing multiple links (100+ sites)
+- **ADDED** Batch processing: requests grouped by 5 for visible progress updates
+- **ADDED** Real-time UI updates: progress bar (0%→100%), counters (Total/Successful/Failed)
+- **ADDED** Cancel functionality: user can stop remaining purchases mid-process
+- **ADDED** Three new functions in `placements.html`:
+  - `showPurchaseProgressModal(total)` - Initialize and show progress modal
+  - `updatePurchaseProgress(percent, successful, failed, total, siteName)` - Update UI
+  - `completePurchaseProgress(successful, failed, errors)` - Finalize with status
+
 ### 🔐 Security - Admin-Only Public Sites
 - **ADDED** Restriction: Only admin can set `is_public = true` on sites
 - **ADDED** New admin endpoint: `PUT /api/admin/sites/:id/public-status`
@@ -28,6 +38,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **FIXED** Calls to non-existent functions in `placements.html`:
   - Changed `updatePurchaseButton()` to `updateCreateButtonState()`
   - Changed `updatePurchaseButtonState()` to `updateCreateButtonState()`
+- **FIXED** Pagination limit bug in `placements-manager.js` causing only 20 records to display:
+  - `loadScheduledPlacements()` - added `limit=5000` (was using default 20)
+  - `loadHistoryPlacements()` - changed from `limit=50` to `limit=5000`
+  - Issue: Scheduled tab showed 100+ then reset to 20 after page load
 
 ### 📚 Documentation
 - **ADDED** ADR-020: Admin-Only Public Site Control

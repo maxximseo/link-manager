@@ -258,10 +258,27 @@
                         <div class="alert alert-info">
                             <i class="bi bi-info-circle"></i> Эти размещения будут опубликованы автоматически в указанную дату.
                         </div>
+
+                        <!-- Bulk Actions Panel -->
+                        <div id="scheduledBulkActions" class="alert alert-warning d-none mb-3">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <i class="bi bi-check2-square me-2"></i>
+                                    Выбрано: <strong id="scheduledSelectedCount">0</strong> размещений
+                                    <span class="mx-2">|</span>
+                                    Сумма возврата: <strong id="scheduledRefundTotal">$0.00</strong>
+                                </div>
+                                <button class="btn btn-danger btn-sm" onclick="bulkCancelScheduled()">
+                                    <i class="bi bi-trash me-1"></i>Отменить выбранные
+                                </button>
+                            </div>
+                        </div>
+
                         <div class="table-responsive">
                             <table class="table table-hover">
                                 <thead>
                                     <tr>
+                                        <th><input type="checkbox" id="selectAllScheduled" onchange="toggleAllScheduled(this)" title="Выбрать все"></th>
                                         <th>ID</th>
                                         <th>Проект</th>
                                         <th>Сайт</th>
@@ -291,7 +308,7 @@
                                 </thead>
                                 <tbody id="scheduledPlacementsTable">
                                     <tr>
-                                        <td colspan="20" class="text-center text-muted">Загрузка...</td>
+                                        <td colspan="21" class="text-center text-muted">Загрузка...</td>
                                     </tr>
                                 </tbody>
                             </table>
