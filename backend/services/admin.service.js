@@ -847,6 +847,114 @@ const rejectPlacement = async (placementId, adminId, reason = 'Rejected by admin
   }
 };
 
+/**
+ * Set site public status (admin only)
+ * @param {number} siteId - Site ID
+ * @param {boolean} isPublic - New public status
+ * @param {number} adminId - Admin user ID
+ * @returns {object} Updated site
+ */
+const setSitePublicStatus = async (siteId, isPublic, adminId) => {
+  try {
+    // Update site public status
+    const result = await query(
+      `UPDATE sites
+       SET is_public = $1, updated_at = NOW()
+       WHERE id = $2
+       RETURNING *`,
+      [isPublic, siteId]
+    );
+
+    if (result.rows.length === 0) {
+      throw new Error('Site not found');
+    }
+
+    const site = result.rows[0];
+
+    // Create audit log
+    await query(`
+      INSERT INTO audit_log (user_id, action, entity_type, entity_id, details)
+      VALUES ($1, 'set_site_public_status', 'site', $2, $3)
+    `, [
+      adminId,
+      siteId,
+      JSON.stringify({ is_public: isPublic, site_name: site.site_name })
+    ]);
+
+    logger.info('Site public status changed by admin', {
+      adminId,
+      siteId,
+      siteName: site.site_name,
+      isPublic
+    });
+
+    return site;
+
+  } catch (error) {
+    logger.error('Failed to set site public status', { siteId, adminId, error: error.message });
+    throw error;
+  }
+};
+
+/**
+ * Get all sites for admin (with user info)
+ */
+const getAllSites = async ({ page = 1, limit = 50, search = null, isPublic = null }) => {
+  try {
+    const offset = (page - 1) * limit;
+    let whereClause = 'WHERE 1=1';
+    const params = [];
+
+    if (search) {
+      params.push(`%${search}%`);
+      whereClause += ` AND (s.site_name ILIKE $${params.length} OR s.site_url ILIKE $${params.length})`;
+    }
+
+    if (isPublic !== null) {
+      params.push(isPublic);
+      whereClause += ` AND s.is_public = $${params.length}`;
+    }
+
+    const result = await query(`
+      SELECT
+        s.*,
+        u.username as owner_username,
+        u.email as owner_email
+      FROM sites s
+      JOIN users u ON s.user_id = u.id
+      ${whereClause}
+      ORDER BY s.created_at DESC
+      LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+    `, [...params, limit, offset]);
+
+    // Get total count
+    const countResult = await query(`
+      SELECT COUNT(*) as count
+      FROM sites s
+      ${whereClause}
+    `, params);
+
+    const total = parseInt(countResult.rows[0].count);
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data: result.rows,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1
+      }
+    };
+
+  } catch (error) {
+    logger.error('Failed to get all sites', { error: error.message });
+    throw error;
+  }
+};
+
 module.exports = {
   getAdminStats,
   getRevenueBreakdown,
@@ -860,5 +968,8 @@ module.exports = {
   getPendingApprovals,
   getPendingApprovalsCount,
   approvePlacement,
-  rejectPlacement
+  rejectPlacement,
+  // Site management
+  setSitePublicStatus,
+  getAllSites
 };
