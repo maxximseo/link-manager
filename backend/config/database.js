@@ -42,7 +42,7 @@ const dbConfig = {
   ssl: sslConfig,
   max: 25, // Increased pool size for performance
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000
+  connectionTimeoutMillis: 30000
 };
 
 logger.info(`Connecting to database: ${dbConfig.database} on port: ${dbConfig.port}`);
