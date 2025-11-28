@@ -660,6 +660,27 @@ const getUserTokens = async (userId) => {
 };
 
 /**
+ * Delete a registration token (only owner can delete)
+ */
+const deleteToken = async (tokenId, userId) => {
+  try {
+    const result = await query(
+      'DELETE FROM registration_tokens WHERE id = $1 AND user_id = $2 RETURNING id',
+      [tokenId, userId]
+    );
+
+    if (result.rowCount > 0) {
+      logger.info('Registration token deleted', { tokenId, userId });
+    }
+
+    return result.rowCount > 0;
+  } catch (error) {
+    logger.error('Delete token error:', error);
+    throw error;
+  }
+};
+
+/**
  * Bulk update site parameters (DR, etc.)
  * @param {string} parameter - Parameter name ('dr', etc.)
  * @param {Array} updates - Array of {domain, value} objects

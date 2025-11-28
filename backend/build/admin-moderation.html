@@ -89,9 +89,14 @@
                     На модерации: <span id="pendingCount" class="badge bg-primary">0</span> размещений
                 </p>
             </div>
-            <button class="btn btn-outline-primary" onclick="loadPendingApprovals()">
-                <i class="bi bi-arrow-clockwise"></i> Обновить
-            </button>
+            <div class="d-flex align-items-center gap-3">
+                <span class="badge bg-success" id="autoRefreshBadge">
+                    <i class="bi bi-arrow-repeat"></i> Авто: 10с
+                </span>
+                <button class="btn btn-primary" onclick="loadPendingApprovals()">
+                    <i class="bi bi-arrow-clockwise"></i> Обновить
+                </button>
+            </div>
         </div>
 
         <!-- Loading State -->
@@ -148,11 +153,16 @@
     <script src="/js/navbar.js"></script>
     <script src="/js/api.js"></script>
     <script>
+        // Initialize navbar
+        initNavbar('admin', 'admin-moderation');
+
         let rejectModal;
+        let autoRefreshInterval;
+        const AUTO_REFRESH_SECONDS = 10;
 
         document.addEventListener('DOMContentLoaded', function() {
             // Check auth
-            const user = Auth.getUser();
+            const user = getCurrentUser();
             if (!user || user.role !== 'admin') {
                 window.location.href = '/dashboard.html';
                 return;
@@ -160,7 +170,80 @@
 
             rejectModal = new bootstrap.Modal(document.getElementById('rejectModal'));
             loadPendingApprovals();
+
+            // Start auto-refresh every 10 seconds
+            startAutoRefresh();
         });
+
+        // Auto-refresh functionality
+        function startAutoRefresh() {
+            autoRefreshInterval = setInterval(() => {
+                loadPendingApprovalsSilent();
+            }, AUTO_REFRESH_SECONDS * 1000);
+            console.log(`Auto-refresh started (every ${AUTO_REFRESH_SECONDS}s)`);
+        }
+
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+                console.log('Auto-refresh stopped');
+            }
+        }
+
+        // Silent refresh - no loading spinner, just update data
+        async function loadPendingApprovalsSilent() {
+            try {
+                const token = getToken();
+                const response = await fetch('/api/admin/moderation', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    console.error('Silent refresh failed:', response.status);
+                    return;
+                }
+
+                const result = await response.json();
+                const placements = result.data || [];
+
+                const pendingCount = document.getElementById('pendingCount');
+                const emptyState = document.getElementById('emptyState');
+                const loadingState = document.getElementById('loadingState');
+                const placementsList = document.getElementById('placementsList');
+
+                // Get current count to detect changes
+                const currentCount = parseInt(pendingCount.textContent) || 0;
+
+                // Update count
+                pendingCount.textContent = placements.length;
+
+                // Hide loading if visible (first load)
+                loadingState.style.display = 'none';
+
+                if (placements.length === 0) {
+                    emptyState.style.display = 'block';
+                    placementsList.innerHTML = '';
+                } else {
+                    emptyState.style.display = 'none';
+
+                    // Only re-render if count changed (new items appeared)
+                    if (placements.length !== currentCount) {
+                        placementsList.innerHTML = placements.map(p => renderPlacementCard(p)).join('');
+
+                        // Show notification for new items
+                        if (placements.length > currentCount && currentCount > 0) {
+                            const newCount = placements.length - currentCount;
+                            showNotification(`Новых размещений: ${newCount}`, 'info');
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Silent refresh error:', error);
+            }
+        }
 
         async function loadPendingApprovals() {
             const loadingState = document.getElementById('loadingState');
@@ -173,7 +256,7 @@
             placementsList.innerHTML = '';
 
             try {
-                const token = Auth.getToken();
+                const token = getToken();
                 const response = await fetch('/api/admin/moderation', {
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -293,7 +376,7 @@
             }
 
             try {
-                const token = Auth.getToken();
+                const token = getToken();
                 const response = await fetch(`/api/admin/moderation/${placementId}/approve`, {
                     method: 'POST',
                     headers: {
@@ -339,7 +422,7 @@
             const reason = document.getElementById('rejectReason').value.trim() || 'Отклонено администратором';
 
             try {
-                const token = Auth.getToken();
+                const token = getToken();
                 const response = await fetch(`/api/admin/moderation/${placementId}/reject`, {
                     method: 'POST',
                     headers: {
@@ -409,11 +492,6 @@
             div.textContent = text;
             return div.innerHTML;
         }
-    </script>
-    <script src="/js/navbar-config.js"></script>
-    <script src="/js/navbar.js"></script>
-    <script>
-        initNavbar('admin', 'admin-moderation');
     </script>
 </body>
 </html>
