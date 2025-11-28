@@ -400,10 +400,7 @@ function renderScheduledPlacements(placements) {
             ? `${p.site_url}/?p=${p.wordpress_post_id}`
             : p.site_url;
 
-        // DEBUG: Log the date before formatting
-        console.log(`Placement #${p.id} scheduled_publish_date:`, p.scheduled_publish_date);
         const formattedDate = formatDate(p.scheduled_publish_date);
-        console.log(`Placement #${p.id} formatted date:`, formattedDate);
 
         // DR value with color coding
         const drValue = p.site_dr || 0;
