@@ -29,7 +29,8 @@ const publicApiLimiter = rateLimit({
 // SECURITY: API key in header instead of URL to prevent logging sensitive data
 router.get('/get-content', publicApiLimiter, wordpressController.getContent); // Public endpoint with strict rate limit
 router.post('/publish-article', authMiddleware, wordpressLimiter, wordpressController.publishArticle);
-router.post('/verify', wordpressController.verifyConnection); // No auth for verification
+// SECURITY: Rate limit verify endpoint to prevent API key brute-force enumeration
+router.post('/verify', publicApiLimiter, wordpressController.verifyConnection);
 router.post('/content', wordpressLimiter, wordpressController.handleContent);
 
 module.exports = router;
