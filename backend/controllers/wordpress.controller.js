@@ -71,10 +71,11 @@ const publishArticle = async (req, res) => {
 // Verify WordPress connection
 const verifyConnection = async (req, res) => {
   try {
-    const { api_key } = req.body;
+    // SECURITY: Support API key from header (preferred) or body (backward compatibility)
+    const api_key = req.headers['x-api-key'] || req.body.api_key;
 
     if (!api_key) {
-      return res.status(400).json({ error: 'API key is required' });
+      return res.status(400).json({ error: 'API key is required in X-API-Key header or request body' });
     }
 
     // Get site info by API key
