@@ -315,6 +315,7 @@ function renderActivePlacements(placements) {
             : '<span class="badge bg-success"><i class="bi bi-filetype-php"></i> PHP</span>';
 
         row.innerHTML = `
+            <td><input type="checkbox" class="active-checkbox" data-id="${p.id}" data-type="${p.type}" onchange="updateActiveBulkActions()"></td>
             <td>#${p.id}</td>
             <td>${p.project_name || '—'}</td>
             <td><a href="${displayUrl}" target="_blank">${displayUrl}</a></td>
@@ -343,6 +344,9 @@ function renderActivePlacements(placements) {
 
         tbody.appendChild(row);
     });
+
+    // Reset bulk actions panel after render
+    updateActiveBulkActions();
 }
 
 /**
