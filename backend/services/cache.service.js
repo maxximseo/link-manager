@@ -3,6 +3,9 @@
  * Provides simple get/set/del operations with TTL support
  */
 
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '..', '..', '.env'), override: true });
+
 const Redis = require('ioredis');
 const logger = require('../config/logger');
 
