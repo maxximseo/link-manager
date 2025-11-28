@@ -3,7 +3,7 @@
  * Plugin Name: Link Manager Widget Pro
  * Plugin URI: https://github.com/maxximseo/link-manager
  * Description: Display placed links and articles from Link Manager system
- * Version: 2.5.0
+ * Version: 2.5.1
  * Author: Link Manager Team
  * License: GPL v2 or later
  */
@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('LMW_VERSION', '2.5.0');
+define('LMW_VERSION', '2.5.1');
 define('LMW_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('LMW_PLUGIN_PATH', plugin_dir_path(__FILE__));
 
@@ -421,16 +421,16 @@ class LinkManagerWidget {
         }
 
         // Call verify endpoint
+        // SECURITY: Send API key in header instead of body to prevent logging
         $response = wp_remote_post(
             $this->api_endpoint . '/wordpress/verify',
             array(
                 'timeout' => 30,
                 'headers' => array(
-                    'Content-Type' => 'application/json'
+                    'Content-Type' => 'application/json',
+                    'X-API-Key' => $this->api_key
                 ),
-                'body' => json_encode(array(
-                    'api_key' => $this->api_key
-                ))
+                'body' => json_encode(array()) // Empty body, key is in header
             )
         );
 

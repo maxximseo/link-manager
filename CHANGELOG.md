@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.5.7] - 2025-11-28
+
+### 🔐 Security Improvements
+
+#### JWT Token Refresh System
+- **CHANGED** Access token expiry: 7 days → 1 hour (reduces risk if token is stolen)
+- **ADDED** Refresh token support (7 days expiry) for seamless session continuation
+- **ADDED** `POST /api/auth/refresh` endpoint with rate limiting (10/min)
+- **ADDED** `refreshAccessToken()` function in `auth.service.js`
+- **ADDED** `refreshToken` controller in `auth.controller.js`
+- **ADDED** Auto-refresh in frontend: tokens refresh 5 minutes before expiry
+- **ADDED** Token retry: if 401 received, attempts refresh before logging out
+- **UPDATED** `auth.js` - Complete rewrite with token lifecycle management:
+  - `saveTokens(token, refreshToken, expiresIn)` - Store tokens with expiry
+  - `scheduleTokenRefresh(expiresIn)` - Auto-schedule refresh
+  - `refreshAccessToken()` - Call backend refresh endpoint
+  - `ensureValidToken()` - Check token validity before requests
+  - `initTokenRefresh()` - Restore refresh timer on page load
+
+#### XSS Protection
+- **ADDED** `backend/build/js/security.js` - New security utilities file
+- **ADDED** Global `escapeHtml(text)` function for safe HTML rendering
+- **ADDED** `escapeUrl(url)` - URL sanitization with protocol whitelist
+- **ADDED** `escapeAttr(text)` - HTML attribute escaping
+- **ADDED** `sanitizeForDisplay(obj)` - Deep object sanitization
+- **ADDED** `html` template literal tag for safe HTML generation
+- **INCLUDED** security.js in all HTML pages (12 files updated)
+
+#### API Key Security (WordPress Plugin)
+- **CHANGED** API key now sent in `X-API-Key` header instead of URL/body
+- **UPDATED** `fetch_content_from_api()` - Already using header
+- **UPDATED** `verify_api_connection()` - Now uses header instead of body
+- **UPDATED** `wordpress.controller.js` - `verifyConnection` accepts header
+- **BENEFIT** API keys no longer logged in web server access logs
+- **UPDATED** WordPress plugin to v2.5.1
+
+### 📦 Files Changed
+- `backend/services/auth.service.js` - Refresh token generation
+- `backend/controllers/auth.controller.js` - Refresh endpoint controller
+- `backend/routes/auth.routes.js` - New /refresh route with rate limiter
+- `backend/build/js/auth.js` - Token refresh lifecycle
+- `backend/build/js/security.js` - NEW FILE: XSS protection utilities
+- `backend/controllers/wordpress.controller.js` - Header-based API key
+- `wordpress-plugin/link-manager-widget.php` - v2.5.1, header-based auth
+- `backend/build/*.html` (12 files) - Added security.js include
+
+---
+
 ## [2.5.6] - 2025-11-28
 
 ### 🚀 Features - Registration Token Management
