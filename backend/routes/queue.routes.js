@@ -1,11 +1,18 @@
 /**
  * Queue management routes for Redis/Valkey integration
+ * SECURITY: All routes require admin authentication
  */
 
 const express = require('express');
 const router = express.Router();
 const { asyncHandler } = require('../middleware/errorHandler');
 const logger = require('../config/logger');
+const authMiddleware = require('../middleware/auth');
+const adminMiddleware = require('../middleware/admin');
+
+// SECURITY: All queue routes require admin authentication
+router.use(authMiddleware);
+router.use(adminMiddleware);
 
 // Import queue service and workers
 let queueService;

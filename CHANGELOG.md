@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.5.8] - 2025-11-28
+
+### 🔐 Security Hardening (Extended Audit)
+
+#### Debug Endpoints Protection
+- **ADDED** Admin authentication to `/api/debug/*` routes
+- **BEFORE** Debug endpoints were accessible without authentication (CRITICAL vulnerability)
+- **AFTER** Debug endpoints require:
+  1. Valid JWT token (authMiddleware)
+  2. Admin role (adminMiddleware)
+  3. NODE_ENV=development (routes not mounted in production)
+- **UPDATED** `backend/routes/debug.routes.js` - Added auth + admin middleware
+
+#### CORS Configuration Documentation
+- **ADDED** `CORS_ORIGINS` environment variable documentation in CLAUDE.md
+- **RECOMMENDED** Set `CORS_ORIGINS=https://yourdomain.com` in production
+- **DEFAULT** Falls back to `*` (all origins) if not set
+
+#### Security Audit Summary
+- ✅ SQL Injection: Parameterized queries
+- ✅ Brute Force: 5 attempts → 30 min lockout
+- ✅ JWT: 1h access + 7d refresh tokens
+- ✅ XSS: escapeHtml() utilities
+- ✅ API Key: X-API-Key header
+- ✅ Debug endpoints: Admin-only + development mode
+- 🟡 CORS: Documented, recommend setting CORS_ORIGINS
+
+### 📦 Files Changed
+- `backend/routes/debug.routes.js` - Admin authentication added
+- `CLAUDE.md` - CORS_ORIGINS documentation
+
+---
+
 ## [2.5.7] - 2025-11-28
 
 ### 🔐 Security Improvements

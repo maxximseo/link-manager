@@ -652,6 +652,11 @@ Redis Configuration (optional, graceful degradation):
 - `REDIS_PASSWORD` - Redis password (if required)
 - `REDIS_USER` - Redis username (DigitalOcean uses 'default')
 
+Security Configuration (recommended for production):
+- `CORS_ORIGINS` - Comma-separated list of allowed origins (e.g., `https://yourdomain.com,https://api.yourdomain.com`)
+  - If not set, defaults to `*` (all origins allowed)
+  - Recommended to set in production for security
+
 Optional:
 - `BCRYPT_ROUNDS` - 8 for dev, 10 for prod
 
