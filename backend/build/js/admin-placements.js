@@ -17,7 +17,7 @@ if (user && user.role !== 'admin') {
 let placements = [];
 let filteredPlacements = [];
 let currentPage = 1;
-const placementsPerPage = 20;
+let placementsPerPage = 50; // Можно менять через UI селектор
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', async () => {
