@@ -606,6 +606,52 @@ Self-registration endpoint for WordPress sites using token (NO AUTH REQUIRED).
 
 ---
 
+### GET /api/sites/tokens
+
+List all registration tokens for authenticated user.
+
+**Response** (200 OK):
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "token": "reg_abc123...",
+      "label": "January 2025 Batch",
+      "max_uses": 10,
+      "current_uses": 3,
+      "expires_at": "2025-02-22T12:00:00.000Z",
+      "created_at": "2025-01-23T12:00:00.000Z"
+    }
+  ]
+}
+```
+
+**Rate Limit**: 100 requests / minute
+
+---
+
+### DELETE /api/sites/tokens/:id
+
+Delete a registration token (only owner can delete).
+
+**Response** (200 OK):
+```json
+{
+  "success": true
+}
+```
+
+**Errors**:
+- 404 Not Found - Token doesn't exist or belongs to another user
+- 400 Bad Request - Invalid token ID
+
+**Note**: Sites already registered with this token will remain in the system.
+
+**Rate Limit**: 100 requests / minute
+
+---
+
 ## Placements
 
 **⚠️ DEPRECATED**: Use [Billing API](#billing) for new integrations.
