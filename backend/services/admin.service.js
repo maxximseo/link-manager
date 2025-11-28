@@ -325,7 +325,7 @@ const getRecentPurchases = async (limit = 20) => {
 /**
  * Get all placements for admin (only on their sites)
  */
-const getAdminPlacements = async (adminId, { page = 1, limit = 50, status = null, type = null }) => {
+const getAdminPlacements = async (adminId, { page = 1, limit = 5000, status = null, type = null }) => {
   try {
     const offset = (page - 1) * limit;
     let whereClause = 'WHERE s.user_id = $1'; // Admin can only see placements on their sites
