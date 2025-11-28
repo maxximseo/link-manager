@@ -1344,8 +1344,8 @@
                 console.log(`⚡ Starting ${totalPurchases} batch purchase requests...`);
                 const startTime = performance.now();
 
-                // Batch processing - process in groups of 5 for visual progress updates
-                const batchSize = 5;
+                // Batch processing - process in groups of 10 for faster parallel execution
+                const batchSize = 10;
                 let successful = 0;
                 let failed = 0;
                 const errors = [];
