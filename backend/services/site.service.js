@@ -842,6 +842,7 @@ module.exports = {
   incrementTokenUsage,
   getSiteByUrlForUser,
   getUserTokens,
+  deleteToken,
   // Bulk update methods
   bulkUpdateSiteParams,
   getSitesWithZeroParam
