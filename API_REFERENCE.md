@@ -4,7 +4,7 @@ Complete reference for all API endpoints in Link Manager system.
 
 **Base URL**: `http://localhost:3003/api` (development)
 **Production URL**: `https://shark-app-9kv6u.ondigitalocean.app/api`
-**API Version**: 2.5.4
+**API Version**: 2.5.7
 **Last Updated**: November 2025
 
 ---
@@ -48,24 +48,61 @@ Authenticate user and receive JWT token.
 **Response** (200 OK):
 ```json
 {
-  "success": true,
-  "data": {
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "user": {
-      "id": 1,
-      "username": "admin",
-      "email": "admin@example.com",
-      "role": "admin"
-    }
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expiresIn": 3600,
+  "user": {
+    "id": 1,
+    "username": "admin",
+    "email": "admin@example.com",
+    "role": "admin"
   }
 }
 ```
+
+**Token Lifecycle** (v2.5.7+):
+- Access token: 1 hour expiry (reduced from 7 days for security)
+- Refresh token: 7 days expiry (for seamless session continuation)
+- Frontend auto-refreshes 5 minutes before expiry
 
 **Errors**:
 - `401 Unauthorized` - Invalid credentials
 - `429 Too Many Requests` - Rate limit exceeded (5 attempts / 15 minutes)
 
 **Rate Limit**: 5 requests / 15 minutes
+
+---
+
+### POST /api/auth/refresh
+
+Refresh access token using refresh token. No authentication header required.
+
+**Request**:
+```json
+{
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expiresIn": 3600,
+  "user": {
+    "id": 1,
+    "username": "admin",
+    "role": "admin"
+  }
+}
+```
+
+**Errors**:
+- `400 Bad Request` - Refresh token not provided
+- `401 Unauthorized` - Invalid/expired refresh token, or account locked
+- `429 Too Many Requests` - Rate limit exceeded
+
+**Rate Limit**: 10 requests / 1 minute
 
 ---
 
