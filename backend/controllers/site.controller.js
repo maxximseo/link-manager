@@ -392,5 +392,6 @@ module.exports = {
   // Registration token controllers
   generateToken,
   registerFromWordPress,
-  getTokens
+  getTokens,
+  deleteToken
 };
