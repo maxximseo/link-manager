@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🔐 Security Hardening (Extended Audit)
 
+#### Queue Routes Protection (CRITICAL FIX)
+- **ADDED** Admin authentication to `/api/queue/*` routes
+- **BEFORE** Queue endpoints were publicly accessible (CRITICAL vulnerability)
+  - Anyone could view all job data (GET /api/queue/jobs)
+  - Anyone could cancel/retry jobs (POST /api/queue/jobs/:q/:id/cancel)
+  - Anyone could cleanup job history (POST /api/queue/cleanup)
+- **AFTER** Queue routes require admin authentication
+- **UPDATED** `backend/routes/queue.routes.js` - Added auth + admin middleware
+
 #### Debug Endpoints Protection
 - **ADDED** Admin authentication to `/api/debug/*` routes
 - **BEFORE** Debug endpoints were accessible without authentication (CRITICAL vulnerability)
@@ -32,9 +41,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ✅ XSS: escapeHtml() utilities
 - ✅ API Key: X-API-Key header
 - ✅ Debug endpoints: Admin-only + development mode
+- ✅ Queue endpoints: Admin-only (FIXED)
 - 🟡 CORS: Documented, recommend setting CORS_ORIGINS
 
 ### 📦 Files Changed
+- `backend/routes/queue.routes.js` - Admin authentication added (CRITICAL)
 - `backend/routes/debug.routes.js` - Admin authentication added
 - `CLAUDE.md` - CORS_ORIGINS documentation
 
