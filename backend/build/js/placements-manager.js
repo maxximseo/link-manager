@@ -388,15 +388,6 @@ function renderScheduledPlacements(placements) {
 
     document.getElementById('scheduledCount').textContent = placements.length;
 
-    // DEBUG: Log placement data to see what's coming from API
-    console.log('=== SCHEDULED PLACEMENTS DEBUG ===');
-    console.log('Total placements:', placements.length);
-    if (placements.length > 0) {
-        console.log('First placement data:', placements[0]);
-        console.log('scheduled_publish_date value:', placements[0]?.scheduled_publish_date);
-        console.log('scheduled_publish_date type:', typeof placements[0]?.scheduled_publish_date);
-    }
-
     placements.forEach(p => {
         const row = document.createElement('tr');
 
