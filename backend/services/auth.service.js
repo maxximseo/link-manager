@@ -264,8 +264,89 @@ const verifyEmail = async (token) => {
   }
 };
 
+// Refresh access token using refresh token
+const refreshAccessToken = async (refreshToken) => {
+  try {
+    // Verify the refresh token
+    const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+
+    // Check if it's actually a refresh token
+    if (decoded.type !== 'refresh') {
+      return {
+        success: false,
+        error: 'Invalid token type'
+      };
+    }
+
+    // Fetch user data from database to ensure user still exists and is active
+    const result = await query(
+      'SELECT id, username, role, account_locked_until FROM users WHERE id = $1',
+      [decoded.userId]
+    );
+
+    if (result.rows.length === 0) {
+      return {
+        success: false,
+        error: 'User not found'
+      };
+    }
+
+    const user = result.rows[0];
+
+    // Check if account is locked
+    if (user.account_locked_until && new Date(user.account_locked_until) > new Date()) {
+      return {
+        success: false,
+        error: 'Account is locked'
+      };
+    }
+
+    // Generate new access token
+    const payload = {
+      userId: user.id,
+      username: user.username,
+      role: user.role
+    };
+
+    const newAccessToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    logger.info(`Token refreshed for user ${user.username}`);
+
+    return {
+      success: true,
+      token: newAccessToken,
+      expiresIn: 3600,
+      user: {
+        id: user.id,
+        username: user.username,
+        role: user.role
+      }
+    };
+
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return {
+        success: false,
+        error: 'Refresh token expired'
+      };
+    }
+    if (error.name === 'JsonWebTokenError') {
+      return {
+        success: false,
+        error: 'Invalid refresh token'
+      };
+    }
+    logger.error('Token refresh error:', error);
+    return {
+      success: false,
+      error: 'Failed to refresh token'
+    };
+  }
+};
+
 module.exports = {
   authenticateUser,
   registerUser,
-  verifyEmail
+  verifyEmail,
+  refreshAccessToken
 };
