@@ -1,11 +1,17 @@
 /**
  * Debug routes for Redis/Valkey connection diagnostics
- * ONLY for troubleshooting - remove in production
+ * SECURITY: Protected by admin authentication + development mode only
  */
 
 const express = require('express');
 const router = express.Router();
 const logger = require('../config/logger');
+const authMiddleware = require('../middleware/auth');
+const adminMiddleware = require('../middleware/admin');
+
+// SECURITY: All debug routes require admin authentication
+router.use(authMiddleware);
+router.use(adminMiddleware);
 
 // Test Redis connection with detailed diagnostics
 router.get('/redis-test', async (req, res) => {
