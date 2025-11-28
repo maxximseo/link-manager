@@ -37,6 +37,7 @@ router.use(authMiddleware);
 // Registration token routes (require auth)
 router.post('/generate-token', generalLimiter, siteController.generateToken);
 router.get('/tokens', generalLimiter, siteController.getTokens);
+router.delete('/tokens/:id', generalLimiter, siteController.deleteToken);
 
 // Site CRUD routes
 router.get('/', generalLimiter, siteController.getSites);
