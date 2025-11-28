@@ -10,8 +10,8 @@ const NavbarConfig = {
         brandLink: '/dashboard.html',
         menuItems: [
             { text: 'Проекты', href: '/dashboard.html', page: 'dashboard' },
-            { text: 'Купить ссылки', href: '/placements.html', page: 'placements' },
-            { text: 'Размещения', href: '/placements-manager.html', page: 'placements-manager' },
+            { text: 'Покупка', href: '/placements.html', page: 'placements' },
+            { text: 'Ссылки', href: '/placements-manager.html', page: 'placements-manager' },
             { text: 'Баланс', href: '/balance.html', page: 'balance' },
             { text: 'Сайты', href: '/sites.html', page: 'sites' }
         ],
