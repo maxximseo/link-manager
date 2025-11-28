@@ -59,11 +59,8 @@ class LinkManagerWidget {
      * Initialize plugin
      */
     public function init() {
-        // Auto-generate API key if not set
-        if (empty($this->api_key)) {
-            $this->api_key = 'api_' . substr(md5(site_url() . time()), 0, 12);
-            update_option('lmw_api_key', $this->api_key);
-        }
+        // API key is now set manually or via registration token
+        // No auto-generation - allows Quick Registration form to show
     }
     
     /**
