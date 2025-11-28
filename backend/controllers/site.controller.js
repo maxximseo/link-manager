@@ -358,6 +358,29 @@ const getTokens = async (req, res) => {
   }
 };
 
+// Delete a registration token
+const deleteToken = async (req, res) => {
+  try {
+    const tokenId = parseInt(req.params.id);
+    const userId = req.user.id;
+
+    if (isNaN(tokenId)) {
+      return res.status(400).json({ error: 'Invalid token ID' });
+    }
+
+    const deleted = await siteService.deleteToken(tokenId, userId);
+
+    if (!deleted) {
+      return res.status(404).json({ error: 'Token not found' });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Delete token error:', error);
+    res.status(500).json({ error: 'Failed to delete token' });
+  }
+};
+
 module.exports = {
   getSites,
   getSite,
