@@ -208,10 +208,30 @@
             <div class="tab-pane fade show active" id="active" role="tabpanel">
                 <div class="card">
                     <div class="card-body">
+                        <!-- Bulk Actions Panel for Active -->
+                        <div id="activeBulkActions" class="alert alert-info d-none mb-3">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <i class="bi bi-check2-square me-2"></i>
+                                    Выбрано: <strong id="activeSelectedCount">0</strong> размещений
+                                    <span class="text-muted ms-2" id="activeLinksInfo"></span>
+                                </div>
+                                <div>
+                                    <button class="btn btn-success btn-sm me-2" onclick="bulkSetAutoRenewal(true)">
+                                        <i class="bi bi-arrow-repeat me-1"></i>Включить автопродление
+                                    </button>
+                                    <button class="btn btn-secondary btn-sm" onclick="bulkSetAutoRenewal(false)">
+                                        <i class="bi bi-x-circle me-1"></i>Выключить автопродление
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="table-responsive">
                             <table class="table table-hover">
                                 <thead>
                                     <tr>
+                                        <th><input type="checkbox" id="selectAllActive" onchange="toggleAllActive(this)" title="Выбрать все"></th>
                                         <th>ID</th>
                                         <th>Проект</th>
                                         <th>Сайт</th>
@@ -242,7 +262,7 @@
                                 </thead>
                                 <tbody id="activePlacementsTable">
                                     <tr>
-                                        <td colspan="20" class="text-center text-muted">Загрузка...</td>
+                                        <td colspan="21" class="text-center text-muted">Загрузка...</td>
                                     </tr>
                                 </tbody>
                             </table>

@@ -210,8 +210,11 @@ function renderActivePlacements(placements) {
     tbody.innerHTML = '';
 
     if (placements.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="20" class="text-center text-muted">Нет активных размещений</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="21" class="text-center text-muted">Нет активных размещений</td></tr>';
         document.getElementById('activeCount').textContent = '0';
+        // Hide bulk actions panel
+        document.getElementById('activeBulkActions').classList.add('d-none');
+        document.getElementById('selectAllActive').checked = false;
         return;
     }
 
