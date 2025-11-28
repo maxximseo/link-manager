@@ -118,13 +118,23 @@ const authenticateUser = async (username, password) => {
       role: user.role
     };
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
+    // Short-lived access token (1 hour) - reduces risk if token is stolen
+    const accessToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    // Long-lived refresh token (7 days) - for automatic token renewal
+    const refreshPayload = {
+      userId: user.id,
+      type: 'refresh'
+    };
+    const refreshToken = jwt.sign(refreshPayload, process.env.JWT_SECRET, { expiresIn: '7d' });
 
     logger.info(`Successful login for user ${username}`);
 
     return {
       success: true,
-      token,
+      token: accessToken,
+      refreshToken,
+      expiresIn: 3600, // 1 hour in seconds
       user: {
         id: user.id,
         username: user.username,
