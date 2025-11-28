@@ -26,6 +26,15 @@ const registerLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Rate limiting for token refresh (more lenient)
+const refreshLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // Max 10 refresh attempts per minute
+  message: 'Too many refresh attempts, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Login endpoint
 router.post('/login', loginLimiter, authController.login);
 
