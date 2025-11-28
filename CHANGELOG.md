@@ -34,6 +34,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **RECOMMENDED** Set `CORS_ORIGINS=https://yourdomain.com` in production
 - **DEFAULT** Falls back to `*` (all origins) if not set
 
+#### WordPress Verify Endpoint Rate Limiting
+- **ADDED** Rate limit (10/min) to `/api/wordpress/verify` endpoint
+- **BEFORE** No rate limit allowed unlimited API key verification attempts
+- **AFTER** 10 requests per minute per IP (prevents brute-force enumeration)
+- **UPDATED** `backend/routes/wordpress.routes.js` - Added publicApiLimiter
+
 #### Security Audit Summary
 - ✅ SQL Injection: Parameterized queries
 - ✅ Brute Force: 5 attempts → 30 min lockout
@@ -42,11 +48,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ✅ API Key: X-API-Key header
 - ✅ Debug endpoints: Admin-only + development mode
 - ✅ Queue endpoints: Admin-only (FIXED)
+- ✅ WordPress verify: Rate limited (FIXED)
 - 🟡 CORS: Documented, recommend setting CORS_ORIGINS
 
 ### 📦 Files Changed
 - `backend/routes/queue.routes.js` - Admin authentication added (CRITICAL)
 - `backend/routes/debug.routes.js` - Admin authentication added
+- `backend/routes/wordpress.routes.js` - Rate limit added to verify endpoint
 - `CLAUDE.md` - CORS_ORIGINS documentation
 
 ---

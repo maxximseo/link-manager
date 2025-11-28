@@ -79,8 +79,7 @@ const register = async (req, res) => {
     logger.info('User registered:', username);
     res.status(201).json({
       message: result.message,
-      user: result.user,
-      verificationToken: result.verificationToken // Remove in production
+      user: result.user
     });
 
   } catch (error) {
