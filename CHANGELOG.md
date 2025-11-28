@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.5.6] - 2025-11-28
+
+### 🚀 Features - Registration Token Management
+- **ADDED** Delete button for registration tokens on `sites.html`
+- **ADDED** `DELETE /api/sites/tokens/:id` endpoint for token deletion
+- **ADDED** `deleteToken()` function in `site.service.js` (only owner can delete)
+- **ADDED** `deleteToken` controller in `site.controller.js`
+- **ADDED** `deleteRegistrationToken()` JS function with confirmation dialog
+- **ADDED** Confirmation message: "Сайты, уже зарегистрированные с этим токеном, останутся в системе"
+
+### 🔧 WordPress Plugin - UX Improvement
+- **FIXED** Plugin auto-generates API key on install - user had to delete it to see registration form
+- **REMOVED** Auto-generation of API key in `init()` function
+- **IMPROVED** Now shows "Quick Site Registration" form immediately after plugin install
+- **UPDATED** `wordpress-plugin/link-manager-widget.php` v2.5.0
+- **REBUILT** `backend/build/link-manager-widget.zip`
+
+### ✅ UI Improvements
+- **ADDED** Auto-refresh every 10 seconds on `admin-moderation.html`
+- **ADDED** "Авто: 10с" badge indicator
+- **ADDED** Silent refresh (no spinner) with new item notification
+- **ADDED** Page size selector on `admin-placements.html` (50/100/200/500)
+- **ADDED** "Дашборд" link in admin navbar
+
+---
+
 ## [2.5.5] - 2025-11-28
 
 ### 🚀 Features - Bulk Auto-Renewal Management
