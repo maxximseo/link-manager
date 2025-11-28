@@ -48,10 +48,18 @@ function debounce(func, wait) {
     };
 }
 
+// Change page size
+function changePageSize(newSize) {
+    placementsPerPage = parseInt(newSize);
+    currentPage = 1;
+    renderPlacements();
+    renderPagination();
+}
+
 // Load placements from API
 async function loadPlacements() {
     try {
-        const response = await fetch('/api/admin/placements', {
+        const response = await fetch(`/api/admin/placements?limit=5000`, {
             headers: {
                 'Authorization': `Bearer ${getToken()}`
             }
