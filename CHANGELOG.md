@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.5.5] - 2025-11-28
+
+### 🚀 Features - Bulk Auto-Renewal Management
+- **ADDED** Bulk selection for active placements with checkboxes
+- **ADDED** "Select All" checkbox in active placements table header
+- **ADDED** Bulk actions panel: "Включить автопродление" / "Выключить автопродление"
+- **ADDED** Progress modal for bulk auto-renewal operations with:
+  - Real-time progress bar (0%→100%)
+  - Counters: Total/Successful/Failed
+  - Error list display
+  - Abort functionality
+- **ADDED** New functions in `placements-manager.js`:
+  - `toggleAllActive(checkbox)` - Toggle all active checkboxes
+  - `updateActiveBulkActions()` - Update bulk actions panel state
+  - `bulkSetAutoRenewal(enabled)` - Batch process auto-renewal changes
+  - `showBulkAutoRenewalProgress()` / `updateBulkAutoRenewalProgress()` / `completeBulkAutoRenewalProgress()`
+  - `abortBulkAutoRenewal()` - Cancel ongoing bulk operation
+
+### ✅ UI Improvements
+- **CHANGED** Navigation menu labels:
+  - "Купить ссылки" → "Покупка"
+  - "Размещения" → "Ссылки"
+- **MODIFIED** `navbar-config.js` - Updated menu item text
+
+---
+
 ## [2.5.4] - 2025-11-27
 
 ### 🚀 Features - Progress Indicator for Bulk Purchases
