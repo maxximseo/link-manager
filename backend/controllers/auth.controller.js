@@ -24,6 +24,8 @@ const login = async (req, res) => {
     logger.info('User logged in:', username);
     res.json({
       token: result.token,
+      refreshToken: result.refreshToken,
+      expiresIn: result.expiresIn,
       user: result.user
     });
     
