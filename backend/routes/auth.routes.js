@@ -44,4 +44,7 @@ router.post('/register', registerLimiter, authController.register);
 // Verify email endpoint
 router.get('/verify-email/:token', authController.verifyEmail);
 
+// Refresh token endpoint
+router.post('/refresh', refreshLimiter, authController.refreshToken);
+
 module.exports = router;
