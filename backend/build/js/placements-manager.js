@@ -1654,3 +1654,268 @@ function abortBulkCancel() {
         document.getElementById('bulkCancelStatus').textContent = 'Прерываем...';
     }
 }
+
+// ==================== BULK AUTO-RENEWAL FOR ACTIVE PLACEMENTS ====================
+
+/**
+ * Toggle all active placement checkboxes
+ */
+function toggleAllActive(checkbox) {
+    document.querySelectorAll('.active-checkbox').forEach(cb => {
+        cb.checked = checkbox.checked;
+    });
+    updateActiveBulkActions();
+}
+
+/**
+ * Update bulk actions panel for active placements
+ */
+function updateActiveBulkActions() {
+    const checked = document.querySelectorAll('.active-checkbox:checked');
+    const count = checked.length;
+
+    // Count only links (auto-renewal only works for links)
+    const linkCount = Array.from(checked).filter(cb => cb.dataset.type === 'link').length;
+
+    document.getElementById('activeSelectedCount').textContent = count;
+    document.getElementById('activeLinksInfo').textContent = linkCount < count
+        ? `(${linkCount} ссылок, ${count - linkCount} статей)`
+        : '';
+
+    const bulkPanel = document.getElementById('activeBulkActions');
+    if (count > 0) {
+        bulkPanel.classList.remove('d-none');
+    } else {
+        bulkPanel.classList.add('d-none');
+    }
+
+    // Update "select all" checkbox state
+    const allCheckboxes = document.querySelectorAll('.active-checkbox');
+    const selectAllCheckbox = document.getElementById('selectAllActive');
+    if (allCheckboxes.length > 0 && count === allCheckboxes.length) {
+        selectAllCheckbox.checked = true;
+        selectAllCheckbox.indeterminate = false;
+    } else if (count > 0) {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = true;
+    } else {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = false;
+    }
+}
+
+// Track if bulk auto-renewal was aborted by user
+let bulkAutoRenewalAborted = false;
+
+/**
+ * Bulk set auto-renewal for selected active placements
+ */
+async function bulkSetAutoRenewal(enabled) {
+    const checked = document.querySelectorAll('.active-checkbox:checked');
+
+    // Filter only links (auto-renewal doesn't work for articles)
+    const linkIds = Array.from(checked)
+        .filter(cb => cb.dataset.type === 'link')
+        .map(cb => parseInt(cb.dataset.id));
+
+    if (linkIds.length === 0) {
+        showAlert('Выберите хотя бы одну ссылку (статьи не поддерживают автопродление)', 'warning');
+        return;
+    }
+
+    const action = enabled ? 'Включить' : 'Выключить';
+    if (!confirm(`${action} автопродление для ${linkIds.length} размещений?`)) {
+        return;
+    }
+
+    // Reset abort flag
+    bulkAutoRenewalAborted = false;
+
+    // Show progress modal
+    showBulkAutoRenewalProgress(linkIds.length, enabled);
+
+    let successful = 0;
+    let failed = 0;
+    const errors = [];
+
+    // Batch processing - 5 at a time for progress visibility
+    const batchSize = 5;
+    for (let i = 0; i < linkIds.length; i += batchSize) {
+        // Check if aborted
+        if (bulkAutoRenewalAborted) {
+            console.log('⚠️ Bulk auto-renewal aborted by user');
+            break;
+        }
+
+        const batch = linkIds.slice(i, i + batchSize);
+
+        const results = await Promise.allSettled(
+            batch.map(id => fetch(`/api/billing/auto-renewal/${id}`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `Bearer ${getToken()}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ enabled })
+            }).then(r => r.json()))
+        );
+
+        results.forEach((result, index) => {
+            if (result.status === 'fulfilled' && result.value.success) {
+                successful++;
+            } else {
+                failed++;
+                const errorMsg = result.reason?.message || result.value?.error || 'Неизвестная ошибка';
+                errors.push({ id: batch[index], error: errorMsg });
+            }
+        });
+
+        // Update progress
+        const processedCount = Math.min(i + batchSize, linkIds.length);
+        const progress = Math.round((processedCount / linkIds.length) * 100);
+        updateBulkAutoRenewalProgress(progress, successful, failed, enabled);
+    }
+
+    // Complete
+    completeBulkAutoRenewalProgress(successful, failed, enabled, errors);
+
+    // Reload data
+    loadAllPlacements();
+}
+
+/**
+ * Show bulk auto-renewal progress modal
+ */
+function showBulkAutoRenewalProgress(total, enabled) {
+    const action = enabled ? 'Включение' : 'Выключение';
+
+    // Create modal if doesn't exist
+    let modal = document.getElementById('bulkAutoRenewalModal');
+    if (!modal) {
+        const modalHtml = `
+        <div class="modal fade" id="bulkAutoRenewalModal" tabindex="-1" data-bs-backdrop="static">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="bi bi-arrow-repeat me-2"></i><span id="bulkAutoRenewalTitle">Автопродление</span></h5>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span id="bulkAutoRenewalStatus">Обработка...</span>
+                                <span id="bulkAutoRenewalPercent">0%</span>
+                            </div>
+                            <div class="progress" style="height: 25px;">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" id="bulkAutoRenewalProgressBar"
+                                     role="progressbar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <div class="fs-4 fw-bold" id="bulkAutoRenewalTotal">0</div>
+                                <small class="text-muted">Всего</small>
+                            </div>
+                            <div class="col-4">
+                                <div class="fs-4 fw-bold text-success" id="bulkAutoRenewalSuccessful">0</div>
+                                <small class="text-muted">Успешно</small>
+                            </div>
+                            <div class="col-4">
+                                <div class="fs-4 fw-bold text-danger" id="bulkAutoRenewalFailed">0</div>
+                                <small class="text-muted">Ошибки</small>
+                            </div>
+                        </div>
+                        <div id="bulkAutoRenewalErrors" class="mt-3 d-none">
+                            <div class="alert alert-danger" style="max-height: 150px; overflow-y: auto;">
+                                <strong>Ошибки:</strong>
+                                <ul class="mb-0" id="bulkAutoRenewalErrorList"></ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="bulkAutoRenewalAbortBtn" onclick="abortBulkAutoRenewal()">
+                            <i class="bi bi-x-circle me-1"></i>Прервать
+                        </button>
+                        <button type="button" class="btn btn-primary d-none" id="bulkAutoRenewalCloseBtn" data-bs-dismiss="modal">
+                            <i class="bi bi-check-circle me-1"></i>Закрыть
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        modal = document.getElementById('bulkAutoRenewalModal');
+    }
+
+    // Reset state
+    document.getElementById('bulkAutoRenewalTitle').textContent = `${action} автопродления`;
+    document.getElementById('bulkAutoRenewalStatus').textContent = `${action} автопродления...`;
+    document.getElementById('bulkAutoRenewalPercent').textContent = '0%';
+    document.getElementById('bulkAutoRenewalProgressBar').style.width = '0%';
+    document.getElementById('bulkAutoRenewalProgressBar').className = 'progress-bar progress-bar-striped progress-bar-animated';
+    document.getElementById('bulkAutoRenewalTotal').textContent = total;
+    document.getElementById('bulkAutoRenewalSuccessful').textContent = '0';
+    document.getElementById('bulkAutoRenewalFailed').textContent = '0';
+    document.getElementById('bulkAutoRenewalErrors').classList.add('d-none');
+    document.getElementById('bulkAutoRenewalErrorList').innerHTML = '';
+    document.getElementById('bulkAutoRenewalAbortBtn').classList.remove('d-none');
+    document.getElementById('bulkAutoRenewalCloseBtn').classList.add('d-none');
+
+    // Show modal
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+}
+
+/**
+ * Update bulk auto-renewal progress
+ */
+function updateBulkAutoRenewalProgress(percent, successful, failed, enabled) {
+    document.getElementById('bulkAutoRenewalPercent').textContent = `${percent}%`;
+    document.getElementById('bulkAutoRenewalProgressBar').style.width = `${percent}%`;
+    document.getElementById('bulkAutoRenewalSuccessful').textContent = successful;
+    document.getElementById('bulkAutoRenewalFailed').textContent = failed;
+}
+
+/**
+ * Complete bulk auto-renewal progress
+ */
+function completeBulkAutoRenewalProgress(successful, failed, enabled, errors) {
+    const action = enabled ? 'включено' : 'выключено';
+    const progressBar = document.getElementById('bulkAutoRenewalProgressBar');
+    progressBar.classList.remove('progress-bar-striped', 'progress-bar-animated');
+    progressBar.style.width = '100%';
+
+    if (failed === 0 && !bulkAutoRenewalAborted) {
+        progressBar.classList.add('bg-success');
+        document.getElementById('bulkAutoRenewalStatus').textContent = `Автопродление ${action} для всех!`;
+    } else if (successful === 0) {
+        progressBar.classList.add('bg-danger');
+        document.getElementById('bulkAutoRenewalStatus').textContent = 'Все попытки провалены';
+    } else if (bulkAutoRenewalAborted) {
+        progressBar.classList.add('bg-warning');
+        document.getElementById('bulkAutoRenewalStatus').textContent = `Прервано: ${successful} ${action}, ${failed} ошибок`;
+    } else {
+        progressBar.classList.add('bg-warning');
+        document.getElementById('bulkAutoRenewalStatus').textContent = `Завершено: ${successful} ${action}, ${failed} ошибок`;
+    }
+
+    // Show errors if any
+    if (errors && errors.length > 0) {
+        const errorList = document.getElementById('bulkAutoRenewalErrorList');
+        errorList.innerHTML = errors.map(e => `<li>ID #${e.id}: ${e.error}</li>`).join('');
+        document.getElementById('bulkAutoRenewalErrors').classList.remove('d-none');
+    }
+
+    // Switch buttons
+    document.getElementById('bulkAutoRenewalAbortBtn').classList.add('d-none');
+    document.getElementById('bulkAutoRenewalCloseBtn').classList.remove('d-none');
+}
+
+/**
+ * Abort bulk auto-renewal operation
+ */
+function abortBulkAutoRenewal() {
+    if (confirm('Прервать операцию? Уже изменённые размещения останутся с новым состоянием.')) {
+        bulkAutoRenewalAborted = true;
+        document.getElementById('bulkAutoRenewalStatus').textContent = 'Прерываем...';
+    }
+}
