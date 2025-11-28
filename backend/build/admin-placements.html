@@ -117,7 +117,18 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <span><i class="bi bi-list-ul"></i> Список размещений</span>
-                <span class="badge bg-purple" id="placementsCount">0</span>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="mb-0 text-muted small">На странице:</label>
+                        <select class="form-select form-select-sm" style="width: auto;" onchange="changePageSize(this.value)" id="pageSizeSelect">
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                            <option value="200">200</option>
+                            <option value="500">500</option>
+                        </select>
+                    </div>
+                    <span class="badge bg-purple" id="placementsCount">0</span>
+                </div>
             </div>
             <div class="card-body">
                 <div class="table-responsive">

@@ -169,7 +169,7 @@ router.post('/users/:id/adjust-balance',
  */
 router.get('/placements', async (req, res) => {
   try {
-    const { page = 1, limit = 50, status, type } = req.query;
+    const { page = 1, limit = 5000, status, type } = req.query;
 
     const placements = await adminService.getAdminPlacements(req.user.id, {
       page: parseInt(page),
