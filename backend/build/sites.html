@@ -1088,6 +1088,9 @@
                             <button class="btn btn-dark" onclick="copyTokenToClipboard('${token.token}')">
                                 <i class="bi bi-clipboard"></i> Копировать
                             </button>
+                            <button class="btn btn-outline-danger" onclick="deleteRegistrationToken(${token.id})" title="Удалить токен">
+                                <i class="bi bi-trash"></i>
+                            </button>
                         </div>
                         <div class="mt-2 small text-dark">
                             <i class="bi bi-info-circle"></i> Вставьте этот токен в настройках плагина Link Manager на ваших WordPress сайтах
@@ -1106,6 +1109,32 @@
                 console.error('Failed to copy token:', err);
                 showNotification('Ошибка копирования токена', 'error');
             });
+        }
+
+        async function deleteRegistrationToken(tokenId) {
+            if (!confirm('Удалить этот токен? Сайты, уже зарегистрированные с этим токеном, останутся в системе.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/sites/tokens/${tokenId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.error || 'Failed to delete token');
+                }
+
+                await loadActiveTokens();
+                showNotification('Токен удалён', 'success');
+            } catch (error) {
+                console.error('Delete token error:', error);
+                showNotification('Ошибка удаления: ' + error.message, 'error');
+            }
         }
 
         function escapeHtml(text) {
