@@ -113,8 +113,36 @@ const verifyEmail = async (req, res) => {
   }
 };
 
+// Refresh token controller
+const refreshToken = async (req, res) => {
+  try {
+    const { refreshToken: token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ error: 'Refresh token is required' });
+    }
+
+    const result = await authService.refreshAccessToken(token);
+
+    if (!result.success) {
+      return res.status(401).json({ error: result.error });
+    }
+
+    res.json({
+      token: result.token,
+      expiresIn: result.expiresIn,
+      user: result.user
+    });
+
+  } catch (error) {
+    logger.error('Token refresh error:', error);
+    res.status(500).json({ error: 'Server error during token refresh' });
+  }
+};
+
 module.exports = {
   login,
   register,
-  verifyEmail
+  verifyEmail,
+  refreshToken
 };
