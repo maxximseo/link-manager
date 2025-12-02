@@ -221,6 +221,13 @@ const updateSite = async (siteId, userId, data) => {
       [site_url, site_name, api_key, max_links, finalMaxArticles, site_type, finalAllowArticles, is_public, available_for_purchase, siteId, userId]
     );
 
+    // Clear cache after site update so UI shows changes immediately
+    if (result.rows.length > 0) {
+      const cache = require('./cache.service');
+      await cache.delPattern(`placements:user:${userId}:*`);
+      await cache.delPattern('wp:content:*');
+    }
+
     return result.rows.length > 0 ? result.rows[0] : null;
   } catch (error) {
     logger.error('Update site error:', error);
