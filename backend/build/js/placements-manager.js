@@ -312,6 +312,15 @@ function renderActivePlacements(placements) {
             <td>#${p.id}</td>
             <td>${p.project_name || '—'}</td>
             <td><a href="${displayUrl}" target="_blank">${displayUrl}</a></td>
+            <td>${formatDate(p.published_at || p.placed_at)}</td>
+            <td class="${expiryClass}">${expiryText}</td>
+            <td>$${parseFloat(p.final_price || 0).toFixed(2)}</td>
+            <td>${autoRenewalToggle}</td>
+            <td class="text-nowrap">
+                ${renewBtn}
+                ${viewBtn}
+                ${deleteBtn}
+            </td>
             <td class="${drClass}">${drValue}</td>
             <td class="${daClass}">${daValue}</td>
             <td class="${tfClass}">${tfValue}</td>
@@ -324,15 +333,6 @@ function renderActivePlacements(placements) {
             <td class="text-muted">${geoValue}</td>
             <td>${siteTypeBadge}</td>
             <td>${typeBadge}</td>
-            <td>${formatDate(p.published_at || p.placed_at)}</td>
-            <td class="${expiryClass}">${expiryText}</td>
-            <td>$${parseFloat(p.final_price || 0).toFixed(2)}</td>
-            <td>${autoRenewalToggle}</td>
-            <td class="text-nowrap">
-                ${renewBtn}
-                ${viewBtn}
-                ${deleteBtn}
-            </td>
         `;
 
         tbody.appendChild(row);

@@ -77,6 +77,22 @@
             color: #fff;
             border-color: #212529;
         }
+
+        /* Table styling - compact font */
+        .table {
+            font-size: 0.75rem;
+        }
+
+        .table th, .table td {
+            padding: 0.4rem 0.5rem;
+        }
+
+        /* "Контент" column (16th) - show full text */
+        .table th:nth-child(16),
+        .table td:nth-child(16) {
+            white-space: normal;
+            min-width: 150px;
+        }
     </style>
 </head>
 <body>
@@ -228,9 +244,9 @@
                                     <th>Тип</th>
                                     <th>Слоты</th>
                                     <th>Цена</th>
+                                    <th>Контент</th>
                                     <th>Статус</th>
                                     <th>Видимость</th>
-                                    <th>Контент</th>
                                 </tr>
                             </thead>
                             <tbody id="sitesTableBody">
@@ -974,9 +990,9 @@
                         <td class="text-center">${siteTypeBadge}</td>
                         <td class="${slotsClass} text-nowrap text-center"><small>${slotsDisplay}</small></td>
                         <td class="text-success fw-bold text-center">$${price.toFixed(2)}</td>
+                        <td id="assigned_${site.id}">${dropdownHtml}</td>
                         <td class="text-center">${site.statusBadge}</td>
                         <td class="text-center">${visibilityBadge}</td>
-                        <td id="assigned_${site.id}">${dropdownHtml}</td>
                     </tr>
                 `;
             }).join('');
