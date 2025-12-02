@@ -1368,7 +1368,7 @@ const refundPlacementInTransaction = async (client, placement) => {
     newBalance: balanceAfter,
     tierChanged,
     newTier: newTierName,
-    oldDiscount: user.current_discount,
+    oldDiscount: parseFloat(user.current_discount),
     newDiscount: newTier.discount
   };
 };
