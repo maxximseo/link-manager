@@ -315,8 +315,6 @@ Navbar.updateNotificationsList = function(notifications) {
 
     let notificationsHtml = '';
     notifications.forEach(notification => {
-        const isUnread = !notification.read;
-        const bgClass = isUnread ? 'bg-light' : '';
         const fontClass = isUnread ? 'fw-semibold' : '';
 
         // Format date
@@ -328,15 +326,18 @@ Navbar.updateNotificationsList = function(notifications) {
             minute: '2-digit'
         });
 
-        li.innerHTML = `
-            <div class="dropdown-item ${bgClass} py-2" style="white-space: normal;">
-                <div class="${fontClass} small">${Navbar.escapeHtml(notification.title)}</div>
-                <div class="text-muted small" style="max-width: 300px;">${Navbar.escapeHtml(notification.message)}</div>
-                <div class="text-muted" style="font-size: 0.7rem;">${dateStr}</div>
-            </div>
+        notificationsHtml += `
+            <li class="notification-item">
+                <div class="dropdown-item ${bgClass} py-2" style="white-space: normal;">
+                    <div class="${fontClass} small">${Navbar.escapeHtml(notification.title)}</div>
+                    <div class="text-muted small" style="max-width: 300px;">${Navbar.escapeHtml(notification.message)}</div>
+                    <div class="text-muted" style="font-size: 0.7rem;">${dateStr}</div>
+                </div>
+            </li>
         `;
-        listContainer.appendChild(li);
     });
+
+    listContainer.innerHTML = headerHtml + notificationsHtml;
 };
 
 /**
