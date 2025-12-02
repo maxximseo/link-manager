@@ -475,7 +475,7 @@ const purchasePlacement = async ({
 
     // 15. Update discount tier if needed
     const newTier = await calculateDiscountTier(newTotalSpent);
-    if (newTier.discount !== user.current_discount) {
+    if (newTier.discount !== parseFloat(user.current_discount)) {
       await client.query(
         'UPDATE users SET current_discount = $1 WHERE id = $2',
         [newTier.discount, userId]
