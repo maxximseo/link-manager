@@ -390,13 +390,20 @@ const deleteProjectLink = async (projectId, linkId, userId) => {
     const result = await query(`
       DELETE FROM project_links pl
       USING projects p
-      WHERE pl.id = $1 
-        AND pl.project_id = $2 
-        AND p.id = pl.project_id 
+      WHERE pl.id = $1
+        AND pl.project_id = $2
+        AND p.id = pl.project_id
         AND p.user_id = $3
       RETURNING pl.id
     `, [linkId, projectId, userId]);
-    
+
+    // Clear cache after link deletion
+    if (result.rows.length > 0) {
+      const cache = require('./cache.service');
+      await cache.delPattern(`projects:user:${userId}:*`);
+      await cache.delPattern('wp:content:*');
+    }
+
     return result.rows.length > 0;
   } catch (error) {
     logger.error('Delete project link error:', error);
