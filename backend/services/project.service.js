@@ -521,7 +521,14 @@ const deleteProjectArticle = async (projectId, articleId, userId) => {
       WHERE pa.id = $1 AND pa.project_id = $2 AND p.id = pa.project_id AND p.user_id = $3
       RETURNING pa.id
     `, [articleId, projectId, userId]);
-    
+
+    // Clear cache after article deletion
+    if (result.rows.length > 0) {
+      const cache = require('./cache.service');
+      await cache.delPattern(`projects:user:${userId}:*`);
+      await cache.delPattern('wp:content:*');
+    }
+
     return result.rows.length > 0;
   } catch (error) {
     logger.error('Delete project article error:', error);
