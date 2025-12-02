@@ -848,7 +848,7 @@ const renewPlacement = async (placementId, userId, isAutoRenewal = false) => {
       // Standard renewal pricing
       basePrice = PRICING.LINK_HOMEPAGE;
       baseRenewalDiscount = PRICING.BASE_RENEWAL_DISCOUNT;
-      personalDiscount = placement.current_discount || 0;
+      personalDiscount = parseFloat(placement.current_discount) || 0;
 
       // Apply both discounts sequentially
       const priceAfterBaseDiscount = basePrice * (1 - baseRenewalDiscount / 100);
