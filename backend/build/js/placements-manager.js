@@ -662,6 +662,9 @@ async function toggleAutoRenewal(placementId, enabled) {
 
         showAlert(`Автопродление ${enabled ? 'включено' : 'выключено'}`, 'success');
 
+        // Reload to sync checkbox state with database
+        await loadActivePlacements();
+
     } catch (error) {
         console.error('Failed to toggle auto-renewal:', error);
         showAlert('Ошибка изменения автопродления', 'danger');
