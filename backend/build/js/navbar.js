@@ -228,12 +228,25 @@ Navbar.loadModerationBadge = async function() {
 
 /**
  * Load notifications for current user
- * Updates badge count and dropdown list
+ * Uses localStorage cache for instant display, then fetches fresh data
  */
 Navbar.loadNotifications = async function() {
     const token = localStorage.getItem('token');
     if (!token) return;
 
+    // 1. Show cached data immediately (instant UI)
+    const cached = localStorage.getItem('notifications_cache');
+    if (cached) {
+        try {
+            const { notifications, unreadCount, timestamp } = JSON.parse(cached);
+            // Use cache if less than 5 minutes old
+            if (Date.now() - timestamp < 300000) {
+                Navbar.displayNotifications(notifications, unreadCount);
+            }
+        } catch (e) { /* ignore cache errors */ }
+    }
+
+    // 2. Fetch fresh data in background
     try {
         const response = await fetch('/api/notifications?limit=20', {
             headers: {
@@ -247,19 +260,34 @@ Navbar.loadNotifications = async function() {
         const notifications = result.data || [];
         const unreadCount = result.pagination?.unread || notifications.filter(n => !n.read).length;
 
-        // Update badge
-        const badge = document.getElementById('notificationBadge');
-        if (badge) {
-            badge.textContent = unreadCount;
-            badge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
-        }
+        // Update UI
+        Navbar.displayNotifications(notifications, unreadCount);
 
-        // Update dropdown list
-        Navbar.updateNotificationsList(notifications);
+        // Cache for next page load
+        localStorage.setItem('notifications_cache', JSON.stringify({
+            notifications,
+            unreadCount,
+            timestamp: Date.now()
+        }));
 
     } catch (e) {
         console.error('Error loading notifications:', e);
     }
+};
+
+/**
+ * Display notifications in UI (extracted for reuse)
+ */
+Navbar.displayNotifications = function(notifications, unreadCount) {
+    // Update badge
+    const badge = document.getElementById('notificationBadge');
+    if (badge) {
+        badge.textContent = unreadCount;
+        badge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
+    }
+
+    // Update dropdown list
+    Navbar.updateNotificationsList(notifications);
 };
 
 /**
