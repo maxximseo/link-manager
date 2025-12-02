@@ -55,7 +55,7 @@ class Navbar {
         return `<li class="nav-item dropdown">
                     <a class="nav-link position-relative" href="#" id="notificationsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-bell"></i>
-                        <span class="badge bg-danger rounded-pill position-absolute" id="notificationBadge" style="display: none; top: -5px; right: -10px; font-size: 0.65rem; padding: 3px 6px;">0</span>
+                        <span class="badge bg-light text-dark rounded-pill position-absolute" id="notificationBadge" style="display: none; top: -2px; right: -8px; font-size: 0.55rem; padding: 2px 5px;">0</span>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end notification-dropdown" id="notificationsList" style="min-width: 350px; max-height: 400px; overflow-y: auto;">
                         <li class="dropdown-header d-flex justify-content-between align-items-center px-3 py-2">
