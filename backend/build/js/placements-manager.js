@@ -442,6 +442,17 @@ function renderScheduledPlacements(placements) {
             <td>#${p.id}</td>
             <td>${p.project_name || '—'}</td>
             <td><a href="${displayUrl}" target="_blank">${displayUrl}</a></td>
+            <td class="fw-bold text-primary">${formattedDate}</td>
+            <td>${formatDate(p.purchased_at)}</td>
+            <td>$${finalPrice.toFixed(2)}</td>
+            <td>
+                <button class="btn btn-xs btn-success" onclick="publishNow(${p.id})" title="Опубликовать сейчас">
+                    <i class="bi bi-send-fill"></i> Опубл.
+                </button>
+                <button class="btn btn-xs btn-outline-danger ms-1" onclick="cancelScheduledPlacement(${p.id})" title="Удалить размещение">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
             <td class="${drClass}">${drValue}</td>
             <td class="${daClass}">${daValue}</td>
             <td class="${tfClass}">${tfValue}</td>
@@ -454,17 +465,6 @@ function renderScheduledPlacements(placements) {
             <td class="text-muted">${geoValue}</td>
             <td>${siteTypeBadge}</td>
             <td>${typeBadge}</td>
-            <td class="fw-bold text-primary">${formattedDate}</td>
-            <td>${formatDate(p.purchased_at)}</td>
-            <td>$${finalPrice.toFixed(2)}</td>
-            <td>
-                <button class="btn btn-xs btn-success" onclick="publishNow(${p.id})" title="Опубликовать сейчас">
-                    <i class="bi bi-send-fill"></i> Опубл.
-                </button>
-                <button class="btn btn-xs btn-outline-danger ms-1" onclick="cancelScheduledPlacement(${p.id})" title="Удалить размещение">
-                    <i class="bi bi-trash"></i>
-                </button>
-            </td>
         `;
 
         tbody.appendChild(row);
