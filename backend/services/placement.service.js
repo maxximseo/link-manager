@@ -752,7 +752,13 @@ const getStatistics = async (userId) => {
       WHERE p.user_id = $1
     `, [userId]);
 
-    return result.rows[0];
+    // CRITICAL: PostgreSQL COUNT returns strings, must convert to numbers
+    const row = result.rows[0];
+    return {
+      total_placements: parseInt(row.total_placements) || 0,
+      total_links_placed: parseInt(row.total_links_placed) || 0,
+      total_articles_placed: parseInt(row.total_articles_placed) || 0
+    };
   } catch (error) {
     logger.error('Get placement statistics error:', error);
     throw error;
