@@ -1310,7 +1310,7 @@ const refundPlacementInTransaction = async (client, placement) => {
   let newTierName = null;
   const newTier = await calculateDiscountTier(totalSpentAfter);
 
-  if (newTier.discount !== user.current_discount) {
+  if (newTier.discount !== parseFloat(user.current_discount)) {
     await client.query(
       'UPDATE users SET current_discount = $1 WHERE id = $2',
       [newTier.discount, placement.user_id]
@@ -1321,7 +1321,7 @@ const refundPlacementInTransaction = async (client, placement) => {
 
     logger.info('Discount tier downgraded after refund', {
       userId: placement.user_id,
-      oldDiscount: user.current_discount,
+      oldDiscount: parseFloat(user.current_discount),
       newDiscount: newTier.discount,
       newTier: newTier.tier,
       totalSpentAfter
