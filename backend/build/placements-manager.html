@@ -59,16 +59,22 @@
             border-radius: 0.375rem;
         }
 
-        /* Table styling - smaller font only */
+        /* Table styling - compact font */
         .table {
-            font-size: 0.875rem;  /* Smaller font size */
+            font-size: 0.75rem;  /* Compact font size */
         }
 
-        /* Narrow "Сайт" column (3rd column) - reduce width by 3x */
-        .table th:nth-child(3),
-        .table td:nth-child(3) {
-            max-width: 150px;  /* Limit maximum width */
-            width: 150px;      /* Set fixed width */
+        .table th, .table td {
+            padding: 0.4rem 0.5rem;  /* Compact padding */
+        }
+
+        /* Narrow "Сайт" columns - compact width */
+        .table th:nth-child(4),
+        .table td:nth-child(4),
+        .table th:nth-child(15),
+        .table td:nth-child(15) {
+            max-width: 100px;  /* Compact width */
+            width: 100px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -234,19 +240,7 @@
                                         <th><input type="checkbox" id="selectAllActive" onchange="toggleAllActive(this)" title="Выбрать все"></th>
                                         <th>ID</th>
                                         <th>Проект</th>
-                                        <th>Сайт</th>
-                                        <th>DR</th>
-                                        <th>DA</th>
-                                        <th>TF</th>
-                                        <th>CF</th>
-                                        <th>RD</th>
-                                        <th>RDm</th>
-                                        <th>Norm</th>
-                                        <th>KW</th>
-                                        <th>Traf</th>
-                                        <th>GEO</th>
-                                        <th>Сайт</th>
-                                        <th>Тип</th>
+                                        <th>Площадка</th>
                                         <th class="sortable-header" onclick="sortActiveBy('published')">
                                             Опубликовано
                                             <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
@@ -258,6 +252,18 @@
                                         <th>Цена</th>
                                         <th>Автопродление</th>
                                         <th>Действия</th>
+                                        <th>DR</th>
+                                        <th>DA</th>
+                                        <th>TF</th>
+                                        <th>CF</th>
+                                        <th>RD</th>
+                                        <th>RDm</th>
+                                        <th>Norm</th>
+                                        <th>KW</th>
+                                        <th>Traf</th>
+                                        <th>GEO</th>
+                                        <th>Тип сайта</th>
+                                        <th>Тип</th>
                                     </tr>
                                 </thead>
                                 <tbody id="activePlacementsTable">
