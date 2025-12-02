@@ -705,6 +705,12 @@ const approvePlacement = async (placementId, adminId) => {
       });
     }
 
+    // Clear cache after approval
+    const cache = require('./cache.service');
+    await cache.delPattern(`placements:user:${placement.user_id}:*`);
+    await cache.delPattern(`projects:user:${placement.user_id}:*`);
+    await cache.delPattern('wp:content:*');
+
     logger.info('Placement approved by admin', {
       placementId,
       adminId,
