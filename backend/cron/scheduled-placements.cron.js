@@ -171,15 +171,14 @@ async function processScheduledPlacements() {
               refundAmount
             });
 
-            // Send notification about failure WITH refund
+            // Send notification about failure WITH refund (no technical details for user)
             await query(`
               INSERT INTO notifications (user_id, type, title, message)
               VALUES ($1, 'placement_failed_refund', $2, $3)
             `, [
               placement.user_id,
-              'Возврат средств за неудавшееся размещение',
-              `Запланированное размещение #${placement.id} не удалось опубликовать. ` +
-              `Причина: ${error.message}. ` +
+              'Возврат средств',
+              `Размещение #${placement.id} на сайте "${placement.site_name}" не удалось опубликовать. ` +
               `Сумма $${refundAmount.toFixed(2)} автоматически возвращена на ваш баланс.`
             ]);
 
