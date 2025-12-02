@@ -460,9 +460,9 @@ const addProjectArticle = async (projectId, userId, articleData) => {
     const finalSlug = slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     
     const result = await query(
-      `INSERT INTO project_articles 
-       (project_id, title, content, excerpt, meta_title, meta_description, featured_image, slug, status, tags, category) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
+      `INSERT INTO project_articles
+       (project_id, title, content, excerpt, meta_title, meta_description, featured_image, slug, status, tags, category)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        RETURNING *`,
       [
         projectId, title, content, excerpt || null,
@@ -471,7 +471,11 @@ const addProjectArticle = async (projectId, userId, articleData) => {
         tags || null, category || null
       ]
     );
-    
+
+    // Clear cache after adding article
+    const cache = require('./cache.service');
+    await cache.delPattern(`projects:user:${userId}:*`);
+
     return result.rows[0];
   } catch (error) {
     logger.error('Add project article error:', error);
