@@ -420,7 +420,8 @@ Navbar.markAllNotificationsRead = async function(event) {
             }
         });
 
-        // Reload notifications
+        // Clear cache and reload
+        localStorage.removeItem('notifications_cache');
         await Navbar.loadNotifications();
     } catch (e) {
         console.error('Error marking all notifications as read:', e);
