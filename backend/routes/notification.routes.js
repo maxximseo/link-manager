@@ -11,43 +11,34 @@ const logger = require('../config/logger');
 
 /**
  * GET /api/notifications
- * Get user notifications
+ * Get user notifications (OPTIMIZED: single query with window function)
  */
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const { page = 1, limit = 50, unreadOnly = false } = req.query;
+    const { page = 1, limit = 20, unreadOnly = false } = req.query;
     const offset = (page - 1) * limit;
 
-    let whereClause = 'WHERE user_id = $1';
-    const params = [req.user.id];
-
-    if (unreadOnly === 'true') {
-      whereClause += ' AND read = false';
-    }
-
+    // Single optimized query with counts
     const result = await query(`
-      SELECT *
-      FROM notifications
-      ${whereClause}
-      ORDER BY created_at DESC
-      LIMIT $2 OFFSET $3
-    `, [req.user.id, limit, offset]);
-
-    // Get total count
-    const countResult = await query(`
       SELECT
-        COUNT(*) as total,
-        COUNT(CASE WHEN read = false THEN 1 END) as unread
-      FROM notifications
-      ${whereClause}
-    `, [req.user.id]);
+        n.*,
+        (SELECT COUNT(*) FROM notifications WHERE user_id = $1) as total_count,
+        (SELECT COUNT(*) FROM notifications WHERE user_id = $1 AND read = false) as unread_count
+      FROM notifications n
+      WHERE n.user_id = $1 ${unreadOnly === 'true' ? 'AND n.read = false' : ''}
+      ORDER BY n.created_at DESC
+      LIMIT $2 OFFSET $3
+    `, [req.user.id, parseInt(limit), parseInt(offset)]);
 
-    const total = parseInt(countResult.rows[0].total);
-    const unread = parseInt(countResult.rows[0].unread);
+    const total = parseInt(result.rows[0]?.total_count || 0);
+    const unread = parseInt(result.rows[0]?.unread_count || 0);
+
+    // Remove count columns from response
+    const notifications = result.rows.map(({ total_count, unread_count, ...n }) => n);
 
     res.json({
       success: true,
-      data: result.rows,
+      data: notifications,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
