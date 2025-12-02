@@ -263,6 +263,11 @@ const updateProjectLink = async (projectId, linkId, userId, linkData) => {
       return null;
     }
 
+    // Clear cache after link update
+    const cache = require('./cache.service');
+    await cache.delPattern(`projects:user:${userId}:*`);
+    await cache.delPattern('wp:content:*');
+
     return result.rows[0];
   } catch (error) {
     logger.error('Update project link error:', error);
