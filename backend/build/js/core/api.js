@@ -131,7 +131,7 @@ class APIClient {
 
     // --- Методы для размещений ---
     async getPlacements() {
-        return this.get('/api/placements');
+        return this.get('/api/placements?limit=5000');
     }
 
     async createPlacement(project_id, site_id, link_ids, article_ids) {

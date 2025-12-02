@@ -88,7 +88,7 @@
         <!-- Page Header with Create Button -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>Мои Проекты</h1>
-            <button class="btn btn-primary" onclick="showCreateModal()">
+            <button class="btn btn-light border" style="background: white !important; color: #333 !important;" onclick="showCreateModal()">
                 <i class="bi bi-plus-circle"></i> Создать проект
             </button>
         </div>
@@ -328,12 +328,8 @@
                             </td>
                             <td>${mainUrl}</td>
                             <td>${createdDate}</td>
-                            <td>
-                                <span class="badge bg-purple">${p.links_count || 0}</span>
-                            </td>
-                            <td>
-                                <span class="badge bg-success">${p.articles_count || 0}</span>
-                            </td>
+                            <td>${p.links_count || 0}</td>
+                            <td>${p.articles_count || 0}</td>
                             <td>$${totalSpent.toFixed(2)}</td>
                             <td>
                                 <a href="/placements-manager.html?projectId=${p.id}&tab=active"
@@ -350,10 +346,10 @@
                                 </a>
                             </td>
                             <td>
-                                <button class="btn btn-xs btn-purple me-1" onclick="editProject(${p.id})" title="Редактировать">
+                                <button class="btn btn-xs btn-light border" style="background: white !important; color: #333 !important;" onclick="editProject(${p.id})" title="Редактировать">
                                     <i class="bi bi-pencil"></i>
                                 </button>
-                                <button class="btn btn-xs btn-purple" onclick="deleteProject(${p.id})" title="Удалить">
+                                <button class="btn btn-xs btn-light border" style="background: white !important; color: #333 !important;" onclick="deleteProject(${p.id})" title="Удалить">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </td>

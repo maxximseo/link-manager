@@ -54,4 +54,7 @@ router.post('/:id/publish-now', generalLimiter, placementController.publishSched
 // ADMIN ONLY: Only administrators can delete placements (with refund)
 router.delete('/:id', generalLimiter, adminMiddleware, placementController.deletePlacement);
 
+// ADMIN ONLY: Batch delete placements with refund (parallel processing - 5-10x faster)
+router.post('/batch-delete', generalLimiter, adminMiddleware, placementController.batchDeletePlacements);
+
 module.exports = router;

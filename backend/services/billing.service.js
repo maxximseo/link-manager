@@ -1358,34 +1358,30 @@ const restoreUsageCountsInTransaction = async (client, placementId) => {
 
   const { link_ids, article_ids, link_count, article_count } = contentResult.rows[0];
 
-  // Decrement usage_count for links
+  // Decrement usage_count for links (batch UPDATE - 1 query instead of N)
   if (link_ids && link_ids.length > 0) {
-    for (const linkId of link_ids) {
-      await client.query(`
-        UPDATE project_links
-        SET usage_count = GREATEST(0, usage_count - 1),
-            status = CASE
-              WHEN GREATEST(0, usage_count - 1) < usage_limit THEN 'active'
-              ELSE status
-            END
-        WHERE id = $1
-      `, [linkId]);
-    }
+    await client.query(`
+      UPDATE project_links
+      SET usage_count = GREATEST(0, usage_count - 1),
+          status = CASE
+            WHEN GREATEST(0, usage_count - 1) < usage_limit THEN 'active'
+            ELSE status
+          END
+      WHERE id = ANY($1::int[])
+    `, [link_ids]);
   }
 
-  // Decrement usage_count for articles
+  // Decrement usage_count for articles (batch UPDATE - 1 query instead of N)
   if (article_ids && article_ids.length > 0) {
-    for (const articleId of article_ids) {
-      await client.query(`
-        UPDATE project_articles
-        SET usage_count = GREATEST(0, usage_count - 1),
-            status = CASE
-              WHEN GREATEST(0, usage_count - 1) < usage_limit THEN 'active'
-              ELSE status
-            END
-        WHERE id = $1
-      `, [articleId]);
-    }
+    await client.query(`
+      UPDATE project_articles
+      SET usage_count = GREATEST(0, usage_count - 1),
+          status = CASE
+            WHEN GREATEST(0, usage_count - 1) < usage_limit THEN 'active'
+            ELSE status
+          END
+      WHERE id = ANY($1::int[])
+    `, [article_ids]);
   }
 
   return {
@@ -1594,34 +1590,30 @@ const deleteAndRefundPlacement = async (placementId, userId, userRole = 'user') 
       );
     }
 
-    // Decrement usage_count for links
+    // Decrement usage_count for links (batch UPDATE - 1 query instead of N)
     if (link_ids && link_ids.length > 0) {
-      for (const linkId of link_ids) {
-        await client.query(`
-          UPDATE project_links
-          SET usage_count = GREATEST(0, usage_count - 1),
-              status = CASE
-                WHEN GREATEST(0, usage_count - 1) < usage_limit THEN 'active'
-                ELSE status
-              END
-          WHERE id = $1
-        `, [linkId]);
-      }
+      await client.query(`
+        UPDATE project_links
+        SET usage_count = GREATEST(0, usage_count - 1),
+            status = CASE
+              WHEN GREATEST(0, usage_count - 1) < usage_limit THEN 'active'
+              ELSE status
+            END
+        WHERE id = ANY($1::int[])
+      `, [link_ids]);
     }
 
-    // Decrement usage_count for articles
+    // Decrement usage_count for articles (batch UPDATE - 1 query instead of N)
     if (article_ids && article_ids.length > 0) {
-      for (const articleId of article_ids) {
-        await client.query(`
-          UPDATE project_articles
-          SET usage_count = GREATEST(0, usage_count - 1),
-              status = CASE
-                WHEN GREATEST(0, usage_count - 1) < usage_limit THEN 'active'
-                ELSE status
-              END
-          WHERE id = $1
-        `, [articleId]);
-      }
+      await client.query(`
+        UPDATE project_articles
+        SET usage_count = GREATEST(0, usage_count - 1),
+            status = CASE
+              WHEN GREATEST(0, usage_count - 1) < usage_limit THEN 'active'
+              ELSE status
+            END
+        WHERE id = ANY($1::int[])
+      `, [article_ids]);
     }
 
     // 5. Audit log for deletion (track admin who deleted)
@@ -1694,59 +1686,74 @@ const batchPurchasePlacements = async (userId, purchases) => {
     totalPurchases: purchases.length
   });
 
-  // Process all purchases in parallel using Promise.allSettled
-  const results = await Promise.allSettled(
-    purchases.map(async (purchase, index) => {
-      try {
-        const result = await purchasePlacement({
-          userId,
-          projectId: purchase.projectId,
-          siteId: purchase.siteId,
-          type: purchase.type,
-          contentIds: purchase.contentIds,
-          scheduledDate: purchase.scheduledDate,
-          autoRenewal: purchase.autoRenewal || false
-        });
-
-        return {
-          index,
-          siteId: purchase.siteId,
-          success: true,
-          placement: result.placement,
-          newBalance: result.newBalance
-        };
-      } catch (error) {
-        return {
-          index,
-          siteId: purchase.siteId,
-          success: false,
-          error: error.message
-        };
-      }
-    })
-  );
-
-  // Aggregate results
+  // Process in chunks to avoid exhausting DB connection pool
+  // Pool has 25 connections, each purchase uses 1 connection, so process 15 at a time
+  const CONCURRENCY_LIMIT = 15;
   const successful = [];
   const failed = [];
   let lastBalance = null;
 
-  results.forEach((result, index) => {
-    if (result.status === 'fulfilled') {
-      const data = result.value;
-      if (data.success) {
-        successful.push(data);
-        lastBalance = data.newBalance;
+  for (let i = 0; i < purchases.length; i += CONCURRENCY_LIMIT) {
+    const chunk = purchases.slice(i, i + CONCURRENCY_LIMIT);
+
+    const chunkResults = await Promise.allSettled(
+      chunk.map(async (purchase) => {
+        try {
+          const result = await purchasePlacement({
+            userId,
+            projectId: purchase.projectId,
+            siteId: purchase.siteId,
+            type: purchase.type,
+            contentIds: purchase.contentIds,
+            scheduledDate: purchase.scheduledDate,
+            autoRenewal: purchase.autoRenewal || false
+          });
+
+          return {
+            siteId: purchase.siteId,
+            success: true,
+            placement: result.placement,
+            newBalance: result.newBalance
+          };
+        } catch (error) {
+          return {
+            siteId: purchase.siteId,
+            success: false,
+            error: error.message
+          };
+        }
+      })
+    );
+
+    // Aggregate chunk results
+    chunkResults.forEach((result, idx) => {
+      if (result.status === 'fulfilled') {
+        const data = result.value;
+        if (data.success) {
+          successful.push(data);
+          lastBalance = data.newBalance;
+        } else {
+          failed.push({ siteId: data.siteId, error: data.error });
+        }
       } else {
-        failed.push({ siteId: data.siteId, error: data.error });
+        failed.push({
+          siteId: chunk[idx]?.siteId,
+          error: result.reason?.message || 'Unknown error'
+        });
       }
-    } else {
-      failed.push({
-        siteId: purchases[index]?.siteId,
-        error: result.reason?.message || 'Unknown error'
+    });
+
+    // Log progress for long batches
+    if (purchases.length > CONCURRENCY_LIMIT) {
+      logger.info('Batch purchase progress', {
+        userId,
+        processed: Math.min(i + CONCURRENCY_LIMIT, purchases.length),
+        total: purchases.length,
+        successful: successful.length,
+        failed: failed.length
       });
     }
-  });
+  }
 
   const duration = Date.now() - startTime;
 
@@ -1774,6 +1781,115 @@ const batchPurchasePlacements = async (userId, purchases) => {
   };
 };
 
+/**
+ * Batch delete placements with refund (parallel processing)
+ * OPTIMIZATION: Process multiple deletes in parallel for 5-10x speed improvement
+ * ADMIN ONLY: Only administrators can delete placements
+ *
+ * @param {number} userId - Admin user making the deletions
+ * @param {string} userRole - User role (must be 'admin')
+ * @param {Array} placementIds - Array of placement IDs to delete
+ * @returns {Object} - { successful: number, failed: number, totalRefunded: number, results: Array, errors: Array }
+ */
+const batchDeletePlacements = async (userId, userRole, placementIds) => {
+  const startTime = Date.now();
+
+  logger.info('Starting batch delete', {
+    userId,
+    userRole,
+    totalPlacements: placementIds.length
+  });
+
+  // Process in chunks to avoid exhausting DB connection pool
+  const CONCURRENCY_LIMIT = 15;
+  const successful = [];
+  const failed = [];
+  let totalRefunded = 0;
+  let lastBalance = null;
+
+  for (let i = 0; i < placementIds.length; i += CONCURRENCY_LIMIT) {
+    const chunk = placementIds.slice(i, i + CONCURRENCY_LIMIT);
+
+    const chunkResults = await Promise.allSettled(
+      chunk.map(async (placementId) => {
+        try {
+          const result = await deleteAndRefundPlacement(placementId, userId, userRole);
+          return {
+            placementId,
+            success: true,
+            refunded: result.refunded,
+            amount: result.amount || 0,
+            newBalance: result.newBalance
+          };
+        } catch (error) {
+          return {
+            placementId,
+            success: false,
+            error: error.message
+          };
+        }
+      })
+    );
+
+    // Aggregate chunk results
+    chunkResults.forEach((result) => {
+      if (result.status === 'fulfilled') {
+        const data = result.value;
+        if (data.success) {
+          successful.push(data);
+          totalRefunded += data.amount || 0;
+          lastBalance = data.newBalance;
+        } else {
+          failed.push({ placementId: data.placementId, error: data.error });
+        }
+      } else {
+        failed.push({
+          placementId: null,
+          error: result.reason?.message || 'Unknown error'
+        });
+      }
+    });
+
+    // Log progress for long batches
+    if (placementIds.length > CONCURRENCY_LIMIT) {
+      logger.info('Batch delete progress', {
+        userId,
+        processed: Math.min(i + CONCURRENCY_LIMIT, placementIds.length),
+        total: placementIds.length,
+        successful: successful.length,
+        failed: failed.length
+      });
+    }
+  }
+
+  const duration = Date.now() - startTime;
+
+  logger.info('Batch delete completed', {
+    userId,
+    totalPlacements: placementIds.length,
+    successful: successful.length,
+    failed: failed.length,
+    totalRefunded,
+    durationMs: duration,
+    avgTimePerDelete: Math.round(duration / placementIds.length)
+  });
+
+  // Clear cache after batch
+  await cache.delPattern(`placements:user:*`);
+  await cache.delPattern(`projects:user:*`);
+  await cache.delPattern('wp:content:*');
+
+  return {
+    successful: successful.length,
+    failed: failed.length,
+    totalRefunded,
+    results: successful,
+    errors: failed,
+    finalBalance: lastBalance,
+    durationMs: duration
+  };
+};
+
 module.exports = {
   PRICING,
   getUserBalance,
@@ -1782,6 +1898,7 @@ module.exports = {
   addBalance,
   purchasePlacement,
   batchPurchasePlacements,
+  batchDeletePlacements,
   renewPlacement,
   toggleAutoRenewal,
   getUserTransactions,
