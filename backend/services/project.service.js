@@ -487,17 +487,24 @@ const addProjectArticle = async (projectId, userId, articleData) => {
 const updateProjectArticle = async (projectId, articleId, userId, articleData) => {
   try {
     const { title, content, excerpt, meta_title, meta_description, featured_image, slug, tags, category } = articleData;
-    
+
     const result = await query(`
       UPDATE project_articles pa
-      SET title = $1, content = $2, excerpt = $3, meta_title = $4, 
-          meta_description = $5, featured_image = $6, slug = $7, 
+      SET title = $1, content = $2, excerpt = $3, meta_title = $4,
+          meta_description = $5, featured_image = $6, slug = $7,
           tags = $8, category = $9, updated_at = CURRENT_TIMESTAMP
       FROM projects p
       WHERE pa.id = $10 AND pa.project_id = $11 AND p.id = pa.project_id AND p.user_id = $12
       RETURNING pa.*
     `, [title, content, excerpt, meta_title, meta_description, featured_image, slug, tags, category, articleId, projectId, userId]);
-    
+
+    // Clear cache after article update
+    if (result.rows.length > 0) {
+      const cache = require('./cache.service');
+      await cache.delPattern(`projects:user:${userId}:*`);
+      await cache.delPattern('wp:content:*');
+    }
+
     return result.rows.length > 0 ? result.rows[0] : null;
   } catch (error) {
     logger.error('Update project article error:', error);
