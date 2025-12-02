@@ -403,9 +403,9 @@ Navbar.deleteNotification = async function(event, notificationId) {
 };
 
 /**
- * Mark all notifications as read
+ * Delete all notifications
  */
-Navbar.markAllNotificationsRead = async function(event) {
+Navbar.deleteAllNotifications = async function(event) {
     event.preventDefault();
     event.stopPropagation();
 
@@ -413,8 +413,8 @@ Navbar.markAllNotificationsRead = async function(event) {
     if (!token) return;
 
     try {
-        await fetch('/api/notifications/mark-all-read', {
-            method: 'PATCH',
+        await fetch('/api/notifications/all', {
+            method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -424,6 +424,6 @@ Navbar.markAllNotificationsRead = async function(event) {
         localStorage.removeItem('notifications_cache');
         await Navbar.loadNotifications();
     } catch (e) {
-        console.error('Error marking all notifications as read:', e);
+        console.error('Error deleting notifications:', e);
     }
 };
