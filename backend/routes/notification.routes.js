@@ -165,6 +165,36 @@ router.patch('/mark-all-read', authMiddleware, async (req, res) => {
 });
 
 /**
+ * DELETE /api/notifications/all
+ * Delete all notifications for current user
+ */
+router.delete('/all', authMiddleware, async (req, res) => {
+  try {
+    const result = await query(`
+      DELETE FROM notifications
+      WHERE user_id = $1
+    `, [req.user.id]);
+
+    // Clear notification cache for this user
+    await cache.delPattern(`notifications:${req.user.id}:*`);
+
+    res.json({
+      success: true,
+      data: {
+        deletedCount: result.rowCount || 0
+      }
+    });
+
+  } catch (error) {
+    logger.error('Failed to delete all notifications', {
+      userId: req.user.id,
+      error: error.message
+    });
+    res.status(500).json({ error: 'Failed to delete notifications' });
+  }
+});
+
+/**
  * DELETE /api/notifications/:id
  * Delete a notification
  */
