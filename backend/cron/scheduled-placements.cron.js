@@ -191,15 +191,14 @@ async function processScheduledPlacements() {
               WHERE id = $1
             `, [placement.id]);
 
-            // Send notification about failure (no refund)
+            // Send notification about failure (no refund, no technical details)
             await query(`
               INSERT INTO notifications (user_id, type, title, message)
               VALUES ($1, 'placement_failed', $2, $3)
             `, [
               placement.user_id,
               'Ошибка публикации',
-              `Не удалось опубликовать запланированное размещение #${placement.id}. ` +
-              `Причина: ${error.message}.`
+              `Размещение #${placement.id} на сайте "${placement.site_name}" не удалось опубликовать. Обратитесь в поддержку.`
             ]);
           }
 
