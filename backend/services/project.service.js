@@ -142,6 +142,13 @@ const updateProject = async (projectId, userId, data) => {
       [name, main_site_url, projectId, userId]
     );
 
+    // Clear cache after project update
+    if (result.rows.length > 0) {
+      const cache = require('./cache.service');
+      await cache.delPattern(`projects:user:${userId}:*`);
+      await cache.delPattern(`placements:user:${userId}:*`);
+    }
+
     return result.rows.length > 0 ? result.rows[0] : null;
   } catch (error) {
     logger.error('Update project error:', error);
