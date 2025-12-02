@@ -145,6 +145,9 @@ router.patch('/mark-all-read', authMiddleware, async (req, res) => {
       RETURNING COUNT(*) as count
     `, [req.user.id]);
 
+    // Clear notification cache for this user
+    await cache.delPattern(`notifications:${req.user.id}:*`);
+
     res.json({
       success: true,
       data: {
