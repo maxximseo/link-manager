@@ -507,15 +507,16 @@ const purchasePlacement = async ({
       JSON.stringify({ placementId: placement.id, type, siteId, siteName: site.site_name, projectId, projectName: project.name, price: finalPrice })
     ]);
 
-    // 18. NOTIFICATION: Create notification for all admins about purchase
+    // 18. NOTIFICATION: Create notification for other admins about purchase (exclude buyer to avoid duplicates)
     await client.query(`
       INSERT INTO notifications (user_id, type, title, message, metadata)
       SELECT id, 'admin_placement_purchased', $1, $2, $3
-      FROM users WHERE role = 'admin'
+      FROM users WHERE role = 'admin' AND id != $4
     `, [
       'Новая покупка',
       `Пользователь "${user.username}" купил ${typeLabel === 'ссылка' ? 'ссылку' : 'статью'} на "${site.site_name}" за $${finalPrice.toFixed(2)}.`,
-      JSON.stringify({ placementId: placement.id, userId, username: user.username, type, siteId, siteName: site.site_name, projectId, projectName: project.name, price: finalPrice })
+      JSON.stringify({ placementId: placement.id, userId, username: user.username, type, siteId, siteName: site.site_name, projectId, projectName: project.name, price: finalPrice }),
+      userId
     ]);
 
     // 19. OPTIMIZATION: Publish AFTER transaction commit (async)
