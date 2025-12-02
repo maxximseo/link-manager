@@ -304,16 +304,10 @@ Navbar.updateNotificationsList = function(notifications) {
         });
 
         li.innerHTML = `
-            <div class="dropdown-item d-flex align-items-start ${bgClass} py-2" style="white-space: normal;">
-                <div class="flex-grow-1 me-2">
-                    <div class="${fontClass} small">${Navbar.escapeHtml(notification.title)}</div>
-                    <div class="text-muted small text-truncate" style="max-width: 280px;" title="${Navbar.escapeHtml(notification.message)}">${Navbar.escapeHtml(notification.message)}</div>
-                    <div class="text-muted" style="font-size: 0.7rem;">${dateStr}</div>
-                </div>
-                <div class="d-flex flex-column gap-1">
-                    ${isUnread ? `<button class="btn btn-link btn-sm p-0 text-muted" onclick="Navbar.markNotificationRead(event, ${notification.id})" title="Отметить как прочитанное"><i class="bi bi-check"></i></button>` : ''}
-                    <button class="btn btn-link btn-sm p-0 text-danger" onclick="Navbar.deleteNotification(event, ${notification.id})" title="Удалить"><i class="bi bi-x"></i></button>
-                </div>
+            <div class="dropdown-item ${bgClass} py-2" style="white-space: normal;">
+                <div class="${fontClass} small">${Navbar.escapeHtml(notification.title)}</div>
+                <div class="text-muted small" style="max-width: 300px;">${Navbar.escapeHtml(notification.message)}</div>
+                <div class="text-muted" style="font-size: 0.7rem;">${dateStr}</div>
             </div>
         `;
         listContainer.appendChild(li);
