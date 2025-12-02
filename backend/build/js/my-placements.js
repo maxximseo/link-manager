@@ -70,7 +70,7 @@ async function loadBalance() {
  */
 async function loadActivePlacements() {
     try {
-        const response = await fetch('/api/placements?status=placed', {
+        const response = await fetch('/api/placements?status=placed&limit=5000', {
             headers: { 'Authorization': `Bearer ${getToken()}` }
         });
 
@@ -188,7 +188,7 @@ function renderActivePlacements(placements) {
  */
 async function loadScheduledPlacements() {
     try {
-        const response = await fetch('/api/placements?status=scheduled', {
+        const response = await fetch('/api/placements?status=scheduled&limit=5000', {
             headers: { 'Authorization': `Bearer ${getToken()}` }
         });
 
@@ -334,7 +334,7 @@ function renderHistoryPlacements(placements) {
  */
 async function updateTabCounts() {
     try {
-        const response = await fetch('/api/placements', {
+        const response = await fetch('/api/placements?limit=5000', {
             headers: { 'Authorization': `Bearer ${getToken()}` }
         });
 

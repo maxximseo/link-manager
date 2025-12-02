@@ -1341,58 +1341,26 @@
                 const totalPurchases = purchases.length;
                 showPurchaseProgressModal(totalPurchases);
 
-                console.log(`⚡ Starting ${totalPurchases} batch purchase requests...`);
+                console.log(`⚡ Starting batch purchase: ${totalPurchases} placements via single API call...`);
                 const startTime = performance.now();
 
-                // Batch processing - process in groups of 10 for faster parallel execution
-                const batchSize = 10;
-                let successful = 0;
-                let failed = 0;
-                const errors = [];
-                let processedCount = 0;
+                // Use new batch endpoint - all purchases processed in parallel on server
+                // This is 5-10x faster than individual requests
+                const result = await BillingAPI.batchPurchase(purchases);
 
-                for (let i = 0; i < purchases.length; i += batchSize) {
-                    // Check if user cancelled
-                    if (purchaseCancelled) {
-                        console.log('⚠️ Purchase cancelled by user');
-                        break;
-                    }
+                const successful = result.data?.successful || 0;
+                const failed = result.data?.failed || 0;
+                const errors = (result.data?.errors || []).map(e => ({
+                    site_id: e.siteId,
+                    error: e.error
+                }));
 
-                    const batch = purchases.slice(i, i + batchSize);
-
-                    // Get first site name in batch for display
-                    const firstSiteId = batch[0]?.siteId;
-                    const firstSite = filteredSites.find(s => s.id === firstSiteId);
-                    const currentSiteName = firstSite ? firstSite.site_name : null;
-
-                    // Process batch in parallel
-                    const batchResults = await Promise.allSettled(
-                        batch.map(data => BillingAPI.purchase(data))
-                    );
-
-                    // Count results from this batch
-                    batchResults.forEach((result, index) => {
-                        const purchaseData = batch[index];
-                        processedCount++;
-
-                        if (result.status === 'fulfilled') {
-                            successful++;
-                            console.log('Purchase successful:', purchaseData.siteId, result.value);
-                        } else {
-                            failed++;
-                            const errorMessage = result.reason?.message || String(result.reason);
-                            errors.push({ site_id: purchaseData.siteId, error: errorMessage });
-                            console.error('Failed placement purchase for site', purchaseData.siteId, ':', errorMessage);
-                        }
-                    });
-
-                    // Update progress UI
-                    const progress = Math.round((processedCount / totalPurchases) * 100);
-                    updatePurchaseProgress(progress, successful, failed, totalPurchases, currentSiteName);
-                }
+                // Update progress to 100%
+                updatePurchaseProgress(100, successful, failed, totalPurchases, null);
 
                 const endTime = performance.now();
-                console.log(`✅ Completed in ${((endTime - startTime) / 1000).toFixed(2)} seconds`);
+                const serverDuration = result.data?.durationMs || 0;
+                console.log(`✅ Completed in ${((endTime - startTime) / 1000).toFixed(2)}s (server: ${serverDuration}ms)`);
 
                 // Complete progress modal
                 completePurchaseProgress(successful, failed, errors);

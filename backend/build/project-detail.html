@@ -110,16 +110,11 @@
     <div id="navbar-container"></div>
 
     <div class="container mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <a href="/projects.html" class="btn btn-sm btn-outline-secondary mb-2">
-                    <i class="bi bi-arrow-left"></i> Назад к проектам
-                </a>
-                <h1 id="projectName">Загрузка...</h1>
-            </div>
-            <button class="btn btn-primary" onclick="editProject()">
-                <i class="bi bi-pencil"></i> Редактировать
-            </button>
+        <div class="mb-4">
+            <a href="/projects.html" class="btn btn-sm btn-light border mb-3" style="background: white !important; color: #333 !important;">
+                <i class="bi bi-arrow-left"></i> Назад к проектам
+            </a>
+            <h1 id="projectName" class="mt-2">Загрузка...</h1>
         </div>
 
         <!-- Tabs and Content in Single Card -->
@@ -128,12 +123,12 @@
             <ul class="nav nav-tabs" role="tablist">
                 <li class="nav-item">
                     <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#linksTab">
-                        <i class="bi bi-link-45deg"></i> Ссылки <span class="badge bg-purple" id="linksCount">0</span>
+                        <i class="bi bi-link-45deg"></i> Ссылки <span id="linksCount">0</span>
                     </button>
                 </li>
                 <li class="nav-item">
                     <button class="nav-link" data-bs-toggle="tab" data-bs-target="#articlesTab">
-                        <i class="bi bi-file-text"></i> Статьи <span class="badge bg-purple" id="articlesCount">0</span>
+                        <i class="bi bi-file-text"></i> Статьи <span id="articlesCount">0</span>
                     </button>
                 </li>
             </ul>
@@ -145,10 +140,10 @@
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h4>Ссылки проекта</h4>
                         <div class="btn-group">
-                            <button class="btn btn-primary" onclick="showAddLinkModal()">
+                            <button class="btn btn-light border" style="background: white !important; color: #333 !important;" onclick="showAddLinkModal()">
                                 <i class="bi bi-plus-circle"></i> Добавить ссылку
                             </button>
-                            <button class="btn btn-primary" onclick="showBulkImportModal()">
+                            <button class="btn btn-light border" style="background: white !important; color: #333 !important;" onclick="showBulkImportModal()">
                                 <i class="bi bi-file-earmark-text"></i> Массовое добавление
                             </button>
                         </div>
@@ -167,7 +162,7 @@
                 <div class="tab-pane fade" id="articlesTab">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h4>Статьи проекта</h4>
-                        <button class="btn btn-primary" onclick="showAddArticleModal()">
+                        <button class="btn btn-light border" style="background: white !important; color: #333 !important;" onclick="showAddArticleModal()">
                             <i class="bi bi-plus-circle"></i> Добавить статью
                         </button>
                     </div>

@@ -14,8 +14,6 @@ const wordpressService = require('../services/wordpress.service');
 async function processScheduledPlacements() {
   logger.info('Starting scheduled placements processing...');
 
-  const client = await pool.connect();
-
   try {
     const now = new Date();
 
@@ -34,8 +32,11 @@ async function processScheduledPlacements() {
 
     let successCount = 0;
     let failCount = 0;
+    const CONCURRENCY_LIMIT = 5; // Limit parallel WordPress HTTP calls
 
-    for (const placement of placements) {
+    // Helper function to process a single placement
+    const processPlacement = async (placement) => {
+      const placementClient = await pool.connect();
       try {
         logger.info('Processing scheduled placement', {
           placementId: placement.id,
@@ -44,10 +45,10 @@ async function processScheduledPlacements() {
           type: placement.type
         });
 
-        await client.query('BEGIN');
+        await placementClient.query('BEGIN');
 
         // Get content
-        const contentResult = await client.query(`
+        const contentResult = await placementClient.query(`
           SELECT
             pc.*,
             pl.url, pl.anchor_text,
@@ -83,7 +84,7 @@ async function processScheduledPlacements() {
           );
 
           // Update placement status
-          await client.query(`
+          await placementClient.query(`
             UPDATE placements
             SET status = 'placed',
                 published_at = NOW(),
@@ -99,7 +100,7 @@ async function processScheduledPlacements() {
 
         } else if (placement.type === 'link' && content.link_id) {
           // For links, just mark as placed (WordPress plugin will display them)
-          await client.query(`
+          await placementClient.query(`
             UPDATE placements
             SET status = 'placed',
                 published_at = NOW(),
@@ -113,7 +114,7 @@ async function processScheduledPlacements() {
         }
 
         // Send notification to user
-        await client.query(`
+        await placementClient.query(`
           INSERT INTO notifications (user_id, type, title, message)
           VALUES ($1, 'placement_published', $2, $3)
         `, [
@@ -122,12 +123,11 @@ async function processScheduledPlacements() {
           `Запланированное размещение #${placement.id} на сайте "${placement.site_name}" успешно опубликовано.`
         ]);
 
-        await client.query('COMMIT');
-
-        successCount++;
+        await placementClient.query('COMMIT');
+        return { success: true };
 
       } catch (error) {
-        await client.query('ROLLBACK');
+        await placementClient.query('ROLLBACK');
 
         logger.error('Failed to publish scheduled placement', {
           placementId: placement.id,
@@ -217,7 +217,28 @@ async function processScheduledPlacements() {
           }
         }
 
-        failCount++;
+        return { success: false };
+
+      } finally {
+        placementClient.release();
+      }
+    };
+
+    // Process placements in parallel chunks
+    for (let i = 0; i < placements.length; i += CONCURRENCY_LIMIT) {
+      const chunk = placements.slice(i, i + CONCURRENCY_LIMIT);
+
+      const chunkResults = await Promise.allSettled(
+        chunk.map(placement => processPlacement(placement))
+      );
+
+      // Count results
+      for (const result of chunkResults) {
+        if (result.status === 'fulfilled' && result.value.success) {
+          successCount++;
+        } else {
+          failCount++;
+        }
       }
     }
 
@@ -235,8 +256,6 @@ async function processScheduledPlacements() {
       stack: error.stack
     });
     throw error;
-  } finally {
-    client.release();
   }
 }
 

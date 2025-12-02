@@ -33,78 +33,98 @@ async function processAutoRenewals() {
 
     let successCount = 0;
     let failCount = 0;
+    const CONCURRENCY_LIMIT = 10;
 
-    for (const placement of placements) {
-      try {
-        logger.info('Processing auto-renewal', {
-          placementId: placement.id,
-          userId: placement.user_id,
-          expiresAt: placement.expires_at,
-          renewalPrice: placement.renewal_price,
-          userBalance: placement.balance
-        });
+    // Process placements in parallel chunks to avoid overwhelming the database
+    for (let i = 0; i < placements.length; i += CONCURRENCY_LIMIT) {
+      const chunk = placements.slice(i, i + CONCURRENCY_LIMIT);
 
-        // Check if user has sufficient balance
-        if (parseFloat(placement.balance) < parseFloat(placement.renewal_price)) {
-          logger.warn('Insufficient balance for auto-renewal', {
+      const chunkResults = await Promise.allSettled(
+        chunk.map(async (placement) => {
+          logger.info('Processing auto-renewal', {
             placementId: placement.id,
             userId: placement.user_id,
-            required: placement.renewal_price,
-            available: placement.balance
+            expiresAt: placement.expires_at,
+            renewalPrice: placement.renewal_price,
+            userBalance: placement.balance
           });
 
-          // Send notification about failed auto-renewal
+          // Check if user has sufficient balance
+          if (parseFloat(placement.balance) < parseFloat(placement.renewal_price)) {
+            logger.warn('Insufficient balance for auto-renewal', {
+              placementId: placement.id,
+              userId: placement.user_id,
+              required: placement.renewal_price,
+              available: placement.balance
+            });
+
+            // Send notification about failed auto-renewal
+            await query(`
+              INSERT INTO notifications (user_id, type, title, message)
+              VALUES ($1, 'auto_renewal_failed', $2, $3)
+            `, [
+              placement.user_id,
+              'Автопродление не удалось',
+              `Не удалось автоматически продлить размещение #${placement.id} из-за недостаточного баланса. ` +
+              `Требуется: $${placement.renewal_price}, Доступно: $${placement.balance}. ` +
+              `Пожалуйста, пополните баланс.`
+            ]);
+
+            return { success: false, reason: 'insufficient_balance' };
+          }
+
+          // Renew the placement
+          const renewalResult = await billingService.renewPlacement(
+            placement.id,
+            placement.user_id,
+            true // isAutoRenewal = true
+          );
+
+          logger.info('Auto-renewal successful', {
+            placementId: placement.id,
+            userId: placement.user_id,
+            newExpiryDate: renewalResult.newExpiryDate,
+            pricePaid: renewalResult.pricePaid
+          });
+
+          return { success: true };
+        })
+      );
+
+      // Process chunk results
+      for (let j = 0; j < chunkResults.length; j++) {
+        const result = chunkResults[j];
+        const placement = chunk[j];
+
+        if (result.status === 'fulfilled') {
+          if (result.value.success) {
+            successCount++;
+          } else {
+            failCount++;
+          }
+        } else {
+          // Promise rejected - error occurred
+          const error = result.reason;
+          logger.error('Auto-renewal failed for placement', {
+            placementId: placement.id,
+            userId: placement.user_id,
+            error: error.message,
+            stack: error.stack
+          });
+
+          // Send notification about error
           await query(`
             INSERT INTO notifications (user_id, type, title, message)
             VALUES ($1, 'auto_renewal_failed', $2, $3)
           `, [
             placement.user_id,
-            'Автопродление не удалось',
-            `Не удалось автоматически продлить размещение #${placement.id} из-за недостаточного баланса. ` +
-            `Требуется: $${placement.renewal_price}, Доступно: $${placement.balance}. ` +
-            `Пожалуйста, пополните баланс.`
+            'Ошибка автопродления',
+            `Произошла ошибка при автопродлении размещения #${placement.id}. ` +
+            `Причина: ${error.message}. Пожалуйста, свяжитесь с поддержкой.`
           ]);
 
           failCount++;
-          continue;
         }
-
-        // Renew the placement
-        const renewalResult = await billingService.renewPlacement(
-          placement.id,
-          placement.user_id,
-          true // isAutoRenewal = true
-        );
-
-        logger.info('Auto-renewal successful', {
-          placementId: placement.id,
-          userId: placement.user_id,
-          newExpiryDate: renewalResult.newExpiryDate,
-          pricePaid: renewalResult.pricePaid
-        });
-
-        successCount++;
-
-      } catch (error) {
-        logger.error('Auto-renewal failed for placement', {
-          placementId: placement.id,
-          userId: placement.user_id,
-          error: error.message,
-          stack: error.stack
-        });
-
-        // Send notification about error
-        await query(`
-          INSERT INTO notifications (user_id, type, title, message)
-          VALUES ($1, 'auto_renewal_failed', $2, $3)
-        `, [
-          placement.user_id,
-          'Ошибка автопродления',
-          `Произошла ошибка при автопродлении размещения #${placement.id}. ` +
-          `Причина: ${error.message}. Пожалуйста, свяжитесь с поддержкой.`
-        ]);
-
-        failCount++;
       }
     }
 
@@ -161,23 +181,35 @@ async function sendExpiryReminders() {
           )
       `);
 
-      for (const placement of result.rows) {
+      // Batch INSERT notifications (1 query instead of N)
+      if (result.rows.length > 0) {
+        const values = [];
+        const params = [];
+        let paramIndex = 1;
+
+        for (const placement of result.rows) {
+          values.push(`($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2}, $${paramIndex + 3}, $${paramIndex + 4})`);
+          params.push(
+            placement.user_id,
+            'placement_expiring',
+            'Размещение скоро истекает',
+            `Размещение #${placement.id} на сайте "${placement.site_name}" истекает через ${interval.message}. ` +
+            `Проект: "${placement.project_name}". ` +
+            `${placement.auto_renewal ? 'Автопродление включено.' : 'Вы можете продлить размещение вручную.'}`,
+            JSON.stringify({
+              placement_id: placement.id,
+              days_remaining: interval.days
+            })
+          );
+          paramIndex += 5;
+        }
+
         await query(`
           INSERT INTO notifications (user_id, type, title, message, metadata)
-          VALUES ($1, 'placement_expiring', $2, $3, $4)
-        `, [
-          placement.user_id,
-          `Размещение скоро истекает`,
-          `Размещение #${placement.id} на сайте "${placement.site_name}" истекает через ${interval.message}. ` +
-          `Проект: "${placement.project_name}". ` +
-          `${placement.auto_renewal ? 'Автопродление включено.' : 'Вы можете продлить размещение вручную.'}`,
-          JSON.stringify({
-            placement_id: placement.id,
-            days_remaining: interval.days
-          })
-        ]);
+          VALUES ${values.join(', ')}
+        `, params);
 
-        totalSent++;
+        totalSent += result.rows.length;
       }
 
       logger.info(`Sent ${result.rows.length} expiry reminders for ${interval.days} days`);

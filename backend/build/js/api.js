@@ -153,6 +153,11 @@ const BillingAPI = {
     toggleAutoRenewal: (placementId, enabled) => apiCall(`/billing/auto-renewal/${placementId}`, {
         method: 'PATCH',
         body: JSON.stringify({ enabled })
+    }),
+    // Batch purchase - process all purchases in parallel (5-10x faster)
+    batchPurchase: (purchases) => apiCall('/billing/batch-purchase', {
+        method: 'POST',
+        body: JSON.stringify({ purchases })
     })
 };
 
