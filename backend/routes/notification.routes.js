@@ -8,15 +8,24 @@ const router = express.Router();
 const authMiddleware = require('../middleware/auth');
 const { query } = require('../config/database');
 const logger = require('../config/logger');
+const cache = require('../services/cache.service');
 
 /**
  * GET /api/notifications
- * Get user notifications (OPTIMIZED: single query with window function)
+ * Get user notifications (OPTIMIZED: Redis cache + single query)
  */
 router.get('/', authMiddleware, async (req, res) => {
   try {
     const { page = 1, limit = 20, unreadOnly = false } = req.query;
     const offset = (page - 1) * limit;
+    const userId = req.user.id;
+
+    // Try cache first (60 second TTL)
+    const cacheKey = `notifications:${userId}:p${page}:l${limit}:u${unreadOnly}`;
+    const cached = await cache.get(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
 
     // Single optimized query with counts
     const result = await query(`
@@ -28,7 +37,7 @@ router.get('/', authMiddleware, async (req, res) => {
       WHERE n.user_id = $1 ${unreadOnly === 'true' ? 'AND n.read = false' : ''}
       ORDER BY n.created_at DESC
       LIMIT $2 OFFSET $3
-    `, [req.user.id, parseInt(limit), parseInt(offset)]);
+    `, [userId, parseInt(limit), parseInt(offset)]);
 
     const total = parseInt(result.rows[0]?.total_count || 0);
     const unread = parseInt(result.rows[0]?.unread_count || 0);
@@ -36,7 +45,7 @@ router.get('/', authMiddleware, async (req, res) => {
     // Remove count columns from response
     const notifications = result.rows.map(({ total_count, unread_count, ...n }) => n);
 
-    res.json({
+    const response = {
       success: true,
       data: notifications,
       pagination: {
@@ -46,7 +55,12 @@ router.get('/', authMiddleware, async (req, res) => {
         unread,
         pages: Math.ceil(total / limit)
       }
-    });
+    };
+
+    // Cache for 60 seconds
+    await cache.set(cacheKey, response, 60);
+
+    res.json(response);
 
   } catch (error) {
     logger.error('Failed to get notifications', { userId: req.user.id, error: error.message });
