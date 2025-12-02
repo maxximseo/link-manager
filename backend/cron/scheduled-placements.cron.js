@@ -123,15 +123,16 @@ async function processScheduledPlacements() {
           `Запланированное размещение #${placement.id} на сайте "${placement.site_name}" успешно опубликовано.`
         ]);
 
-        // Send notification to all admins
+        // Send notification to other admins (exclude placement owner to avoid duplicates)
         await placementClient.query(`
           INSERT INTO notifications (user_id, type, title, message, metadata)
           SELECT id, 'admin_placement_published', $1, $2, $3
-          FROM users WHERE role = 'admin'
+          FROM users WHERE role = 'admin' AND id != $4
         `, [
           'Размещение опубликовано',
           `Запланированное размещение #${placement.id} на сайте "${placement.site_name}" успешно опубликовано (${placement.type}).`,
-          JSON.stringify({ placementId: placement.id, type: placement.type, siteId: placement.site_id, siteName: placement.site_name, userId: placement.user_id })
+          JSON.stringify({ placementId: placement.id, type: placement.type, siteId: placement.site_id, siteName: placement.site_name, userId: placement.user_id }),
+          placement.user_id
         ]);
 
         await placementClient.query('COMMIT');
