@@ -1014,6 +1014,10 @@ const toggleAutoRenewal = async (placementId, userId, enabled) => {
       [enabled, placementId]
     );
 
+    // Clear cache after toggle so UI shows updated data
+    const cache = require('./cache.service');
+    await cache.delPattern(`placements:user:${userId}:*`);
+
     logger.info('Auto-renewal toggled', { placementId, userId, enabled });
 
     return { success: true, enabled };
