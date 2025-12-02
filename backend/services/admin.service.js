@@ -762,11 +762,37 @@ const rejectPlacement = async (placementId, adminId, reason = 'Rejected by admin
 
     // 1. Refund user balance
     if (finalPrice > 0) {
+      // Get current user data for tier recalculation
+      const userResult = await client.query(
+        'SELECT total_spent, current_discount FROM users WHERE id = $1 FOR UPDATE',
+        [placement.user_id]
+      );
+      const user = userResult.rows[0];
+      const totalSpentBefore = parseFloat(user?.total_spent || 0);
+      const totalSpentAfter = Math.max(0, totalSpentBefore - finalPrice);
+
       await client.query(`
         UPDATE users
-        SET balance = balance + $1, total_spent = total_spent - $1
-        WHERE id = $2
-      `, [finalPrice, placement.user_id]);
+        SET balance = balance + $1, total_spent = $2
+        WHERE id = $3
+      `, [finalPrice, totalSpentAfter, placement.user_id]);
+
+      // CRITICAL FIX (BUG #11): Recalculate discount tier after refund
+      const newTier = await billingService.calculateDiscountTier(totalSpentAfter);
+      if (newTier.discount !== parseFloat(user.current_discount)) {
+        await client.query(
+          'UPDATE users SET current_discount = $1 WHERE id = $2',
+          [newTier.discount, placement.user_id]
+        );
+
+        logger.info('Discount tier changed after rejection refund', {
+          userId: placement.user_id,
+          oldDiscount: parseFloat(user.current_discount),
+          newDiscount: newTier.discount,
+          newTier: newTier.tier,
+          totalSpentAfter
+        });
+      }
 
       // Create refund transaction
       await client.query(`
