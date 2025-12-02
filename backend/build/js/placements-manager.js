@@ -572,6 +572,11 @@ function renderHistoryPlacements(placements) {
             <td>#${p.id}</td>
             <td>${p.project_name || '—'}</td>
             <td><a href="${displayUrl}" target="_blank">${displayUrl}</a></td>
+            <td>${statusBadges[p.status] || p.status}</td>
+            <td>${formatDate(p.published_at || p.placed_at)}</td>
+            <td>${p.expires_at ? formatDate(p.expires_at) : '—'}</td>
+            <td>$${parseFloat(p.final_price || 0).toFixed(2)}</td>
+            <td>${p.renewal_count || 0}</td>
             <td class="${drClass}">${drValue}</td>
             <td class="${daClass}">${daValue}</td>
             <td class="${tfClass}">${tfValue}</td>
@@ -584,11 +589,6 @@ function renderHistoryPlacements(placements) {
             <td class="text-muted">${geoValue}</td>
             <td>${siteTypeBadge}</td>
             <td>${typeBadge}</td>
-            <td>${statusBadges[p.status] || p.status}</td>
-            <td>${formatDate(p.published_at || p.placed_at)}</td>
-            <td>${p.expires_at ? formatDate(p.expires_at) : '—'}</td>
-            <td>$${parseFloat(p.final_price || 0).toFixed(2)}</td>
-            <td>${p.renewal_count || 0}</td>
         `;
 
         tbody.appendChild(row);
