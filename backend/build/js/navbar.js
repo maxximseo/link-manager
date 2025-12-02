@@ -225,3 +225,182 @@ Navbar.loadModerationBadge = async function() {
         console.error('Error loading moderation badge:', e);
     }
 };
+
+/**
+ * Load notifications for current user
+ * Updates badge count and dropdown list
+ */
+Navbar.loadNotifications = async function() {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+        const response = await fetch('/api/notifications?limit=20', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) return;
+
+        const result = await response.json();
+        const notifications = result.data || [];
+        const unreadCount = result.pagination?.unread || notifications.filter(n => !n.read).length;
+
+        // Update badge
+        const badge = document.getElementById('notificationBadge');
+        if (badge) {
+            badge.textContent = unreadCount;
+            badge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
+        }
+
+        // Update dropdown list
+        Navbar.updateNotificationsList(notifications);
+
+    } catch (e) {
+        console.error('Error loading notifications:', e);
+    }
+};
+
+/**
+ * Update notifications dropdown list HTML
+ */
+Navbar.updateNotificationsList = function(notifications) {
+    const listContainer = document.getElementById('notificationsList');
+    if (!listContainer) return;
+
+    // Keep header and divider
+    const header = listContainer.querySelector('.dropdown-header');
+    const divider = listContainer.querySelector('.dropdown-divider');
+
+    // Clear list except header and divider
+    listContainer.innerHTML = '';
+    if (header) listContainer.appendChild(header.parentElement);
+    if (divider) listContainer.appendChild(divider.parentElement);
+
+    if (!notifications || notifications.length === 0) {
+        const emptyLi = document.createElement('li');
+        emptyLi.id = 'notificationsEmpty';
+        emptyLi.innerHTML = '<span class="dropdown-item text-muted small">Нет уведомлений</span>';
+        listContainer.appendChild(emptyLi);
+        return;
+    }
+
+    notifications.forEach(notification => {
+        const li = document.createElement('li');
+        li.className = 'notification-item';
+
+        const isUnread = !notification.read;
+        const bgClass = isUnread ? 'bg-light' : '';
+        const fontClass = isUnread ? 'fw-semibold' : '';
+
+        // Format date
+        const date = new Date(notification.created_at);
+        const dateStr = date.toLocaleDateString('ru-RU', {
+            day: '2-digit',
+            month: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+
+        li.innerHTML = `
+            <div class="dropdown-item d-flex align-items-start ${bgClass} py-2" style="white-space: normal;">
+                <div class="flex-grow-1 me-2">
+                    <div class="${fontClass} small">${Navbar.escapeHtml(notification.title)}</div>
+                    <div class="text-muted small text-truncate" style="max-width: 280px;" title="${Navbar.escapeHtml(notification.message)}">${Navbar.escapeHtml(notification.message)}</div>
+                    <div class="text-muted" style="font-size: 0.7rem;">${dateStr}</div>
+                </div>
+                <div class="d-flex flex-column gap-1">
+                    ${isUnread ? `<button class="btn btn-link btn-sm p-0 text-muted" onclick="Navbar.markNotificationRead(event, ${notification.id})" title="Отметить как прочитанное"><i class="bi bi-check"></i></button>` : ''}
+                    <button class="btn btn-link btn-sm p-0 text-danger" onclick="Navbar.deleteNotification(event, ${notification.id})" title="Удалить"><i class="bi bi-x"></i></button>
+                </div>
+            </div>
+        `;
+        listContainer.appendChild(li);
+    });
+};
+
+/**
+ * Escape HTML to prevent XSS
+ */
+Navbar.escapeHtml = function(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+};
+
+/**
+ * Mark single notification as read
+ */
+Navbar.markNotificationRead = async function(event, notificationId) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+        await fetch(`/api/notifications/${notificationId}/read`, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        // Reload notifications
+        await Navbar.loadNotifications();
+    } catch (e) {
+        console.error('Error marking notification as read:', e);
+    }
+};
+
+/**
+ * Delete notification
+ */
+Navbar.deleteNotification = async function(event, notificationId) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+        await fetch(`/api/notifications/${notificationId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        // Reload notifications
+        await Navbar.loadNotifications();
+    } catch (e) {
+        console.error('Error deleting notification:', e);
+    }
+};
+
+/**
+ * Mark all notifications as read
+ */
+Navbar.markAllNotificationsRead = async function(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+        await fetch('/api/notifications/mark-all-read', {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        // Reload notifications
+        await Navbar.loadNotifications();
+    } catch (e) {
+        console.error('Error marking all notifications as read:', e);
+    }
+};
