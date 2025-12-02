@@ -301,8 +301,8 @@ Navbar.updateNotificationsList = function(notifications) {
     const headerHtml = `
         <li class="dropdown-header d-flex justify-content-between align-items-center px-3 py-2">
             <span class="fw-bold">Уведомления</span>
-            <button class="btn btn-sm" onclick="Navbar.deleteAllNotifications(event)" title="Прочитать все" style="background-color: #fff; color: #333; border: 1px solid #ccc;">
-                <i class="bi bi-check2-all"></i> Прочитать все
+            <button class="btn btn-sm" onclick="Navbar.deleteAllNotifications(event)" title="Удалить все уведомления" style="background-color: #fff; color: #333; border: 1px solid #ccc;">
+                <i class="bi bi-trash"></i> Удалить все
             </button>
         </li>
         <li><hr class="dropdown-divider m-0"></li>
