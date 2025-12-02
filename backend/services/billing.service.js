@@ -1178,7 +1178,7 @@ const refundPlacement = async (placementId, userId) => {
 
     // Get user balance with lock
     const userResult = await client.query(
-      'SELECT id, balance FROM users WHERE id = $1 FOR UPDATE',
+      'SELECT id, balance, total_spent, current_discount FROM users WHERE id = $1 FOR UPDATE',
       [userId]
     );
 
@@ -1191,11 +1191,32 @@ const refundPlacement = async (placementId, userId) => {
     const balanceBefore = parseFloat(user.balance);
     const balanceAfter = balanceBefore + finalPrice;
 
-    // Refund the amount
+    // CRITICAL FIX (BUG #10): Decrement total_spent on refund to prevent discount tier exploitation
+    const totalSpentBefore = parseFloat(user.total_spent || 0);
+    const totalSpentAfter = Math.max(0, totalSpentBefore - finalPrice);
+
+    // Refund the amount and decrement total_spent
     await client.query(
-      'UPDATE users SET balance = $1 WHERE id = $2',
-      [balanceAfter, userId]
+      'UPDATE users SET balance = $1, total_spent = $2 WHERE id = $3',
+      [balanceAfter, totalSpentAfter, userId]
     );
+
+    // CRITICAL FIX (BUG #11): Recalculate discount tier after refund
+    const newTier = await calculateDiscountTier(totalSpentAfter);
+    if (newTier.discount !== parseFloat(user.current_discount)) {
+      await client.query(
+        'UPDATE users SET current_discount = $1 WHERE id = $2',
+        [newTier.discount, userId]
+      );
+
+      logger.info('Discount tier changed after refundPlacement', {
+        userId,
+        oldDiscount: parseFloat(user.current_discount),
+        newDiscount: newTier.discount,
+        newTier: newTier.tier,
+        totalSpentAfter
+      });
+    }
 
     // Create refund transaction
     const transactionResult = await client.query(`
