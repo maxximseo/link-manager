@@ -586,6 +586,10 @@ const deletePlacement = async (placementId, userId) => {
 
     const { site_id, link_count, article_count, link_ids, article_ids } = placementInfo.rows[0];
 
+    // CRITICAL: PostgreSQL COUNT returns string, must convert to number
+    const linkCountNum = parseInt(link_count) || 0;
+    const articleCountNum = parseInt(article_count) || 0;
+
     // Delete the placement
     const result = await client.query(`
       DELETE FROM placements p
@@ -599,17 +603,17 @@ const deletePlacement = async (placementId, userId) => {
 
     if (result.rows.length > 0) {
       // Update site quotas
-      if (link_count > 0) {
+      if (linkCountNum > 0) {
         await client.query(
           'UPDATE sites SET used_links = GREATEST(0, used_links - $1) WHERE id = $2',
-          [link_count, site_id]
+          [linkCountNum, site_id]
         );
       }
 
-      if (article_count > 0) {
+      if (articleCountNum > 0) {
         await client.query(
           'UPDATE sites SET used_articles = GREATEST(0, used_articles - $1) WHERE id = $2',
-          [article_count, site_id]
+          [articleCountNum, site_id]
         );
       }
 
