@@ -1085,7 +1085,7 @@ const getUserTransactions = async (userId, { page = 1, limit = 50, type = null }
 const getPricingForUser = async (userId) => {
   try {
     const user = await getUserBalance(userId);
-    const discount = user.current_discount || 0;
+    const discount = parseFloat(user.current_discount) || 0;
 
     const linkPrice = PRICING.LINK_HOMEPAGE * (1 - discount / 100);
     const articlePrice = PRICING.ARTICLE_GUEST_POST * (1 - discount / 100);
