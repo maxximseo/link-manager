@@ -297,27 +297,24 @@ Navbar.updateNotificationsList = function(notifications) {
     const listContainer = document.getElementById('notificationsList');
     if (!listContainer) return;
 
-    // Keep header and divider
-    const header = listContainer.querySelector('.dropdown-header');
-    const divider = listContainer.querySelector('.dropdown-divider');
-
-    // Clear list except header and divider
-    listContainer.innerHTML = '';
-    if (header) listContainer.appendChild(header.parentElement);
-    if (divider) listContainer.appendChild(divider.parentElement);
+    // Recreate header and divider (cloning doesn't work after innerHTML clear)
+    const headerHtml = `
+        <li class="dropdown-header d-flex justify-content-between align-items-center px-3 py-2">
+            <span class="fw-bold">Уведомления</span>
+            <button class="btn btn-sm btn-outline-primary" onclick="Navbar.markAllNotificationsRead(event)" title="Отметить все как прочитанные">
+                <i class="bi bi-check2-all"></i> Прочитать
+            </button>
+        </li>
+        <li><hr class="dropdown-divider m-0"></li>
+    `;
 
     if (!notifications || notifications.length === 0) {
-        const emptyLi = document.createElement('li');
-        emptyLi.id = 'notificationsEmpty';
-        emptyLi.innerHTML = '<span class="dropdown-item text-muted small">Нет уведомлений</span>';
-        listContainer.appendChild(emptyLi);
+        listContainer.innerHTML = headerHtml + '<li id="notificationsEmpty"><span class="dropdown-item text-muted small">Нет уведомлений</span></li>';
         return;
     }
 
+    let notificationsHtml = '';
     notifications.forEach(notification => {
-        const li = document.createElement('li');
-        li.className = 'notification-item';
-
         const isUnread = !notification.read;
         const bgClass = isUnread ? 'bg-light' : '';
         const fontClass = isUnread ? 'fw-semibold' : '';
