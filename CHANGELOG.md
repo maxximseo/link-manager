@@ -7,6 +7,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.5.9] - 2025-12-02
+
+### 🔔 Notification System Implementation
+
+#### Critical Bug Fix - Scheduled Placements
+- **FIXED** Scheduled placements cron job failing with error: `column "updated_at" of relation "placements" does not exist`
+- **ADDED** Migration `database/migrate_add_updated_at.sql` - Adds `updated_at` column to placements table
+- **ADDED** Migration runner `database/run_updated_at_migration.js` - Node.js script to run the migration
+- **IMPACT** Scheduled placements were being refunded instead of published due to this missing column
+
+#### Navbar Notifications UI (navbar.js)
+- **ADDED** `Navbar.loadNotifications()` - Fetches notifications from API and updates badge count
+- **ADDED** `Navbar.updateNotificationsList()` - Renders notifications in dropdown with:
+  - Title, message preview, and timestamp
+  - Unread indicator (highlighted background)
+  - Mark as read button (checkmark)
+  - Delete button (X)
+- **ADDED** `Navbar.markNotificationRead()` - Mark single notification as read
+- **ADDED** `Navbar.deleteNotification()` - Delete single notification
+- **ADDED** `Navbar.markAllNotificationsRead()` - Mark all notifications as read
+- **ADDED** `Navbar.escapeHtml()` - XSS protection for notification content
+- **ADDED** Auto-refresh every 60 seconds
+- **UPDATED** `renderNotifications()` - Now renders full dropdown with header and action buttons
+
+#### Purchase Notifications (billing.service.js)
+- **ADDED** User notification on placement purchase: "Куплена ссылка на сайте X для проекта Y. Списано $Z."
+- **ADDED** Admin notification on purchase: "Пользователь X купил ссылку на Y за $Z."
+- **ADDED** Grouped notification for batch purchases: "Куплено N размещений для проекта X. Списано $Y."
+- **ADDED** Admin notification for batch purchases: "Пользователь X купил N размещений за $Y."
+
+#### Scheduled Placement Notifications (scheduled-placements.cron.js)
+- **ADDED** Admin notification when scheduled placement is published: "Запланированное размещение #N на сайте X успешно опубликовано."
+
+### 📋 Notification Types Added
+| Type | Recipient | Event |
+|------|-----------|-------|
+| `placement_purchased` | User | Single placement purchase |
+| `admin_placement_purchased` | Admin | User purchased placement |
+| `batch_placement_purchased` | User | Multiple placements purchased |
+| `admin_batch_purchased` | Admin | User batch purchase |
+| `placement_published` | User | Scheduled placement published |
+| `admin_placement_published` | Admin | Scheduled placement published |
+
+### 📦 Files Changed
+- `backend/build/js/navbar.js` - Full notification system UI implementation
+- `backend/services/billing.service.js` - Purchase and batch purchase notifications
+- `backend/cron/scheduled-placements.cron.js` - Admin notifications for scheduled publications
+- `database/migrate_add_updated_at.sql` - NEW migration file
+- `database/run_updated_at_migration.js` - NEW migration runner
+
+### 🔧 Migration Required
+```bash
+# Run this migration if scheduled placements are failing with refunds:
+node database/run_updated_at_migration.js
+```
+
+---
+
 ## [2.5.8] - 2025-11-28
 
 ### 🔐 Security Hardening (Extended Audit)
