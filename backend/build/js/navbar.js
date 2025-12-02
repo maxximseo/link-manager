@@ -301,7 +301,7 @@ Navbar.updateNotificationsList = function(notifications) {
     const headerHtml = `
         <li class="dropdown-header d-flex justify-content-between align-items-center px-3 py-2">
             <span class="fw-bold">Уведомления</span>
-            <button class="btn btn-sm btn-outline-primary" onclick="Navbar.markAllNotificationsRead(event)" title="Отметить все как прочитанные">
+            <button class="btn btn-sm btn-light" onclick="Navbar.markAllNotificationsRead(event)" title="Отметить все как прочитанные">
                 <i class="bi bi-check2-all"></i> Прочитать
             </button>
         </li>
