@@ -1,5 +1,6 @@
 const logger = require('../config/logger');
 const PlacementService = require('../services/placement.service');
+const billingService = require('../services/billing.service');
 
 const placementHandlers = {
   create: async (data) => {
@@ -17,8 +18,14 @@ const placementHandlers = {
 
   delete: async (data) => {
     logger.info('Processing placement deletion:', data);
-    await PlacementService.deletePlacement(data.placementId, data.userId);
-    return { success: true };
+    // CRITICAL FIX: Use billing service for proper refund with tier recalculation
+    // Worker jobs run as 'admin' for automatic operations
+    const result = await billingService.deleteAndRefundPlacement(
+      data.placementId,
+      data.userId,
+      'admin'
+    );
+    return { success: true, refunded: result.refunded, amount: result.amount };
   }
 };
 
