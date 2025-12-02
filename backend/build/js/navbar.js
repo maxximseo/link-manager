@@ -315,6 +315,8 @@ Navbar.updateNotificationsList = function(notifications) {
 
     let notificationsHtml = '';
     notifications.forEach(notification => {
+        const isUnread = !notification.read;
+        const bgClass = isUnread ? 'bg-light' : '';
         const fontClass = isUnread ? 'fw-semibold' : '';
 
         // Format date
