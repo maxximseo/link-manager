@@ -328,7 +328,7 @@ const purchasePlacement = async ({
     } else {
       // Standard pricing with user's discount tier
       basePrice = type === 'link' ? PRICING.LINK_HOMEPAGE : PRICING.ARTICLE_GUEST_POST;
-      discount = user.current_discount || 0;
+      discount = parseFloat(user.current_discount) || 0;
       finalPrice = basePrice * (1 - discount / 100);
     }
 
