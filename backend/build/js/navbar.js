@@ -49,22 +49,23 @@ class Navbar {
     }
 
     /**
-     * Generate notifications dropdown HTML (for balance.html)
+     * Generate notifications dropdown HTML (always shown)
      */
     renderNotifications() {
-        if (!this.options.hasNotifications) {
-            return '';
-        }
-
         return `<li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="notificationsDropdown" role="button" data-bs-toggle="dropdown">
+                    <a class="nav-link" href="#" id="notificationsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-bell"></i>
-                        <span class="badge bg-danger" id="notificationBadge" style="display: none;">0</span>
+                        <span class="badge bg-danger position-absolute" id="notificationBadge" style="display: none; top: 0; right: 0; font-size: 0.6rem;">0</span>
                     </a>
-                    <ul class="dropdown-menu dropdown-menu-end" id="notificationsList">
-                        <li><h6 class="dropdown-header">Уведомления</h6></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item text-muted" href="#">Нет новых уведомлений</a></li>
+                    <ul class="dropdown-menu dropdown-menu-end notification-dropdown" id="notificationsList" style="min-width: 350px; max-height: 400px; overflow-y: auto;">
+                        <li class="dropdown-header d-flex justify-content-between align-items-center px-3 py-2">
+                            <span class="fw-bold">Уведомления</span>
+                            <button class="btn btn-sm btn-link text-muted p-0" onclick="Navbar.markAllNotificationsRead(event)" title="Отметить все как прочитанные">
+                                <i class="bi bi-check2-all"></i>
+                            </button>
+                        </li>
+                        <li><hr class="dropdown-divider m-0"></li>
+                        <li id="notificationsEmpty"><span class="dropdown-item text-muted small">Загрузка...</span></li>
                     </ul>
                 </li>`;
     }
