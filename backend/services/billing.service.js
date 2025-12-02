@@ -958,6 +958,12 @@ const renewPlacement = async (placementId, userId, isAutoRenewal = false) => {
 
     await client.query('COMMIT');
 
+    // CRITICAL: Clear cache after renewal so UI shows updated data
+    const cache = require('./cache.service');
+    await cache.delPattern(`placements:user:${userId}:*`);
+    await cache.delPattern(`projects:user:${userId}:*`);
+    await cache.delPattern('wp:content:*');
+
     logger.info('Placement renewed successfully', {
       placementId,
       userId,
