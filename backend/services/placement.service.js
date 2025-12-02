@@ -651,7 +651,7 @@ const deletePlacement = async (placementId, userId) => {
       if (refundAmount > 0) {
         // Get user balance with lock
         const userResult = await client.query(
-          'SELECT balance, total_spent FROM users WHERE id = $1 FOR UPDATE',
+          'SELECT balance, total_spent, current_discount FROM users WHERE id = $1 FOR UPDATE',
           [placementData.user_id]
         );
 
@@ -659,11 +659,33 @@ const deletePlacement = async (placementId, userId) => {
           const currentBalance = parseFloat(userResult.rows[0].balance);
           const newBalance = currentBalance + refundAmount;
 
-          // Update user balance
+          // CRITICAL FIX (BUG #10): Decrement total_spent on refund to prevent discount tier exploitation
+          const totalSpentBefore = parseFloat(userResult.rows[0].total_spent || 0);
+          const totalSpentAfter = Math.max(0, totalSpentBefore - refundAmount);
+
+          // Update user balance and decrement total_spent
           await client.query(
-            'UPDATE users SET balance = $1 WHERE id = $2',
-            [newBalance, placementData.user_id]
+            'UPDATE users SET balance = $1, total_spent = $2 WHERE id = $3',
+            [newBalance, totalSpentAfter, placementData.user_id]
           );
+
+          // CRITICAL FIX (BUG #11): Recalculate discount tier after refund
+          const billingService = require('./billing.service');
+          const newTier = await billingService.calculateDiscountTier(totalSpentAfter);
+          if (newTier.discount !== parseFloat(userResult.rows[0].current_discount)) {
+            await client.query(
+              'UPDATE users SET current_discount = $1 WHERE id = $2',
+              [newTier.discount, placementData.user_id]
+            );
+
+            logger.info('Discount tier changed after placement deletion', {
+              userId: placementData.user_id,
+              oldDiscount: parseFloat(userResult.rows[0].current_discount),
+              newDiscount: newTier.discount,
+              newTier: newTier.tier,
+              totalSpentAfter
+            });
+          }
 
           // Create refund transaction record
           await client.query(`
@@ -684,7 +706,8 @@ const deletePlacement = async (placementId, userId) => {
             placementId,
             userId: placementData.user_id,
             refundAmount,
-            newBalance
+            newBalance,
+            totalSpentAfter
           });
         }
       }
