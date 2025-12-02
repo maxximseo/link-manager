@@ -180,6 +180,12 @@ function initNavbar(type, activePage, options = {}) {
 
     // Load moderation badge count for admin users
     Navbar.loadModerationBadge();
+
+    // Load notifications for all users
+    Navbar.loadNotifications();
+
+    // Refresh notifications every 60 seconds
+    setInterval(Navbar.loadNotifications, 60000);
 }
 
 /**
