@@ -1521,7 +1521,7 @@ const deleteAndRefundPlacement = async (placementId, userId, userRole = 'user') 
       // CRITICAL FIX (BUG #11): Recalculate discount tier after refund
       // User may no longer qualify for their current tier after total_spent decrease
       const newTier = await calculateDiscountTier(totalSpentAfter);
-      if (newTier.discount !== user.current_discount) {
+      if (newTier.discount !== parseFloat(user.current_discount)) {
         await client.query(
           'UPDATE users SET current_discount = $1 WHERE id = $2',
           [newTier.discount, refundUserId]
@@ -1529,7 +1529,7 @@ const deleteAndRefundPlacement = async (placementId, userId, userRole = 'user') 
 
         logger.info('Discount tier downgraded after refund', {
           userId: refundUserId,
-          oldDiscount: user.current_discount,
+          oldDiscount: parseFloat(user.current_discount),
           newDiscount: newTier.discount,
           newTier: newTier.tier,
           totalSpentAfter
