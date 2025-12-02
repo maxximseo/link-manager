@@ -226,6 +226,10 @@ const addProjectLink = async (projectId, userId, linkData) => {
       [projectId, url, anchor_text || url, position || 0, usage_limit || 1, html_context || null]
     );
 
+    // Clear cache after adding link
+    const cache = require('./cache.service');
+    await cache.delPattern(`projects:user:${userId}:*`);
+
     return result.rows[0];
   } catch (error) {
     logger.error('Add project link error:', error);
