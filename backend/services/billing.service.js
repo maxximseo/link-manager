@@ -1792,6 +1792,53 @@ const batchPurchasePlacements = async (userId, purchases) => {
     avgTimePerPurchase: Math.round(duration / purchases.length)
   });
 
+  // NOTIFICATION: Create grouped notification for batch purchase (if more than 1 successful)
+  if (successful.length > 1) {
+    try {
+      // Get project names for the notification
+      const projectIds = [...new Set(purchases.map(p => p.projectId))];
+      const projectResult = await query(`
+        SELECT id, name FROM projects WHERE id = ANY($1::int[])
+      `, [projectIds]);
+      const projectNames = projectResult.rows.map(p => p.name).join(', ');
+
+      // Calculate total spent
+      const totalSpent = successful.reduce((sum, r) => {
+        const placement = r.placement;
+        return sum + (parseFloat(placement?.final_price) || 0);
+      }, 0);
+
+      // Get user info for admin notification
+      const userResult = await query('SELECT username FROM users WHERE id = $1', [userId]);
+      const username = userResult.rows[0]?.username || 'Unknown';
+
+      // User notification (grouped)
+      await query(`
+        INSERT INTO notifications (user_id, type, title, message, metadata)
+        VALUES ($1, 'batch_placement_purchased', $2, $3, $4)
+      `, [
+        userId,
+        'Массовая покупка',
+        `Куплено ${successful.length} размещений для проекта "${projectNames}". Списано $${totalSpent.toFixed(2)}.`,
+        JSON.stringify({ count: successful.length, projectIds, totalSpent })
+      ]);
+
+      // Admin notification (grouped)
+      await query(`
+        INSERT INTO notifications (user_id, type, title, message, metadata)
+        SELECT id, 'admin_batch_purchased', $1, $2, $3
+        FROM users WHERE role = 'admin'
+      `, [
+        'Массовая покупка',
+        `Пользователь "${username}" купил ${successful.length} размещений за $${totalSpent.toFixed(2)}.`,
+        JSON.stringify({ userId, username, count: successful.length, projectIds, totalSpent })
+      ]);
+    } catch (notifyError) {
+      logger.error('Failed to create batch purchase notification', { userId, error: notifyError.message });
+      // Don't throw - notifications are not critical
+    }
+  }
+
   // Clear cache after batch
   await cache.delPattern(`placements:user:${userId}:*`);
   await cache.delPattern(`projects:user:${userId}:*`);
