@@ -163,7 +163,15 @@ const deleteProject = async (projectId, userId) => {
       'DELETE FROM projects WHERE id = $1 AND user_id = $2 RETURNING id',
       [projectId, userId]
     );
-    
+
+    // Clear cache after project deletion
+    if (result.rows.length > 0) {
+      const cache = require('./cache.service');
+      await cache.delPattern(`projects:user:${userId}:*`);
+      await cache.delPattern(`placements:user:${userId}:*`);
+      await cache.delPattern('wp:content:*');
+    }
+
     return result.rows.length > 0;
   } catch (error) {
     logger.error('Delete project error:', error);
