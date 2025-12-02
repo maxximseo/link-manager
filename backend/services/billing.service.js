@@ -1824,15 +1824,16 @@ const batchPurchasePlacements = async (userId, purchases) => {
         JSON.stringify({ count: successful.length, projectIds, totalSpent })
       ]);
 
-      // Admin notification (grouped)
+      // Admin notification (grouped) - exclude buyer to avoid duplicates
       await query(`
         INSERT INTO notifications (user_id, type, title, message, metadata)
         SELECT id, 'admin_batch_purchased', $1, $2, $3
-        FROM users WHERE role = 'admin'
+        FROM users WHERE role = 'admin' AND id != $4
       `, [
         'Массовая покупка',
         `Пользователь "${username}" купил ${successful.length} размещений за $${totalSpent.toFixed(2)}.`,
-        JSON.stringify({ userId, username, count: successful.length, projectIds, totalSpent })
+        JSON.stringify({ userId, username, count: successful.length, projectIds, totalSpent }),
+        userId
       ]);
     } catch (notifyError) {
       logger.error('Failed to create batch purchase notification', { userId, error: notifyError.message });
