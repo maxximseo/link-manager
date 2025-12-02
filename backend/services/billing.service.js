@@ -492,7 +492,33 @@ const purchasePlacement = async ({
       ]);
     }
 
-    // 15. OPTIMIZATION: Publish AFTER transaction commit (async)
+    // 16. Get project name for notifications
+    const project = projectResult.rows[0];
+    const typeLabel = type === 'link' ? 'ссылка' : 'статья';
+
+    // 17. NOTIFICATION: Create notification for user about purchase
+    await client.query(`
+      INSERT INTO notifications (user_id, type, title, message, metadata)
+      VALUES ($1, 'placement_purchased', $2, $3, $4)
+    `, [
+      userId,
+      'Размещение куплено',
+      `${typeLabel === 'ссылка' ? 'Куплена' : 'Куплена'} ${typeLabel} на сайте "${site.site_name}" для проекта "${project.name}". Списано $${finalPrice.toFixed(2)}.`,
+      JSON.stringify({ placementId: placement.id, type, siteId, siteName: site.site_name, projectId, projectName: project.name, price: finalPrice })
+    ]);
+
+    // 18. NOTIFICATION: Create notification for all admins about purchase
+    await client.query(`
+      INSERT INTO notifications (user_id, type, title, message, metadata)
+      SELECT id, 'admin_placement_purchased', $1, $2, $3
+      FROM users WHERE role = 'admin'
+    `, [
+      'Новая покупка',
+      `Пользователь "${user.username}" купил ${typeLabel === 'ссылка' ? 'ссылку' : 'статью'} на "${site.site_name}" за $${finalPrice.toFixed(2)}.`,
+      JSON.stringify({ placementId: placement.id, userId, username: user.username, type, siteId, siteName: site.site_name, projectId, projectName: project.name, price: finalPrice })
+    ]);
+
+    // 19. OPTIMIZATION: Publish AFTER transaction commit (async)
     // OLD: WordPress publication inside transaction blocked for 500-1000ms
     // NEW: Commit first, then publish async (no blocking)
 
