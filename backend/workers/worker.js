@@ -67,7 +67,7 @@ const process = async job => {
     throw new Error(`Unknown job type: ${type} for queue: ${queue}`);
   }
 
-  return await handler(job.data);
+  return handler(job.data);
 };
 
 module.exports = { process };
