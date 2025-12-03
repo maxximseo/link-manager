@@ -416,9 +416,14 @@ const verifyWordPressConnection = async (siteUrl, _apiKey) => {
     // Check if Link Manager plugin REST API is available
     const testUrl = `${siteUrl}/wp-json/link-manager/v1/create-article`;
 
-    const response = await axios.options(testUrl, {
-      timeout: 10000
-    });
+    // Use retry wrapper for network resilience
+    const response = await axiosWithRetry(
+      () =>
+        axios.options(testUrl, {
+          timeout: 10000
+        }),
+      `WordPress verify ${siteUrl}`
+    );
 
     return {
       success: true,
