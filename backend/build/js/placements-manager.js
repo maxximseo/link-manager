@@ -195,42 +195,24 @@ function renderActivePlacements(placements) {
                </button>`
             : '';
 
-        // For articles, show full WordPress post URL; for links, show site URL
-        const displayUrl = (p.type === 'article' && p.wordpress_post_id)
-            ? `${p.site_url}/?p=${p.wordpress_post_id}`
-            : p.site_url;
-
-        // DR value with color coding
+        // SEO metrics with color coding (using shared utilities)
         const drValue = p.site_dr || 0;
-        const drClass = drValue >= 50 ? 'text-success fw-bold' : drValue >= 20 ? 'text-primary' : 'text-muted';
-
-        // DA value with color coding
+        const drClass = getDrColorClass(drValue);
         const daValue = p.site_da || 0;
-        const daClass = daValue >= 50 ? 'text-success fw-bold' : daValue >= 20 ? 'text-primary' : 'text-muted';
-
-        // TF value with color coding (Majestic Trust Flow, 0-100)
+        const daClass = getDaColorClass(daValue);
         const tfValue = p.site_tf || 0;
-        const tfClass = tfValue >= 50 ? 'text-success fw-bold' : tfValue >= 20 ? 'text-primary' : 'text-muted';
-
-        // CF value with color coding (Majestic Citation Flow, 0-100)
+        const tfClass = getTfColorClass(tfValue);
         const cfValue = p.site_cf || 0;
-        const cfClass = cfValue >= 50 ? 'text-success fw-bold' : cfValue >= 20 ? 'text-primary' : 'text-muted';
+        const cfClass = getCfColorClass(cfValue);
 
-        // Ref Domains, RD Main, Norm values
+        // Other metrics
         const refDomainsValue = p.site_ref_domains || 0;
         const rdMainValue = p.site_rd_main || 0;
         const normValue = p.site_norm || 0;
-
-        // Keywords and Traffic values (Ahrefs)
         const keywordsValue = p.site_keywords || 0;
         const trafficValue = p.site_traffic || 0;
-
-        // GEO value
         const geoValue = p.site_geo || 'EN';
-
-        // Site type badge (WP/PHP) - using badge-utils.js
-        const siteType = p.site_type || 'wordpress';
-        const siteTypeBadge = getSiteTypeBadge(siteType);
+        const siteTypeBadge = getSiteTypeBadge(p.site_type || 'wordpress');
 
         row.innerHTML = `
             <td><input type="checkbox" class="active-checkbox" data-id="${p.id}" data-type="${p.type}" onchange="updateActiveBulkActions()"></td>
