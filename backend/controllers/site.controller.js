@@ -53,16 +53,16 @@ const getSite = async (req, res) => {
 // Create new site
 const createSite = async (req, res) => {
   try {
-    let {
+    const {
       site_url,
       api_key,
       max_links,
       max_articles,
       site_type,
       allow_articles,
-      is_public,
       available_for_purchase
     } = req.body;
+    let { is_public } = req.body;
 
     // RESTRICTION: Only admin can set is_public to true
     if (is_public !== undefined && req.user.role !== 'admin') {
