@@ -68,6 +68,7 @@ const process = async job => {
   }
 
   // Handler may be sync or async - await handles both correctly
+  // eslint-disable-next-line no-return-await
   return await handler(job.data);
 };
 
