@@ -6,23 +6,8 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env'), override: true });
 
-// Initialize Sentry early (before app import)
-const Sentry = require('@sentry/node');
-if (process.env.SENTRY_DSN) {
-  Sentry.init({
-    dsn: process.env.SENTRY_DSN,
-    environment: process.env.NODE_ENV || 'development',
-    release: require('../package.json').version,
-    tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-    beforeSend(event) {
-      // Don't send events in test environment
-      if (process.env.NODE_ENV === 'test') {
-        return null;
-      }
-      return event;
-    },
-  });
-}
+// Initialize Sentry FIRST (before any other imports)
+const Sentry = require('./instrument');
 
 const app = require('./app');
 const logger = require('./config/logger');
