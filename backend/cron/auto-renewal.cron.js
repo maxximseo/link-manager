@@ -84,22 +84,32 @@ async function processAutoRenewals() {
         } else {
           // Promise rejected - error occurred
           const error = result.reason;
+          const isInsufficientBalance = error.message && error.message.includes('Insufficient balance');
+
           logger.error('Auto-renewal failed for placement', {
             placementId: placement.id,
             userId: placement.user_id,
             error: error.message,
+            isInsufficientBalance,
             stack: error.stack
           });
 
-          // Send notification about error
+          // Send user-friendly notification based on error type
+          const notificationTitle = isInsufficientBalance
+            ? 'Автопродление не удалось'
+            : 'Ошибка автопродления';
+
+          const notificationMessage = isInsufficientBalance
+            ? `Не удалось автоматически продлить размещение #${placement.id} из-за недостаточного баланса. Пожалуйста, пополните баланс.`
+            : `Произошла ошибка при автопродлении размещения #${placement.id}. Пожалуйста, свяжитесь с поддержкой.`;
+
           await query(`
             INSERT INTO notifications (user_id, type, title, message)
             VALUES ($1, 'auto_renewal_failed', $2, $3)
           `, [
             placement.user_id,
-            'Ошибка автопродления',
-            `Произошла ошибка при автопродлении размещения #${placement.id}. ` +
-            `Причина: ${error.message}. Пожалуйста, свяжитесь с поддержкой.`
+            notificationTitle,
+            notificationMessage
           ]);
 
           failCount++;
