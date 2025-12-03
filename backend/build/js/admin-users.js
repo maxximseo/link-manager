@@ -38,18 +38,7 @@ function setupEventListeners() {
     });
 }
 
-// Debounce helper
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
+// debounce() is provided by security.js (loaded first)
 
 // Load users from API
 async function loadUsers() {
