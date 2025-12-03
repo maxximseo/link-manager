@@ -97,6 +97,11 @@ async function startServer() {
       // Continue without cron jobs - they can be run manually if needed
     }
 
+    // Log Sentry status
+    if (process.env.SENTRY_DSN) {
+      logger.info('Sentry error monitoring initialized');
+    }
+
     logger.info('Application initialized successfully');
 
     // Start server
