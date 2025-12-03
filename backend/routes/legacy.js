@@ -29,7 +29,7 @@ const loginLimiter = rateLimit({
 });
 
 // Auth middleware
-const authMiddleware = async (req, res, next) => {
+const authMiddleware = (req, res, next) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
 
