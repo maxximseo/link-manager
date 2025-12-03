@@ -8,6 +8,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const path = require('path');
+const Sentry = require('@sentry/node');
 
 const { errorHandler } = require('./middleware/errorHandler');
 
