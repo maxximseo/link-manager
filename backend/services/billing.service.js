@@ -14,7 +14,8 @@ const PRICING = {
   ARTICLE_GUEST_POST: 15.00, // Guest post article placement
   OWNER_RATE: 0.10,          // Special rate for placing content on own sites
   BASE_RENEWAL_DISCOUNT: 30, // Base discount for link renewals (30%)
-  RENEWAL_PERIOD_DAYS: 365   // Renewal period (1 year)
+  RENEWAL_PERIOD_DAYS: 365,  // Renewal period (1 year)
+  MAX_TOTAL_DISCOUNT: 60     // Maximum combined discount (base + personal tier)
 };
 
 /**
