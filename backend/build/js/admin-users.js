@@ -141,13 +141,8 @@ function renderUsers() {
         const totalSpent = parseFloat(user.total_spent || 0);
         const discount = parseInt(user.current_discount || 0);
 
-        // Determine discount tier name
-        let tierName = 'Стандарт';
-        if (discount === 10) tierName = 'Bronze';
-        else if (discount === 15) tierName = 'Silver';
-        else if (discount === 20) tierName = 'Gold';
-        else if (discount === 25) tierName = 'Platinum';
-        else if (discount === 30) tierName = 'Diamond';
+        // Determine discount tier name using shared function
+        const tierName = getDiscountTierName(discount);
 
         // Format dates
         const lastLogin = user.last_login
@@ -155,10 +150,8 @@ function renderUsers() {
             : 'Никогда';
         const createdAt = new Date(user.created_at).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
-        // Role badge
-        const roleBadge = user.role === 'admin'
-            ? '<span class="badge bg-danger">Админ</span>'
-            : '<span class="badge bg-secondary">Пользователь</span>';
+        // Role badge using shared function
+        const roleBadge = getUserRoleBadge(user.role);
 
         // Balance color
         const balanceClass = balance > 0 ? 'text-success' : 'text-muted';
