@@ -8,7 +8,7 @@ module.exports = async function batchWorker(job) {
   try {
     logger.info('Processing batch job', { jobId: job.id, data: job.data });
 
-    const { type, options = {} } = job.data;
+    const { type, options: _options = {} } = job.data;
 
     job.progress(10);
 
@@ -41,7 +41,7 @@ module.exports = async function batchWorker(job) {
 };
 
 async function processExport(job) {
-  const { project_id, site_id, format } = job.data;
+  const { project_id: _projectId, site_id: _siteId, format } = job.data;
 
   // Simulate export processing
   job.progress(30);
