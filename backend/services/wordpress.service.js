@@ -345,7 +345,7 @@ const deleteArticle = async (siteUrl, apiKey, wordpressPostId) => {
 };
 
 // Verify WordPress connection via Link Manager plugin
-const verifyWordPressConnection = async (siteUrl, apiKey) => {
+const verifyWordPressConnection = async (siteUrl, _apiKey) => {
   try {
     // Check if Link Manager plugin REST API is available
     const testUrl = `${siteUrl}/wp-json/link-manager/v1/create-article`;
