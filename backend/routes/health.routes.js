@@ -8,6 +8,7 @@ const router = express.Router();
 const { query } = require('../config/database');
 const cache = require('../services/cache.service');
 const queueService = require('../config/queue');
+const Sentry = require('@sentry/node');
 
 // Health check endpoint - checks all system components
 router.get('/', async (req, res) => {
