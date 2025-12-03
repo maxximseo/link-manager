@@ -6,7 +6,7 @@ const asyncHandler = fn => (req, res, next) => {
 };
 
 // Global error handler
-const errorHandler = (err, req, res, next) => {
+const errorHandler = (err, req, res, _next) => {
   const error = { ...err };
   error.message = err.message;
 
