@@ -241,6 +241,8 @@ if (typeof window !== 'undefined') {
     window.getCfColorClass = getCfColorClass;
 
     // Tier status
+    window.DISCOUNT_TIER_NAMES = DISCOUNT_TIER_NAMES;
+    window.getDiscountTierName = getDiscountTierName;
     window.getTierStatusHtml = getTierStatusHtml;
 
     // Table helpers
