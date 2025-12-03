@@ -140,5 +140,6 @@ if (typeof window !== 'undefined') {
     window.safeTextContent = safeTextContent;
     window.html = html;
     window.sanitizeForDisplay = sanitizeForDisplay;
+    window.debounce = debounce;
     window.showAlert = showAlert;
 }
