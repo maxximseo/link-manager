@@ -504,7 +504,7 @@ const purchasePlacement = async ({
     `, [
       userId,
       'Размещение куплено',
-      `${typeLabel === 'ссылка' ? 'Куплена' : 'Куплена'} ${typeLabel} на сайте "${site.site_name}" для проекта "${project.name}". Списано $${finalPrice.toFixed(2)}.`,
+      `Куплена ${typeLabel} на сайте "${site.site_name}" для проекта "${project.name}". Списано $${finalPrice.toFixed(2)}.`,
       JSON.stringify({ placementId: placement.id, type, siteId, siteName: site.site_name, projectId, projectName: project.name, price: finalPrice })
     ]);
 
