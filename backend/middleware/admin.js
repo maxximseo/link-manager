@@ -12,7 +12,7 @@ const logger = require('../config/logger');
  * Middleware to check if user is admin
  * Returns 403 if user is not admin
  */
-const adminMiddleware = async (req, res, next) => {
+const adminMiddleware = (req, res, next) => {
   try {
     // Check if user exists (should be set by authMiddleware)
     if (!req.user) {
