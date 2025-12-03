@@ -12,11 +12,32 @@ const billingService = require('../services/billing.service');
 const exportService = require('../services/export.service');
 const logger = require('../config/logger');
 const { handleSmartError } = require('../utils/errorHandler');
+const { RATE_LIMITS } = require('../config/constants');
 
-// Rate limiting for financial operations (adjusted for bulk purchases)
+// Rate limiting for purchase operations (stricter than general API)
+const purchaseLimiter = rateLimit({
+  windowMs: RATE_LIMITS.FINANCIAL.windowMs,
+  max: RATE_LIMITS.FINANCIAL.max, // 10 purchases per minute
+  message: 'Too many purchase operations. Please wait before trying again.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: req => req.user?.id || req.ip // Per-user limit
+});
+
+// Even stricter limit for deposit operations (potential fraud vector)
+const depositLimiter = rateLimit({
+  windowMs: RATE_LIMITS.DEPOSIT.windowMs,
+  max: RATE_LIMITS.DEPOSIT.max, // 5 deposits per minute
+  message: 'Too many deposit attempts. Please wait before trying again.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: req => req.user?.id || req.ip
+});
+
+// Legacy financialLimiter for backward compatibility (batch operations)
 const financialLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 50, // 50 financial operations per minute (allows bulk purchases)
+  windowMs: 60 * 1000,
+  max: 50, // 50 for batch operations that need higher limit
   message: 'Too many financial operations, please try again later.',
   standardHeaders: true,
   legacyHeaders: false
