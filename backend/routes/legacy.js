@@ -8,11 +8,8 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
-const { pool, query } = require('../config/database');
+const { query } = require('../config/database');
 const logger = require('../config/logger');
-
-// Import existing middleware and utilities from server.js
-const crypto = require('crypto');
 
 // Validate JWT secret is provided in environment
 if (!process.env.JWT_SECRET) {
