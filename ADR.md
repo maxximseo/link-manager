@@ -1447,6 +1447,11 @@ window.formatDateTime(dateString)        // DD.MM.YYYY HH:MM
 window.getDiscountTierName(discount)     // 0→'Стандарт', 10→'Bronze'...
 window.getTierStatusHtml(isActive, isAchieved)
 
+// Placement helpers (added December 2025)
+window.getPlacementDisplayUrl(placement) // Article post URL or site URL
+window.calculateExpiryInfo(expiresAt)    // Returns { daysLeft, class, text }
+window.getAutoRenewalToggleHtml(placement) // Toggle HTML or '—'
+
 // Table helpers
 window.getEmptyTableRow(colspan, message)
 window.getErrorTableRow(colspan, message)
@@ -1463,6 +1468,10 @@ DELETED: backend/build/js/modules/
   - articles.js, bulk-links.js, export.js, placements.js,
     projects.js, queue.js, sites.js, wordpress.js
   - (~1600 lines total) - None included in any HTML file
+
+DELETED: backend/build/js/my-placements.js (December 2025)
+  - (~872 lines) - Never included in any HTML file
+  - Fully duplicated placements-manager.js + purchase-modal.js logic
 ```
 
 ### Function Location Reference
@@ -1524,11 +1533,12 @@ grep -r "function escapeHtml(" backend/build/js/
 ```
 
 ### Consequences
-- ✅ **~2000 lines removed** from codebase
+- ✅ **~2900 lines removed** from codebase (including my-placements.js)
 - ✅ **Single source of truth** for all utilities
 - ✅ **Consistent behavior** across all pages
 - ✅ **Easier maintenance** - change once, applies everywhere
 - ✅ **Smaller bundle** - no duplicate code loaded
+- ✅ **~76 lines reduced** in placements-manager.js via shared utilities
 - ⚠️ **Script order dependency** - must load in correct order
 - ⚠️ **Global namespace** - functions attached to window object
 
