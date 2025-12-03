@@ -7,6 +7,84 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.6.0] - 2025-12-03
+
+### 🏗️ Frontend Architecture Refactoring (ADR-021)
+
+Major refactoring of frontend JavaScript codebase to eliminate code duplication and establish single-source-of-truth patterns.
+
+#### New Shared Utilities Module (badge-utils.js)
+- **ADDED** `badge-utils.js` - Centralized badge, status, and color utilities (~280 lines)
+- **ADDED** `getPlacementStatusBadge(status)` - Returns HTML badge for placement status
+- **ADDED** `getPlacementTypeBadge(type)` - Returns badge for 'link' or 'article'
+- **ADDED** `getSiteTypeBadge(siteType)` - Returns badge for 'wordpress' or 'static_php'
+- **ADDED** `getTransactionTypeBadge(type)` - Returns badge for transaction types
+- **ADDED** `getUserRoleBadge(role)` - Returns badge for user roles
+- **ADDED** `getAutoRenewalIcon(enabled)` - Returns icon for auto-renewal status
+- **ADDED** `getAmountColorClass(amount)` - Returns CSS class for positive/negative amounts
+- **ADDED** `formatExpiryWithColor(expiresAt)` - Returns `{text, class, daysLeft}` object
+- **ADDED** `getDrColorClass(dr)`, `getDaColorClass(da)`, `getTfColorClass(tf)`, `getCfColorClass(cf)` - SEO metric colors
+- **ADDED** `getDiscountTierName(discount)` - Returns tier name ('Стандарт', 'Bronze', etc.)
+- **ADDED** `formatDate(dateString)` - Formats date as DD.MM.YYYY
+- **ADDED** `formatDateTime(dateString)` - Formats date as DD.MM.YYYY HH:MM
+- **ADDED** `getEmptyTableRow(colspan, message)` - Returns empty state row HTML
+- **ADDED** `getErrorTableRow(colspan, message)` - Returns error state row HTML
+
+#### Dead Code Removal (~2000 lines)
+- **DELETED** `backend/build/js/core/` folder (3 files):
+  - `api.js` (~217 lines) - Duplicate APIClient class, never used
+  - `app.js` (~50 lines) - Never included in any HTML
+  - `utils.js` (~80 lines) - Never included in any HTML
+- **DELETED** `backend/build/js/modules/` folder (8 files):
+  - `articles.js`, `bulk-links.js`, `export.js`, `placements.js`, `projects.js`, `queue.js`, `sites.js`, `wordpress.js`
+  - (~1600 lines total) - None were included in any HTML file
+
+#### Duplicate Function Consolidation
+- **REMOVED** `formatDate()` duplicate from `admin-dashboard.js` (11 lines)
+- **REMOVED** `formatDate()` duplicate from `placements-manager.js` (9 lines)
+- **REMOVED** `isAdmin()` duplicate from `placements-manager.js` (8 lines)
+- **UPDATED** `admin-dashboard.js` - Now uses shared `formatDateTime()` from badge-utils.js
+- **UPDATED** `placements-manager.js` - Now uses shared `formatDate()` and `isAdmin()` from shared modules
+- **UPDATED** `admin-placements.js` - Now uses badge-utils functions
+- **UPDATED** `admin-users.js` - Now uses badge-utils functions
+- **UPDATED** `balance.js` - Now uses badge-utils functions
+
+#### Script Loading Order
+Established strict loading order for frontend scripts:
+```
+1. security.js      → escapeHtml(), showAlert()
+2. auth.js          → getToken(), isAdmin(), isAuthenticated()
+3. badge-utils.js   → All badge/color utilities
+4. api.js           → ProjectsAPI, SitesAPI, etc.
+5. [page].js        → Page-specific code
+```
+
+### 📦 Files Changed
+| File | Change |
+|------|--------|
+| `backend/build/js/badge-utils.js` | NEW - Shared utilities module |
+| `backend/build/js/admin-dashboard.js` | UPDATED - Uses shared functions |
+| `backend/build/js/admin-placements.js` | UPDATED - Uses shared functions |
+| `backend/build/js/admin-users.js` | UPDATED - Uses shared functions |
+| `backend/build/js/balance.js` | UPDATED - Uses shared functions |
+| `backend/build/js/placements-manager.js` | UPDATED - Uses shared functions |
+| `backend/build/js/core/*` | DELETED - Dead code |
+| `backend/build/js/modules/*` | DELETED - Dead code |
+
+### 📊 Impact Metrics
+- **Lines Removed**: ~2000 (dead code)
+- **Duplicate Functions Eliminated**: 5
+- **Files Deleted**: 11
+- **New Shared Functions**: 20+
+- **Files Updated**: 6
+
+### 📚 Documentation
+- **ADDED** ADR-021: Frontend Shared Utilities Architecture
+- **UPDATED** CLAUDE.md - Frontend Architecture section with new structure
+- **UPDATED** DECISIONS.md - Quick patterns for frontend development
+
+---
+
 ## [2.5.9] - 2025-12-02
 
 ### 🔔 Notification System Implementation
