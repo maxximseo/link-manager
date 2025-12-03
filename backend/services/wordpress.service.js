@@ -308,22 +308,27 @@ const publishArticle = async (siteUrl, apiKey, articleData) => {
     // Use Link Manager plugin REST API endpoint
     const pluginUrl = `${validatedUrl}/wp-json/link-manager/v1/create-article`;
 
-    const response = await axios.post(
-      pluginUrl,
-      {
-        title,
-        content,
-        slug,
-        api_key: apiKey
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': apiKey
-        },
-        timeout: 30000,
-        maxRedirects: 0 // Prevent SSRF via redirects
-      }
+    // Use retry wrapper for network resilience
+    const response = await axiosWithRetry(
+      () =>
+        axios.post(
+          pluginUrl,
+          {
+            title,
+            content,
+            slug,
+            api_key: apiKey
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'X-API-Key': apiKey
+            },
+            timeout: 30000,
+            maxRedirects: 0 // Prevent SSRF via redirects
+          }
+        ),
+      `WordPress publish to ${siteUrl}`
     );
 
     if (response.data.success) {
