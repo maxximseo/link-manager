@@ -342,16 +342,8 @@ function renderRecentPurchases(purchases) {
     purchases.forEach(p => {
         const row = document.createElement('tr');
 
-        const typeBadge = p.type === 'link'
-            ? '<span class="badge bg-primary">Главная</span>'
-            : '<span class="badge bg-success">Статья</span>';
-
-        const statusBadges = {
-            'placed': '<span class="badge bg-success">Размещено</span>',
-            'pending': '<span class="badge bg-warning">Ожидание</span>',
-            'scheduled': '<span class="badge bg-info">Запланировано</span>',
-            'failed': '<span class="badge bg-danger">Ошибка</span>'
-        };
+        // Use shared badge-utils functions
+        const typeBadge = getPlacementTypeBadge(p.type);
 
         row.innerHTML = `
             <td>${formatDate(p.purchased_at)}</td>
@@ -368,7 +360,7 @@ function renderRecentPurchases(purchases) {
                     ? `<span class="badge bg-warning">${p.discount_applied}%</span>`
                     : '—'}
             </td>
-            <td>${statusBadges[p.status] || p.status}</td>
+            <td>${getPlacementStatusBadge(p.status)}</td>
         `;
 
         tbody.appendChild(row);
