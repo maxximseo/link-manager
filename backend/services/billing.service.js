@@ -1099,7 +1099,7 @@ const getPricingForUser = async (userId) => {
       * (1 - PRICING.BASE_RENEWAL_DISCOUNT / 100)
       * (1 - discount / 100);
 
-    const maxDiscount = Math.min(60, PRICING.BASE_RENEWAL_DISCOUNT + discount);
+    const maxDiscount = Math.min(PRICING.MAX_TOTAL_DISCOUNT, PRICING.BASE_RENEWAL_DISCOUNT + discount);
 
     return {
       link: {
