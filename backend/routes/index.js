@@ -38,7 +38,7 @@ router.get('/health', (req, res) => {
     try {
       const { isQueueAvailable } = require('../workers');
       queueStatus = isQueueAvailable();
-    } catch (error) {
+    } catch (_error) {
       // Queue workers not available
     }
   }
