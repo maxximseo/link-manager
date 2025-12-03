@@ -274,4 +274,8 @@ if (typeof window !== 'undefined') {
     // Table helpers
     window.getEmptyTableRow = getEmptyTableRow;
     window.getErrorTableRow = getErrorTableRow;
+
+    // Date formatting
+    window.formatDate = formatDate;
+    window.formatDateTime = formatDateTime;
 }
