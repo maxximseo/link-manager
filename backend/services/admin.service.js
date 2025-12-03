@@ -911,12 +911,11 @@ const setSitePublicStatus = async (siteId, isPublic, adminId) => {
 
     // Create audit log
     await query(`
-      INSERT INTO audit_log (user_id, action, entity_type, entity_id, details)
-      VALUES ($1, 'set_site_public_status', 'site', $2, $3)
+      INSERT INTO audit_log (user_id, action, details)
+      VALUES ($1, 'set_site_public_status', $2)
     `, [
       adminId,
-      siteId,
-      JSON.stringify({ is_public: isPublic, site_name: site.site_name })
+      JSON.stringify({ entity_type: 'site', entity_id: siteId, is_public: isPublic, site_name: site.site_name })
     ]);
 
     logger.info('Site public status changed by admin', {
