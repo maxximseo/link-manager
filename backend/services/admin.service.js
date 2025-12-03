@@ -666,12 +666,11 @@ const approvePlacement = async (placementId, adminId) => {
 
     // Audit log
     await client.query(`
-      INSERT INTO audit_log (user_id, action, entity_type, entity_id, details)
-      VALUES ($1, 'approve_placement', 'placement', $2, $3)
+      INSERT INTO audit_log (user_id, action, details)
+      VALUES ($1, 'approve_placement', $2)
     `, [
       adminId,
-      placementId,
-      JSON.stringify({ newStatus, userId: placement.user_id })
+      JSON.stringify({ entity_type: 'placement', entity_id: placementId, newStatus, userId: placement.user_id })
     ]);
 
     // Notify user
