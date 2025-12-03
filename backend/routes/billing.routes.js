@@ -182,7 +182,7 @@ router.get('/discount-tiers', authMiddleware, async (req, res) => {
 router.post(
   '/purchase',
   authMiddleware,
-  financialLimiter,
+  purchaseLimiter, // Stricter rate limit for purchases (10/min)
   [
     body('projectId').isInt({ min: 1 }).withMessage('Valid project ID required'),
     body('siteId').isInt({ min: 1 }).withMessage('Valid site ID required'),
