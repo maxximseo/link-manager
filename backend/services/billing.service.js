@@ -826,6 +826,12 @@ const renewPlacement = async (placementId, userId, isAutoRenewal = false) => {
 
     const placement = placementResult.rows[0];
 
+    // Extract user financial data from locked row (FOR UPDATE ensures these are current)
+    // NOTE: placement object contains joined user data (u.balance, u.current_discount, u.total_spent)
+    const userBalance = parseFloat(placement.balance);
+    const userCurrentDiscount = parseFloat(placement.current_discount) || 0;
+    const userTotalSpent = parseFloat(placement.total_spent || 0);
+
     // 2. Validate placement type
     if (placement.type !== 'link') {
       throw new Error('Only homepage links can be renewed');
@@ -849,21 +855,21 @@ const renewPlacement = async (placementId, userId, isAutoRenewal = false) => {
       // Standard renewal pricing
       basePrice = PRICING.LINK_HOMEPAGE;
       baseRenewalDiscount = PRICING.BASE_RENEWAL_DISCOUNT;
-      personalDiscount = parseFloat(placement.current_discount) || 0;
+      personalDiscount = userCurrentDiscount;
 
       // Apply both discounts sequentially
       const priceAfterBaseDiscount = basePrice * (1 - baseRenewalDiscount / 100);
       finalRenewalPrice = priceAfterBaseDiscount * (1 - personalDiscount / 100);
     }
 
-    // 4. Check balance
-    if (parseFloat(placement.balance) < finalRenewalPrice) {
-      throw new Error(`Insufficient balance for renewal. Required: $${finalRenewalPrice.toFixed(2)}, Available: $${placement.balance}`);
+    // 4. Check balance (using locked user data)
+    if (userBalance < finalRenewalPrice) {
+      throw new Error(`Insufficient balance for renewal. Required: $${finalRenewalPrice.toFixed(2)}, Available: $${userBalance.toFixed(2)}`);
     }
 
     // 5. Deduct from balance
-    const newBalance = parseFloat(placement.balance) - finalRenewalPrice;
-    const newTotalSpent = parseFloat(placement.total_spent || 0) + finalRenewalPrice;
+    const newBalance = userBalance - finalRenewalPrice;
+    const newTotalSpent = userTotalSpent + finalRenewalPrice;
 
     await client.query(
       'UPDATE users SET balance = $1, total_spent = $2 WHERE id = $3',
