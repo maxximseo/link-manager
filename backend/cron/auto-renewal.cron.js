@@ -16,10 +16,10 @@ async function processAutoRenewals() {
 
   try {
     // Find all placements with auto-renewal enabled that expire in the next 7 days
+    // NOTE: We don't fetch balance here - renewPlacement() will check with FOR UPDATE lock
     const result = await query(`
-      SELECT p.id, p.user_id, p.expires_at, p.renewal_price, u.balance, u.username
+      SELECT p.id, p.user_id, p.expires_at, p.renewal_price
       FROM placements p
-      JOIN users u ON p.user_id = u.id
       WHERE p.auto_renewal = true
         AND p.status = 'placed'
         AND p.type = 'link'
