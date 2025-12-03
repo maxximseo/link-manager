@@ -443,7 +443,7 @@ const refundPlacement = async (placementId, reason, adminId, deleteWordPressPost
       LEFT JOIN sites s ON p.site_id = s.id
       LEFT JOIN projects proj ON p.project_id = proj.id
       WHERE p.id = $1
-      FOR UPDATE
+      FOR UPDATE OF p
     `, [placementId]);
 
     if (placementResult.rows.length === 0) {
