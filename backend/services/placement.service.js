@@ -250,9 +250,10 @@ const createPlacement = async (data) => {
       logger.info('Using existing placement', { placementId: placement.id, project_id, site_id });
     } else {
       // Create new placement
+      // CRITICAL FIX: Include user_id in placement creation for proper billing/refund tracking
       const placementResult = await client.query(
-        'INSERT INTO placements (project_id, site_id, type, placed_at) VALUES ($1, $2, $3, CURRENT_TIMESTAMP) RETURNING *',
-        [project_id, site_id, 'manual']
+        'INSERT INTO placements (user_id, project_id, site_id, type, placed_at) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP) RETURNING *',
+        [userId, project_id, site_id, 'manual']
       );
       placement = placementResult.rows[0];
     }
