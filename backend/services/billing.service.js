@@ -888,7 +888,7 @@ const renewPlacement = async (placementId, userId, isAutoRenewal = false) => {
 
       logger.info('Discount tier upgraded after renewal', {
         userId,
-        oldDiscount: currentUserDiscount,
+        oldDiscount: userCurrentDiscount,
         newDiscount: newTier.discount,
         newTier: newTier.tier,
         totalSpent: newTotalSpent
