@@ -140,13 +140,7 @@ describe('WordPress Service', () => {
     });
 
     it('should format links with extended fields', async () => {
-<<<<<<< HEAD
       mockQuery.mockResolvedValueOnce({ rows: mockLinks }).mockResolvedValueOnce({ rows: [] });
-=======
-      mockQuery
-        .mockResolvedValueOnce({ rows: mockLinks })
-        .mockResolvedValueOnce({ rows: [] });
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
 
       const result = await wordpressService.getContentByApiKey('api_test123');
 
@@ -163,13 +157,7 @@ describe('WordPress Service', () => {
     });
 
     it('should return empty arrays when no content found', async () => {
-<<<<<<< HEAD
       mockQuery.mockResolvedValueOnce({ rows: [] }).mockResolvedValueOnce({ rows: [] });
-=======
-      mockQuery
-        .mockResolvedValueOnce({ rows: [] })
-        .mockResolvedValueOnce({ rows: [] });
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
 
       const result = await wordpressService.getContentByApiKey('api_unknown');
 
@@ -178,13 +166,7 @@ describe('WordPress Service', () => {
     });
 
     it('should format articles with wordpress_post_id', async () => {
-<<<<<<< HEAD
       mockQuery.mockResolvedValueOnce({ rows: [] }).mockResolvedValueOnce({ rows: mockArticles });
-=======
-      mockQuery
-        .mockResolvedValueOnce({ rows: [] })
-        .mockResolvedValueOnce({ rows: mockArticles });
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
 
       const result = await wordpressService.getContentByApiKey('api_test123');
 
@@ -202,13 +184,7 @@ describe('WordPress Service', () => {
     it('should return links for valid domain', async () => {
       siteService.getSiteByDomain.mockResolvedValueOnce({ id: 1 });
       mockQuery.mockResolvedValueOnce({
-<<<<<<< HEAD
         rows: [{ id: 1, url: 'https://example.com', anchor_text: 'Link', html_context: '' }]
-=======
-        rows: [
-          { id: 1, url: 'https://example.com', anchor_text: 'Link', html_context: '' }
-        ]
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
       });
 
       const result = await wordpressService.getContentByDomain('example.com');
@@ -281,15 +257,7 @@ describe('WordPress Service', () => {
         data: { success: true, post_id: 123 }
       });
 
-<<<<<<< HEAD
       await wordpressService.publishArticle('https://example.com', 'api_test123', articleData);
-=======
-      await wordpressService.publishArticle(
-        'https://example.com',
-        'api_test123',
-        articleData
-      );
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
 
       expect(axios.post).toHaveBeenCalledWith(
         'https://example.com/wp-json/link-manager/v1/create-article',
@@ -315,33 +283,17 @@ describe('WordPress Service', () => {
         data: { success: false, error: 'Plugin not configured' }
       });
 
-<<<<<<< HEAD
       await expect(
         wordpressService.publishArticle('https://example.com', 'api_test123', articleData)
       ).rejects.toThrow('Plugin not configured');
-=======
-      await expect(wordpressService.publishArticle(
-        'https://example.com',
-        'api_test123',
-        articleData
-      )).rejects.toThrow('Plugin not configured');
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
 
     it('should throw error on network failure', async () => {
       axios.post.mockRejectedValueOnce(new Error('Network timeout'));
 
-<<<<<<< HEAD
       await expect(
         wordpressService.publishArticle('https://example.com', 'api_test123', articleData)
       ).rejects.toThrow(/Network timeout/);
-=======
-      await expect(wordpressService.publishArticle(
-        'https://example.com',
-        'api_test123',
-        articleData
-      )).rejects.toThrow(/Network timeout/);
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
 
     it('should remove trailing slash from site URL', async () => {
@@ -349,15 +301,7 @@ describe('WordPress Service', () => {
         data: { success: true, post_id: 123 }
       });
 
-<<<<<<< HEAD
       await wordpressService.publishArticle('https://example.com/', 'api_test123', articleData);
-=======
-      await wordpressService.publishArticle(
-        'https://example.com/',
-        'api_test123',
-        articleData
-      );
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
 
       expect(axios.post).toHaveBeenCalledWith(
         'https://example.com/wp-json/link-manager/v1/create-article',
@@ -399,15 +343,7 @@ describe('WordPress Service', () => {
         data: { success: true }
       });
 
-<<<<<<< HEAD
       await wordpressService.deleteArticle('https://example.com', 'api_test123', 456);
-=======
-      await wordpressService.deleteArticle(
-        'https://example.com',
-        'api_test123',
-        456
-      );
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
 
       expect(axios.delete).toHaveBeenCalledWith(
         'https://example.com/wp-json/link-manager/v1/delete-article/456',
@@ -479,14 +415,7 @@ describe('WordPress Service', () => {
     it('should call correct endpoint', async () => {
       axios.options.mockResolvedValueOnce({ status: 200 });
 
-<<<<<<< HEAD
       await wordpressService.verifyWordPressConnection('https://example.com', 'api_test123');
-=======
-      await wordpressService.verifyWordPressConnection(
-        'https://example.com',
-        'api_test123'
-      );
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
 
       expect(axios.options).toHaveBeenCalledWith(
         'https://example.com/wp-json/link-manager/v1/create-article',
@@ -498,7 +427,6 @@ describe('WordPress Service', () => {
   describe('getSiteByApiKey', () => {
     it('should return site for valid API key', async () => {
       mockQuery.mockResolvedValueOnce({
-<<<<<<< HEAD
         rows: [
           {
             id: 1,
@@ -508,15 +436,6 @@ describe('WordPress Service', () => {
             used_links: 5
           }
         ]
-=======
-        rows: [{
-          id: 1,
-          site_url: 'https://example.com',
-          site_name: 'Example Site',
-          max_links: 10,
-          used_links: 5
-        }]
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
       });
 
       const result = await wordpressService.getSiteByApiKey('api_test123');
@@ -539,7 +458,6 @@ describe('WordPress Service', () => {
   describe('getSiteById', () => {
     it('should return site for valid ID and user', async () => {
       mockQuery.mockResolvedValueOnce({
-<<<<<<< HEAD
         rows: [
           {
             id: 1,
@@ -548,14 +466,6 @@ describe('WordPress Service', () => {
             api_key: 'api_test123'
           }
         ]
-=======
-        rows: [{
-          id: 1,
-          site_url: 'https://example.com',
-          site_name: 'Example Site',
-          api_key: 'api_test123'
-        }]
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
       });
 
       const result = await wordpressService.getSiteById(1, 1);
@@ -586,7 +496,6 @@ describe('WordPress Service', () => {
   describe('getArticleById', () => {
     it('should return article for valid ID and user', async () => {
       mockQuery.mockResolvedValueOnce({
-<<<<<<< HEAD
         rows: [
           {
             id: 1,
@@ -595,14 +504,6 @@ describe('WordPress Service', () => {
             slug: 'test-article'
           }
         ]
-=======
-        rows: [{
-          id: 1,
-          title: 'Test Article',
-          content: 'Content',
-          slug: 'test-article'
-        }]
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
       });
 
       const result = await wordpressService.getArticleById(1, 1);
@@ -651,7 +552,6 @@ describe('SSRF Prevention', () => {
 
   describe('validateExternalUrl (via publishArticle)', () => {
     it('should block localhost', async () => {
-<<<<<<< HEAD
       await expect(
         wordpressService.publishArticle('http://localhost/wp', 'api_test123', {
           title: 'Test',
@@ -739,77 +639,6 @@ describe('SSRF Prevention', () => {
           slug: 'test'
         })
       ).rejects.toThrow(/protocol/i);
-=======
-      await expect(wordpressService.publishArticle(
-        'http://localhost/wp',
-        'api_test123',
-        { title: 'Test', content: 'Test', slug: 'test' }
-      )).rejects.toThrow(/localhost/i);
-    });
-
-    it('should block 127.0.0.1', async () => {
-      await expect(wordpressService.publishArticle(
-        'http://127.0.0.1/wp',
-        'api_test123',
-        { title: 'Test', content: 'Test', slug: 'test' }
-      )).rejects.toThrow(/localhost/i);
-    });
-
-    it('should block private IP 10.x.x.x', async () => {
-      await expect(wordpressService.publishArticle(
-        'http://10.0.0.1/wp',
-        'api_test123',
-        { title: 'Test', content: 'Test', slug: 'test' }
-      )).rejects.toThrow(/private/i);
-    });
-
-    it('should block private IP 192.168.x.x', async () => {
-      await expect(wordpressService.publishArticle(
-        'http://192.168.1.1/wp',
-        'api_test123',
-        { title: 'Test', content: 'Test', slug: 'test' }
-      )).rejects.toThrow(/private/i);
-    });
-
-    it('should block private IP 172.16-31.x.x', async () => {
-      await expect(wordpressService.publishArticle(
-        'http://172.16.0.1/wp',
-        'api_test123',
-        { title: 'Test', content: 'Test', slug: 'test' }
-      )).rejects.toThrow(/private/i);
-    });
-
-    it('should block link-local 169.254.x.x', async () => {
-      await expect(wordpressService.publishArticle(
-        'http://169.254.1.1/wp',
-        'api_test123',
-        { title: 'Test', content: 'Test', slug: 'test' }
-      )).rejects.toThrow(/link-local/i);
-    });
-
-    it('should block AWS metadata endpoint', async () => {
-      await expect(wordpressService.publishArticle(
-        'http://169.254.169.254/latest/meta-data',
-        'api_test123',
-        { title: 'Test', content: 'Test', slug: 'test' }
-      )).rejects.toThrow(/metadata|link-local/i);
-    });
-
-    it('should block non-HTTP protocols', async () => {
-      await expect(wordpressService.publishArticle(
-        'ftp://example.com/wp',
-        'api_test123',
-        { title: 'Test', content: 'Test', slug: 'test' }
-      )).rejects.toThrow(/protocol/i);
-    });
-
-    it('should block file:// protocol', async () => {
-      await expect(wordpressService.publishArticle(
-        'file:///etc/passwd',
-        'api_test123',
-        { title: 'Test', content: 'Test', slug: 'test' }
-      )).rejects.toThrow(/protocol/i);
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
 
     it('should allow valid public URLs', async () => {
@@ -818,19 +647,11 @@ describe('SSRF Prevention', () => {
         data: { success: true, post_id: 123 }
       });
 
-<<<<<<< HEAD
       const result = await wordpressService.publishArticle('https://example.com', 'api_test123', {
         title: 'Test',
         content: 'Test',
         slug: 'test'
       });
-=======
-      const result = await wordpressService.publishArticle(
-        'https://example.com',
-        'api_test123',
-        { title: 'Test', content: 'Test', slug: 'test' }
-      );
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
 
       expect(result.success).toBe(true);
     });
@@ -838,7 +659,6 @@ describe('SSRF Prevention', () => {
     it('should block DNS rebinding to private IP', async () => {
       dns.resolve4.mockResolvedValueOnce(['10.0.0.1']); // DNS resolves to private IP
 
-<<<<<<< HEAD
       await expect(
         wordpressService.publishArticle('https://evil.com', 'api_test123', {
           title: 'Test',
@@ -846,19 +666,11 @@ describe('SSRF Prevention', () => {
           slug: 'test'
         })
       ).rejects.toThrow(/private|WordPress/i);
-=======
-      await expect(wordpressService.publishArticle(
-        'https://evil.com',
-        'api_test123',
-        { title: 'Test', content: 'Test', slug: 'test' }
-      )).rejects.toThrow(/private|WordPress/i);
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
 
     it('should block DNS rebinding to 127.0.0.1', async () => {
       dns.resolve4.mockResolvedValueOnce(['127.0.0.1']);
 
-<<<<<<< HEAD
       await expect(
         wordpressService.publishArticle('https://evil.com', 'api_test123', {
           title: 'Test',
@@ -866,13 +678,6 @@ describe('SSRF Prevention', () => {
           slug: 'test'
         })
       ).rejects.toThrow(/private|WordPress/i);
-=======
-      await expect(wordpressService.publishArticle(
-        'https://evil.com',
-        'api_test123',
-        { title: 'Test', content: 'Test', slug: 'test' }
-      )).rejects.toThrow(/private|WordPress/i);
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
 
     it('should allow public domain even if DNS fails', async () => {
@@ -882,19 +687,11 @@ describe('SSRF Prevention', () => {
       });
 
       // Should proceed because DNS failure is logged but not blocking
-<<<<<<< HEAD
       const result = await wordpressService.publishArticle('https://new-site.com', 'api_test123', {
         title: 'Test',
         content: 'Test',
         slug: 'test'
       });
-=======
-      const result = await wordpressService.publishArticle(
-        'https://new-site.com',
-        'api_test123',
-        { title: 'Test', content: 'Test', slug: 'test' }
-      );
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
 
       expect(result.success).toBe(true);
     });
@@ -905,35 +702,20 @@ describe('Error Handling', () => {
   it('should throw error on database failure in getContentByApiKey', async () => {
     mockQuery.mockRejectedValueOnce(new Error('Database error'));
 
-<<<<<<< HEAD
     await expect(wordpressService.getContentByApiKey('api_test')).rejects.toThrow('Database error');
-=======
-    await expect(wordpressService.getContentByApiKey('api_test'))
-      .rejects.toThrow('Database error');
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
   });
 
   it('should throw error on database failure in getSiteByApiKey', async () => {
     mockQuery.mockRejectedValueOnce(new Error('Database error'));
 
-<<<<<<< HEAD
     await expect(wordpressService.getSiteByApiKey('api_test')).rejects.toThrow('Database error');
-=======
-    await expect(wordpressService.getSiteByApiKey('api_test'))
-      .rejects.toThrow('Database error');
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
   });
 
   it('should throw error on database failure in updatePlacementWithPostId', async () => {
     mockQuery.mockRejectedValueOnce(new Error('Database error'));
 
-<<<<<<< HEAD
     await expect(wordpressService.updatePlacementWithPostId(1, 2, 123)).rejects.toThrow(
       'Database error'
     );
-=======
-    await expect(wordpressService.updatePlacementWithPostId(1, 2, 123))
-      .rejects.toThrow('Database error');
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
   });
 });
