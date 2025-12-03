@@ -6,7 +6,11 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env'), override: true });
 
-// Initialize Sentry FIRST (before any other imports)
+// Validate environment variables FIRST (fail-fast if config is wrong)
+const validateEnv = require('./config/validateEnv');
+validateEnv();
+
+// Initialize Sentry (before any other imports)
 const Sentry = require('./instrument');
 
 const app = require('./app');

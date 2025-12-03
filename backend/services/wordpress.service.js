@@ -9,6 +9,62 @@ const axios = require('axios');
 const cache = require('./cache.service');
 const dns = require('dns').promises;
 
+// Retry configuration for WordPress API calls
+const RETRY_CONFIG = {
+  maxRetries: 3,
+  delays: [1000, 2000, 4000], // Exponential backoff: 1s, 2s, 4s
+  retryableStatusCodes: [408, 429, 500, 502, 503, 504] // Timeout, Rate Limit, Server Errors
+};
+
+/**
+ * Sleep helper for retry delays
+ */
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Execute axios request with retry logic
+ * Retries on network errors and 5xx status codes with exponential backoff
+ */
+async function axiosWithRetry(requestFn, context = 'WordPress API') {
+  const { maxRetries, delays, retryableStatusCodes } = RETRY_CONFIG;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const response = await requestFn();
+      return response;
+    } catch (error) {
+      const isLastAttempt = attempt === maxRetries - 1;
+      const statusCode = error.response?.status;
+
+      // Check if error is retryable
+      const isNetworkError = !error.response && error.code !== 'ECONNABORTED';
+      const isRetryableStatus = statusCode && retryableStatusCodes.includes(statusCode);
+      const shouldRetry = (isNetworkError || isRetryableStatus) && !isLastAttempt;
+
+      if (shouldRetry) {
+        const delay = delays[attempt] || delays[delays.length - 1];
+        logger.warn(`${context} request failed, retrying...`, {
+          attempt: attempt + 1,
+          maxRetries,
+          delay: `${delay}ms`,
+          error: error.message,
+          statusCode: statusCode || 'network error'
+        });
+        await sleep(delay);
+        continue;
+      }
+
+      // Log final failure
+      logger.error(`${context} request failed after ${attempt + 1} attempts`, {
+        error: error.message,
+        statusCode,
+        url: error.config?.url
+      });
+      throw error;
+    }
+  }
+}
+
 // Validate URL to prevent SSRF attacks (enhanced with DNS resolution check)
 async function validateExternalUrl(url) {
   try {
