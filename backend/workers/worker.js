@@ -5,15 +5,15 @@ const billingService = require('../services/billing.service');
 const placementHandlers = {
   create: async (data) => {
     logger.info('Processing placement creation:', data);
-    await PlacementService.createPlacement(
-      data.userId,
-      data.projectId,
-      data.siteId,
-      data.type,
-      data.linkIds,
-      data.articleIds
-    );
-    return { success: true };
+    // CRITICAL FIX: createPlacement expects a single object parameter, not multiple args
+    const placement = await PlacementService.createPlacement({
+      site_id: data.siteId,
+      project_id: data.projectId,
+      link_ids: data.linkIds || [],
+      article_ids: data.articleIds || [],
+      userId: data.userId
+    });
+    return { success: true, placementId: placement.id };
   },
 
   delete: async (data) => {

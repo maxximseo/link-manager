@@ -398,11 +398,7 @@ async function viewUserTransactions(userId, username) {
 }
 
 // Helper functions
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
+// escapeHtml() is provided by security.js (loaded first)
 
 function showSuccess(message) {
     // You can use Bootstrap toast or custom notification
@@ -413,10 +409,7 @@ function showError(message) {
     alert(message);
 }
 
-// Get token from auth.js
-function getToken() {
-    return localStorage.getItem('token') || localStorage.getItem('authToken');
-}
+// getToken() is provided by auth.js (loaded first)
 
 // Logout function
 function logout() {

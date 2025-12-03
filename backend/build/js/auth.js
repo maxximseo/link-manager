@@ -15,9 +15,9 @@ function getAuthToken() {
     return localStorage.getItem('token');
 }
 
-// Alias for compatibility
+// Alias for compatibility (supports legacy 'authToken' key)
 function getToken() {
-    return localStorage.getItem('token');
+    return localStorage.getItem('token') || localStorage.getItem('authToken');
 }
 
 // Get refresh token

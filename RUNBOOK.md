@@ -21,7 +21,57 @@ This document contains step-by-step procedures for common operational tasks in t
 
 ## Server Operations
 
-### Start Development Server
+### ⚡ Quick Local Start (ВАЖНО!)
+
+**Перед запуском убедитесь что ваш IP добавлен в белый список DigitalOcean!**
+
+#### 1. Узнать свой IP
+```bash
+curl ifconfig.me
+# Пример: 91.84.98.55
+```
+
+#### 2. Добавить IP в белый список (DigitalOcean Console)
+
+**PostgreSQL:**
+1. DigitalOcean → Databases → `db-postgresql-nyc3-90526`
+2. Settings → Trusted Sources → Add Trusted Source
+3. Добавить: `ВАШ_IP/32` (например `91.84.98.55/32`)
+
+**Valkey (Redis):**
+1. DigitalOcean → Databases → `link-manager-valkey`
+2. Settings → Trusted Sources → Add Trusted Source
+3. Добавить: `ВАШ_IP/32`
+
+⚠️ **Без этого сервер будет висеть на подключении к БД!**
+
+#### 3. Запустить сервер
+```bash
+npm run dev
+```
+
+**Время запуска**: ~15-30 секунд (подключение к удалённым БД)
+
+**Ожидаемый лог**:
+```
+info: Successfully parsed DATABASE_URL
+info: Using SSL with disabled certificate verification
+info: Connecting to database: defaultdb on port: 25060
+info: Redis TLS enabled for DigitalOcean
+info: Redis cache connected successfully
+info: Database tables initialized successfully
+🚀 New architecture server running on port 3003
+```
+
+#### 4. Проверить работу
+```bash
+curl http://localhost:3003/
+# Должен вернуть HTML страницу логина
+```
+
+---
+
+### Start Development Server (детально)
 
 ```bash
 # Option 1: With auto-reload (recommended)
@@ -322,6 +372,34 @@ doctl apps restart <app-id>
 ---
 
 ## Troubleshooting
+
+### 🚨 Server Hangs on Startup (Connection Timeout)
+
+**Симптомы**: Сервер висит на `Connecting to database...` или `Redis TLS enabled` без дальнейшего вывода
+
+**Причина**: IP не в белом списке DigitalOcean (Trusted Sources)
+
+**Диагностика**:
+```bash
+# Проверить свой IP
+curl ifconfig.me
+
+# Проверить доступность PostgreSQL
+nc -zv db-postgresql-nyc3-90526-do-user-24010108-0.j.db.ondigitalocean.com 25060
+
+# Проверить доступность Redis/Valkey
+nc -zv link-manager-valkey-do-user-24010108-0.d.db.ondigitalocean.com 25060
+```
+
+**Решение**:
+1. Зайти в DigitalOcean Console
+2. **PostgreSQL**: Databases → db-postgresql-nyc3-90526 → Settings → Trusted Sources → Add `ВАШ_IP/32`
+3. **Valkey**: Databases → link-manager-valkey → Settings → Trusted Sources → Add `ВАШ_IP/32`
+4. Перезапустить сервер: `pkill -f nodemon && npm run dev`
+
+**Важно**: IP может меняться при перезагрузке роутера или VPN!
+
+---
 
 ### Server Won't Start
 
