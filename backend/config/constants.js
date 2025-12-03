@@ -9,7 +9,10 @@ module.exports = {
     API: { windowMs: 60 * 1000, max: 100 },
     CREATE: { windowMs: 60 * 1000, max: 10 },
     PLACEMENT: { windowMs: 60 * 1000, max: 20 },
-    WORDPRESS: { windowMs: 60 * 1000, max: 30 }
+    WORDPRESS: { windowMs: 60 * 1000, max: 30 },
+    // Financial operations - stricter limits to prevent fraud/abuse
+    FINANCIAL: { windowMs: 60 * 1000, max: 10 }, // 10 purchases per minute
+    DEPOSIT: { windowMs: 60 * 1000, max: 5 } // 5 deposit attempts per minute
   },
 
   JWT_EXPIRY: '7d',
