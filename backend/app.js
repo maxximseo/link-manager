@@ -9,7 +9,6 @@ const helmet = require('helmet');
 const compression = require('compression');
 const path = require('path');
 
-const logger = require('./config/logger');
 const { errorHandler } = require('./middleware/errorHandler');
 
 // Import routes
