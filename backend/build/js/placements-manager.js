@@ -739,7 +739,7 @@ async function deletePlacement(placementId) {
         await loadBalance();
         await loadActivePlacements();
         await loadScheduledPlacements();
-        await loadHistory();
+        await loadHistoryPlacements();
 
     } catch (error) {
         console.error('Failed to delete placement:', error);
