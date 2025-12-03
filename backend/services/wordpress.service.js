@@ -368,14 +368,19 @@ const deleteArticle = async (siteUrl, apiKey, wordpressPostId) => {
     // Use Link Manager plugin REST API endpoint
     const pluginUrl = `${validatedUrl}/wp-json/link-manager/v1/delete-article/${wordpressPostId}`;
 
-    const response = await axios.delete(pluginUrl, {
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': apiKey
-      },
-      timeout: 30000,
-      maxRedirects: 0 // Prevent SSRF via redirects
-    });
+    // Use retry wrapper for network resilience
+    const response = await axiosWithRetry(
+      () =>
+        axios.delete(pluginUrl, {
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': apiKey
+          },
+          timeout: 30000,
+          maxRedirects: 0 // Prevent SSRF via redirects
+        }),
+      `WordPress delete from ${siteUrl}`
+    );
 
     if (response.data.success) {
       logger.info('Article deleted from WordPress via plugin', {
