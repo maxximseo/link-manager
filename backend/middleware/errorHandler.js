@@ -1,5 +1,4 @@
 const logger = require('../config/logger');
-const Sentry = require('@sentry/node');
 
 // Async handler wrapper
 const asyncHandler = fn => (req, res, next) => {
@@ -7,36 +6,22 @@ const asyncHandler = fn => (req, res, next) => {
 };
 
 // Global error handler
+// Note: Sentry.setupExpressErrorHandler() runs BEFORE this middleware
+// and automatically captures exceptions with request context
 const errorHandler = (err, req, res, _next) => {
   const error = { ...err };
   error.message = err.message;
 
-  // Log error
+  // Log error (Sentry handles the exception capture via setupExpressErrorHandler)
   logger.error('Error handler:', {
     message: error.message,
     stack: error.stack,
     url: req.url,
     method: req.method,
     ip: req.ip,
-    userAgent: req.get('User-Agent')
+    userAgent: req.get('User-Agent'),
+    sentryId: res.sentry // Sentry event ID attached by setupExpressErrorHandler
   });
-
-  // Send to Sentry with user context
-  if (process.env.SENTRY_DSN) {
-    Sentry.withScope(scope => {
-      scope.setUser({
-        id: req.user?.id,
-        username: req.user?.username,
-        role: req.user?.role
-      });
-      scope.setExtra('url', req.originalUrl);
-      scope.setExtra('method', req.method);
-      scope.setExtra('ip', req.ip);
-      scope.setExtra('userAgent', req.get('User-Agent'));
-      scope.setTag('statusCode', error.statusCode || 500);
-      Sentry.captureException(err);
-    });
-  }
 
   // Database connection errors
   if (err.code === 'ECONNREFUSED') {
