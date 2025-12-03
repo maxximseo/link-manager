@@ -72,7 +72,7 @@ async function loadUsers() {
         applyFilters();
     } catch (error) {
         console.error('Error loading users:', error);
-        showError('Ошибка загрузки пользователей: ' + error.message);
+        showAlert('Ошибка загрузки пользователей: ' + error.message, 'danger');
     }
 }
 
@@ -314,14 +314,14 @@ async function confirmAdjustBalance() {
         modal.hide();
 
         // Show success message
-        showSuccess(`Баланс успешно изменен. Новый баланс: $${result.data.newBalance.toFixed(2)}`);
+        showAlert(`Баланс успешно изменен. Новый баланс: $${result.data.newBalance.toFixed(2)}`, 'success');
 
         // Reload users
         await loadUsers();
 
     } catch (error) {
         console.error('Error adjusting balance:', error);
-        showError('Ошибка изменения баланса: ' + error.message);
+        showAlert('Ошибка изменения баланса: ' + error.message, 'danger');
     }
 }
 
