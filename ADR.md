@@ -1368,6 +1368,176 @@ No database migration required - uses existing `is_public` column.
 
 ---
 
+## ADR-021: Frontend Shared Utilities Architecture
+
+**Status**: ✅ ACTIVE
+**Date**: December 2025
+**Decision Makers**: Development Team
+
+### Context
+Frontend codebase had significant code duplication:
+- Badge configurations duplicated 8+ times across files
+- Utility functions (`formatDate`, `isAdmin`, `escapeHtml`) defined in multiple places
+- Two parallel API client implementations (`core/api.js` vs `api.js`)
+- ~2000 lines of dead code in unused `core/` and `modules/` folders
+- No centralized pattern for common UI elements
+
+### Decision
+Implement **modular shared utilities architecture** with strict single-source-of-truth for each function.
+
+### Rationale
+**Problems Solved**:
+- ✅ **DRY Violation**: Same badge HTML defined 8+ times
+- ✅ **Inconsistent Behavior**: `formatDate()` had different implementations
+- ✅ **Dead Code**: 11 unused files (~2000 lines)
+- ✅ **Maintenance Burden**: Changes required editing multiple files
+
+**New Architecture**:
+```
+backend/build/js/
+├── security.js       # escapeHtml(), showAlert() - FIRST to load
+├── auth.js           # getToken(), isAdmin(), isAuthenticated()
+├── badge-utils.js    # All badge/status/color utilities
+├── api.js            # ProjectsAPI, SitesAPI, BillingAPI, PlacementsAPI
+├── purchase-modal.js # Shared purchase modal logic
+└── [page].js         # Page-specific code (uses above)
+```
+
+### Implementation
+
+**Script Loading Order** (CRITICAL):
+```html
+<!-- 1. Security (XSS protection) -->
+<script src="/js/security.js"></script>
+
+<!-- 2. Auth (token management) -->
+<script src="/js/auth.js"></script>
+
+<!-- 3. Shared utilities -->
+<script src="/js/badge-utils.js"></script>
+<script src="/js/api.js"></script>
+
+<!-- 4. Page-specific -->
+<script src="/js/placements-manager.js"></script>
+```
+
+**badge-utils.js Exports** (~280 lines):
+```javascript
+// Status badges
+window.getPlacementStatusBadge(status)   // Returns HTML badge
+window.getPlacementTypeBadge(type)       // 'link' | 'article'
+window.getSiteTypeBadge(siteType)        // 'wordpress' | 'static_php'
+window.getTransactionTypeBadge(type)     // deposit, purchase, renewal...
+window.getUserRoleBadge(role)            // admin, user
+
+// Color utilities
+window.getAmountColorClass(amount)       // text-success/danger/muted
+window.getBalanceColorClass(balance)
+window.formatExpiryWithColor(expiresAt)  // Returns { text, class, daysLeft }
+window.getDrColorClass(dr)               // SEO metric colors
+window.getDaColorClass(da)
+window.getTfColorClass(tf)
+window.getCfColorClass(cf)
+
+// Date formatting
+window.formatDate(dateString)            // DD.MM.YYYY
+window.formatDateTime(dateString)        // DD.MM.YYYY HH:MM
+
+// Tier utilities
+window.getDiscountTierName(discount)     // 0→'Стандарт', 10→'Bronze'...
+window.getTierStatusHtml(isActive, isAchieved)
+
+// Table helpers
+window.getEmptyTableRow(colspan, message)
+window.getErrorTableRow(colspan, message)
+```
+
+**Deleted Dead Code**:
+```
+DELETED: backend/build/js/core/
+  - api.js      (~217 lines) - Duplicate APIClient class
+  - app.js      (~50 lines)  - Never used
+  - utils.js    (~80 lines)  - Never used
+
+DELETED: backend/build/js/modules/
+  - articles.js, bulk-links.js, export.js, placements.js,
+    projects.js, queue.js, sites.js, wordpress.js
+  - (~1600 lines total) - None included in any HTML file
+```
+
+### Function Location Reference
+
+| Function | Source File | Line |
+|----------|-------------|------|
+| `escapeHtml()` | security.js | 7 |
+| `showAlert()` | security.js | 105 |
+| `getToken()` | auth.js | 19 |
+| `isAdmin()` | auth.js | 40 |
+| `isAuthenticated()` | auth.js | 25 |
+| `apiCall()` | api.js | 18 |
+| `showNotification()` | api.js | 6 |
+| `formatDate()` | badge-utils.js | 205 |
+| `formatDateTime()` | badge-utils.js | 215 |
+| `getPlacementStatusBadge()` | badge-utils.js | 23 |
+| `getPlacementTypeBadge()` | badge-utils.js | 36 |
+| All other badges... | badge-utils.js | - |
+
+### Migration Guide
+
+**Before** (duplicate in each file):
+```javascript
+// placements-manager.js
+function formatDate(dateString) {
+    if (!dateString) return '—';
+    return new Date(dateString).toLocaleDateString('ru-RU', {...});
+}
+
+// admin-dashboard.js
+function formatDate(dateString) {  // DUPLICATE!
+    if (!dateString) return '—';
+    return new Date(dateString).toLocaleString('ru-RU', {...});
+}
+```
+
+**After** (single source):
+```javascript
+// placements-manager.js - Uses shared function
+// formatDate() is provided by badge-utils.js (loaded first)
+const dateStr = formatDate(placement.created_at);
+
+// admin-dashboard.js - Uses shared function with time
+// formatDateTime() is provided by badge-utils.js (loaded first)
+const dateStr = formatDateTime(purchase.purchased_at);
+```
+
+### Verification Commands
+```bash
+# Check for duplicate function definitions
+grep -r "function formatDate(" backend/build/js/
+# Should show ONLY badge-utils.js
+
+grep -r "function isAdmin(" backend/build/js/
+# Should show ONLY auth.js
+
+grep -r "function escapeHtml(" backend/build/js/
+# Should show ONLY security.js
+```
+
+### Consequences
+- ✅ **~2000 lines removed** from codebase
+- ✅ **Single source of truth** for all utilities
+- ✅ **Consistent behavior** across all pages
+- ✅ **Easier maintenance** - change once, applies everywhere
+- ✅ **Smaller bundle** - no duplicate code loaded
+- ⚠️ **Script order dependency** - must load in correct order
+- ⚠️ **Global namespace** - functions attached to window object
+
+### Related ADRs
+- ADR-005: Modular Frontend (Vanilla JS) - Establishes vanilla JS approach
+- ADR-007: Parameterized Queries Only - Security patterns extend to frontend
+
+---
+
 ## Summary of Active ADRs
 
 | ADR | Title | Impact | Status |
@@ -1392,6 +1562,7 @@ No database migration required - uses existing `is_public` column.
 | 018 | GEO Parameter System | Medium | ✅ Active |
 | 019 | Optimization Principles Doc | Low | ✅ Active |
 | 020 | Admin-Only Public Site Control | High | ✅ Active |
+| 021 | Frontend Shared Utilities | High | ✅ Active |
 
 ---
 
