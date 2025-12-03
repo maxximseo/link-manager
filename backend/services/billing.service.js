@@ -10,20 +10,21 @@ const wordpressService = require('./wordpress.service');
 
 // Pricing constants
 const PRICING = {
-  LINK_HOMEPAGE: 25.00,      // Homepage link placement
-  ARTICLE_GUEST_POST: 15.00, // Guest post article placement
-  OWNER_RATE: 0.10,          // Special rate for placing content on own sites
+  LINK_HOMEPAGE: 25.0, // Homepage link placement
+  ARTICLE_GUEST_POST: 15.0, // Guest post article placement
+  OWNER_RATE: 0.1, // Special rate for placing content on own sites
   BASE_RENEWAL_DISCOUNT: 30, // Base discount for link renewals (30%)
-  RENEWAL_PERIOD_DAYS: 365,  // Renewal period (1 year)
-  MAX_TOTAL_DISCOUNT: 60     // Maximum combined discount (base + personal tier)
+  RENEWAL_PERIOD_DAYS: 365, // Renewal period (1 year)
+  MAX_TOTAL_DISCOUNT: 60 // Maximum combined discount (base + personal tier)
 };
 
 /**
  * Get user balance and billing info
  */
-const getUserBalance = async (userId) => {
+const getUserBalance = async userId => {
   try {
-    const result = await query(`
+    const result = await query(
+      `
       SELECT
         u.id,
         u.username,
@@ -36,7 +37,9 @@ const getUserBalance = async (userId) => {
       FROM users u
       LEFT JOIN discount_tiers dt ON u.current_discount = dt.discount_percentage
       WHERE u.id = $1
-    `, [userId]);
+    `,
+      [userId]
+    );
 
     if (result.rows.length === 0) {
       throw new Error('User not found');
@@ -52,15 +55,18 @@ const getUserBalance = async (userId) => {
 /**
  * Calculate discount tier based on total spent
  */
-const calculateDiscountTier = async (totalSpent) => {
+const calculateDiscountTier = async totalSpent => {
   try {
-    const result = await query(`
+    const result = await query(
+      `
       SELECT discount_percentage, tier_name
       FROM discount_tiers
       WHERE min_spent <= $1
       ORDER BY min_spent DESC
       LIMIT 1
-    `, [totalSpent]);
+    `,
+      [totalSpent]
+    );
 
     if (result.rows.length === 0) {
       return { discount: 0, tier: 'Стандарт' };
@@ -104,10 +110,7 @@ const addBalance = async (userId, amount, description = 'Balance deposit', admin
     await client.query('BEGIN');
 
     // Get user with lock
-    const userResult = await client.query(
-      'SELECT * FROM users WHERE id = $1 FOR UPDATE',
-      [userId]
-    );
+    const userResult = await client.query('SELECT * FROM users WHERE id = $1 FOR UPDATE', [userId]);
 
     const user = userResult.rows[0];
     if (!user) {
@@ -116,36 +119,38 @@ const addBalance = async (userId, amount, description = 'Balance deposit', admin
 
     // Update balance
     const newBalance = parseFloat(user.balance) + parseFloat(amount);
-    await client.query(
-      'UPDATE users SET balance = $1 WHERE id = $2',
-      [newBalance, userId]
-    );
+    await client.query('UPDATE users SET balance = $1 WHERE id = $2', [newBalance, userId]);
 
     // Create transaction record
     const metadata = adminId ? { added_by_admin: adminId } : {};
-    await client.query(`
+    await client.query(
+      `
       INSERT INTO transactions (
         user_id, type, amount, balance_before, balance_after, description, metadata
       )
       VALUES ($1, 'deposit', $2, $3, $4, $5, $6)
-    `, [userId, amount, user.balance, newBalance, description, JSON.stringify(metadata)]);
+    `,
+      [userId, amount, user.balance, newBalance, description, JSON.stringify(metadata)]
+    );
 
     // Create notification
-    await client.query(`
+    await client.query(
+      `
       INSERT INTO notifications (user_id, type, title, message)
       VALUES ($1, 'balance_deposited', $2, $3)
-    `, [
-      userId,
-      'Баланс пополнен',
-      `Ваш баланс пополнен на $${amount}. Новый баланс: $${newBalance.toFixed(2)}`
-    ]);
+    `,
+      [
+        userId,
+        'Баланс пополнен',
+        `Ваш баланс пополнен на $${amount}. Новый баланс: $${newBalance.toFixed(2)}`
+      ]
+    );
 
     await client.query('COMMIT');
 
     logger.info('Balance added successfully', { userId, amount, newBalance });
 
     return { success: true, newBalance, amount };
-
   } catch (error) {
     await client.query('ROLLBACK');
     logger.error('Failed to add balance', { userId, amount, error: error.message });
@@ -162,9 +167,9 @@ const purchasePlacement = async ({
   userId,
   projectId,
   siteId,
-  type,           // 'link' or 'article'
-  contentIds,     // Array of link/article IDs
-  scheduledDate,  // Optional: scheduled publish date (ISO string)
+  type, // 'link' or 'article'
+  contentIds, // Array of link/article IDs
+  scheduledDate, // Optional: scheduled publish date (ISO string)
   autoRenewal = false
 }) => {
   const client = await pool.connect();
@@ -173,10 +178,7 @@ const purchasePlacement = async ({
     await client.query('BEGIN');
 
     // 1. Get user with lock
-    const userResult = await client.query(
-      'SELECT * FROM users WHERE id = $1 FOR UPDATE',
-      [userId]
-    );
+    const userResult = await client.query('SELECT * FROM users WHERE id = $1 FOR UPDATE', [userId]);
 
     const user = userResult.rows[0];
     if (!user) {
@@ -194,10 +196,7 @@ const purchasePlacement = async ({
     }
 
     // 3. Validate site exists AND lock for quota check (prevent race condition)
-    const siteResult = await client.query(
-      'SELECT * FROM sites WHERE id = $1 FOR UPDATE',
-      [siteId]
-    );
+    const siteResult = await client.query('SELECT * FROM sites WHERE id = $1 FOR UPDATE', [siteId]);
 
     if (siteResult.rows.length === 0) {
       throw new Error('Site not found');
@@ -212,7 +211,7 @@ const purchasePlacement = async ({
     if (!site.is_public && site.user_id !== userId) {
       throw new Error(
         `Сайт "${site.site_name}" приватный. ` +
-        `Только владелец может размещать контент на приватных сайтах.`
+          `Только владелец может размещать контент на приватных сайтах.`
       );
     }
 
@@ -220,7 +219,7 @@ const purchasePlacement = async ({
     if (site.site_type === 'static_php' && type === 'article') {
       throw new Error(
         `Site "${site.site_name}" is a static PHP site and does not support article placements. ` +
-        `Static PHP sites can only purchase link placements.`
+          `Static PHP sites can only purchase link placements.`
       );
     }
 
@@ -228,7 +227,7 @@ const purchasePlacement = async ({
     if (type === 'article' && !site.allow_articles) {
       throw new Error(
         `Site "${site.site_name}" does not allow article placements. ` +
-        `The site owner has disabled article purchases. Only link placements are permitted on this site.`
+          `The site owner has disabled article purchases. Only link placements are permitted on this site.`
       );
     }
 
@@ -236,7 +235,7 @@ const purchasePlacement = async ({
     if (site.available_for_purchase === false) {
       throw new Error(
         `Site "${site.site_name}" is not available for purchase. ` +
-        `The site owner has temporarily closed this site for new placements.`
+          `The site owner has temporarily closed this site for new placements.`
       );
     }
 
@@ -244,22 +243,25 @@ const purchasePlacement = async ({
     if (type === 'link' && site.used_links >= site.max_links) {
       throw new Error(
         `Site "${site.site_name}" has reached its link limit (${site.used_links}/${site.max_links} used). ` +
-        `Cannot create new link placement.`
+          `Cannot create new link placement.`
       );
     }
 
     if (type === 'article' && site.used_articles >= site.max_articles) {
       throw new Error(
         `Site "${site.site_name}" has reached its article limit (${site.used_articles}/${site.max_articles} used). ` +
-        `Cannot create new article placement.`
+          `Cannot create new article placement.`
       );
     }
 
     // 5. Check if placement already exists for this project/site combination
-    const existingPlacement = await client.query(`
+    const existingPlacement = await client.query(
+      `
       SELECT id FROM placements
       WHERE project_id = $1 AND site_id = $2 AND type = $3 AND status NOT IN ('cancelled', 'expired')
-    `, [projectId, siteId, type]);
+    `,
+      [projectId, siteId, type]
+    );
 
     if (existingPlacement.rows.length > 0) {
       throw new Error(`A ${type} placement already exists for this project on this site`);
@@ -275,8 +277,8 @@ const purchasePlacement = async ({
     if (contentIds.length > 1) {
       throw new Error(
         `You can only place 1 ${type} per site per project. ` +
-        `You provided ${contentIds.length} ${type}s. ` +
-        `Please create separate placements for each ${type}.`
+          `You provided ${contentIds.length} ${type}s. ` +
+          `Please create separate placements for each ${type}.`
       );
     }
 
@@ -285,32 +287,41 @@ const purchasePlacement = async ({
     // NEW: Single query with ANY operator (50ms total)
     const tableName = type === 'link' ? 'project_links' : 'project_articles';
 
-    const contentResult = await client.query(`
+    const contentResult = await client.query(
+      `
       SELECT id, project_id, usage_count, usage_limit, status,
              ${type === 'link' ? 'anchor_text, url' : 'title'}
       FROM ${tableName}
       WHERE id = ANY($1::int[])
       FOR UPDATE
-    `, [contentIds]);
+    `,
+      [contentIds]
+    );
 
     // TEST 1: Non-existent contentId
     if (contentResult.rows.length !== contentIds.length) {
       const foundIds = contentResult.rows.map(r => r.id);
       const missingIds = contentIds.filter(id => !foundIds.includes(id));
-      throw new Error(`${type === 'link' ? 'Link' : 'Article'} with ID(s) ${missingIds.join(', ')} not found`);
+      throw new Error(
+        `${type === 'link' ? 'Link' : 'Article'} with ID(s) ${missingIds.join(', ')} not found`
+      );
     }
 
     // Validate each content item
     for (const content of contentResult.rows) {
       // TEST 2: Ownership validation - content must belong to the same project
       if (content.project_id !== projectId) {
-        throw new Error(`${type === 'link' ? 'Link' : 'Article'} with ID ${content.id} does not belong to project ${projectId} (ownership violation)`);
+        throw new Error(
+          `${type === 'link' ? 'Link' : 'Article'} with ID ${content.id} does not belong to project ${projectId} (ownership violation)`
+        );
       }
 
       // TEST 4: Exhausted content
       if (content.status === 'exhausted' || content.usage_count >= content.usage_limit) {
         const displayName = type === 'link' ? content.anchor_text : content.title;
-        throw new Error(`${type === 'link' ? 'Link' : 'Article'} "${displayName}" is exhausted (${content.usage_count}/${content.usage_limit} uses)`);
+        throw new Error(
+          `${type === 'link' ? 'Link' : 'Article'} "${displayName}" is exhausted (${content.usage_count}/${content.usage_limit} uses)`
+        );
       }
     }
 
@@ -325,7 +336,12 @@ const purchasePlacement = async ({
       basePrice = PRICING.OWNER_RATE;
       discount = 0;
       finalPrice = PRICING.OWNER_RATE;
-      logger.info('Owner pricing applied', { userId, siteId, siteName: site.site_name, price: finalPrice });
+      logger.info('Owner pricing applied', {
+        userId,
+        siteId,
+        siteName: site.site_name,
+        price: finalPrice
+      });
     } else {
       // Standard pricing with user's discount tier
       basePrice = type === 'link' ? PRICING.LINK_HOMEPAGE : PRICING.ARTICLE_GUEST_POST;
@@ -335,33 +351,39 @@ const purchasePlacement = async ({
 
     // 7. Check balance
     if (parseFloat(user.balance) < finalPrice) {
-      throw new Error(`Insufficient balance. Required: $${finalPrice.toFixed(2)}, Available: $${user.balance}`);
+      throw new Error(
+        `Insufficient balance. Required: $${finalPrice.toFixed(2)}, Available: $${user.balance}`
+      );
     }
 
     // 8. Deduct from balance
     const newBalance = parseFloat(user.balance) - finalPrice;
     const newTotalSpent = parseFloat(user.total_spent) + finalPrice;
 
-    await client.query(
-      'UPDATE users SET balance = $1, total_spent = $2 WHERE id = $3',
-      [newBalance, newTotalSpent, userId]
-    );
+    await client.query('UPDATE users SET balance = $1, total_spent = $2 WHERE id = $3', [
+      newBalance,
+      newTotalSpent,
+      userId
+    ]);
 
     // 9. Create transaction
-    const transactionResult = await client.query(`
+    const transactionResult = await client.query(
+      `
       INSERT INTO transactions (
         user_id, type, amount, balance_before, balance_after, description, metadata
       )
       VALUES ($1, 'purchase', $2, $3, $4, $5, $6)
       RETURNING id
-    `, [
-      userId,
-      -finalPrice,
-      user.balance,
-      newBalance,
-      `Purchase ${type} placement on ${site.site_name}`,
-      JSON.stringify({ type, discount, basePrice, finalPrice, projectId, siteId })
-    ]);
+    `,
+      [
+        userId,
+        -finalPrice,
+        user.balance,
+        newBalance,
+        `Purchase ${type} placement on ${site.site_name}`,
+        JSON.stringify({ type, discount, basePrice, finalPrice, projectId, siteId })
+      ]
+    );
 
     const transactionId = transactionResult.rows[0].id;
 
@@ -423,7 +445,8 @@ const purchasePlacement = async ({
     }
 
     // 12. Create placement
-    const placementResult = await client.query(`
+    const placementResult = await client.query(
+      `
       INSERT INTO placements (
         user_id, project_id, site_id, type,
         original_price, discount_applied, final_price,
@@ -433,64 +456,79 @@ const purchasePlacement = async ({
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), $8, $9, $10, $11, $12, $13)
       RETURNING *
-    `, [
-      userId, projectId, siteId, type,
-      basePrice, discount, finalPrice,
-      scheduledPublishDate, expiresAt,
-      autoRenewal, renewalPrice,
-      transactionId, status
-    ]);
+    `,
+      [
+        userId,
+        projectId,
+        siteId,
+        type,
+        basePrice,
+        discount,
+        finalPrice,
+        scheduledPublishDate,
+        expiresAt,
+        autoRenewal,
+        renewalPrice,
+        transactionId,
+        status
+      ]
+    );
 
     const placement = placementResult.rows[0];
 
     // 13. Link content (links or articles)
     for (const contentId of contentIds) {
       const columnName = type === 'link' ? 'link_id' : 'article_id';
-      await client.query(`
+      await client.query(
+        `
         INSERT INTO placement_content (placement_id, ${columnName})
         VALUES ($1, $2)
-      `, [placement.id, contentId]);
+      `,
+        [placement.id, contentId]
+      );
 
       // Update usage count
       const tableName = type === 'link' ? 'project_links' : 'project_articles';
-      await client.query(`
+      await client.query(
+        `
         UPDATE ${tableName}
         SET usage_count = usage_count + 1,
             status = CASE WHEN usage_count + 1 >= usage_limit THEN 'exhausted' ELSE 'active' END
         WHERE id = $1
-      `, [contentId]);
+      `,
+        [contentId]
+      );
     }
 
     // 14. Update site quotas
     if (type === 'link') {
-      await client.query(
-        'UPDATE sites SET used_links = used_links + 1 WHERE id = $1',
-        [siteId]
-      );
+      await client.query('UPDATE sites SET used_links = used_links + 1 WHERE id = $1', [siteId]);
     } else {
-      await client.query(
-        'UPDATE sites SET used_articles = used_articles + 1 WHERE id = $1',
-        [siteId]
-      );
+      await client.query('UPDATE sites SET used_articles = used_articles + 1 WHERE id = $1', [
+        siteId
+      ]);
     }
 
     // 15. Update discount tier if needed
     const newTier = await calculateDiscountTier(newTotalSpent);
     if (newTier.discount !== parseFloat(user.current_discount)) {
-      await client.query(
-        'UPDATE users SET current_discount = $1 WHERE id = $2',
-        [newTier.discount, userId]
-      );
+      await client.query('UPDATE users SET current_discount = $1 WHERE id = $2', [
+        newTier.discount,
+        userId
+      ]);
 
       // Notify user about tier upgrade
-      await client.query(`
+      await client.query(
+        `
         INSERT INTO notifications (user_id, type, title, message)
         VALUES ($1, 'discount_tier_achieved', $2, $3)
-      `, [
-        userId,
-        'Новый уровень скидки!',
-        `Поздравляем! Вы достигли уровня "${newTier.tier}" со скидкой ${newTier.discount}%`
-      ]);
+      `,
+        [
+          userId,
+          'Новый уровень скидки!',
+          `Поздравляем! Вы достигли уровня "${newTier.tier}" со скидкой ${newTier.discount}%`
+        ]
+      );
     }
 
     // 16. Get project name for notifications
@@ -498,55 +536,84 @@ const purchasePlacement = async ({
     const typeLabel = type === 'link' ? 'ссылка' : 'статья';
 
     // 17. NOTIFICATION: Create notification for user about purchase
-    await client.query(`
+    await client.query(
+      `
       INSERT INTO notifications (user_id, type, title, message, metadata)
       VALUES ($1, 'placement_purchased', $2, $3, $4)
-    `, [
-      userId,
-      'Размещение куплено',
-      `Куплена ${typeLabel} на сайте "${site.site_name}" для проекта "${project.name}". Списано $${finalPrice.toFixed(2)}.`,
-      JSON.stringify({ placementId: placement.id, type, siteId, siteName: site.site_name, projectId, projectName: project.name, price: finalPrice })
-    ]);
+    `,
+      [
+        userId,
+        'Размещение куплено',
+        `Куплена ${typeLabel} на сайте "${site.site_name}" для проекта "${project.name}". Списано $${finalPrice.toFixed(2)}.`,
+        JSON.stringify({
+          placementId: placement.id,
+          type,
+          siteId,
+          siteName: site.site_name,
+          projectId,
+          projectName: project.name,
+          price: finalPrice
+        })
+      ]
+    );
 
     // 18. NOTIFICATION: Create notification for other admins about purchase (exclude buyer to avoid duplicates)
-    await client.query(`
+    await client.query(
+      `
       INSERT INTO notifications (user_id, type, title, message, metadata)
       SELECT id, 'admin_placement_purchased', $1, $2, $3
       FROM users WHERE role = 'admin' AND id != $4
-    `, [
-      'Новая покупка',
-      `Пользователь "${user.username}" купил ${typeLabel === 'ссылка' ? 'ссылку' : 'статью'} на "${site.site_name}" за $${finalPrice.toFixed(2)}.`,
-      JSON.stringify({ placementId: placement.id, userId, username: user.username, type, siteId, siteName: site.site_name, projectId, projectName: project.name, price: finalPrice }),
-      userId
-    ]);
+    `,
+      [
+        'Новая покупка',
+        `Пользователь "${user.username}" купил ${typeLabel === 'ссылка' ? 'ссылку' : 'статью'} на "${site.site_name}" за $${finalPrice.toFixed(2)}.`,
+        JSON.stringify({
+          placementId: placement.id,
+          userId,
+          username: user.username,
+          type,
+          siteId,
+          siteName: site.site_name,
+          projectId,
+          projectName: project.name,
+          price: finalPrice
+        }),
+        userId
+      ]
+    );
 
     // 19. OPTIMIZATION: Publish AFTER transaction commit (async)
     // OLD: WordPress publication inside transaction blocked for 500-1000ms
     // NEW: Commit first, then publish async (no blocking)
 
     // 17. Create audit log
-    await client.query(`
+    await client.query(
+      `
       INSERT INTO audit_log (user_id, action, details)
       VALUES ($1, 'purchase_placement', $2)
-    `, [userId, JSON.stringify({ placementId: placement.id, type, siteId, finalPrice })]);
+    `,
+      [userId, JSON.stringify({ placementId: placement.id, type, siteId, finalPrice })]
+    );
 
     await client.query('COMMIT');
 
     // OPTIMIZATION: Async cache invalidation (don't await - save 60-150ms)
     // Cache staleness is acceptable (2 min TTL)
-    cache.delPattern(`placements:user:${userId}:*`).catch(err =>
-      logger.error('Cache invalidation failed (placements)', { userId, err })
-    );
-    cache.delPattern(`projects:user:${userId}:*`).catch(err =>
-      logger.error('Cache invalidation failed (projects)', { userId, err })
-    );
+    cache
+      .delPattern(`placements:user:${userId}:*`)
+      .catch(err => logger.error('Cache invalidation failed (placements)', { userId, err }));
+    cache
+      .delPattern(`projects:user:${userId}:*`)
+      .catch(err => logger.error('Cache invalidation failed (projects)', { userId, err }));
 
     // CRITICAL FIX: Invalidate WordPress/Static content cache for this site
     // This ensures the plugin/widget shows updated content immediately
     if (site.site_type === 'wordpress' && site.api_key) {
-      cache.del(`wp:content:${site.api_key}`).catch(err =>
-        logger.error('Cache invalidation failed (wp content)', { apiKey: site.api_key, err })
-      );
+      cache
+        .del(`wp:content:${site.api_key}`)
+        .catch(err =>
+          logger.error('Cache invalidation failed (wp content)', { apiKey: site.api_key, err })
+        );
     } else if (site.site_type === 'static_php' && site.site_url) {
       // Normalize domain for cache key
       const normalizedDomain = site.site_url
@@ -555,7 +622,10 @@ const purchasePlacement = async ({
         .replace(/^www\./, '')
         .replace(/\/.*$/, '');
       cache.del(`static:content:${normalizedDomain}`).catch(err =>
-        logger.error('Cache invalidation failed (static content)', { domain: normalizedDomain, err })
+        logger.error('Cache invalidation failed (static content)', {
+          domain: normalizedDomain,
+          err
+        })
       );
     }
 
@@ -596,7 +666,6 @@ const purchasePlacement = async ({
       newDiscount: newTier.discount,
       newTier: newTier.tier
     };
-
   } catch (error) {
     await client.query('ROLLBACK');
     logger.error('Failed to purchase placement', { userId, error: error.message });
@@ -617,11 +686,14 @@ const publishPlacementAsync = async (placementId, site) => {
     await client.query('BEGIN');
 
     // Get placement details
-    const placementResult = await client.query(`
+    const placementResult = await client.query(
+      `
       SELECT p.*
       FROM placements p
       WHERE p.id = $1
-    `, [placementId]);
+    `,
+      [placementId]
+    );
 
     const placement = placementResult.rows[0];
 
@@ -630,7 +702,8 @@ const publishPlacementAsync = async (placementId, site) => {
     }
 
     // Get content
-    const contentResult = await client.query(`
+    const contentResult = await client.query(
+      `
       SELECT
         pc.*,
         pl.url, pl.anchor_text,
@@ -639,38 +712,45 @@ const publishPlacementAsync = async (placementId, site) => {
       LEFT JOIN project_links pl ON pc.link_id = pl.id
       LEFT JOIN project_articles pa ON pc.article_id = pa.id
       WHERE pc.placement_id = $1
-    `, [placementId]);
+    `,
+      [placementId]
+    );
 
     const content = contentResult.rows[0];
 
     // Publish to WordPress
     if (placement.type === 'article' && content.article_id) {
-      const result = await wordpressService.publishArticle(
-        site.site_url,
-        site.api_key,
-        {
-          title: content.title,
-          content: content.content,
-          slug: content.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')
-        }
-      );
+      const result = await wordpressService.publishArticle(site.site_url, site.api_key, {
+        title: content.title,
+        content: content.content,
+        slug: content.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+      });
 
-      await client.query(`
+      await client.query(
+        `
         UPDATE placements
         SET status = 'placed',
             published_at = NOW(),
             wordpress_post_id = $1
         WHERE id = $2
-      `, [result.post_id, placementId]);
+      `,
+        [result.post_id, placementId]
+      );
 
-      logger.info('Article published successfully (async)', { placementId, wordpressPostId: result.post_id });
+      logger.info('Article published successfully (async)', {
+        placementId,
+        wordpressPostId: result.post_id
+      });
     } else {
       // For links, mark as placed (actual publication handled by plugin)
-      await client.query(`
+      await client.query(
+        `
         UPDATE placements
         SET status = 'placed', published_at = NOW()
         WHERE id = $1
-      `, [placementId]);
+      `,
+        [placementId]
+      );
 
       logger.info('Link placement marked as placed (async)', { placementId });
     }
@@ -692,12 +772,15 @@ const publishPlacementAsync = async (placementId, site) => {
 const publishScheduledPlacement = async (placementId, userId = null) => {
   try {
     // Get placement with site info
-    const placementResult = await query(`
+    const placementResult = await query(
+      `
       SELECT p.*, s.api_key, s.site_url, s.site_type
       FROM placements p
       JOIN sites s ON p.site_id = s.id
       WHERE p.id = $1
-    `, [placementId]);
+    `,
+      [placementId]
+    );
 
     if (placementResult.rows.length === 0) {
       throw new Error('Placement not found');
@@ -707,7 +790,9 @@ const publishScheduledPlacement = async (placementId, userId = null) => {
 
     // Validate status
     if (placement.status !== 'scheduled') {
-      throw new Error(`Placement status is '${placement.status}', not 'scheduled'. Cannot publish.`);
+      throw new Error(
+        `Placement status is '${placement.status}', not 'scheduled'. Cannot publish.`
+      );
     }
 
     // Authorization check (if userId provided)
@@ -734,7 +819,11 @@ const publishScheduledPlacement = async (placementId, userId = null) => {
       message: 'Placement is being published'
     };
   } catch (error) {
-    logger.error('Failed to publish scheduled placement', { placementId, userId, error: error.message });
+    logger.error('Failed to publish scheduled placement', {
+      placementId,
+      userId,
+      error: error.message
+    });
     throw error;
   }
 };
@@ -745,17 +834,21 @@ const publishScheduledPlacement = async (placementId, userId = null) => {
  */
 const publishPlacement = async (client, placementId) => {
   // Get placement details
-  const placementResult = await client.query(`
+  const placementResult = await client.query(
+    `
     SELECT p.*, s.api_key, s.site_url
     FROM placements p
     JOIN sites s ON p.site_id = s.id
     WHERE p.id = $1
-  `, [placementId]);
+  `,
+    [placementId]
+  );
 
   const placement = placementResult.rows[0];
 
   // Get content
-  const contentResult = await client.query(`
+  const contentResult = await client.query(
+    `
     SELECT
       pc.*,
       pl.url, pl.anchor_text,
@@ -764,38 +857,42 @@ const publishPlacement = async (client, placementId) => {
     LEFT JOIN project_links pl ON pc.link_id = pl.id
     LEFT JOIN project_articles pa ON pc.article_id = pa.id
     WHERE pc.placement_id = $1
-  `, [placementId]);
+  `,
+    [placementId]
+  );
 
   const content = contentResult.rows[0];
 
   // Publish to WordPress
   if (placement.type === 'article' && content.article_id) {
-    const result = await wordpressService.publishArticle(
-      placement.site_url,
-      placement.api_key,
-      {
-        title: content.title,
-        content: content.content,
-        slug: content.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')
-      }
-    );
+    const result = await wordpressService.publishArticle(placement.site_url, placement.api_key, {
+      title: content.title,
+      content: content.content,
+      slug: content.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+    });
 
-    await client.query(`
+    await client.query(
+      `
       UPDATE placements
       SET status = 'placed',
           published_at = NOW(),
           wordpress_post_id = $1
       WHERE id = $2
-    `, [result.post_id, placementId]);
+    `,
+      [result.post_id, placementId]
+    );
 
     logger.info('Article published successfully', { placementId, wordpressPostId: result.post_id });
   } else {
     // For links, mark as placed (actual publication handled by plugin)
-    await client.query(`
+    await client.query(
+      `
       UPDATE placements
       SET status = 'placed', published_at = NOW()
       WHERE id = $1
-    `, [placementId]);
+    `,
+      [placementId]
+    );
 
     logger.info('Link placement marked as placed', { placementId });
   }
@@ -811,14 +908,17 @@ const renewPlacement = async (placementId, userId, isAutoRenewal = false) => {
     await client.query('BEGIN');
 
     // 1. Get placement, user, and site with lock
-    const placementResult = await client.query(`
+    const placementResult = await client.query(
+      `
       SELECT p.*, u.balance, u.current_discount, u.total_spent, s.user_id as site_owner_id
       FROM placements p
       JOIN users u ON p.user_id = u.id
       JOIN sites s ON p.site_id = s.id
       WHERE p.id = $1 AND p.user_id = $2
       FOR UPDATE OF p, u
-    `, [placementId, userId]);
+    `,
+      [placementId, userId]
+    );
 
     if (placementResult.rows.length === 0) {
       throw new Error('Placement not found or unauthorized');
@@ -850,7 +950,11 @@ const renewPlacement = async (placementId, userId, isAutoRenewal = false) => {
       basePrice = PRICING.OWNER_RATE;
       baseRenewalDiscount = 0;
       personalDiscount = 0;
-      logger.info('Owner renewal pricing applied', { userId, placementId, price: finalRenewalPrice });
+      logger.info('Owner renewal pricing applied', {
+        userId,
+        placementId,
+        price: finalRenewalPrice
+      });
     } else {
       // Standard renewal pricing
       basePrice = PRICING.LINK_HOMEPAGE;
@@ -864,27 +968,30 @@ const renewPlacement = async (placementId, userId, isAutoRenewal = false) => {
 
     // 4. Check balance (using locked user data)
     if (userBalance < finalRenewalPrice) {
-      throw new Error(`Insufficient balance for renewal. Required: $${finalRenewalPrice.toFixed(2)}, Available: $${userBalance.toFixed(2)}`);
+      throw new Error(
+        `Insufficient balance for renewal. Required: $${finalRenewalPrice.toFixed(2)}, Available: $${userBalance.toFixed(2)}`
+      );
     }
 
     // 5. Deduct from balance
     const newBalance = userBalance - finalRenewalPrice;
     const newTotalSpent = userTotalSpent + finalRenewalPrice;
 
-    await client.query(
-      'UPDATE users SET balance = $1, total_spent = $2 WHERE id = $3',
-      [newBalance, newTotalSpent, userId]
-    );
+    await client.query('UPDATE users SET balance = $1, total_spent = $2 WHERE id = $3', [
+      newBalance,
+      newTotalSpent,
+      userId
+    ]);
 
     // CRITICAL FIX (BUG #12): Recalculate discount tier after renewal
     // User may qualify for higher tier after total_spent increase from renewal
     const newTier = await calculateDiscountTier(newTotalSpent);
     // Compare with actual current_discount from locked user row (userCurrentDiscount extracted above)
     if (newTier.discount !== userCurrentDiscount) {
-      await client.query(
-        'UPDATE users SET current_discount = $1 WHERE id = $2',
-        [newTier.discount, userId]
-      );
+      await client.query('UPDATE users SET current_discount = $1 WHERE id = $2', [
+        newTier.discount,
+        userId
+      ]);
 
       logger.info('Discount tier upgraded after renewal', {
         userId,
@@ -895,34 +1002,45 @@ const renewPlacement = async (placementId, userId, isAutoRenewal = false) => {
       });
 
       // Notify user about tier upgrade
-      await client.query(`
+      await client.query(
+        `
         INSERT INTO notifications (user_id, type, title, message)
         VALUES ($1, 'discount_tier_achieved', $2, $3)
-      `, [
-        userId,
-        'Новый уровень скидки!',
-        `Поздравляем! Вы достигли уровня "${newTier.tier}" со скидкой ${newTier.discount}%`
-      ]);
+      `,
+        [
+          userId,
+          'Новый уровень скидки!',
+          `Поздравляем! Вы достигли уровня "${newTier.tier}" со скидкой ${newTier.discount}%`
+        ]
+      );
     }
 
     // 6. Create transaction
     const transactionType = isAutoRenewal ? 'auto_renewal' : 'renewal';
-    const transactionResult = await client.query(`
+    const transactionResult = await client.query(
+      `
       INSERT INTO transactions (
         user_id, type, amount, balance_before, balance_after, description, placement_id, metadata
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING id
-    `, [
-      userId,
-      transactionType,
-      -finalRenewalPrice,
-      placement.balance,
-      newBalance,
-      `Renewal of placement #${placementId}`,
-      placementId,
-      JSON.stringify({ basePrice, baseRenewalDiscount, personalDiscount, finalPrice: finalRenewalPrice })
-    ]);
+    `,
+      [
+        userId,
+        transactionType,
+        -finalRenewalPrice,
+        placement.balance,
+        newBalance,
+        `Renewal of placement #${placementId}`,
+        placementId,
+        JSON.stringify({
+          basePrice,
+          baseRenewalDiscount,
+          personalDiscount,
+          finalPrice: finalRenewalPrice
+        })
+      ]
+    );
 
     const transactionId = transactionResult.rows[0].id;
 
@@ -930,39 +1048,51 @@ const renewPlacement = async (placementId, userId, isAutoRenewal = false) => {
     const newExpiryDate = new Date(placement.expires_at || new Date());
     newExpiryDate.setDate(newExpiryDate.getDate() + PRICING.RENEWAL_PERIOD_DAYS);
 
-    await client.query(`
+    await client.query(
+      `
       UPDATE placements
       SET expires_at = $1,
           last_renewed_at = NOW(),
           renewal_count = renewal_count + 1,
           renewal_price = $2
       WHERE id = $3
-    `, [newExpiryDate, finalRenewalPrice, placementId]);
+    `,
+      [newExpiryDate, finalRenewalPrice, placementId]
+    );
 
     // 8. Record renewal history
-    await client.query(`
+    await client.query(
+      `
       INSERT INTO renewal_history (
         placement_id, user_id, price_paid, discount_applied, new_expiry_date, transaction_id
       )
       VALUES ($1, $2, $3, $4, $5, $6)
-    `, [placementId, userId, finalRenewalPrice, personalDiscount, newExpiryDate, transactionId]);
+    `,
+      [placementId, userId, finalRenewalPrice, personalDiscount, newExpiryDate, transactionId]
+    );
 
     // 9. Create notification
-    await client.query(`
+    await client.query(
+      `
       INSERT INTO notifications (user_id, type, title, message)
       VALUES ($1, $2, $3, $4)
-    `, [
-      userId,
-      'placement_renewed',
-      'Размещение продлено',
-      `Размещение #${placementId} успешно продлено до ${newExpiryDate.toLocaleDateString()}. Списано $${finalRenewalPrice.toFixed(2)}`
-    ]);
+    `,
+      [
+        userId,
+        'placement_renewed',
+        'Размещение продлено',
+        `Размещение #${placementId} успешно продлено до ${newExpiryDate.toLocaleDateString()}. Списано $${finalRenewalPrice.toFixed(2)}`
+      ]
+    );
 
     // 10. Audit log
-    await client.query(`
+    await client.query(
+      `
       INSERT INTO audit_log (user_id, action, details)
       VALUES ($1, 'renew_placement', $2)
-    `, [userId, JSON.stringify({ placementId, isAutoRenewal, pricePaid: finalRenewalPrice })]);
+    `,
+      [userId, JSON.stringify({ placementId, isAutoRenewal, pricePaid: finalRenewalPrice })]
+    );
 
     await client.query('COMMIT');
 
@@ -986,10 +1116,14 @@ const renewPlacement = async (placementId, userId, isAutoRenewal = false) => {
       pricePaid: finalRenewalPrice,
       newBalance
     };
-
   } catch (error) {
     await client.query('ROLLBACK');
-    logger.error('Failed to renew placement', { placementId, userId, isAutoRenewal, error: error.message });
+    logger.error('Failed to renew placement', {
+      placementId,
+      userId,
+      isAutoRenewal,
+      error: error.message
+    });
     throw error;
   } finally {
     client.release();
@@ -1002,10 +1136,10 @@ const renewPlacement = async (placementId, userId, isAutoRenewal = false) => {
 const toggleAutoRenewal = async (placementId, userId, enabled) => {
   try {
     // Verify ownership
-    const placementResult = await query(
-      'SELECT * FROM placements WHERE id = $1 AND user_id = $2',
-      [placementId, userId]
-    );
+    const placementResult = await query('SELECT * FROM placements WHERE id = $1 AND user_id = $2', [
+      placementId,
+      userId
+    ]);
 
     if (placementResult.rows.length === 0) {
       throw new Error('Placement not found or unauthorized');
@@ -1017,10 +1151,7 @@ const toggleAutoRenewal = async (placementId, userId, enabled) => {
       throw new Error('Auto-renewal is only available for homepage links');
     }
 
-    await query(
-      'UPDATE placements SET auto_renewal = $1 WHERE id = $2',
-      [enabled, placementId]
-    );
+    await query('UPDATE placements SET auto_renewal = $1 WHERE id = $2', [enabled, placementId]);
 
     // Clear cache after toggle so UI shows updated data
     const cache = require('./cache.service');
@@ -1029,9 +1160,13 @@ const toggleAutoRenewal = async (placementId, userId, enabled) => {
     logger.info('Auto-renewal toggled', { placementId, userId, enabled });
 
     return { success: true, enabled };
-
   } catch (error) {
-    logger.error('Failed to toggle auto-renewal', { placementId, userId, enabled, error: error.message });
+    logger.error('Failed to toggle auto-renewal', {
+      placementId,
+      userId,
+      enabled,
+      error: error.message
+    });
     throw error;
   }
 };
@@ -1051,20 +1186,26 @@ const getUserTransactions = async (userId, { page = 1, limit = 50, type = null }
       params.push(type);
     }
 
-    const result = await query(`
+    const result = await query(
+      `
       SELECT *
       FROM transactions
       ${whereClause}
       ORDER BY created_at DESC
       LIMIT $${params.length + 1} OFFSET $${params.length + 2}
-    `, [...params, limit, offset]);
+    `,
+      [...params, limit, offset]
+    );
 
     // Get total count
-    const countResult = await query(`
+    const countResult = await query(
+      `
       SELECT COUNT(*) as count
       FROM transactions
       ${whereClause}
-    `, params);
+    `,
+      params
+    );
 
     const total = parseInt(countResult.rows[0].count);
     const totalPages = Math.ceil(total / limit);
@@ -1080,7 +1221,6 @@ const getUserTransactions = async (userId, { page = 1, limit = 50, type = null }
         hasPrev: page > 1
       }
     };
-
   } catch (error) {
     logger.error('Failed to get user transactions', { userId, error: error.message });
     throw error;
@@ -1090,7 +1230,7 @@ const getUserTransactions = async (userId, { page = 1, limit = 50, type = null }
 /**
  * Calculate pricing for user (with their discount)
  */
-const getPricingForUser = async (userId) => {
+const getPricingForUser = async userId => {
   try {
     const user = await getUserBalance(userId);
     const discount = parseFloat(user.current_discount) || 0;
@@ -1099,11 +1239,13 @@ const getPricingForUser = async (userId) => {
     const articlePrice = PRICING.ARTICLE_GUEST_POST * (1 - discount / 100);
 
     // Calculate renewal price
-    const renewalPrice = PRICING.LINK_HOMEPAGE
-      * (1 - PRICING.BASE_RENEWAL_DISCOUNT / 100)
-      * (1 - discount / 100);
+    const renewalPrice =
+      PRICING.LINK_HOMEPAGE * (1 - PRICING.BASE_RENEWAL_DISCOUNT / 100) * (1 - discount / 100);
 
-    const maxDiscount = Math.min(PRICING.MAX_TOTAL_DISCOUNT, PRICING.BASE_RENEWAL_DISCOUNT + discount);
+    const maxDiscount = Math.min(
+      PRICING.MAX_TOTAL_DISCOUNT,
+      PRICING.BASE_RENEWAL_DISCOUNT + discount
+    );
 
     return {
       link: {
@@ -1129,7 +1271,6 @@ const getPricingForUser = async (userId) => {
       },
       discountTiers: await getDiscountTiers()
     };
-
   } catch (error) {
     logger.error('Failed to get pricing for user', { userId, error: error.message });
     throw error;
@@ -1147,7 +1288,8 @@ const refundPlacement = async (placementId, userId) => {
     await client.query('BEGIN');
 
     // Get placement with billing data and lock it
-    const placementResult = await client.query(`
+    const placementResult = await client.query(
+      `
       SELECT
         p.id,
         p.user_id,
@@ -1166,7 +1308,9 @@ const refundPlacement = async (placementId, userId) => {
       LEFT JOIN projects proj ON p.project_id = proj.id
       WHERE p.id = $1 AND p.user_id = $2
       FOR UPDATE OF p
-    `, [placementId, userId]);
+    `,
+      [placementId, userId]
+    );
 
     if (placementResult.rows.length === 0) {
       await client.query('ROLLBACK');
@@ -1204,18 +1348,19 @@ const refundPlacement = async (placementId, userId) => {
     const totalSpentAfter = Math.max(0, totalSpentBefore - finalPrice);
 
     // Refund the amount and decrement total_spent
-    await client.query(
-      'UPDATE users SET balance = $1, total_spent = $2 WHERE id = $3',
-      [balanceAfter, totalSpentAfter, userId]
-    );
+    await client.query('UPDATE users SET balance = $1, total_spent = $2 WHERE id = $3', [
+      balanceAfter,
+      totalSpentAfter,
+      userId
+    ]);
 
     // CRITICAL FIX (BUG #11): Recalculate discount tier after refund
     const newTier = await calculateDiscountTier(totalSpentAfter);
     if (newTier.discount !== parseFloat(user.current_discount)) {
-      await client.query(
-        'UPDATE users SET current_discount = $1 WHERE id = $2',
-        [newTier.discount, userId]
-      );
+      await client.query('UPDATE users SET current_discount = $1 WHERE id = $2', [
+        newTier.discount,
+        userId
+      ]);
 
       logger.info('Discount tier changed after refundPlacement', {
         userId,
@@ -1227,42 +1372,48 @@ const refundPlacement = async (placementId, userId) => {
     }
 
     // Create refund transaction
-    const transactionResult = await client.query(`
+    const transactionResult = await client.query(
+      `
       INSERT INTO transactions (
         user_id, type, amount, balance_before, balance_after,
         description, placement_id
       ) VALUES ($1, 'refund', $2, $3, $4, $5, $6)
       RETURNING id, created_at
-    `, [
-      userId,
-      finalPrice, // Positive amount for refund
-      balanceBefore,
-      balanceAfter,
-      `Refund for ${placement.type} placement on ${placement.site_name} (${placement.project_name})`,
-      placementId
-    ]);
+    `,
+      [
+        userId,
+        finalPrice, // Positive amount for refund
+        balanceBefore,
+        balanceAfter,
+        `Refund for ${placement.type} placement on ${placement.site_name} (${placement.project_name})`,
+        placementId
+      ]
+    );
 
     const transaction = transactionResult.rows[0];
 
     // Add audit log
-    await client.query(`
+    await client.query(
+      `
       INSERT INTO audit_log (
         user_id, action, details
       ) VALUES ($1, 'placement_refund', $2)
-    `, [
-      userId,
-      JSON.stringify({
-        entity_type: 'placement',
-        entity_id: placementId,
-        refund_amount: finalPrice,
-        original_price: placement.original_price,
-        discount_applied: placement.discount_applied,
-        transaction_id: transaction.id,
-        site_name: placement.site_name,
-        project_name: placement.project_name,
-        type: placement.type
-      })
-    ]);
+    `,
+      [
+        userId,
+        JSON.stringify({
+          entity_type: 'placement',
+          entity_id: placementId,
+          refund_amount: finalPrice,
+          original_price: placement.original_price,
+          discount_applied: placement.discount_applied,
+          transaction_id: transaction.id,
+          site_name: placement.site_name,
+          project_name: placement.project_name,
+          type: placement.type
+        })
+      ]
+    );
 
     await client.query('COMMIT');
 
@@ -1281,7 +1432,6 @@ const refundPlacement = async (placementId, userId) => {
       transactionId: transaction.id,
       transactionDate: transaction.created_at
     };
-
   } catch (error) {
     await client.query('ROLLBACK');
     logger.error('Failed to refund placement', {
@@ -1330,10 +1480,11 @@ const refundPlacementInTransaction = async (client, placement) => {
   const totalSpentAfter = Math.max(0, totalSpentBefore - finalPrice);
 
   // Refund money and decrement total_spent
-  await client.query(
-    'UPDATE users SET balance = $1, total_spent = $2 WHERE id = $3',
-    [balanceAfter, totalSpentAfter, placement.user_id]
-  );
+  await client.query('UPDATE users SET balance = $1, total_spent = $2 WHERE id = $3', [
+    balanceAfter,
+    totalSpentAfter,
+    placement.user_id
+  ]);
 
   // Recalculate discount tier after refund
   let tierChanged = false;
@@ -1341,10 +1492,10 @@ const refundPlacementInTransaction = async (client, placement) => {
   const newTier = await calculateDiscountTier(totalSpentAfter);
 
   if (newTier.discount !== parseFloat(user.current_discount)) {
-    await client.query(
-      'UPDATE users SET current_discount = $1 WHERE id = $2',
-      [newTier.discount, placement.user_id]
-    );
+    await client.query('UPDATE users SET current_discount = $1 WHERE id = $2', [
+      newTier.discount,
+      placement.user_id
+    ]);
 
     tierChanged = true;
     newTierName = newTier.tier;
@@ -1358,30 +1509,36 @@ const refundPlacementInTransaction = async (client, placement) => {
     });
 
     // Notify placement owner about tier downgrade
-    await client.query(`
+    await client.query(
+      `
       INSERT INTO notifications (user_id, type, title, message)
       VALUES ($1, 'discount_tier_changed', $2, $3)
-    `, [
-      placement.user_id,
-      'Изменение уровня скидки',
-      `Ваш уровень скидки изменён на "${newTier.tier}" (${newTier.discount}%) после возврата средств.`
-    ]);
+    `,
+      [
+        placement.user_id,
+        'Изменение уровня скидки',
+        `Ваш уровень скидки изменён на "${newTier.tier}" (${newTier.discount}%) после возврата средств.`
+      ]
+    );
   }
 
   // Create refund transaction
-  await client.query(`
+  await client.query(
+    `
     INSERT INTO transactions (
       user_id, type, amount, balance_before, balance_after,
       description, placement_id
     ) VALUES ($1, 'refund', $2, $3, $4, $5, $6)
-  `, [
-    placement.user_id,
-    finalPrice,
-    balanceBefore,
-    balanceAfter,
-    `Refund for ${placement.type} placement on ${placement.site_name || 'site'} (${placement.project_name || 'project'})`,
-    placement.id
-  ]);
+  `,
+    [
+      placement.user_id,
+      finalPrice,
+      balanceBefore,
+      balanceAfter,
+      `Refund for ${placement.type} placement on ${placement.site_name || 'site'} (${placement.project_name || 'project'})`,
+      placement.id
+    ]
+  );
 
   logger.info('Refund processed within transaction', {
     placementId: placement.id,
@@ -1413,7 +1570,8 @@ const refundPlacementInTransaction = async (client, placement) => {
  */
 const restoreUsageCountsInTransaction = async (client, placementId) => {
   // Get content IDs
-  const contentResult = await client.query(`
+  const contentResult = await client.query(
+    `
     SELECT
       array_agg(DISTINCT link_id) FILTER (WHERE link_id IS NOT NULL) as link_ids,
       array_agg(DISTINCT article_id) FILTER (WHERE article_id IS NOT NULL) as article_ids,
@@ -1421,13 +1579,16 @@ const restoreUsageCountsInTransaction = async (client, placementId) => {
       COUNT(DISTINCT article_id) as article_count
     FROM placement_content
     WHERE placement_id = $1
-  `, [placementId]);
+  `,
+    [placementId]
+  );
 
   const { link_ids, article_ids, link_count, article_count } = contentResult.rows[0];
 
   // Decrement usage_count for links (batch UPDATE - 1 query instead of N)
   if (link_ids && link_ids.length > 0) {
-    await client.query(`
+    await client.query(
+      `
       UPDATE project_links
       SET usage_count = GREATEST(0, usage_count - 1),
           status = CASE
@@ -1435,12 +1596,15 @@ const restoreUsageCountsInTransaction = async (client, placementId) => {
             ELSE status
           END
       WHERE id = ANY($1::int[])
-    `, [link_ids]);
+    `,
+      [link_ids]
+    );
   }
 
   // Decrement usage_count for articles (batch UPDATE - 1 query instead of N)
   if (article_ids && article_ids.length > 0) {
-    await client.query(`
+    await client.query(
+      `
       UPDATE project_articles
       SET usage_count = GREATEST(0, usage_count - 1),
           status = CASE
@@ -1448,7 +1612,9 @@ const restoreUsageCountsInTransaction = async (client, placementId) => {
             ELSE status
           END
       WHERE id = ANY($1::int[])
-    `, [article_ids]);
+    `,
+      [article_ids]
+    );
   }
 
   return {
@@ -1477,7 +1643,8 @@ const deleteAndRefundPlacement = async (placementId, userId, userRole = 'user') 
     await client.query('BEGIN');
 
     // 1. Get placement with lock
-    const placementResult = await client.query(`
+    const placementResult = await client.query(
+      `
       SELECT
         p.id,
         p.user_id,
@@ -1497,7 +1664,9 @@ const deleteAndRefundPlacement = async (placementId, userId, userRole = 'user') 
       LEFT JOIN projects proj ON p.project_id = proj.id
       WHERE p.id = $1
       FOR UPDATE OF p
-    `, [placementId]);
+    `,
+      [placementId]
+    );
 
     if (placementResult.rows.length === 0) {
       await client.query('ROLLBACK');
@@ -1543,19 +1712,20 @@ const deleteAndRefundPlacement = async (placementId, userId, userRole = 'user') 
       const totalSpentAfter = Math.max(0, totalSpentBefore - finalPrice);
 
       // Refund money and decrement total_spent
-      await client.query(
-        'UPDATE users SET balance = $1, total_spent = $2 WHERE id = $3',
-        [balanceAfter, totalSpentAfter, refundUserId]
-      );
+      await client.query('UPDATE users SET balance = $1, total_spent = $2 WHERE id = $3', [
+        balanceAfter,
+        totalSpentAfter,
+        refundUserId
+      ]);
 
       // CRITICAL FIX (BUG #11): Recalculate discount tier after refund
       // User may no longer qualify for their current tier after total_spent decrease
       const newTier = await calculateDiscountTier(totalSpentAfter);
       if (newTier.discount !== parseFloat(user.current_discount)) {
-        await client.query(
-          'UPDATE users SET current_discount = $1 WHERE id = $2',
-          [newTier.discount, refundUserId]
-        );
+        await client.query('UPDATE users SET current_discount = $1 WHERE id = $2', [
+          newTier.discount,
+          refundUserId
+        ]);
 
         logger.info('Discount tier downgraded after refund', {
           userId: refundUserId,
@@ -1566,50 +1736,59 @@ const deleteAndRefundPlacement = async (placementId, userId, userRole = 'user') 
         });
 
         // Notify placement owner about tier downgrade
-        await client.query(`
+        await client.query(
+          `
           INSERT INTO notifications (user_id, type, title, message)
           VALUES ($1, 'discount_tier_changed', $2, $3)
-        `, [
-          refundUserId,
-          'Изменение уровня скидки',
-          `Ваш уровень скидки изменён на "${newTier.tier}" (${newTier.discount}%) после возврата средств.`
-        ]);
+        `,
+          [
+            refundUserId,
+            'Изменение уровня скидки',
+            `Ваш уровень скидки изменён на "${newTier.tier}" (${newTier.discount}%) после возврата средств.`
+          ]
+        );
       }
 
       // Create refund transaction (for placement owner)
-      await client.query(`
+      await client.query(
+        `
         INSERT INTO transactions (
           user_id, type, amount, balance_before, balance_after,
           description, placement_id
         ) VALUES ($1, 'refund', $2, $3, $4, $5, $6)
-      `, [
-        refundUserId,
-        finalPrice,
-        balanceBefore,
-        balanceAfter,
-        `Refund for ${placement.type} placement on ${placement.site_name} (${placement.project_name})`,
-        placementId
-      ]);
+      `,
+        [
+          refundUserId,
+          finalPrice,
+          balanceBefore,
+          balanceAfter,
+          `Refund for ${placement.type} placement on ${placement.site_name} (${placement.project_name})`,
+          placementId
+        ]
+      );
 
       // Audit log for refund (for placement owner)
-      await client.query(`
+      await client.query(
+        `
         INSERT INTO audit_log (
           user_id, action, details
         ) VALUES ($1, 'placement_refund', $2)
-      `, [
-        refundUserId,
-        JSON.stringify({
-          entity_type: 'placement',
-          entity_id: placementId,
-          refund_amount: finalPrice,
-          original_price: placement.original_price,
-          discount_applied: placement.discount_applied,
-          site_name: placement.site_name,
-          project_name: placement.project_name,
-          type: placement.type,
-          deleted_by_admin: userId // Track which admin deleted it
-        })
-      ]);
+      `,
+        [
+          refundUserId,
+          JSON.stringify({
+            entity_type: 'placement',
+            entity_id: placementId,
+            refund_amount: finalPrice,
+            original_price: placement.original_price,
+            discount_applied: placement.discount_applied,
+            site_name: placement.site_name,
+            project_name: placement.project_name,
+            type: placement.type,
+            deleted_by_admin: userId // Track which admin deleted it
+          })
+        ]
+      );
 
       refundResult = {
         refunded: true,
@@ -1628,7 +1807,8 @@ const deleteAndRefundPlacement = async (placementId, userId, userRole = 'user') 
 
     // 4. Delete placement content and placement itself
     // Get content IDs
-    const contentResult = await client.query(`
+    const contentResult = await client.query(
+      `
       SELECT
         array_agg(DISTINCT link_id) FILTER (WHERE link_id IS NOT NULL) as link_ids,
         array_agg(DISTINCT article_id) FILTER (WHERE article_id IS NOT NULL) as article_ids,
@@ -1636,7 +1816,9 @@ const deleteAndRefundPlacement = async (placementId, userId, userRole = 'user') 
         COUNT(DISTINCT article_id) as article_count
       FROM placement_content
       WHERE placement_id = $1
-    `, [placementId]);
+    `,
+      [placementId]
+    );
 
     const { link_ids, article_ids, link_count, article_count } = contentResult.rows[0];
 
@@ -1659,7 +1841,8 @@ const deleteAndRefundPlacement = async (placementId, userId, userRole = 'user') 
 
     // Decrement usage_count for links (batch UPDATE - 1 query instead of N)
     if (link_ids && link_ids.length > 0) {
-      await client.query(`
+      await client.query(
+        `
         UPDATE project_links
         SET usage_count = GREATEST(0, usage_count - 1),
             status = CASE
@@ -1667,12 +1850,15 @@ const deleteAndRefundPlacement = async (placementId, userId, userRole = 'user') 
               ELSE status
             END
         WHERE id = ANY($1::int[])
-      `, [link_ids]);
+      `,
+        [link_ids]
+      );
     }
 
     // Decrement usage_count for articles (batch UPDATE - 1 query instead of N)
     if (article_ids && article_ids.length > 0) {
-      await client.query(`
+      await client.query(
+        `
         UPDATE project_articles
         SET usage_count = GREATEST(0, usage_count - 1),
             status = CASE
@@ -1680,27 +1866,32 @@ const deleteAndRefundPlacement = async (placementId, userId, userRole = 'user') 
               ELSE status
             END
         WHERE id = ANY($1::int[])
-      `, [article_ids]);
+      `,
+        [article_ids]
+      );
     }
 
     // 5. Audit log for deletion (track admin who deleted)
-    await client.query(`
+    await client.query(
+      `
       INSERT INTO audit_log (
         user_id, action, details
       ) VALUES ($1, 'placement_delete', $2)
-    `, [
-      userId, // Admin who performed the deletion
-      JSON.stringify({
-        entity_type: 'placement',
-        entity_id: placementId,
-        placement_owner_id: refundUserId,
-        placement_type: placement.type,
-        site_name: placement.site_name,
-        project_name: placement.project_name,
-        refunded: refundResult.refunded,
-        refund_amount: refundResult.amount
-      })
-    ]);
+    `,
+      [
+        userId, // Admin who performed the deletion
+        JSON.stringify({
+          entity_type: 'placement',
+          entity_id: placementId,
+          placement_owner_id: refundUserId,
+          placement_type: placement.type,
+          site_name: placement.site_name,
+          project_name: placement.project_name,
+          refunded: refundResult.refunded,
+          refund_amount: refundResult.amount
+        })
+      ]
+    );
 
     // 6. COMMIT everything atomically
     await client.query('COMMIT');
@@ -1723,7 +1914,6 @@ const deleteAndRefundPlacement = async (placementId, userId, userRole = 'user') 
       deleted: true,
       ...refundResult
     };
-
   } catch (error) {
     await client.query('ROLLBACK');
     logger.error('Atomic delete with refund failed - transaction rolled back', {
@@ -1764,7 +1954,7 @@ const batchPurchasePlacements = async (userId, purchases) => {
     const chunk = purchases.slice(i, i + CONCURRENCY_LIMIT);
 
     const chunkResults = await Promise.allSettled(
-      chunk.map(async (purchase) => {
+      chunk.map(async purchase => {
         try {
           const result = await purchasePlacement({
             userId,
@@ -1838,9 +2028,12 @@ const batchPurchasePlacements = async (userId, purchases) => {
     try {
       // Get project names for the notification
       const projectIds = [...new Set(purchases.map(p => p.projectId))];
-      const projectResult = await query(`
+      const projectResult = await query(
+        `
         SELECT id, name FROM projects WHERE id = ANY($1::int[])
-      `, [projectIds]);
+      `,
+        [projectIds]
+      );
       const projectNames = projectResult.rows.map(p => p.name).join(', ');
 
       // Calculate total spent
@@ -1854,29 +2047,38 @@ const batchPurchasePlacements = async (userId, purchases) => {
       const username = userResult.rows[0]?.username || 'Unknown';
 
       // User notification (grouped)
-      await query(`
+      await query(
+        `
         INSERT INTO notifications (user_id, type, title, message, metadata)
         VALUES ($1, 'batch_placement_purchased', $2, $3, $4)
-      `, [
-        userId,
-        'Массовая покупка',
-        `Куплено ${successful.length} размещений для проекта "${projectNames}". Списано $${totalSpent.toFixed(2)}.`,
-        JSON.stringify({ count: successful.length, projectIds, totalSpent })
-      ]);
+      `,
+        [
+          userId,
+          'Массовая покупка',
+          `Куплено ${successful.length} размещений для проекта "${projectNames}". Списано $${totalSpent.toFixed(2)}.`,
+          JSON.stringify({ count: successful.length, projectIds, totalSpent })
+        ]
+      );
 
       // Admin notification (grouped) - exclude buyer to avoid duplicates
-      await query(`
+      await query(
+        `
         INSERT INTO notifications (user_id, type, title, message, metadata)
         SELECT id, 'admin_batch_purchased', $1, $2, $3
         FROM users WHERE role = 'admin' AND id != $4
-      `, [
-        'Массовая покупка',
-        `Пользователь "${username}" купил ${successful.length} размещений за $${totalSpent.toFixed(2)}.`,
-        JSON.stringify({ userId, username, count: successful.length, projectIds, totalSpent }),
-        userId
-      ]);
+      `,
+        [
+          'Массовая покупка',
+          `Пользователь "${username}" купил ${successful.length} размещений за $${totalSpent.toFixed(2)}.`,
+          JSON.stringify({ userId, username, count: successful.length, projectIds, totalSpent }),
+          userId
+        ]
+      );
     } catch (notifyError) {
-      logger.error('Failed to create batch purchase notification', { userId, error: notifyError.message });
+      logger.error('Failed to create batch purchase notification', {
+        userId,
+        error: notifyError.message
+      });
       // Don't throw - notifications are not critical
     }
   }
@@ -1926,7 +2128,7 @@ const batchDeletePlacements = async (userId, userRole, placementIds) => {
     const chunk = placementIds.slice(i, i + CONCURRENCY_LIMIT);
 
     const chunkResults = await Promise.allSettled(
-      chunk.map(async (placementId) => {
+      chunk.map(async placementId => {
         try {
           const result = await deleteAndRefundPlacement(placementId, userId, userRole);
           return {
@@ -1947,7 +2149,7 @@ const batchDeletePlacements = async (userId, userRole, placementIds) => {
     );
 
     // Aggregate chunk results
-    chunkResults.forEach((result) => {
+    chunkResults.forEach(result => {
       if (result.status === 'fulfilled') {
         const data = result.value;
         if (data.success) {

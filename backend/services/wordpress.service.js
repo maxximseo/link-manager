@@ -28,9 +28,11 @@ async function validateExternalUrl(url) {
     }
 
     // Block private IP ranges (10.x.x.x, 172.16-31.x.x, 192.168.x.x)
-    if (/^10\./.test(hostname) ||
-        /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname) ||
-        /^192\.168\./.test(hostname)) {
+    if (
+      /^10\./.test(hostname) ||
+      /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname) ||
+      /^192\.168\./.test(hostname)
+    ) {
       throw new Error('Invalid site URL: Private IP addresses not allowed');
     }
 
@@ -48,11 +50,13 @@ async function validateExternalUrl(url) {
     try {
       const addresses = await dns.resolve4(hostname);
       for (const ip of addresses) {
-        if (ip.startsWith('10.') ||
-            /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(ip) ||
-            ip.startsWith('192.168.') ||
-            ip.startsWith('127.') ||
-            ip.startsWith('169.254.')) {
+        if (
+          ip.startsWith('10.') ||
+          /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(ip) ||
+          ip.startsWith('192.168.') ||
+          ip.startsWith('127.') ||
+          ip.startsWith('169.254.')
+        ) {
           throw new Error('Invalid site URL: Resolves to private IP address');
         }
       }
@@ -69,7 +73,7 @@ async function validateExternalUrl(url) {
 }
 
 // Get content by API key (with Redis caching)
-const getContentByApiKey = async (apiKey) => {
+const getContentByApiKey = async apiKey => {
   try {
     // Check cache first (5 minutes TTL)
     const cacheKey = `wp:content:${apiKey}`;
@@ -81,7 +85,8 @@ const getContentByApiKey = async (apiKey) => {
     }
 
     // Get all links for sites with this API key
-    const linksResult = await query(`
+    const linksResult = await query(
+      `
       SELECT
         pl.id,
         pl.url,
@@ -98,10 +103,13 @@ const getContentByApiKey = async (apiKey) => {
       WHERE s.api_key = $1
         AND pc.link_id IS NOT NULL
       ORDER BY pc.id DESC
-    `, [apiKey]);
+    `,
+      [apiKey]
+    );
 
     // Get all articles for sites with this API key
-    const articlesResult = await query(`
+    const articlesResult = await query(
+      `
       SELECT
         pa.id,
         pa.title,
@@ -115,7 +123,9 @@ const getContentByApiKey = async (apiKey) => {
       WHERE s.api_key = $1
         AND pc.article_id IS NOT NULL
       ORDER BY pc.id DESC
-    `, [apiKey]);
+    `,
+      [apiKey]
+    );
 
     // Format response for WordPress plugin
     const links = linksResult.rows.map(row => ({
@@ -146,7 +156,11 @@ const getContentByApiKey = async (apiKey) => {
 
     // Cache for 5 minutes
     await cache.set(cacheKey, response, 300);
-    logger.debug('WordPress content cached', { apiKey, linksCount: links.length, articlesCount: articles.length });
+    logger.debug('WordPress content cached', {
+      apiKey,
+      linksCount: links.length,
+      articlesCount: articles.length
+    });
 
     return response;
   } catch (error) {
@@ -157,7 +171,7 @@ const getContentByApiKey = async (apiKey) => {
 
 // Get content by domain (legacy method for static PHP sites)
 // NOTE: New static sites should use API key via getContentByApiKey() instead
-const getContentByDomain = async (domain) => {
+const getContentByDomain = async domain => {
   try {
     const siteService = require('./site.service');
 
@@ -186,7 +200,8 @@ const getContentByDomain = async (domain) => {
     }
 
     // Get all links for this site (static_php only supports links, not articles)
-    const linksResult = await query(`
+    const linksResult = await query(
+      `
       SELECT
         pl.id,
         pl.url,
@@ -199,7 +214,9 @@ const getContentByDomain = async (domain) => {
         AND pc.link_id IS NOT NULL
         AND plc.status = 'placed'
       ORDER BY pc.id DESC
-    `, [site.id]);
+    `,
+      [site.id]
+    );
 
     // Format response (same format as WordPress plugin)
     const links = linksResult.rows.map(row => ({
@@ -235,19 +252,23 @@ const publishArticle = async (siteUrl, apiKey, articleData) => {
     // Use Link Manager plugin REST API endpoint
     const pluginUrl = `${validatedUrl}/wp-json/link-manager/v1/create-article`;
 
-    const response = await axios.post(pluginUrl, {
-      title,
-      content,
-      slug,
-      api_key: apiKey
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': apiKey
+    const response = await axios.post(
+      pluginUrl,
+      {
+        title,
+        content,
+        slug,
+        api_key: apiKey
       },
-      timeout: 30000,
-      maxRedirects: 0  // Prevent SSRF via redirects
-    });
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': apiKey
+        },
+        timeout: 30000,
+        maxRedirects: 0 // Prevent SSRF via redirects
+      }
+    );
 
     if (response.data.success) {
       logger.info('Article published to WordPress via plugin', {
@@ -266,7 +287,9 @@ const publishArticle = async (siteUrl, apiKey, articleData) => {
     }
   } catch (error) {
     logger.error('WordPress publish error:', error);
-    throw new Error(`Failed to publish to WordPress: ${error.response?.data?.error || error.message}`);
+    throw new Error(
+      `Failed to publish to WordPress: ${error.response?.data?.error || error.message}`
+    );
   }
 };
 
@@ -290,7 +313,7 @@ const deleteArticle = async (siteUrl, apiKey, wordpressPostId) => {
         'X-API-Key': apiKey
       },
       timeout: 30000,
-      maxRedirects: 0  // Prevent SSRF via redirects
+      maxRedirects: 0 // Prevent SSRF via redirects
     });
 
     if (response.data.success) {
@@ -346,7 +369,7 @@ const verifyWordPressConnection = async (siteUrl, apiKey) => {
 };
 
 // Get site by API key
-const getSiteByApiKey = async (apiKey) => {
+const getSiteByApiKey = async apiKey => {
   try {
     const result = await query(
       'SELECT id, site_url, site_name, max_links, used_links, max_articles, used_articles FROM sites WHERE api_key = $1',

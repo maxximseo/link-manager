@@ -11,34 +11,32 @@ const crypto = require('crypto');
 const getUserSites = async (userId, page = 0, limit = 0, recalculate = false) => {
   try {
     const usePagination = page > 0 && limit > 0;
-    
+
     // Optionally recalculate statistics first (batch operation optimization)
     if (recalculate) {
       await recalculateSiteStats(userId);
     }
-    
+
     // Fetch sites data
-    let sitesQuery = 'SELECT id, user_id, site_name, site_url, api_key, site_type, max_links, max_articles, used_links, used_articles, allow_articles, is_public, available_for_purchase, dr, da, ref_domains, rd_main, norm, tf, cf, keywords, traffic, geo, created_at FROM sites WHERE user_id = $1 ORDER BY created_at DESC';
+    let sitesQuery =
+      'SELECT id, user_id, site_name, site_url, api_key, site_type, max_links, max_articles, used_links, used_articles, allow_articles, is_public, available_for_purchase, dr, da, ref_domains, rd_main, norm, tf, cf, keywords, traffic, geo, created_at FROM sites WHERE user_id = $1 ORDER BY created_at DESC';
     const queryParams = [userId];
-    
+
     if (usePagination) {
       const offset = (page - 1) * limit;
       sitesQuery += ' LIMIT $2 OFFSET $3';
       queryParams.push(limit, offset);
     }
-    
+
     const result = await query(sitesQuery, queryParams);
-    
+
     // If pagination is requested, return paginated format
     if (usePagination) {
       // Get total count
-      const countResult = await query(
-        'SELECT COUNT(*) FROM sites WHERE user_id = $1',
-        [userId]
-      );
+      const countResult = await query('SELECT COUNT(*) FROM sites WHERE user_id = $1', [userId]);
       const total = parseInt(countResult.rows[0].count);
       const totalPages = Math.ceil(total / limit);
-      
+
       return {
         data: result.rows,
         pagination: {
@@ -62,13 +60,14 @@ const getUserSites = async (userId, page = 0, limit = 0, recalculate = false) =>
 };
 
 // Get marketplace sites (public sites + user's own sites)
-const getMarketplaceSites = async (userId) => {
+const getMarketplaceSites = async userId => {
   try {
     // Return sites that are either:
     // 1. Public (is_public = TRUE), OR
     // 2. Owned by the requesting user (user_id = userId)
     // Note: Don't expose api_key for sites user doesn't own
-    const result = await query(`
+    const result = await query(
+      `
       SELECT
         id, user_id, site_name, site_url, site_type,
         max_links, max_articles, used_links, used_articles,
@@ -80,7 +79,9 @@ const getMarketplaceSites = async (userId) => {
       FROM sites
       WHERE is_public = TRUE OR user_id = $1
       ORDER BY created_at DESC
-    `, [userId]);
+    `,
+      [userId]
+    );
 
     logger.info('Marketplace sites retrieved', {
       userId,
@@ -97,9 +98,19 @@ const getMarketplaceSites = async (userId) => {
 };
 
 // Create new site
-const createSite = async (data) => {
+const createSite = async data => {
   try {
-    const { site_url, api_key, max_links, max_articles, userId, site_type, allow_articles, is_public, available_for_purchase } = data;
+    const {
+      site_url,
+      api_key,
+      max_links,
+      max_articles,
+      userId,
+      site_type,
+      allow_articles,
+      is_public,
+      available_for_purchase
+    } = data;
 
     // SECURITY: Validate URL format
     if (!site_url) {
@@ -152,11 +163,25 @@ const createSite = async (data) => {
 
     const site_name = site_url;
     const finalIsPublic = is_public !== undefined ? is_public : false; // Default to private
-    const finalAvailableForPurchase = available_for_purchase !== undefined ? available_for_purchase : true; // Default to available
+    const finalAvailableForPurchase =
+      available_for_purchase !== undefined ? available_for_purchase : true; // Default to available
 
     const result = await query(
       'INSERT INTO sites (site_url, site_name, api_key, site_type, user_id, max_links, max_articles, used_links, used_articles, allow_articles, is_public, available_for_purchase) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *',
-      [site_url, site_name, finalApiKey, finalSiteType, userId, max_links || 10, finalMaxArticles, 0, 0, finalAllowArticles, finalIsPublic, finalAvailableForPurchase]
+      [
+        site_url,
+        site_name,
+        finalApiKey,
+        finalSiteType,
+        userId,
+        max_links || 10,
+        finalMaxArticles,
+        0,
+        0,
+        finalAllowArticles,
+        finalIsPublic,
+        finalAvailableForPurchase
+      ]
     );
 
     return result.rows[0];
@@ -169,7 +194,17 @@ const createSite = async (data) => {
 // Update site
 const updateSite = async (siteId, userId, data) => {
   try {
-    const { site_url, site_name, api_key, max_links, max_articles, site_type, allow_articles, is_public, available_for_purchase } = data;
+    const {
+      site_url,
+      site_name,
+      api_key,
+      max_links,
+      max_articles,
+      site_type,
+      allow_articles,
+      is_public,
+      available_for_purchase
+    } = data;
 
     // SECURITY: Validate URL format if provided
     if (site_url) {
@@ -218,7 +253,19 @@ const updateSite = async (siteId, userId, data) => {
            available_for_purchase = COALESCE($9, available_for_purchase)
        WHERE id = $10 AND user_id = $11
        RETURNING *`,
-      [site_url, site_name, api_key, max_links, finalMaxArticles, site_type, finalAllowArticles, is_public, available_for_purchase, siteId, userId]
+      [
+        site_url,
+        site_name,
+        api_key,
+        max_links,
+        finalMaxArticles,
+        site_type,
+        finalAllowArticles,
+        is_public,
+        available_for_purchase,
+        siteId,
+        userId
+      ]
     );
 
     // Clear cache after site update so UI shows changes immediately
@@ -259,7 +306,8 @@ const deleteSite = async (siteId, userId) => {
     const site = siteResult.rows[0];
 
     // 2. Get all placements for this site with financial data
-    const placementsResult = await client.query(`
+    const placementsResult = await client.query(
+      `
       SELECT
         p.id,
         p.user_id,
@@ -280,7 +328,9 @@ const deleteSite = async (siteId, userId) => {
       LEFT JOIN projects proj ON p.project_id = proj.id
       WHERE p.site_id = $1
       ORDER BY p.id
-    `, [siteId]);
+    `,
+      [siteId]
+    );
 
     const placements = placementsResult.rows;
 
@@ -288,7 +338,7 @@ const deleteSite = async (siteId, userId) => {
     // Do this BEFORE refunds, but don't fail the entire deletion if WordPress is down
     const wordpressService = require('./wordpress.service');
     let wpPostsDeleted = 0;
-    let wpDeletionErrors = [];
+    const wpDeletionErrors = [];
 
     if (site.site_type === 'wordpress' && site.api_key) {
       for (const placement of placements) {
@@ -369,40 +419,43 @@ const deleteSite = async (siteId, userId) => {
 
     // 4. Update site quotas (will be zero since all placements deleted)
     // CASCADE will handle placement deletion, but we need to update quotas first
-    await client.query(`
+    await client.query(
+      `
       UPDATE sites
       SET used_links = 0, used_articles = 0
       WHERE id = $1
-    `, [siteId]);
-
-    // 5. Delete site (CASCADE will delete all placements and placement_content)
-    await client.query(
-      'DELETE FROM sites WHERE id = $1 AND user_id = $2',
-      [siteId, userId]
+    `,
+      [siteId]
     );
 
+    // 5. Delete site (CASCADE will delete all placements and placement_content)
+    await client.query('DELETE FROM sites WHERE id = $1 AND user_id = $2', [siteId, userId]);
+
     // 6. Create audit log entry
-    await client.query(`
+    await client.query(
+      `
       INSERT INTO audit_log (
         user_id, action, details
       ) VALUES ($1, $2, $3)
-    `, [
-      userId,
-      'site_delete',
-      JSON.stringify({
-        site_id: siteId,
-        site_name: site.site_name,
-        site_url: site.site_url,
-        site_type: site.site_type,
-        placements_count: placements.length,
-        refunded_count: refundedCount,
-        total_refunded: totalRefunded,
-        tier_changed: tierChanged,
-        new_tier: newTierName,
-        wordpress_posts_deleted: wpPostsDeleted,
-        wordpress_deletion_errors: wpDeletionErrors.length
-      })
-    ]);
+    `,
+      [
+        userId,
+        'site_delete',
+        JSON.stringify({
+          site_id: siteId,
+          site_name: site.site_name,
+          site_url: site.site_url,
+          site_type: site.site_type,
+          placements_count: placements.length,
+          refunded_count: refundedCount,
+          total_refunded: totalRefunded,
+          tier_changed: tierChanged,
+          new_tier: newTierName,
+          wordpress_posts_deleted: wpPostsDeleted,
+          wordpress_deletion_errors: wpDeletionErrors.length
+        })
+      ]
+    );
 
     // 7. COMMIT transaction
     await client.query('COMMIT');
@@ -437,7 +490,6 @@ const deleteSite = async (siteId, userId) => {
       wordpressPostsDeleted: wpPostsDeleted,
       wordpressDeletionErrors: wpDeletionErrors
     };
-
   } catch (error) {
     await client.query('ROLLBACK');
     logger.error('Delete site with refunds failed - transaction rolled back:', error);
@@ -448,14 +500,15 @@ const deleteSite = async (siteId, userId) => {
 };
 
 // Recalculate site statistics
-const recalculateSiteStats = async (userId) => {
+const recalculateSiteStats = async userId => {
   const client = await pool.connect();
 
   try {
     await client.query('BEGIN');
 
     // Batch recalculate all user's sites in single query with explicit transaction
-    await client.query(`
+    await client.query(
+      `
       WITH site_stats AS (
         SELECT
           s.id,
@@ -473,7 +526,9 @@ const recalculateSiteStats = async (userId) => {
         used_articles = COALESCE(ss.article_count, 0)
       FROM site_stats ss
       WHERE s.id = ss.id AND s.user_id = $1
-    `, [userId]);
+    `,
+      [userId]
+    );
 
     await client.query('COMMIT');
     logger.info('Site statistics recalculated successfully', { userId });
@@ -502,7 +557,7 @@ const getSiteById = async (siteId, userId) => {
 };
 
 // Get site by domain (for static PHP widget)
-const getSiteByDomain = async (domain) => {
+const getSiteByDomain = async domain => {
   try {
     // Normalize domain: remove protocol, www, trailing slash, path
     const normalizedDomain = domain
@@ -574,7 +629,7 @@ const generateRegistrationToken = async (userId, options = {}) => {
 /**
  * Validate a registration token and return its details
  */
-const validateRegistrationToken = async (token) => {
+const validateRegistrationToken = async token => {
   try {
     const result = await query(
       `SELECT * FROM registration_tokens
@@ -610,7 +665,7 @@ const validateRegistrationToken = async (token) => {
 /**
  * Increment the usage count for a registration token
  */
-const incrementTokenUsage = async (token) => {
+const incrementTokenUsage = async token => {
   try {
     await query(
       `UPDATE registration_tokens
@@ -649,7 +704,7 @@ const getSiteByUrlForUser = async (siteUrl, userId) => {
 /**
  * Get all registration tokens for a user
  */
-const getUserTokens = async (userId) => {
+const getUserTokens = async userId => {
   try {
     const result = await query(
       `SELECT id, token, label, max_uses, current_uses, expires_at, created_at
@@ -694,10 +749,23 @@ const deleteToken = async (tokenId, userId) => {
  * @returns {Object} - Results with success/failure counts
  */
 const bulkUpdateSiteParams = async (parameter, updates) => {
-  const allowedParams = ['dr', 'da', 'ref_domains', 'rd_main', 'norm', 'tf', 'cf', 'keywords', 'traffic', 'geo']; // Whitelist of allowed parameters
+  const allowedParams = [
+    'dr',
+    'da',
+    'ref_domains',
+    'rd_main',
+    'norm',
+    'tf',
+    'cf',
+    'keywords',
+    'traffic',
+    'geo'
+  ]; // Whitelist of allowed parameters
 
   if (!allowedParams.includes(parameter)) {
-    throw new Error(`Parameter '${parameter}' is not allowed. Allowed: ${allowedParams.join(', ')}`);
+    throw new Error(
+      `Parameter '${parameter}' is not allowed. Allowed: ${allowedParams.join(', ')}`
+    );
   }
 
   const results = {
@@ -761,10 +829,7 @@ const bulkUpdateSiteParams = async (parameter, updates) => {
       const oldValue = site.old_value;
 
       // Update the parameter
-      await query(
-        `UPDATE sites SET ${parameter} = $1 WHERE id = $2`,
-        [value, site.id]
-      );
+      await query(`UPDATE sites SET ${parameter} = $1 WHERE id = $2`, [value, site.id]);
 
       results.updated++;
       results.details.push({
@@ -774,7 +839,6 @@ const bulkUpdateSiteParams = async (parameter, updates) => {
         oldValue: oldValue,
         newValue: value
       });
-
     } catch (error) {
       results.errors++;
       results.details.push({
@@ -782,7 +846,10 @@ const bulkUpdateSiteParams = async (parameter, updates) => {
         status: 'error',
         message: error.message
       });
-      logger.error('Bulk update site param error:', { domain: normalizedDomain, error: error.message });
+      logger.error('Bulk update site param error:', {
+        domain: normalizedDomain,
+        error: error.message
+      });
     }
   }
 
@@ -802,11 +869,24 @@ const bulkUpdateSiteParams = async (parameter, updates) => {
  * @param {string} parameter - Parameter name ('dr', etc.)
  * @returns {Array} - Array of sites with zero/null value
  */
-const getSitesWithZeroParam = async (parameter) => {
-  const allowedParams = ['dr', 'da', 'ref_domains', 'rd_main', 'norm', 'tf', 'cf', 'keywords', 'traffic', 'geo']; // Whitelist of allowed parameters
+const getSitesWithZeroParam = async parameter => {
+  const allowedParams = [
+    'dr',
+    'da',
+    'ref_domains',
+    'rd_main',
+    'norm',
+    'tf',
+    'cf',
+    'keywords',
+    'traffic',
+    'geo'
+  ]; // Whitelist of allowed parameters
 
   if (!allowedParams.includes(parameter)) {
-    throw new Error(`Parameter '${parameter}' is not allowed. Allowed: ${allowedParams.join(', ')}`);
+    throw new Error(
+      `Parameter '${parameter}' is not allowed. Allowed: ${allowedParams.join(', ')}`
+    );
   }
 
   try {
@@ -827,7 +907,6 @@ const getSitesWithZeroParam = async (parameter) => {
       count: result.rows.length,
       sites: result.rows
     };
-
   } catch (error) {
     logger.error('Get sites with zero param error:', { parameter, error: error.message });
     throw error;

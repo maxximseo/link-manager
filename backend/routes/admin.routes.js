@@ -45,7 +45,6 @@ router.get('/dashboard/stats', async (req, res) => {
       success: true,
       data: stats
     });
-
   } catch (error) {
     logger.error('Failed to get dashboard stats', { error: error.message });
     res.status(500).json({ error: 'Failed to get dashboard stats' });
@@ -66,7 +65,6 @@ router.get('/revenue', async (req, res) => {
       success: true,
       data: revenue
     });
-
   } catch (error) {
     logger.error('Failed to get revenue breakdown', { error: error.message });
     res.status(500).json({ error: 'Failed to get revenue breakdown' });
@@ -85,7 +83,6 @@ router.get('/revenue/multi-period', async (req, res) => {
       success: true,
       data: revenue
     });
-
   } catch (error) {
     logger.error('Failed to get multi-period revenue', { error: error.message });
     res.status(500).json({ error: 'Failed to get multi-period revenue' });
@@ -112,7 +109,6 @@ router.get('/users', async (req, res) => {
       data: users.data,
       pagination: users.pagination
     });
-
   } catch (error) {
     logger.error('Failed to get users', { error: error.message });
     res.status(500).json({ error: 'Failed to get users' });
@@ -123,9 +119,12 @@ router.get('/users', async (req, res) => {
  * POST /api/admin/users/:id/adjust-balance
  * Adjust user balance (add or subtract)
  */
-router.post('/users/:id/adjust-balance',
+router.post(
+  '/users/:id/adjust-balance',
   [
-    body('amount').isFloat({ min: -10000, max: 10000 }).withMessage('Amount must be between -$10,000 and $10,000'),
+    body('amount')
+      .isFloat({ min: -10000, max: 10000 })
+      .withMessage('Amount must be between -$10,000 and $10,000'),
     body('reason').isString().trim().notEmpty().withMessage('Reason is required')
   ],
   validateRequest,
@@ -151,7 +150,6 @@ router.post('/users/:id/adjust-balance',
           newBalance: result.newBalance
         }
       });
-
     } catch (error) {
       logger.error('Failed to adjust user balance', {
         adminId: req.user.id,
@@ -183,7 +181,6 @@ router.get('/placements', async (req, res) => {
       data: placements.data,
       pagination: placements.pagination
     });
-
   } catch (error) {
     logger.error('Failed to get admin placements', { error: error.message });
     res.status(500).json({ error: 'Failed to get placements' });
@@ -204,7 +201,6 @@ router.get('/recent-purchases', async (req, res) => {
       success: true,
       data: purchases
     });
-
   } catch (error) {
     logger.error('Failed to get recent purchases', { error: error.message });
     res.status(500).json({ error: 'Failed to get recent purchases' });
@@ -225,10 +221,14 @@ router.get('/recent-purchases', async (req, res) => {
  * - reason (required): String explaining why refund is issued
  * - deleteWordPressPost (optional): Boolean, if true deletes WP post (default: false)
  */
-router.post('/placements/:id/refund',
+router.post(
+  '/placements/:id/refund',
   [
     body('reason').isString().trim().notEmpty().withMessage('Refund reason is required'),
-    body('deleteWordPressPost').optional().isBoolean().withMessage('deleteWordPressPost must be boolean')
+    body('deleteWordPressPost')
+      .optional()
+      .isBoolean()
+      .withMessage('deleteWordPressPost must be boolean')
   ],
   validateRequest,
   async (req, res) => {
@@ -259,7 +259,6 @@ router.post('/placements/:id/refund',
           wordpressPostDeleted: result.wordpressPostDeleted
         }
       });
-
     } catch (error) {
       logger.error('Failed to refund placement', {
         adminId: req.user.id,
@@ -288,7 +287,6 @@ router.get('/sites/with-zero-param', async (req, res) => {
       success: true,
       data: result
     });
-
   } catch (error) {
     logger.error('Failed to get sites with zero param', {
       adminId: req.user.id,
@@ -311,11 +309,18 @@ router.get('/sites/with-zero-param', async (req, res) => {
  *
  * Input format in frontend: "site.com 10\nexample.org 25"
  */
-router.post('/sites/bulk-update-params',
+router.post(
+  '/sites/bulk-update-params',
   [
     body('parameter').isString().trim().notEmpty().withMessage('Parameter name is required'),
-    body('updates').isArray({ min: 1 }).withMessage('Updates array is required and must not be empty'),
-    body('updates.*.domain').isString().trim().notEmpty().withMessage('Domain is required for each update'),
+    body('updates')
+      .isArray({ min: 1 })
+      .withMessage('Updates array is required and must not be empty'),
+    body('updates.*.domain')
+      .isString()
+      .trim()
+      .notEmpty()
+      .withMessage('Domain is required for each update'),
     body('updates.*.value').notEmpty().withMessage('Value is required for each update')
   ],
   validateRequest,
@@ -326,7 +331,9 @@ router.post('/sites/bulk-update-params',
       // GEO: string parameter (country code like "PL", "EN", "RU")
       if (parameter === 'geo') {
         // For GEO, value should be a string (2-10 chars)
-        const invalidValues = updates.filter(u => typeof u.value !== 'string' || u.value.length > 10);
+        const invalidValues = updates.filter(
+          u => typeof u.value !== 'string' || u.value.length > 10
+        );
         if (invalidValues.length > 0) {
           return res.status(400).json({
             error: `GEO values must be strings up to 10 characters. Found invalid values for: ${invalidValues.map(u => u.domain).join(', ')}`
@@ -334,7 +341,9 @@ router.post('/sites/bulk-update-params',
         }
       } else {
         // For numeric parameters, validate as integers
-        const nonIntegerValues = updates.filter(u => !Number.isInteger(Number(u.value)) || Number(u.value) < 0);
+        const nonIntegerValues = updates.filter(
+          u => !Number.isInteger(Number(u.value)) || Number(u.value) < 0
+        );
         if (nonIntegerValues.length > 0) {
           return res.status(400).json({
             error: `Values must be non-negative integers. Found invalid values for: ${nonIntegerValues.map(u => u.domain).join(', ')}`
@@ -365,7 +374,6 @@ router.post('/sites/bulk-update-params',
         success: true,
         data: result
       });
-
     } catch (error) {
       logger.error('Failed to bulk update site params', {
         adminId: req.user.id,
@@ -400,7 +408,6 @@ router.get('/sites', async (req, res) => {
       data: sites.data,
       pagination: sites.pagination
     });
-
   } catch (error) {
     logger.error('Failed to get all sites', { error: error.message });
     res.status(500).json({ error: 'Failed to get sites' });
@@ -414,10 +421,9 @@ router.get('/sites', async (req, res) => {
  * Body:
  * - is_public: Boolean
  */
-router.put('/sites/:id/public-status',
-  [
-    body('is_public').isBoolean().withMessage('is_public must be a boolean')
-  ],
+router.put(
+  '/sites/:id/public-status',
+  [body('is_public').isBoolean().withMessage('is_public must be a boolean')],
   validateRequest,
   async (req, res) => {
     try {
@@ -435,7 +441,6 @@ router.put('/sites/:id/public-status',
         message: `Site ${is_public ? 'made public' : 'made private'} successfully`,
         data: site
       });
-
     } catch (error) {
       logger.error('Failed to set site public status', {
         adminId: req.user.id,
@@ -461,7 +466,6 @@ router.get('/moderation', async (req, res) => {
       success: true,
       data: pendingApprovals
     });
-
   } catch (error) {
     logger.error('Failed to get pending approvals', { error: error.message });
     res.status(500).json({ error: 'Failed to get pending approvals' });
@@ -480,7 +484,6 @@ router.get('/moderation/count', async (req, res) => {
       success: true,
       count
     });
-
   } catch (error) {
     logger.error('Failed to get moderation count', { error: error.message });
     res.status(500).json({ error: 'Failed to get count' });
@@ -509,7 +512,6 @@ router.post('/moderation/:id/approve', async (req, res) => {
         newStatus: result.newStatus
       }
     });
-
   } catch (error) {
     logger.error('Failed to approve placement', {
       adminId: req.user.id,
@@ -524,10 +526,9 @@ router.post('/moderation/:id/approve', async (req, res) => {
  * POST /api/admin/moderation/:id/reject
  * Reject a placement and refund the user
  */
-router.post('/moderation/:id/reject',
-  [
-    body('reason').optional().isString().trim().withMessage('Reason must be a string')
-  ],
+router.post(
+  '/moderation/:id/reject',
+  [body('reason').optional().isString().trim().withMessage('Reason must be a string')],
   validateRequest,
   async (req, res) => {
     try {
@@ -549,7 +550,6 @@ router.post('/moderation/:id/reject',
           reason: result.reason
         }
       });
-
     } catch (error) {
       logger.error('Failed to reject placement', {
         adminId: req.user.id,

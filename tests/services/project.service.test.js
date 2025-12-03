@@ -91,22 +91,20 @@ describe('Project Service', () => {
       // getProjectWithDetails makes 3 queries: project, links, articles
       mockQuery
         .mockResolvedValueOnce({
-          rows: [{
-            id: 1,
-            name: 'Test Project',
-            user_id: 1,
-            created_at: new Date().toISOString()
-          }]
-        })
-        .mockResolvedValueOnce({
           rows: [
-            { id: 1, anchor_text: 'Link 1', url: 'https://example.com' }
+            {
+              id: 1,
+              name: 'Test Project',
+              user_id: 1,
+              created_at: new Date().toISOString()
+            }
           ]
         })
         .mockResolvedValueOnce({
-          rows: [
-            { id: 1, title: 'Article 1', content: 'Content 1' }
-          ]
+          rows: [{ id: 1, anchor_text: 'Link 1', url: 'https://example.com' }]
+        })
+        .mockResolvedValueOnce({
+          rows: [{ id: 1, title: 'Article 1', content: 'Content 1' }]
         });
 
       const result = await projectService.getProjectWithDetails(1, 1);
@@ -137,12 +135,14 @@ describe('Project Service', () => {
   describe('createProject', () => {
     it('should create project with valid data', async () => {
       mockQuery.mockResolvedValueOnce({
-        rows: [{
-          id: 1,
-          name: 'New Project',
-          user_id: 1,
-          created_at: new Date().toISOString()
-        }]
+        rows: [
+          {
+            id: 1,
+            name: 'New Project',
+            user_id: 1,
+            created_at: new Date().toISOString()
+          }
+        ]
       });
 
       const result = await projectService.createProject({
@@ -155,26 +155,32 @@ describe('Project Service', () => {
     });
 
     it('should throw error for missing name', async () => {
-      await expect(projectService.createProject({
-        userId: 1
-      })).rejects.toThrow();
+      await expect(
+        projectService.createProject({
+          userId: 1
+        })
+      ).rejects.toThrow();
     });
 
     it('should throw error for missing userId', async () => {
-      await expect(projectService.createProject({
-        name: 'Test'
-      })).rejects.toThrow();
+      await expect(
+        projectService.createProject({
+          name: 'Test'
+        })
+      ).rejects.toThrow();
     });
   });
 
   describe('updateProject', () => {
     it('should update project name', async () => {
       mockQuery.mockResolvedValueOnce({
-        rows: [{
-          id: 1,
-          name: 'Updated Name',
-          user_id: 1
-        }]
+        rows: [
+          {
+            id: 1,
+            name: 'Updated Name',
+            user_id: 1
+          }
+        ]
       });
 
       const result = await projectService.updateProject(1, 1, {
@@ -251,13 +257,15 @@ describe('Project Service', () => {
       mockQuery
         .mockResolvedValueOnce({ rows: [{ id: 1, user_id: 1 }] }) // Project check
         .mockResolvedValueOnce({
-          rows: [{
-            id: 1,
-            anchor_text: 'Test Link',
-            url: 'https://example.com',
-            usage_limit: 999,
-            usage_count: 0
-          }]
+          rows: [
+            {
+              id: 1,
+              anchor_text: 'Test Link',
+              url: 'https://example.com',
+              usage_limit: 999,
+              usage_count: 0
+            }
+          ]
         });
 
       const result = await projectService.addProjectLink(1, 1, {
@@ -273,17 +281,21 @@ describe('Project Service', () => {
     it('should throw for missing anchor_text', async () => {
       mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, user_id: 1 }] });
 
-      await expect(projectService.addProjectLink(1, 1, {
-        url: 'https://example.com'
-      })).rejects.toThrow();
+      await expect(
+        projectService.addProjectLink(1, 1, {
+          url: 'https://example.com'
+        })
+      ).rejects.toThrow();
     });
 
     it('should throw for missing url', async () => {
       mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, user_id: 1 }] });
 
-      await expect(projectService.addProjectLink(1, 1, {
-        anchor_text: 'Test'
-      })).rejects.toThrow();
+      await expect(
+        projectService.addProjectLink(1, 1, {
+          anchor_text: 'Test'
+        })
+      ).rejects.toThrow();
     });
   });
 
@@ -292,11 +304,13 @@ describe('Project Service', () => {
       mockQuery
         .mockResolvedValueOnce({ rows: [{ id: 1, user_id: 1 }] }) // Project check
         .mockResolvedValueOnce({
-          rows: [{
-            id: 1,
-            anchor_text: 'Updated Link',
-            url: 'https://example.com'
-          }]
+          rows: [
+            {
+              id: 1,
+              anchor_text: 'Updated Link',
+              url: 'https://example.com'
+            }
+          ]
         });
 
       const result = await projectService.updateProjectLink(1, 1, 1, {
@@ -367,8 +381,7 @@ describe('Project Service', () => {
     it('should handle empty array', async () => {
       mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, user_id: 1 }] });
 
-      await expect(projectService.addProjectLinksBulk(1, 1, []))
-        .rejects.toThrow();
+      await expect(projectService.addProjectLinksBulk(1, 1, [])).rejects.toThrow();
     });
 
     it('should handle up to 500 links', async () => {
@@ -377,11 +390,9 @@ describe('Project Service', () => {
         url: `https://example${i}.com`
       }));
 
-      mockQuery
-        .mockResolvedValueOnce({ rows: [{ id: 1, user_id: 1 }] })
-        .mockResolvedValueOnce({
-          rows: links.map((l, i) => ({ id: i + 1, ...l }))
-        });
+      mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, user_id: 1 }] }).mockResolvedValueOnce({
+        rows: links.map((l, i) => ({ id: i + 1, ...l }))
+      });
 
       const result = await projectService.addProjectLinksBulk(1, 1, links);
 
@@ -392,14 +403,12 @@ describe('Project Service', () => {
 
   describe('getProjectArticles', () => {
     it('should return project articles', async () => {
-      mockQuery
-        .mockResolvedValueOnce({ rows: [{ id: 1, user_id: 1 }] })
-        .mockResolvedValueOnce({
-          rows: [
-            { id: 1, title: 'Article 1', content: 'Content 1' },
-            { id: 2, title: 'Article 2', content: 'Content 2' }
-          ]
-        });
+      mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, user_id: 1 }] }).mockResolvedValueOnce({
+        rows: [
+          { id: 1, title: 'Article 1', content: 'Content 1' },
+          { id: 2, title: 'Article 2', content: 'Content 2' }
+        ]
+      });
 
       const result = await projectService.getProjectArticles(1, 1);
 
@@ -410,17 +419,17 @@ describe('Project Service', () => {
 
   describe('addProjectArticle', () => {
     it('should add article with valid data', async () => {
-      mockQuery
-        .mockResolvedValueOnce({ rows: [{ id: 1, user_id: 1 }] })
-        .mockResolvedValueOnce({
-          rows: [{
+      mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, user_id: 1 }] }).mockResolvedValueOnce({
+        rows: [
+          {
             id: 1,
             title: 'New Article',
             content: 'Article content',
             usage_limit: 1,
             usage_count: 0
-          }]
-        });
+          }
+        ]
+      });
 
       const result = await projectService.addProjectArticle(1, 1, {
         title: 'New Article',
@@ -435,9 +444,11 @@ describe('Project Service', () => {
     it('should throw for missing title', async () => {
       mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, user_id: 1 }] });
 
-      await expect(projectService.addProjectArticle(1, 1, {
-        content: 'Some content'
-      })).rejects.toThrow();
+      await expect(
+        projectService.addProjectArticle(1, 1, {
+          content: 'Some content'
+        })
+      ).rejects.toThrow();
     });
   });
 

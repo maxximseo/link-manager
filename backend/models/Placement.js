@@ -16,18 +16,15 @@ class Placement {
   }
 
   static async count(userId) {
-    const result = await pool.query(
-      'SELECT COUNT(*) FROM placements WHERE user_id = $1',
-      [userId]
-    );
+    const result = await pool.query('SELECT COUNT(*) FROM placements WHERE user_id = $1', [userId]);
     return parseInt(result.rows[0].count);
   }
 
   static async findById(id, userId) {
-    const result = await pool.query(
-      'SELECT * FROM placements WHERE id = $1 AND user_id = $2',
-      [id, userId]
-    );
+    const result = await pool.query('SELECT * FROM placements WHERE id = $1 AND user_id = $2', [
+      id,
+      userId
+    ]);
     return result.rows[0];
   }
 

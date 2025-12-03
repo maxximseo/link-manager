@@ -87,7 +87,6 @@ const getAdminStats = async (period = 'day') => {
         totalSpending: parseFloat(userResult.rows[0].total_user_spending || 0)
       }
     };
-
   } catch (error) {
     logger.error('Failed to get admin stats', { period, error: error.message });
     throw error;
@@ -117,7 +116,8 @@ const getRevenueBreakdown = async (startDate, endDate, groupBy = 'day') => {
         dateFormat = "DATE_TRUNC('day', created_at)";
     }
 
-    const result = await query(`
+    const result = await query(
+      `
       SELECT
         ${dateFormat} as period,
         type,
@@ -128,12 +128,18 @@ const getRevenueBreakdown = async (startDate, endDate, groupBy = 'day') => {
         AND type IN ('purchase', 'renewal', 'auto_renewal')
       GROUP BY period, type
       ORDER BY period DESC, type
-    `, [startDate || '2020-01-01', endDate || new Date()]);
+    `,
+      [startDate || '2020-01-01', endDate || new Date()]
+    );
 
     return result.rows;
-
   } catch (error) {
-    logger.error('Failed to get revenue breakdown', { startDate, endDate, groupBy, error: error.message });
+    logger.error('Failed to get revenue breakdown', {
+      startDate,
+      endDate,
+      groupBy,
+      error: error.message
+    });
     throw error;
   }
 };
@@ -158,7 +164,8 @@ const getUsers = async ({ page = 1, limit = 50, search = null, role = null }) =>
     }
 
     // Get users with placement count
-    const result = await query(`
+    const result = await query(
+      `
       SELECT
         u.id,
         u.username,
@@ -179,14 +186,19 @@ const getUsers = async ({ page = 1, limit = 50, search = null, role = null }) =>
       GROUP BY u.id
       ORDER BY u.created_at DESC
       LIMIT $${params.length + 1} OFFSET $${params.length + 2}
-    `, [...params, limit, offset]);
+    `,
+      [...params, limit, offset]
+    );
 
     // Get total count
-    const countResult = await query(`
+    const countResult = await query(
+      `
       SELECT COUNT(*) as count
       FROM users u
       ${whereClause}
-    `, params);
+    `,
+      params
+    );
 
     const total = parseInt(countResult.rows[0].count);
     const totalPages = Math.ceil(total / limit);
@@ -202,7 +214,6 @@ const getUsers = async ({ page = 1, limit = 50, search = null, role = null }) =>
         hasPrev: page > 1
       }
     };
-
   } catch (error) {
     logger.error('Failed to get users', { error: error.message });
     throw error;
@@ -219,10 +230,7 @@ const adjustUserBalance = async (userId, amount, reason, adminId) => {
     await client.query('BEGIN');
 
     // Get user with lock
-    const userResult = await client.query(
-      'SELECT * FROM users WHERE id = $1 FOR UPDATE',
-      [userId]
-    );
+    const userResult = await client.query('SELECT * FROM users WHERE id = $1 FOR UPDATE', [userId]);
 
     const user = userResult.rows[0];
     if (!user) {
@@ -237,51 +245,61 @@ const adjustUserBalance = async (userId, amount, reason, adminId) => {
     }
 
     // Update balance
-    await client.query(
-      'UPDATE users SET balance = $1 WHERE id = $2',
-      [newBalance, userId]
-    );
+    await client.query('UPDATE users SET balance = $1 WHERE id = $2', [newBalance, userId]);
 
     // Create transaction
-    await client.query(`
+    await client.query(
+      `
       INSERT INTO transactions (
         user_id, type, amount, balance_before, balance_after, description, metadata
       )
       VALUES ($1, 'admin_adjustment', $2, $3, $4, $5, $6)
-    `, [
-      userId,
-      amount,
-      user.balance,
-      newBalance,
-      reason || 'Admin balance adjustment',
-      JSON.stringify({ adjusted_by_admin: adminId })
-    ]);
+    `,
+      [
+        userId,
+        amount,
+        user.balance,
+        newBalance,
+        reason || 'Admin balance adjustment',
+        JSON.stringify({ adjusted_by_admin: adminId })
+      ]
+    );
 
     // Audit log
-    await client.query(`
+    await client.query(
+      `
       INSERT INTO audit_log (user_id, action, details)
       VALUES ($1, 'admin_adjust_balance', $2)
-    `, [adminId, JSON.stringify({ targetUserId: userId, amount, reason })]);
+    `,
+      [adminId, JSON.stringify({ targetUserId: userId, amount, reason })]
+    );
 
     // Notification
-    await client.query(`
+    await client.query(
+      `
       INSERT INTO notifications (user_id, type, title, message)
       VALUES ($1, 'balance_adjusted', $2, $3)
-    `, [
-      userId,
-      'Баланс скорректирован',
-      `Администратор скорректировал ваш баланс на $${amount}. Причина: ${reason}`
-    ]);
+    `,
+      [
+        userId,
+        'Баланс скорректирован',
+        `Администратор скорректировал ваш баланс на $${amount}. Причина: ${reason}`
+      ]
+    );
 
     await client.query('COMMIT');
 
     logger.info('User balance adjusted by admin', { userId, adminId, amount, reason });
 
     return { success: true, newBalance };
-
   } catch (error) {
     await client.query('ROLLBACK');
-    logger.error('Failed to adjust user balance', { userId, adminId, amount, error: error.message });
+    logger.error('Failed to adjust user balance', {
+      userId,
+      adminId,
+      amount,
+      error: error.message
+    });
     throw error;
   } finally {
     client.release();
@@ -293,7 +311,8 @@ const adjustUserBalance = async (userId, amount, reason, adminId) => {
  */
 const getRecentPurchases = async (limit = 20) => {
   try {
-    const result = await query(`
+    const result = await query(
+      `
       SELECT
         p.id,
         p.type,
@@ -312,10 +331,11 @@ const getRecentPurchases = async (limit = 20) => {
       JOIN sites s ON p.site_id = s.id
       ORDER BY p.purchased_at DESC
       LIMIT $1
-    `, [limit]);
+    `,
+      [limit]
+    );
 
     return result.rows;
-
   } catch (error) {
     logger.error('Failed to get recent purchases', { error: error.message });
     throw error;
@@ -325,7 +345,10 @@ const getRecentPurchases = async (limit = 20) => {
 /**
  * Get all placements for admin (only on their sites)
  */
-const getAdminPlacements = async (adminId, { page = 1, limit = 5000, status = null, type = null }) => {
+const getAdminPlacements = async (
+  adminId,
+  { page = 1, limit = 5000, status = null, type = null }
+) => {
   try {
     const offset = (page - 1) * limit;
     let whereClause = 'WHERE s.user_id = $1'; // Admin can only see placements on their sites
@@ -341,7 +364,8 @@ const getAdminPlacements = async (adminId, { page = 1, limit = 5000, status = nu
       whereClause += ` AND p.type = $${params.length}`;
     }
 
-    const result = await query(`
+    const result = await query(
+      `
       SELECT
         p.*,
         u.username,
@@ -356,15 +380,20 @@ const getAdminPlacements = async (adminId, { page = 1, limit = 5000, status = nu
       ${whereClause}
       ORDER BY p.purchased_at DESC
       LIMIT $${params.length + 1} OFFSET $${params.length + 2}
-    `, [...params, limit, offset]);
+    `,
+      [...params, limit, offset]
+    );
 
     // Get total count
-    const countResult = await query(`
+    const countResult = await query(
+      `
       SELECT COUNT(*) as count
       FROM placements p
       JOIN sites s ON p.site_id = s.id
       ${whereClause}
-    `, params);
+    `,
+      params
+    );
 
     const total = parseInt(countResult.rows[0].count);
     const totalPages = Math.ceil(total / limit);
@@ -380,7 +409,6 @@ const getAdminPlacements = async (adminId, { page = 1, limit = 5000, status = nu
         hasPrev: page > 1
       }
     };
-
   } catch (error) {
     logger.error('Failed to get admin placements', { adminId, error: error.message });
     throw error;
@@ -401,7 +429,6 @@ const getMultiPeriodRevenue = async () => {
     }
 
     return results;
-
   } catch (error) {
     logger.error('Failed to get multi-period revenue', { error: error.message });
     throw error;
@@ -423,7 +450,8 @@ const refundPlacement = async (placementId, reason, adminId, deleteWordPressPost
     await client.query('BEGIN');
 
     // 1. Get placement details with site info
-    const placementResult = await client.query(`
+    const placementResult = await client.query(
+      `
       SELECT
         p.id,
         p.user_id,
@@ -444,7 +472,9 @@ const refundPlacement = async (placementId, reason, adminId, deleteWordPressPost
       LEFT JOIN projects proj ON p.project_id = proj.id
       WHERE p.id = $1
       FOR UPDATE OF p
-    `, [placementId]);
+    `,
+      [placementId]
+    );
 
     if (placementResult.rows.length === 0) {
       await client.query('ROLLBACK');
@@ -502,25 +532,28 @@ const refundPlacement = async (placementId, reason, adminId, deleteWordPressPost
     await billingService.restoreUsageCountsInTransaction(client, placementId);
 
     // 5. Create admin audit log entry
-    await client.query(`
+    await client.query(
+      `
       INSERT INTO audit_log (
         user_id, action, details
       ) VALUES ($1, 'admin_refund_placement', $2)
-    `, [
-      adminId,
-      JSON.stringify({
-        entity_type: 'placement',
-        entity_id: placementId,
-        placement_id: placementId,
-        user_id: placement.user_id,
-        refund_amount: finalPrice,
-        reason,
-        wordpress_post_deleted: wordpressPostDeleted,
-        site_name: placement.site_name,
-        project_name: placement.project_name,
-        type: placement.type
-      })
-    ]);
+    `,
+      [
+        adminId,
+        JSON.stringify({
+          entity_type: 'placement',
+          entity_id: placementId,
+          placement_id: placementId,
+          user_id: placement.user_id,
+          refund_amount: finalPrice,
+          reason,
+          wordpress_post_deleted: wordpressPostDeleted,
+          site_name: placement.site_name,
+          project_name: placement.project_name,
+          type: placement.type
+        })
+      ]
+    );
 
     // 6. Delete placement
     await client.query('DELETE FROM placements WHERE id = $1', [placementId]);
@@ -553,7 +586,6 @@ const refundPlacement = async (placementId, reason, adminId, deleteWordPressPost
       newTier: refundResult.newTier,
       wordpressPostDeleted
     };
-
   } catch (error) {
     await client.query('ROLLBACK');
     logger.error('Admin refund failed - transaction rolled back', {
@@ -601,7 +633,6 @@ const getPendingApprovals = async () => {
     `);
 
     return result.rows;
-
   } catch (error) {
     logger.error('Failed to get pending approvals', { error: error.message });
     throw error;
@@ -633,13 +664,16 @@ const approvePlacement = async (placementId, adminId) => {
     await client.query('BEGIN');
 
     // Get placement with site info
-    const placementResult = await client.query(`
+    const placementResult = await client.query(
+      `
       SELECT p.*, s.site_url, s.api_key, s.site_type
       FROM placements p
       JOIN sites s ON p.site_id = s.id
       WHERE p.id = $1
       FOR UPDATE OF p
-    `, [placementId]);
+    `,
+      [placementId]
+    );
 
     if (placementResult.rows.length === 0) {
       throw new Error('Placement not found');
@@ -653,35 +687,52 @@ const approvePlacement = async (placementId, adminId) => {
 
     // Determine new status: scheduled or pending (for publication)
     let newStatus = 'pending';
-    if (placement.scheduled_publish_date && new Date(placement.scheduled_publish_date) > new Date()) {
+    if (
+      placement.scheduled_publish_date &&
+      new Date(placement.scheduled_publish_date) > new Date()
+    ) {
       newStatus = 'scheduled';
     }
 
     // Update placement status
-    await client.query(`
+    await client.query(
+      `
       UPDATE placements
       SET status = $1, approved_at = NOW(), approved_by = $2
       WHERE id = $3
-    `, [newStatus, adminId, placementId]);
+    `,
+      [newStatus, adminId, placementId]
+    );
 
     // Audit log
-    await client.query(`
+    await client.query(
+      `
       INSERT INTO audit_log (user_id, action, details)
       VALUES ($1, 'approve_placement', $2)
-    `, [
-      adminId,
-      JSON.stringify({ entity_type: 'placement', entity_id: placementId, newStatus, userId: placement.user_id })
-    ]);
+    `,
+      [
+        adminId,
+        JSON.stringify({
+          entity_type: 'placement',
+          entity_id: placementId,
+          newStatus,
+          userId: placement.user_id
+        })
+      ]
+    );
 
     // Notify user
-    await client.query(`
+    await client.query(
+      `
       INSERT INTO notifications (user_id, type, title, message)
       VALUES ($1, 'placement_approved', $2, $3)
-    `, [
-      placement.user_id,
-      'Размещение одобрено',
-      `Ваше размещение #${placementId} было одобрено администратором и будет опубликовано.`
-    ]);
+    `,
+      [
+        placement.user_id,
+        'Размещение одобрено',
+        `Ваше размещение #${placementId} было одобрено администратором и будет опубликовано.`
+      ]
+    );
 
     await client.query('COMMIT');
 
@@ -719,7 +770,6 @@ const approvePlacement = async (placementId, adminId) => {
     });
 
     return { success: true, newStatus };
-
   } catch (error) {
     await client.query('ROLLBACK');
     logger.error('Failed to approve placement', { placementId, adminId, error: error.message });
@@ -739,14 +789,17 @@ const rejectPlacement = async (placementId, adminId, reason = 'Rejected by admin
     await client.query('BEGIN');
 
     // Get placement details
-    const placementResult = await client.query(`
+    const placementResult = await client.query(
+      `
       SELECT p.*, s.site_name, pr.name as project_name
       FROM placements p
       JOIN sites s ON p.site_id = s.id
       JOIN projects pr ON p.project_id = pr.id
       WHERE p.id = $1
       FOR UPDATE OF p
-    `, [placementId]);
+    `,
+      [placementId]
+    );
 
     if (placementResult.rows.length === 0) {
       throw new Error('Placement not found');
@@ -774,19 +827,22 @@ const rejectPlacement = async (placementId, adminId, reason = 'Rejected by admin
       const totalSpentBefore = parseFloat(user?.total_spent || 0);
       const totalSpentAfter = Math.max(0, totalSpentBefore - finalPrice);
 
-      await client.query(`
+      await client.query(
+        `
         UPDATE users
         SET balance = $1, total_spent = $2
         WHERE id = $3
-      `, [balanceAfter, totalSpentAfter, placement.user_id]);
+      `,
+        [balanceAfter, totalSpentAfter, placement.user_id]
+      );
 
       // CRITICAL FIX (BUG #11): Recalculate discount tier after refund
       const newTier = await billingService.calculateDiscountTier(totalSpentAfter);
       if (newTier.discount !== parseFloat(user.current_discount)) {
-        await client.query(
-          'UPDATE users SET current_discount = $1 WHERE id = $2',
-          [newTier.discount, placement.user_id]
-        );
+        await client.query('UPDATE users SET current_discount = $1 WHERE id = $2', [
+          newTier.discount,
+          placement.user_id
+        ]);
 
         logger.info('Discount tier changed after rejection refund', {
           userId: placement.user_id,
@@ -799,25 +855,31 @@ const rejectPlacement = async (placementId, adminId, reason = 'Rejected by admin
 
       // Create refund transaction
       // CRITICAL FIX: Include balance_before and balance_after for complete audit trail
-      await client.query(`
+      await client.query(
+        `
         INSERT INTO transactions (user_id, type, amount, balance_before, balance_after, description, metadata)
         VALUES ($1, 'refund', $2, $3, $4, $5, $6)
-      `, [
-        placement.user_id,
-        finalPrice,
-        balanceBefore,
-        balanceAfter,
-        `Refund: Placement #${placementId} rejected`,
-        JSON.stringify({ placementId, reason, adminId })
-      ]);
+      `,
+        [
+          placement.user_id,
+          finalPrice,
+          balanceBefore,
+          balanceAfter,
+          `Refund: Placement #${placementId} rejected`,
+          JSON.stringify({ placementId, reason, adminId })
+        ]
+      );
     }
 
     // 2. Update rejection reason
-    await client.query(`
+    await client.query(
+      `
       UPDATE placements
       SET status = 'rejected', rejection_reason = $1, approved_by = $2
       WHERE id = $3
-    `, [reason, adminId, placementId]);
+    `,
+      [reason, adminId, placementId]
+    );
 
     // 3. Restore usage counts
     await billingService.restoreUsageCountsInTransaction(client, placementId);
@@ -836,23 +898,35 @@ const rejectPlacement = async (placementId, adminId, reason = 'Rejected by admin
     }
 
     // 5. Audit log
-    await client.query(`
+    await client.query(
+      `
       INSERT INTO audit_log (user_id, action, details)
       VALUES ($1, 'reject_placement', $2)
-    `, [
-      adminId,
-      JSON.stringify({ entity_type: 'placement', entity_id: placementId, reason, refundAmount: finalPrice, userId: placement.user_id })
-    ]);
+    `,
+      [
+        adminId,
+        JSON.stringify({
+          entity_type: 'placement',
+          entity_id: placementId,
+          reason,
+          refundAmount: finalPrice,
+          userId: placement.user_id
+        })
+      ]
+    );
 
     // 6. Notify user
-    await client.query(`
+    await client.query(
+      `
       INSERT INTO notifications (user_id, type, title, message)
       VALUES ($1, 'placement_rejected', $2, $3)
-    `, [
-      placement.user_id,
-      'Размещение отклонено',
-      `Ваше размещение #${placementId} было отклонено. Причина: ${reason}. Средства возвращены на баланс.`
-    ]);
+    `,
+      [
+        placement.user_id,
+        'Размещение отклонено',
+        `Ваше размещение #${placementId} было отклонено. Причина: ${reason}. Средства возвращены на баланс.`
+      ]
+    );
 
     await client.query('COMMIT');
 
@@ -875,7 +949,6 @@ const rejectPlacement = async (placementId, adminId, reason = 'Rejected by admin
       refundAmount: finalPrice,
       reason
     };
-
   } catch (error) {
     await client.query('ROLLBACK');
     logger.error('Failed to reject placement', { placementId, adminId, error: error.message });
@@ -910,13 +983,21 @@ const setSitePublicStatus = async (siteId, isPublic, adminId) => {
     const site = result.rows[0];
 
     // Create audit log
-    await query(`
+    await query(
+      `
       INSERT INTO audit_log (user_id, action, details)
       VALUES ($1, 'set_site_public_status', $2)
-    `, [
-      adminId,
-      JSON.stringify({ entity_type: 'site', entity_id: siteId, is_public: isPublic, site_name: site.site_name })
-    ]);
+    `,
+      [
+        adminId,
+        JSON.stringify({
+          entity_type: 'site',
+          entity_id: siteId,
+          is_public: isPublic,
+          site_name: site.site_name
+        })
+      ]
+    );
 
     logger.info('Site public status changed by admin', {
       adminId,
@@ -926,7 +1007,6 @@ const setSitePublicStatus = async (siteId, isPublic, adminId) => {
     });
 
     return site;
-
   } catch (error) {
     logger.error('Failed to set site public status', { siteId, adminId, error: error.message });
     throw error;
@@ -952,7 +1032,8 @@ const getAllSites = async ({ page = 1, limit = 50, search = null, isPublic = nul
       whereClause += ` AND s.is_public = $${params.length}`;
     }
 
-    const result = await query(`
+    const result = await query(
+      `
       SELECT
         s.*,
         u.username as owner_username,
@@ -962,14 +1043,19 @@ const getAllSites = async ({ page = 1, limit = 50, search = null, isPublic = nul
       ${whereClause}
       ORDER BY s.created_at DESC
       LIMIT $${params.length + 1} OFFSET $${params.length + 2}
-    `, [...params, limit, offset]);
+    `,
+      [...params, limit, offset]
+    );
 
     // Get total count
-    const countResult = await query(`
+    const countResult = await query(
+      `
       SELECT COUNT(*) as count
       FROM sites s
       ${whereClause}
-    `, params);
+    `,
+      params
+    );
 
     const total = parseInt(countResult.rows[0].count);
     const totalPages = Math.ceil(total / limit);
@@ -985,7 +1071,6 @@ const getAllSites = async ({ page = 1, limit = 50, search = null, isPublic = nul
         hasPrev: page > 1
       }
     };
-
   } catch (error) {
     logger.error('Failed to get all sites', { error: error.message });
     throw error;

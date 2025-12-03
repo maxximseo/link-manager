@@ -36,13 +36,13 @@ const getSite = async (req, res) => {
   try {
     const siteId = req.params.id;
     const userId = req.user.id;
-    
+
     const site = await siteService.getSiteById(siteId, userId);
-    
+
     if (!site) {
       return res.status(404).json({ error: 'Site not found' });
     }
-    
+
     res.json(site);
   } catch (error) {
     logger.error('Get site error:', error);
@@ -53,7 +53,16 @@ const getSite = async (req, res) => {
 // Create new site
 const createSite = async (req, res) => {
   try {
-    let { site_url, api_key, max_links, max_articles, site_type, allow_articles, is_public, available_for_purchase } = req.body;
+    let {
+      site_url,
+      api_key,
+      max_links,
+      max_articles,
+      site_type,
+      allow_articles,
+      is_public,
+      available_for_purchase
+    } = req.body;
 
     // RESTRICTION: Only admin can set is_public to true
     if (is_public !== undefined && req.user.role !== 'admin') {
@@ -87,8 +96,12 @@ const createSite = async (req, res) => {
       if (ipMatch) {
         const [, a, b] = ipMatch.map(Number);
         // 10.x.x.x, 172.16-31.x.x, 192.168.x.x, 169.254.x.x (AWS metadata)
-        if (a === 10 || (a === 172 && b >= 16 && b <= 31) ||
-            (a === 192 && b === 168) || (a === 169 && b === 254)) {
+        if (
+          a === 10 ||
+          (a === 172 && b >= 16 && b <= 31) ||
+          (a === 192 && b === 168) ||
+          (a === 169 && b === 254)
+        ) {
           return res.status(400).json({ error: 'Private IP addresses are not allowed' });
         }
       }
@@ -154,7 +167,17 @@ const updateSite = async (req, res) => {
   try {
     const siteId = req.params.id;
     const userId = req.user.id;
-    let { site_url, site_name, api_key, max_links, max_articles, site_type, allow_articles, is_public, available_for_purchase } = req.body;
+    let {
+      site_url,
+      site_name,
+      api_key,
+      max_links,
+      max_articles,
+      site_type,
+      allow_articles,
+      is_public,
+      available_for_purchase
+    } = req.body;
 
     // RESTRICTION: Only admin can change is_public
     if (is_public !== undefined && req.user.role !== 'admin') {
@@ -254,9 +277,9 @@ const deleteSite = async (req, res) => {
 const recalculateStats = async (req, res) => {
   try {
     const userId = req.user.id;
-    
+
     await siteService.recalculateSiteStats(userId);
-    
+
     res.json({ message: 'Site statistics recalculated successfully' });
   } catch (error) {
     logger.error('Recalculate stats error:', error);

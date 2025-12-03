@@ -3,7 +3,7 @@ const PlacementService = require('../services/placement.service');
 const billingService = require('../services/billing.service');
 
 const placementHandlers = {
-  create: async (data) => {
+  create: async data => {
     logger.info('Processing placement creation:', data);
     // CRITICAL FIX: createPlacement expects a single object parameter, not multiple args
     const placement = await PlacementService.createPlacement({
@@ -16,7 +16,7 @@ const placementHandlers = {
     return { success: true, placementId: placement.id };
   },
 
-  delete: async (data) => {
+  delete: async data => {
     logger.info('Processing placement deletion:', data);
     // CRITICAL FIX: Use billing service for proper refund with tier recalculation
     // Worker jobs run as 'admin' for automatic operations
@@ -30,7 +30,7 @@ const placementHandlers = {
 };
 
 const wordpressHandlers = {
-  publish: async (data) => {
+  publish: async data => {
     logger.info('Publishing to WordPress:', data);
     // WordPress API integration here
     return { success: true, post_id: 123 };
@@ -38,14 +38,14 @@ const wordpressHandlers = {
 };
 
 const batchHandlers = {
-  bulk_placement: async (data) => {
+  bulk_placement: async data => {
     logger.info('Processing bulk placements:', data);
     // Bulk operations here
     return { success: true, processed: data.items.length };
   }
 };
 
-const process = async (job) => {
+const process = async job => {
   const { queue, type } = job.data;
 
   let handler;

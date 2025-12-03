@@ -41,8 +41,7 @@ describe('Pagination Validator', () => {
   });
 
   it('should enforce maximum limit (throws error)', () => {
-    expect(() => validatePagination({ limit: '10000' }))
-      .toThrow('Limit cannot exceed 5000');
+    expect(() => validatePagination({ limit: '10000' })).toThrow('Limit cannot exceed 5000');
   });
 
   it('should handle non-numeric values', () => {
@@ -53,8 +52,9 @@ describe('Pagination Validator', () => {
   });
 
   it('should accept custom maxLimit option', () => {
-    expect(() => validatePagination({ limit: '200' }, { maxLimit: 100 }))
-      .toThrow('Limit cannot exceed 100');
+    expect(() => validatePagination({ limit: '200' }, { maxLimit: 100 })).toThrow(
+      'Limit cannot exceed 100'
+    );
   });
 
   it('should accept custom defaultLimit option', () => {
@@ -82,8 +82,7 @@ describe('ID Validator', () => {
   });
 
   it('should include param name in error message', () => {
-    expect(() => validateId('abc', 'userId'))
-      .toThrow('Invalid userId');
+    expect(() => validateId('abc', 'userId')).toThrow('Invalid userId');
   });
 });
 
@@ -94,25 +93,22 @@ describe('Array Length Validator', () => {
   });
 
   it('should throw for non-arrays', () => {
-    expect(() => validateArrayLength('not an array', 10))
-      .toThrow('must be an array');
-    expect(() => validateArrayLength(null, 10))
-      .toThrow('must be an array');
+    expect(() => validateArrayLength('not an array', 10)).toThrow('must be an array');
+    expect(() => validateArrayLength(null, 10)).toThrow('must be an array');
   });
 
   it('should throw for empty arrays', () => {
-    expect(() => validateArrayLength([], 10))
-      .toThrow('cannot be empty');
+    expect(() => validateArrayLength([], 10)).toThrow('cannot be empty');
   });
 
   it('should throw for arrays exceeding max length', () => {
-    expect(() => validateArrayLength([1, 2, 3, 4, 5, 6], 5))
-      .toThrow('cannot contain more than 5 items');
+    expect(() => validateArrayLength([1, 2, 3, 4, 5, 6], 5)).toThrow(
+      'cannot contain more than 5 items'
+    );
   });
 
   it('should include array name in error message', () => {
-    expect(() => validateArrayLength([], 10, 'linkIds'))
-      .toThrow('linkIds cannot be empty');
+    expect(() => validateArrayLength([], 10, 'linkIds')).toThrow('linkIds cannot be empty');
   });
 });
 
@@ -123,18 +119,18 @@ describe('SQL Injection Prevention', () => {
 
   it('should parse leading numeric prefix (parseInt behavior)', () => {
     // These return valid IDs because parseInt extracts leading numbers
-    expect(validateId("1; DROP TABLE users")).toBe(1);
-    expect(validateId("1 OR 1=1")).toBe(1);
+    expect(validateId('1; DROP TABLE users')).toBe(1);
+    expect(validateId('1 OR 1=1')).toBe(1);
   });
 
   it('should reject completely non-numeric strings', () => {
     // These throw because no valid number can be parsed
-    expect(() => validateId("DROP TABLE users")).toThrow('Invalid');
-    expect(() => validateId("abc123")).toThrow('Invalid');
+    expect(() => validateId('DROP TABLE users')).toThrow('Invalid');
+    expect(() => validateId('abc123')).toThrow('Invalid');
   });
 
   it('should accept string floats (truncates to integer)', () => {
     // parseInt("1.5") returns 1, which is valid
-    expect(validateId("1.5")).toBe(1);
+    expect(validateId('1.5')).toBe(1);
   });
 });

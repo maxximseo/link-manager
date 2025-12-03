@@ -14,7 +14,9 @@ const getContent = async (req, res) => {
     const apiKey = req.headers['x-api-key'] || req.query.api_key; // Support both for backward compatibility
 
     if (!apiKey) {
-      return res.status(400).json({ error: 'API key is required in X-API-Key header or api_key query parameter' });
+      return res
+        .status(400)
+        .json({ error: 'API key is required in X-API-Key header or api_key query parameter' });
     }
 
     const content = await wordpressService.getContentByApiKey(apiKey);
@@ -75,7 +77,9 @@ const verifyConnection = async (req, res) => {
     const api_key = req.headers['x-api-key'] || req.body.api_key;
 
     if (!api_key) {
-      return res.status(400).json({ error: 'API key is required in X-API-Key header or request body' });
+      return res
+        .status(400)
+        .json({ error: 'API key is required in X-API-Key header or request body' });
     }
 
     // Get site info by API key
@@ -113,7 +117,7 @@ const handleContent = async (req, res) => {
   try {
     // This endpoint handles various WordPress content operations
     // For now, return success with basic info
-    res.json({ 
+    res.json({
       message: 'WordPress content endpoint available',
       timestamp: new Date().toISOString()
     });

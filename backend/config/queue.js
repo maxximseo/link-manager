@@ -38,7 +38,7 @@ function getRedisConfig() {
   return config;
 }
 
-const createQueue = (name) => {
+const createQueue = name => {
   // Don't check redisAvailable - it's set asynchronously
   // Just try to create queue and handle errors gracefully
   try {

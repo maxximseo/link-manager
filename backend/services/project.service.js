@@ -10,7 +10,7 @@ const logger = require('../config/logger');
 const getUserProjects = async (userId, page = 1, limit = 20) => {
   try {
     const offset = (page - 1) * limit;
-    
+
     // Get projects with counts in one optimized query
     const projectsQuery = `
       WITH project_stats AS (
@@ -44,15 +44,15 @@ const getUserProjects = async (userId, page = 1, limit = 20) => {
       ORDER BY p.created_at DESC
       LIMIT $2 OFFSET $3
     `;
-    
+
     const result = await query(projectsQuery, [userId, limit, offset]);
-    
+
     // If pagination requested, get total count
     if (page > 1 || limit < 100) {
       const countResult = await query('SELECT COUNT(*) FROM projects WHERE user_id = $1', [userId]);
       const total = parseInt(countResult.rows[0].count);
       const pages = Math.ceil(total / limit);
-      
+
       return {
         data: result.rows,
         pagination: {
@@ -65,7 +65,7 @@ const getUserProjects = async (userId, page = 1, limit = 20) => {
         }
       };
     }
-    
+
     return result.rows;
   } catch (error) {
     logger.error('Get user projects error:', error);
@@ -87,7 +87,7 @@ const getProjectWithDetails = async (projectId, userId) => {
     }
 
     const project = projectResult.rows[0];
-    
+
     // Get links (only available ones - usage_count < usage_limit)
     const linksResult = await query(
       'SELECT * FROM project_links WHERE project_id = $1 AND usage_count < usage_limit ORDER BY created_at DESC',
@@ -99,7 +99,7 @@ const getProjectWithDetails = async (projectId, userId) => {
       'SELECT * FROM project_articles WHERE project_id = $1 AND usage_count < usage_limit ORDER BY created_at DESC',
       [projectId]
     );
-    
+
     return {
       ...project,
       links: linksResult.rows,
@@ -112,7 +112,7 @@ const getProjectWithDetails = async (projectId, userId) => {
 };
 
 // Create new project
-const createProject = async (data) => {
+const createProject = async data => {
   try {
     const { name, userId, main_site_url } = data;
 
@@ -159,10 +159,10 @@ const updateProject = async (projectId, userId, data) => {
 // Delete project
 const deleteProject = async (projectId, userId) => {
   try {
-    const result = await query(
-      'DELETE FROM projects WHERE id = $1 AND user_id = $2 RETURNING id',
-      [projectId, userId]
-    );
+    const result = await query('DELETE FROM projects WHERE id = $1 AND user_id = $2 RETURNING id', [
+      projectId,
+      userId
+    ]);
 
     // Clear cache after project deletion
     if (result.rows.length > 0) {
@@ -183,22 +183,22 @@ const deleteProject = async (projectId, userId) => {
 const getProjectLinks = async (projectId, userId) => {
   try {
     // Verify project ownership
-    const projectResult = await query(
-      'SELECT id FROM projects WHERE id = $1 AND user_id = $2',
-      [projectId, userId]
-    );
+    const projectResult = await query('SELECT id FROM projects WHERE id = $1 AND user_id = $2', [
+      projectId,
+      userId
+    ]);
 
     if (projectResult.rows.length === 0) {
       return null;
     }
-    
+
     // Add LIMIT to prevent unbounded result sets
     const MAX_LINKS_PER_QUERY = 1000;
     const linksResult = await query(
       'SELECT * FROM project_links WHERE project_id = $1 ORDER BY created_at DESC LIMIT $2',
       [projectId, MAX_LINKS_PER_QUERY]
     );
-    
+
     return linksResult.rows;
   } catch (error) {
     logger.error('Get project links error:', error);
@@ -212,10 +212,10 @@ const addProjectLink = async (projectId, userId, linkData) => {
     const { url, anchor_text, position, usage_limit, html_context } = linkData;
 
     // Verify project ownership
-    const projectResult = await query(
-      'SELECT id FROM projects WHERE id = $1 AND user_id = $2',
-      [projectId, userId]
-    );
+    const projectResult = await query('SELECT id FROM projects WHERE id = $1 AND user_id = $2', [
+      projectId,
+      userId
+    ]);
 
     if (projectResult.rows.length === 0) {
       return null;
@@ -241,10 +241,10 @@ const addProjectLink = async (projectId, userId, linkData) => {
 const updateProjectLink = async (projectId, linkId, userId, linkData) => {
   try {
     // Verify project ownership
-    const projectResult = await query(
-      'SELECT id FROM projects WHERE id = $1 AND user_id = $2',
-      [projectId, userId]
-    );
+    const projectResult = await query('SELECT id FROM projects WHERE id = $1 AND user_id = $2', [
+      projectId,
+      userId
+    ]);
 
     if (projectResult.rows.length === 0) {
       return null;
@@ -283,19 +283,19 @@ const updateProjectLink = async (projectId, linkId, userId, linkData) => {
 const addProjectLinksBulk = async (projectId, userId, links) => {
   try {
     // Verify project ownership
-    const projectResult = await query(
-      'SELECT id FROM projects WHERE id = $1 AND user_id = $2',
-      [projectId, userId]
-    );
+    const projectResult = await query('SELECT id FROM projects WHERE id = $1 AND user_id = $2', [
+      projectId,
+      userId
+    ]);
 
     if (projectResult.rows.length === 0) {
       return null;
     }
-    
+
     if (!Array.isArray(links) || links.length === 0) {
       throw new Error('No links provided');
     }
-    
+
     if (links.length > 500) {
       throw new Error('Maximum 500 links at once');
     }
@@ -325,7 +325,9 @@ const addProjectLinksBulk = async (projectId, userId, links) => {
       const anchorText = link.anchor_text || link.url;
 
       // Valid link - add to batch (duplicates are now allowed)
-      placeholders.push(`($${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++})`);
+      placeholders.push(
+        `($${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++})`
+      );
       values.push(
         projectId,
         link.url,
@@ -387,7 +389,8 @@ const addProjectLinksBulk = async (projectId, userId, links) => {
 // Delete project link
 const deleteProjectLink = async (projectId, linkId, userId) => {
   try {
-    const result = await query(`
+    const result = await query(
+      `
       DELETE FROM project_links pl
       USING projects p
       WHERE pl.id = $1
@@ -395,7 +398,9 @@ const deleteProjectLink = async (projectId, linkId, userId) => {
         AND p.id = pl.project_id
         AND p.user_id = $3
       RETURNING pl.id
-    `, [linkId, projectId, userId]);
+    `,
+      [linkId, projectId, userId]
+    );
 
     // Clear cache after link deletion
     if (result.rows.length > 0) {
@@ -415,22 +420,22 @@ const deleteProjectLink = async (projectId, linkId, userId) => {
 const getProjectArticles = async (projectId, userId) => {
   try {
     // Verify project ownership
-    const projectResult = await query(
-      'SELECT id FROM projects WHERE id = $1 AND user_id = $2',
-      [projectId, userId]
-    );
+    const projectResult = await query('SELECT id FROM projects WHERE id = $1 AND user_id = $2', [
+      projectId,
+      userId
+    ]);
 
     if (projectResult.rows.length === 0) {
       return null;
     }
-    
+
     // Add LIMIT to prevent unbounded result sets
     const MAX_ARTICLES_PER_QUERY = 500;
     const articlesResult = await query(
       'SELECT * FROM project_articles WHERE project_id = $1 ORDER BY created_at DESC LIMIT $2',
       [projectId, MAX_ARTICLES_PER_QUERY]
     );
-    
+
     return articlesResult.rows;
   } catch (error) {
     logger.error('Get project articles error:', error);
@@ -442,33 +447,47 @@ const getProjectArticles = async (projectId, userId) => {
 const addProjectArticle = async (projectId, userId, articleData) => {
   try {
     const {
-      title, content, excerpt, meta_title, meta_description,
-      featured_image, slug, tags, category
+      title,
+      content,
+      excerpt,
+      meta_title,
+      meta_description,
+      featured_image,
+      slug,
+      tags,
+      category
     } = articleData;
 
     // Verify project ownership
-    const projectResult = await query(
-      'SELECT id FROM projects WHERE id = $1 AND user_id = $2',
-      [projectId, userId]
-    );
+    const projectResult = await query('SELECT id FROM projects WHERE id = $1 AND user_id = $2', [
+      projectId,
+      userId
+    ]);
 
     if (projectResult.rows.length === 0) {
       return null;
     }
-    
+
     // Generate slug if not provided
     const finalSlug = slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    
+
     const result = await query(
       `INSERT INTO project_articles
        (project_id, title, content, excerpt, meta_title, meta_description, featured_image, slug, status, tags, category)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        RETURNING *`,
       [
-        projectId, title, content, excerpt || null,
-        meta_title || title, meta_description || null,
-        featured_image || null, finalSlug, 'published',
-        tags || null, category || null
+        projectId,
+        title,
+        content,
+        excerpt || null,
+        meta_title || title,
+        meta_description || null,
+        featured_image || null,
+        finalSlug,
+        'published',
+        tags || null,
+        category || null
       ]
     );
 
@@ -486,9 +505,20 @@ const addProjectArticle = async (projectId, userId, articleData) => {
 // Update project article
 const updateProjectArticle = async (projectId, articleId, userId, articleData) => {
   try {
-    const { title, content, excerpt, meta_title, meta_description, featured_image, slug, tags, category } = articleData;
+    const {
+      title,
+      content,
+      excerpt,
+      meta_title,
+      meta_description,
+      featured_image,
+      slug,
+      tags,
+      category
+    } = articleData;
 
-    const result = await query(`
+    const result = await query(
+      `
       UPDATE project_articles pa
       SET title = $1, content = $2, excerpt = $3, meta_title = $4,
           meta_description = $5, featured_image = $6, slug = $7,
@@ -496,7 +526,22 @@ const updateProjectArticle = async (projectId, articleId, userId, articleData) =
       FROM projects p
       WHERE pa.id = $10 AND pa.project_id = $11 AND p.id = pa.project_id AND p.user_id = $12
       RETURNING pa.*
-    `, [title, content, excerpt, meta_title, meta_description, featured_image, slug, tags, category, articleId, projectId, userId]);
+    `,
+      [
+        title,
+        content,
+        excerpt,
+        meta_title,
+        meta_description,
+        featured_image,
+        slug,
+        tags,
+        category,
+        articleId,
+        projectId,
+        userId
+      ]
+    );
 
     // Clear cache after article update
     if (result.rows.length > 0) {
@@ -515,12 +560,15 @@ const updateProjectArticle = async (projectId, articleId, userId, articleData) =
 // Delete project article
 const deleteProjectArticle = async (projectId, articleId, userId) => {
   try {
-    const result = await query(`
+    const result = await query(
+      `
       DELETE FROM project_articles pa
       USING projects p
       WHERE pa.id = $1 AND pa.project_id = $2 AND p.id = pa.project_id AND p.user_id = $3
       RETURNING pa.id
-    `, [articleId, projectId, userId]);
+    `,
+      [articleId, projectId, userId]
+    );
 
     // Clear cache after article deletion
     if (result.rows.length > 0) {

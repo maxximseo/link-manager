@@ -79,8 +79,8 @@ describe('Discount Tier Calculation', () => {
 
 describe('Price Calculation', () => {
   const BASE_PRICES = {
-    link: 0.10,
-    article: 5.00,
+    link: 0.1,
+    article: 5.0,
     renewal: 0.05
   };
 
@@ -89,12 +89,12 @@ describe('Price Calculation', () => {
   }
 
   const discountTests = [
-    { discount: 0, link: 0.10, article: 5.00, renewal: 0.05 },
-    { discount: 10, link: 0.09, article: 4.50, renewal: 0.045 },
+    { discount: 0, link: 0.1, article: 5.0, renewal: 0.05 },
+    { discount: 10, link: 0.09, article: 4.5, renewal: 0.045 },
     { discount: 15, link: 0.085, article: 4.25, renewal: 0.0425 },
-    { discount: 20, link: 0.08, article: 4.00, renewal: 0.04 },
+    { discount: 20, link: 0.08, article: 4.0, renewal: 0.04 },
     { discount: 25, link: 0.075, article: 3.75, renewal: 0.0375 },
-    { discount: 30, link: 0.07, article: 3.50, renewal: 0.035 }
+    { discount: 30, link: 0.07, article: 3.5, renewal: 0.035 }
   ];
 
   discountTests.forEach(({ discount, link, article, renewal }) => {
@@ -174,9 +174,9 @@ describe('Purchase Validation', () => {
   });
 
   it('should handle decimal precision correctly', () => {
-    const result = validatePurchase(10.00, 0.10);
+    const result = validatePurchase(10.0, 0.1);
     expect(result.valid).toBe(true);
-    expect(result.newBalance).toBeCloseTo(9.90, 2);
+    expect(result.newBalance).toBeCloseTo(9.9, 2);
   });
 });
 

@@ -89,17 +89,15 @@ function isSafeErrorMessage(error) {
     'does not support',
     'No links provided',
     'No valid links',
-    'All',  // Catches "All X links are duplicates"
-    'Import failed',  // For detailed import error messages
-    'violates unique constraint',  // Database constraint errors
+    'All', // Catches "All X links are duplicates"
+    'Import failed', // For detailed import error messages
+    'violates unique constraint', // Database constraint errors
     'unique constraint violation'
   ];
 
   // Check if error message starts with any safe prefix
   const message = error.message || '';
-  return safeErrorPrefixes.some(prefix =>
-    message.startsWith(prefix)
-  );
+  return safeErrorPrefixes.some(prefix => message.startsWith(prefix));
 }
 
 /**

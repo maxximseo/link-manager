@@ -56,7 +56,7 @@ if (sslConfig && sslConfig.ca) {
 }
 
 // Monitor pool events
-pool.on('error', (err) => {
+pool.on('error', err => {
   logger.error('Unexpected error on idle client', err);
 });
 
@@ -68,7 +68,7 @@ pool.on('connect', () => {
 async function initDatabase() {
   try {
     logger.info('Initializing database tables...');
-    
+
     // Create tables if they don't exist
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
@@ -166,22 +166,38 @@ async function initDatabase() {
 
     // Create indexes
     await pool.query('CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)'); // Performance fix for login
-    await pool.query('CREATE INDEX IF NOT EXISTS idx_project_links_project_id ON project_links(project_id)');
-    await pool.query('CREATE INDEX IF NOT EXISTS idx_project_articles_project_id ON project_articles(project_id)');
-    await pool.query('CREATE INDEX IF NOT EXISTS idx_placement_content_placement_id ON placement_content(placement_id)');
-    await pool.query('CREATE INDEX IF NOT EXISTS idx_placements_project_site ON placements(project_id, site_id)');
+    await pool.query(
+      'CREATE INDEX IF NOT EXISTS idx_project_links_project_id ON project_links(project_id)'
+    );
+    await pool.query(
+      'CREATE INDEX IF NOT EXISTS idx_project_articles_project_id ON project_articles(project_id)'
+    );
+    await pool.query(
+      'CREATE INDEX IF NOT EXISTS idx_placement_content_placement_id ON placement_content(placement_id)'
+    );
+    await pool.query(
+      'CREATE INDEX IF NOT EXISTS idx_placements_project_site ON placements(project_id, site_id)'
+    );
     await pool.query('CREATE INDEX IF NOT EXISTS idx_sites_user_id ON sites(user_id)');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_projects_user_id ON projects(user_id)');
 
     // Additional indexes for JOIN performance
-    await pool.query('CREATE INDEX IF NOT EXISTS idx_placement_content_link_id ON placement_content(link_id)');
-    await pool.query('CREATE INDEX IF NOT EXISTS idx_placement_content_article_id ON placement_content(article_id)');
+    await pool.query(
+      'CREATE INDEX IF NOT EXISTS idx_placement_content_link_id ON placement_content(link_id)'
+    );
+    await pool.query(
+      'CREATE INDEX IF NOT EXISTS idx_placement_content_article_id ON placement_content(article_id)'
+    );
     await pool.query('CREATE INDEX IF NOT EXISTS idx_placements_site_id ON placements(site_id)');
-    await pool.query('CREATE INDEX IF NOT EXISTS idx_placements_project_id ON placements(project_id)');
+    await pool.query(
+      'CREATE INDEX IF NOT EXISTS idx_placements_project_id ON placements(project_id)'
+    );
     await pool.query('CREATE INDEX IF NOT EXISTS idx_sites_api_key ON sites(api_key)');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_placements_status ON placements(status)');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_sites_created_at ON sites(created_at DESC)');
-    await pool.query('CREATE INDEX IF NOT EXISTS idx_projects_created_at ON projects(created_at DESC)');
+    await pool.query(
+      'CREATE INDEX IF NOT EXISTS idx_projects_created_at ON projects(created_at DESC)'
+    );
 
     logger.info('Database tables initialized successfully');
   } catch (error) {

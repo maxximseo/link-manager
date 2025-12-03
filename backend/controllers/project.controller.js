@@ -40,13 +40,13 @@ const getProject = async (req, res) => {
   try {
     const projectId = req.params.id;
     const userId = req.user.id;
-    
+
     const project = await projectService.getProjectWithDetails(projectId, userId);
-    
+
     if (!project) {
       return res.status(404).json({ error: 'Project not found' });
     }
-    
+
     res.json(project);
   } catch (error) {
     logger.error('Get project error:', error);
@@ -129,7 +129,7 @@ const updateProject = async (req, res) => {
     if (!project) {
       return res.status(404).json({ error: 'Project not found' });
     }
-    
+
     res.json(project);
   } catch (error) {
     logger.error('Update project error:', error);
@@ -142,13 +142,13 @@ const deleteProject = async (req, res) => {
   try {
     const projectId = req.params.id;
     const userId = req.user.id;
-    
+
     const deleted = await projectService.deleteProject(projectId, userId);
-    
+
     if (!deleted) {
       return res.status(404).json({ error: 'Project not found' });
     }
-    
+
     res.json({ message: 'Project deleted successfully' });
   } catch (error) {
     logger.error('Delete project error:', error);
@@ -161,13 +161,13 @@ const getProjectLinks = async (req, res) => {
   try {
     const projectId = req.params.id;
     const userId = req.user.id;
-    
+
     const links = await projectService.getProjectLinks(projectId, userId);
-    
+
     if (links === null) {
       return res.status(404).json({ error: 'Project not found' });
     }
-    
+
     res.json(links);
   } catch (error) {
     logger.error('Get project links error:', error);
@@ -310,7 +310,8 @@ const deleteProjectLink = async (req, res) => {
     // Regular users can only delete unused links (usage_count = 0)
     if (linkToDelete.usage_count > 0 && req.user.role !== 'admin') {
       return res.status(403).json({
-        error: 'Cannot delete used link. Only admins can delete links that have been placed on sites.'
+        error:
+          'Cannot delete used link. Only admins can delete links that have been placed on sites.'
       });
     }
 
@@ -332,13 +333,13 @@ const getProjectArticles = async (req, res) => {
   try {
     const projectId = req.params.id;
     const userId = req.user.id;
-    
+
     const articles = await projectService.getProjectArticles(projectId, userId);
-    
+
     if (articles === null) {
       return res.status(404).json({ error: 'Project not found' });
     }
-    
+
     res.json(articles);
   } catch (error) {
     logger.error('Get project articles error:', error);
@@ -350,16 +351,26 @@ const addProjectArticle = async (req, res) => {
   try {
     const projectId = req.params.id;
     const userId = req.user.id;
-    const { title, content, excerpt, meta_title, meta_description, featured_image, slug, tags, category } = req.body;
-    
+    const {
+      title,
+      content,
+      excerpt,
+      meta_title,
+      meta_description,
+      featured_image,
+      slug,
+      tags,
+      category
+    } = req.body;
+
     if (!title || typeof title !== 'string' || title.trim().length === 0) {
       return res.status(400).json({ error: 'Article title is required' });
     }
-    
+
     if (!content || typeof content !== 'string' || content.trim().length === 0) {
       return res.status(400).json({ error: 'Article content is required' });
     }
-    
+
     const article = await projectService.addProjectArticle(projectId, userId, {
       title: title.trim(),
       content: content.trim(),
@@ -371,11 +382,11 @@ const addProjectArticle = async (req, res) => {
       tags,
       category
     });
-    
+
     if (article === null) {
       return res.status(404).json({ error: 'Project not found' });
     }
-    
+
     res.json(article);
   } catch (error) {
     logger.error('Add project article error:', error);
@@ -385,11 +396,21 @@ const addProjectArticle = async (req, res) => {
 
 const updateProjectArticle = async (req, res) => {
   try {
-    const projectId = req.params.id;  // Route uses /:id not /:projectId
+    const projectId = req.params.id; // Route uses /:id not /:projectId
     const articleId = req.params.articleId;
     const userId = req.user.id;
-    const { title, content, excerpt, meta_title, meta_description, featured_image, slug, tags, category } = req.body;
-    
+    const {
+      title,
+      content,
+      excerpt,
+      meta_title,
+      meta_description,
+      featured_image,
+      slug,
+      tags,
+      category
+    } = req.body;
+
     const article = await projectService.updateProjectArticle(projectId, articleId, userId, {
       title,
       content,
@@ -401,11 +422,11 @@ const updateProjectArticle = async (req, res) => {
       tags,
       category
     });
-    
+
     if (article === null) {
       return res.status(404).json({ error: 'Article not found' });
     }
-    
+
     res.json(article);
   } catch (error) {
     logger.error('Update project article error:', error);
@@ -431,7 +452,8 @@ const deleteProjectArticle = async (req, res) => {
     // Regular users can only delete unused articles (usage_count = 0)
     if (articleToDelete.usage_count > 0 && req.user.role !== 'admin') {
       return res.status(403).json({
-        error: 'Cannot delete used article. Only admins can delete articles that have been published.'
+        error:
+          'Cannot delete used article. Only admins can delete articles that have been published.'
       });
     }
 

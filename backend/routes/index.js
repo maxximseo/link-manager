@@ -32,7 +32,7 @@ try {
 // Health check
 router.get('/health', (req, res) => {
   let queueStatus = false;
-  
+
   // Check if queue routes are loaded and workers are available
   if (queueRoutes) {
     try {
@@ -42,9 +42,9 @@ router.get('/health', (req, res) => {
       // Queue workers not available
     }
   }
-  
-  res.json({ 
-    status: 'ok', 
+
+  res.json({
+    status: 'ok',
     timestamp: new Date().toISOString(),
     architecture: 'modular',
     queue: queueStatus
