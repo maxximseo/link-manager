@@ -46,7 +46,7 @@ router.get('/', authMiddleware, async (req, res) => {
     const unread = parseInt(result.rows[0]?.unread_count || 0);
 
     // Remove count columns from response
-    const notifications = result.rows.map(({ total_count, unread_count, ...n }) => n);
+    const notifications = result.rows.map(({ total_count: _tc, unread_count: _uc, ...n }) => n);
 
     const response = {
       success: true,

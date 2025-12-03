@@ -245,7 +245,7 @@ router.post(
       const queues = queueService.queues;
       let cleanedCount = 0;
 
-      for (const [name, queue] of Object.entries(queues)) {
+      for (const [_name, queue] of Object.entries(queues)) {
         // Clean completed jobs older than specified time
         const cleaned = await queue.clean(olderThan, 'completed');
         cleanedCount += cleaned.length;
