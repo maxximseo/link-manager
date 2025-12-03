@@ -837,12 +837,11 @@ const rejectPlacement = async (placementId, adminId, reason = 'Rejected by admin
 
     // 5. Audit log
     await client.query(`
-      INSERT INTO audit_log (user_id, action, entity_type, entity_id, details)
-      VALUES ($1, 'reject_placement', 'placement', $2, $3)
+      INSERT INTO audit_log (user_id, action, details)
+      VALUES ($1, 'reject_placement', $2)
     `, [
       adminId,
-      placementId,
-      JSON.stringify({ reason, refundAmount: finalPrice, userId: placement.user_id })
+      JSON.stringify({ entity_type: 'placement', entity_id: placementId, reason, refundAmount: finalPrice, userId: placement.user_id })
     ]);
 
     // 6. Notify user
