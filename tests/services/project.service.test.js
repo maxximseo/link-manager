@@ -494,3 +494,428 @@ describe('Project Ownership', () => {
     expect(queryCall[1]).toContain(1); // User ID in params
   });
 });
+
+// =============================================
+// Additional Coverage Tests
+// =============================================
+
+describe('Error Handling', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+  });
+
+  describe('getUserProjects', () => {
+    it('should throw on database error', async () => {
+      mockQuery.mockRejectedValue(new Error('Database connection failed'));
+
+      await expect(projectService.getUserProjects(1, 1, 10)).rejects.toThrow(
+        'Database connection failed'
+      );
+    });
+
+    it('should return raw array when limit >= 100', async () => {
+      const mockProjects = [{ id: 1, name: 'Project' }];
+      mockQuery.mockResolvedValueOnce({ rows: mockProjects });
+
+      // With limit >= 100, it returns raw array without pagination
+      const result = await projectService.getUserProjects(1, 1, 100);
+
+      expect(Array.isArray(result)).toBe(true);
+      expect(result).toHaveLength(1);
+    });
+  });
+
+  describe('getProjectWithDetails', () => {
+    it('should throw on database error', async () => {
+      mockQuery.mockRejectedValue(new Error('Query failed'));
+
+      await expect(projectService.getProjectWithDetails(1, 1)).rejects.toThrow(
+        'Query failed'
+      );
+    });
+  });
+
+  describe('createProject', () => {
+    it('should throw on database error', async () => {
+      mockQuery.mockRejectedValue(new Error('Insert failed'));
+
+      await expect(
+        projectService.createProject({ name: 'Test', userId: 1 })
+      ).rejects.toThrow('Insert failed');
+    });
+  });
+
+  describe('updateProject', () => {
+    it('should throw on database error', async () => {
+      mockQuery.mockRejectedValue(new Error('Update failed'));
+
+      await expect(
+        projectService.updateProject(1, 1, { name: 'New Name' })
+      ).rejects.toThrow('Update failed');
+    });
+  });
+
+  describe('deleteProject', () => {
+    it('should throw on database error', async () => {
+      mockQuery.mockRejectedValue(new Error('Delete failed'));
+
+      await expect(projectService.deleteProject(1, 1)).rejects.toThrow(
+        'Delete failed'
+      );
+    });
+  });
+});
+
+describe('getProjectLinks - Additional Tests', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+  });
+
+  it('should return null for non-existent project', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] }); // Project not found
+
+    const result = await projectService.getProjectLinks(999, 1);
+
+    expect(result).toBeNull();
+  });
+
+  it('should throw on database error', async () => {
+    mockQuery.mockRejectedValue(new Error('Query failed'));
+
+    await expect(projectService.getProjectLinks(1, 1)).rejects.toThrow(
+      'Query failed'
+    );
+  });
+});
+
+describe('addProjectLink - Additional Tests', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+  });
+
+  it('should return null for non-existent project', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] }); // Project not found
+
+    const result = await projectService.addProjectLink(999, 1, {
+      url: 'https://example.com',
+      anchor_text: 'Test'
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it('should throw on database error', async () => {
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ id: 1 }] }) // Project found
+      .mockRejectedValueOnce(new Error('Insert failed'));
+
+    await expect(
+      projectService.addProjectLink(1, 1, {
+        url: 'https://example.com',
+        anchor_text: 'Test'
+      })
+    ).rejects.toThrow('Insert failed');
+  });
+});
+
+describe('updateProjectLink - Additional Tests', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+  });
+
+  it('should return null for non-existent project', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] }); // Project not found
+
+    const result = await projectService.updateProjectLink(999, 1, 1, {
+      anchor_text: 'Updated'
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it('should throw on database error', async () => {
+    mockQuery.mockRejectedValue(new Error('Update failed'));
+
+    await expect(
+      projectService.updateProjectLink(1, 1, 1, { anchor_text: 'Updated' })
+    ).rejects.toThrow('Update failed');
+  });
+});
+
+describe('addProjectLinksBulk - Additional Tests', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+  });
+
+  it('should return null for non-existent project', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] }); // Project not found
+
+    const result = await projectService.addProjectLinksBulk(999, 1, [
+      { url: 'https://example.com', anchor_text: 'Test' }
+    ]);
+
+    expect(result).toBeNull();
+  });
+
+  it('should throw for more than 500 links', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] }); // Project found
+
+    const links = Array.from({ length: 501 }, (_, i) => ({
+      url: `https://example${i}.com`,
+      anchor_text: `Link ${i}`
+    }));
+
+    await expect(
+      projectService.addProjectLinksBulk(1, 1, links)
+    ).rejects.toThrow('Maximum 500 links');
+  });
+
+  it('should handle invalid URLs in bulk import', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] }); // Project found
+
+    const links = [
+      { url: 'not-a-valid-url', anchor_text: 'Invalid' },
+      { url: 'also-invalid', anchor_text: 'Also Invalid' }
+    ];
+
+    await expect(
+      projectService.addProjectLinksBulk(1, 1, links)
+    ).rejects.toThrow('Import failed');
+  });
+
+  it('should import valid links and report invalid ones', async () => {
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ id: 1 }] }) // Project found
+      .mockResolvedValueOnce({
+        rows: [{ id: 1, url: 'https://valid.com', anchor_text: 'Valid' }]
+      });
+
+    const links = [
+      { url: 'https://valid.com', anchor_text: 'Valid' },
+      { url: 'invalid-url', anchor_text: 'Invalid' }
+    ];
+
+    const result = await projectService.addProjectLinksBulk(1, 1, links);
+
+    expect(result.imported).toHaveLength(1);
+    expect(result.invalidUrls).toHaveLength(1);
+    expect(result.summary.imported).toBe(1);
+    expect(result.summary.invalidUrls).toBe(1);
+  });
+
+  it('should report empty URL as invalid', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }] }); // Project found
+
+    const links = [
+      { url: '', anchor_text: 'Empty URL' }
+    ];
+
+    await expect(
+      projectService.addProjectLinksBulk(1, 1, links)
+    ).rejects.toThrow('Import failed');
+  });
+
+  it('should throw on database error during bulk insert', async () => {
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ id: 1 }] }) // Project found
+      .mockRejectedValueOnce(new Error('Bulk insert failed'));
+
+    const links = [
+      { url: 'https://example.com', anchor_text: 'Test' }
+    ];
+
+    await expect(
+      projectService.addProjectLinksBulk(1, 1, links)
+    ).rejects.toThrow('Bulk insert failed');
+  });
+});
+
+describe('deleteProjectLink - Additional Tests', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+  });
+
+  it('should throw on database error', async () => {
+    mockQuery.mockRejectedValue(new Error('Delete failed'));
+
+    await expect(projectService.deleteProjectLink(1, 1, 1)).rejects.toThrow(
+      'Delete failed'
+    );
+  });
+});
+
+describe('getProjectArticles - Additional Tests', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+  });
+
+  it('should return null for non-existent project', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] }); // Project not found
+
+    const result = await projectService.getProjectArticles(999, 1);
+
+    expect(result).toBeNull();
+  });
+
+  it('should throw on database error', async () => {
+    mockQuery.mockRejectedValue(new Error('Query failed'));
+
+    await expect(projectService.getProjectArticles(1, 1)).rejects.toThrow(
+      'Query failed'
+    );
+  });
+});
+
+describe('addProjectArticle - Additional Tests', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+  });
+
+  it('should return null for non-existent project', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] }); // Project not found
+
+    const result = await projectService.addProjectArticle(999, 1, {
+      title: 'Test Article',
+      content: 'Content'
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it('should throw on database error', async () => {
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ id: 1 }] }) // Project found
+      .mockRejectedValueOnce(new Error('Insert failed'));
+
+    await expect(
+      projectService.addProjectArticle(1, 1, {
+        title: 'Test',
+        content: 'Content'
+      })
+    ).rejects.toThrow('Insert failed');
+  });
+
+  it('should create article with all fields', async () => {
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ id: 1 }] }) // Project found
+      .mockResolvedValueOnce({
+        rows: [{
+          id: 1,
+          title: 'Full Article',
+          content: 'Article content',
+          excerpt: 'Summary',
+          meta_title: 'SEO Title',
+          meta_description: 'SEO Description',
+          featured_image: 'https://example.com/image.jpg',
+          slug: 'full-article',
+          tags: 'tag1, tag2',
+          category: 'Category'
+        }]
+      });
+
+    const result = await projectService.addProjectArticle(1, 1, {
+      title: 'Full Article',
+      content: 'Article content',
+      excerpt: 'Summary',
+      meta_title: 'SEO Title',
+      meta_description: 'SEO Description',
+      featured_image: 'https://example.com/image.jpg',
+      slug: 'full-article',
+      tags: 'tag1, tag2',
+      category: 'Category'
+    });
+
+    expect(result.title).toBe('Full Article');
+    expect(result.meta_title).toBe('SEO Title');
+    expect(result.slug).toBe('full-article');
+  });
+});
+
+describe('updateProjectArticle', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+  });
+
+  it('should update article successfully', async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [{
+        id: 1,
+        title: 'Updated Title',
+        content: 'Updated content',
+        excerpt: null,
+        meta_title: 'Updated SEO',
+        meta_description: null,
+        featured_image: null,
+        slug: 'updated-title',
+        tags: null,
+        category: null
+      }]
+    });
+
+    const result = await projectService.updateProjectArticle(1, 1, 1, {
+      title: 'Updated Title',
+      content: 'Updated content',
+      excerpt: null,
+      meta_title: 'Updated SEO',
+      meta_description: null,
+      featured_image: null,
+      slug: 'updated-title',
+      tags: null,
+      category: null
+    });
+
+    expect(result).toBeDefined();
+    expect(result.title).toBe('Updated Title');
+    expect(result.meta_title).toBe('Updated SEO');
+  });
+
+  it('should return null for non-existent article', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] }); // Article not found
+
+    const result = await projectService.updateProjectArticle(1, 999, 1, {
+      title: 'Updated',
+      content: 'Content',
+      excerpt: null,
+      meta_title: null,
+      meta_description: null,
+      featured_image: null,
+      slug: null,
+      tags: null,
+      category: null
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it('should throw on database error', async () => {
+    mockQuery.mockRejectedValue(new Error('Update failed'));
+
+    await expect(
+      projectService.updateProjectArticle(1, 1, 1, {
+        title: 'Updated',
+        content: 'Content',
+        excerpt: null,
+        meta_title: null,
+        meta_description: null,
+        featured_image: null,
+        slug: null,
+        tags: null,
+        category: null
+      })
+    ).rejects.toThrow('Update failed');
+  });
+});
+
+describe('deleteProjectArticle - Additional Tests', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+  });
+
+  it('should throw on database error', async () => {
+    mockQuery.mockRejectedValue(new Error('Delete failed'));
+
+    await expect(projectService.deleteProjectArticle(1, 1, 1)).rejects.toThrow(
+      'Delete failed'
+    );
+  });
+});

@@ -19,6 +19,7 @@
     "format:check": "prettier --check \"backend/**/*.js\" \"tests/**/*.js\" --ignore-path .prettierignore"
   },
   "dependencies": {
+    "@sentry/node": "^10.28.0",
     "axios": "^1.12.2",
     "bcryptjs": "^3.0.2",
     "bull": "^4.10.4",
