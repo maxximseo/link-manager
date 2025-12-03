@@ -84,6 +84,22 @@ npm start
 
 **⚠️ Change these in production!**
 
+## 🛠️ Development Commands
+
+```bash
+# Start development server (with auto-reload)
+npm run dev
+
+# Run tests
+npm test
+
+# Code Quality
+npm run lint          # Check for errors/warnings
+npm run lint:fix      # Auto-fix issues
+npm run format        # Format all files
+npm run format:check  # Check formatting only
+```
+
 ## 🌐 Endpoints
 
 ### Authentication

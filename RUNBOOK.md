@@ -10,12 +10,13 @@ This document contains step-by-step procedures for common operational tasks in t
 ## Table of Contents
 
 1. [Server Operations](#server-operations)
-2. [Database Operations](#database-operations)
-3. [Deployment Procedures](#deployment-procedures)
-4. [Troubleshooting](#troubleshooting)
-5. [Backup & Recovery](#backup--recovery)
-6. [Monitoring & Alerts](#monitoring--alerts)
-7. [Security Incidents](#security-incidents)
+2. [Code Quality](#code-quality)
+3. [Database Operations](#database-operations)
+4. [Deployment Procedures](#deployment-procedures)
+5. [Troubleshooting](#troubleshooting)
+6. [Backup & Recovery](#backup--recovery)
+7. [Monitoring & Alerts](#monitoring--alerts)
+8. [Security Incidents](#security-incidents)
 
 ---
 
@@ -140,6 +141,82 @@ git log --oneline -5  # Find last good commit
 git reset --hard <commit-hash>
 pm2 reload link-manager
 ```
+
+---
+
+## Code Quality
+
+### ESLint + Prettier (ADR-022)
+
+Code quality tools are configured for consistent style and early bug detection.
+
+### Check Code for Issues
+
+```bash
+# Run full lint check
+npm run lint
+
+# Expected output:
+# ✓ No errors (or list of problems)
+# Problems found: X warnings, Y errors
+```
+
+### Auto-Fix Issues
+
+```bash
+# Fix formatting and some code issues automatically
+npm run lint:fix
+
+# This will:
+# - Fix Prettier formatting (~90% of warnings)
+# - Fix some ESLint auto-fixable rules
+# - Report remaining issues that need manual review
+```
+
+### Format Code Only
+
+```bash
+# Check formatting without fixing
+npm run format:check
+
+# Auto-format all files
+npm run format
+```
+
+### Common Warnings and Fixes
+
+| Warning | Fix |
+|---------|-----|
+| `'variable' is defined but never used` | Remove variable or prefix with `_` |
+| `Async function has no await` | Add `await` or remove `async` |
+| `Unexpected console statement` | Use `logger.info()` instead |
+| `Expected '===' and instead saw '=='` | Use `===` (or `== null` is ok) |
+
+### Before PR Checklist
+
+```bash
+# 1. Run lint
+npm run lint
+
+# 2. Fix auto-fixable issues
+npm run lint:fix
+
+# 3. Review remaining warnings
+# 4. Fix critical errors (no-var, etc.)
+# 5. Commit
+```
+
+### ESLint Configuration
+
+**Config file**: `eslint.config.js`
+
+**Ignored paths**:
+- `node_modules/`
+- `backend/build/` (frontend HTML/CSS)
+- `coverage/`
+- `*.min.js`
+
+**See**: [ADR-022](ADR.md#adr-022-eslint--prettier-code-quality) for full configuration details.
 
 ---
 
