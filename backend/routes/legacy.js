@@ -187,7 +187,7 @@ router.get('/placements', authMiddleware, async (req, res) => {
 // REMOVED: Batch placement endpoint - SECURITY: Bypassed billing system
 // This legacy endpoint allowed free placement creation without payment
 // Use POST /api/billing/purchase instead for paid placements
-router.post('/placements/batch/create', authMiddleware, async (req, res) => {
+router.post('/placements/batch/create', authMiddleware, (req, res) => {
   return res.status(410).json({
     error: 'This endpoint has been removed for security reasons',
     reason: 'Bypassed billing system - all placements must be paid',
