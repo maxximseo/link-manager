@@ -504,12 +504,13 @@ const refundPlacement = async (placementId, reason, adminId, deleteWordPressPost
     // 5. Create admin audit log entry
     await client.query(`
       INSERT INTO audit_log (
-        user_id, action, entity_type, entity_id, details
-      ) VALUES ($1, 'admin_refund_placement', 'placement', $2, $3)
+        user_id, action, details
+      ) VALUES ($1, 'admin_refund_placement', $2)
     `, [
       adminId,
-      placementId,
       JSON.stringify({
+        entity_type: 'placement',
+        entity_id: placementId,
         placement_id: placementId,
         user_id: placement.user_id,
         refund_amount: finalPrice,
