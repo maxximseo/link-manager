@@ -97,38 +97,45 @@ async function startServer() {
 
 // Start the server
 let server;
+
+// Graceful shutdown - defined at module level for access from unhandledRejection handler
+async function gracefulShutdown(signal) {
+  logger.info(`${signal} signal received: starting graceful shutdown`);
+
+  if (!server) {
+    logger.warn('Server not started yet, exiting immediately');
+    process.exit(0);
+    return;
+  }
+
+  // Close HTTP server first
+  server.close(async () => {
+    logger.info('HTTP server closed');
+
+    // Shutdown workers if available
+    if (workerManager) {
+      try {
+        logger.info('Shutting down queue workers...');
+        await workerManager.shutdown();
+        logger.info('Queue workers shut down successfully');
+      } catch (error) {
+        logger.error('Error shutting down queue workers', { error: error.message });
+      }
+    }
+
+    logger.info('Graceful shutdown complete');
+    process.exit(0);
+  });
+
+  // Force shutdown after 30 seconds
+  setTimeout(() => {
+    logger.error('Could not close connections in time, forcefully shutting down');
+    process.exit(1);
+  }, 30000);
+}
+
 const serverPromise = startServer().then(s => {
   server = s;
-
-  // Graceful shutdown
-  async function gracefulShutdown(signal) {
-    logger.info(`${signal} signal received: starting graceful shutdown`);
-
-    // Close HTTP server first
-    server.close(async () => {
-      logger.info('HTTP server closed');
-
-      // Shutdown workers if available
-      if (workerManager) {
-        try {
-          logger.info('Shutting down queue workers...');
-          await workerManager.shutdown();
-          logger.info('Queue workers shut down successfully');
-        } catch (error) {
-          logger.error('Error shutting down queue workers', { error: error.message });
-        }
-      }
-
-      logger.info('Graceful shutdown complete');
-      process.exit(0);
-    });
-
-    // Force shutdown after 30 seconds
-    setTimeout(() => {
-      logger.error('Could not close connections in time, forcefully shutting down');
-      process.exit(1);
-    }, 30000);
-  }
 
   process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
   process.on('SIGINT', () => gracefulShutdown('SIGINT'));
