@@ -1,4 +1,5 @@
 const logger = require('../config/logger');
+const Sentry = require('@sentry/node');
 
 // Async handler wrapper
 const asyncHandler = fn => (req, res, next) => {
@@ -19,6 +20,23 @@ const errorHandler = (err, req, res, _next) => {
     ip: req.ip,
     userAgent: req.get('User-Agent')
   });
+
+  // Send to Sentry with user context
+  if (process.env.SENTRY_DSN) {
+    Sentry.withScope(scope => {
+      scope.setUser({
+        id: req.user?.id,
+        username: req.user?.username,
+        role: req.user?.role
+      });
+      scope.setExtra('url', req.originalUrl);
+      scope.setExtra('method', req.method);
+      scope.setExtra('ip', req.ip);
+      scope.setExtra('userAgent', req.get('User-Agent'));
+      scope.setTag('statusCode', error.statusCode || 500);
+      Sentry.captureException(err);
+    });
+  }
 
   // Database connection errors
   if (err.code === 'ECONNREFUSED') {
