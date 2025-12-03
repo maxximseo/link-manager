@@ -458,6 +458,7 @@ describe('Billing Service', () => {
       mockClient.query
         .mockResolvedValueOnce({}) // BEGIN
         .mockResolvedValueOnce({
+<<<<<<< HEAD
           rows: [
             {
               id: 1,
@@ -474,6 +475,23 @@ describe('Billing Service', () => {
         .mockResolvedValueOnce({}); // ROLLBACK
 
       await expect(billingService.renewPlacement(1, 1)).rejects.toThrow(/link/i);
+=======
+          rows: [{
+            id: 1,
+            user_id: 1,
+            type: 'article', // Articles cannot be renewed
+            balance: '100.00',
+            current_discount: 0,
+            total_spent: '0',
+            expires_at: new Date().toISOString(),
+            site_owner_id: 2
+          }]
+        }) // SELECT placement
+        .mockResolvedValueOnce({}); // ROLLBACK
+
+      await expect(billingService.renewPlacement(1, 1))
+        .rejects.toThrow(/link/i);
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
 
     it('should reject renewal for non-existent placement', async () => {
@@ -482,15 +500,21 @@ describe('Billing Service', () => {
         .mockResolvedValueOnce({ rows: [] }) // Empty result - placement not found
         .mockResolvedValueOnce({}); // ROLLBACK
 
+<<<<<<< HEAD
       await expect(billingService.renewPlacement(999, 1)).rejects.toThrow(
         /not found|unauthorized/i
       );
+=======
+      await expect(billingService.renewPlacement(999, 1))
+        .rejects.toThrow(/not found|unauthorized/i);
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
 
     it('should reject renewal with insufficient balance', async () => {
       mockClient.query
         .mockResolvedValueOnce({}) // BEGIN
         .mockResolvedValueOnce({
+<<<<<<< HEAD
           rows: [
             {
               id: 1,
@@ -507,6 +531,23 @@ describe('Billing Service', () => {
         .mockResolvedValueOnce({}); // ROLLBACK
 
       await expect(billingService.renewPlacement(1, 1)).rejects.toThrow(/insufficient/i);
+=======
+          rows: [{
+            id: 1,
+            user_id: 1,
+            type: 'link',
+            balance: '5.00', // Not enough for renewal
+            current_discount: 0,
+            total_spent: '0',
+            expires_at: new Date().toISOString(),
+            site_owner_id: 2
+          }]
+        })
+        .mockResolvedValueOnce({}); // ROLLBACK
+
+      await expect(billingService.renewPlacement(1, 1))
+        .rejects.toThrow(/insufficient/i);
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
 
     // Note: Owner rate success test removed - requires 10+ queries in exact sequence
@@ -516,6 +557,7 @@ describe('Billing Service', () => {
       mockClient.query
         .mockResolvedValueOnce({}) // BEGIN
         .mockResolvedValueOnce({
+<<<<<<< HEAD
           rows: [
             {
               id: 1,
@@ -532,6 +574,23 @@ describe('Billing Service', () => {
         .mockRejectedValueOnce(new Error('Database error')); // Error during UPDATE
 
       await expect(billingService.renewPlacement(1, 1)).rejects.toThrow('Database error');
+=======
+          rows: [{
+            id: 1,
+            user_id: 1,
+            type: 'link',
+            balance: '100.00',
+            current_discount: 0,
+            total_spent: '0',
+            expires_at: new Date().toISOString(),
+            site_owner_id: 2
+          }]
+        })
+        .mockRejectedValueOnce(new Error('Database error')); // Error during UPDATE
+
+      await expect(billingService.renewPlacement(1, 1))
+        .rejects.toThrow('Database error');
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
 
       const calls = mockClient.query.mock.calls.map(c => c[0] || c);
       expect(calls.some(c => typeof c === 'string' && c.includes('ROLLBACK'))).toBe(true);
@@ -544,6 +603,7 @@ describe('Billing Service', () => {
       mockClient.query
         .mockResolvedValueOnce({}) // BEGIN
         .mockResolvedValueOnce({
+<<<<<<< HEAD
           rows: [
             {
               id: 1,
@@ -566,6 +626,26 @@ describe('Billing Service', () => {
               current_discount: 10
             }
           ]
+=======
+          rows: [{
+            id: 1,
+            user_id: 1,
+            final_price: '25.00',
+            original_price: '25.00',
+            discount_applied: 0,
+            site_name: 'Test Site',
+            project_name: 'Test Project',
+            type: 'link'
+          }]
+        }) // SELECT placement FOR UPDATE
+        .mockResolvedValueOnce({
+          rows: [{
+            id: 1,
+            balance: '50.00',
+            total_spent: '100.00',
+            current_discount: 10
+          }]
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
         }) // SELECT user FOR UPDATE
         .mockResolvedValueOnce({}) // UPDATE user balance and total_spent
         .mockResolvedValueOnce({ rows: [{ id: 1, created_at: new Date() }] }) // INSERT refund transaction
@@ -589,6 +669,7 @@ describe('Billing Service', () => {
       mockClient.query
         .mockResolvedValueOnce({}) // BEGIN
         .mockResolvedValueOnce({
+<<<<<<< HEAD
           rows: [
             {
               id: 1,
@@ -601,6 +682,18 @@ describe('Billing Service', () => {
               type: 'link'
             }
           ]
+=======
+          rows: [{
+            id: 1,
+            user_id: 1,
+            final_price: '0', // Free placement
+            original_price: '0',
+            discount_applied: 0,
+            site_name: 'Test Site',
+            project_name: 'Test Project',
+            type: 'link'
+          }]
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
         }) // SELECT placement FOR UPDATE
         .mockResolvedValueOnce({}); // ROLLBACK
 
@@ -617,13 +710,19 @@ describe('Billing Service', () => {
         .mockResolvedValueOnce({ rows: [] }) // Empty result - placement not found
         .mockResolvedValueOnce({}); // ROLLBACK
 
+<<<<<<< HEAD
       await expect(billingService.refundPlacement(999, 1)).rejects.toThrow(/not found/i);
+=======
+      await expect(billingService.refundPlacement(999, 1))
+        .rejects.toThrow(/not found/i);
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
 
     it('should update discount tier after refund if needed', async () => {
       mockClient.query
         .mockResolvedValueOnce({}) // BEGIN
         .mockResolvedValueOnce({
+<<<<<<< HEAD
           rows: [
             {
               id: 1,
@@ -646,6 +745,26 @@ describe('Billing Service', () => {
               current_discount: 10 // Current Bronze tier
             }
           ]
+=======
+          rows: [{
+            id: 1,
+            user_id: 1,
+            final_price: '100.00',
+            original_price: '100.00',
+            discount_applied: 0,
+            site_name: 'Test Site',
+            project_name: 'Test Project',
+            type: 'link'
+          }]
+        }) // SELECT placement FOR UPDATE
+        .mockResolvedValueOnce({
+          rows: [{
+            id: 1,
+            balance: '50.00',
+            total_spent: '150.00', // Will go to 50 after refund
+            current_discount: 10 // Current Bronze tier
+          }]
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
         }) // SELECT user FOR UPDATE
         .mockResolvedValueOnce({}) // UPDATE user balance and total_spent
         .mockResolvedValueOnce({}) // UPDATE user current_discount (tier downgrade)
@@ -663,8 +782,13 @@ describe('Billing Service', () => {
       expect(result.refunded).toBe(true);
       expect(result.amount).toBe(100);
       // Verify UPDATE current_discount was called
+<<<<<<< HEAD
       const updateCalls = mockClient.query.mock.calls.filter(
         c => typeof c[0] === 'string' && c[0].includes('UPDATE users SET current_discount')
+=======
+      const updateCalls = mockClient.query.mock.calls.filter(c =>
+        typeof c[0] === 'string' && c[0].includes('UPDATE users SET current_discount')
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
       );
       expect(updateCalls.length).toBeGreaterThan(0);
     });
@@ -674,7 +798,12 @@ describe('Billing Service', () => {
         .mockResolvedValueOnce({}) // BEGIN
         .mockRejectedValueOnce(new Error('Database error'));
 
+<<<<<<< HEAD
       await expect(billingService.refundPlacement(1, 1)).rejects.toThrow('Database error');
+=======
+      await expect(billingService.refundPlacement(1, 1))
+        .rejects.toThrow('Database error');
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
 
       const calls = mockClient.query.mock.calls.map(c => c[0] || c);
       expect(calls.some(c => typeof c === 'string' && c.includes('ROLLBACK'))).toBe(true);
@@ -686,6 +815,7 @@ describe('Billing Service', () => {
       mockClient.query
         .mockResolvedValueOnce({}) // BEGIN
         .mockResolvedValueOnce({
+<<<<<<< HEAD
           rows: [
             {
               id: 1,
@@ -711,11 +841,35 @@ describe('Billing Service', () => {
               current_discount: 10
             }
           ]
+=======
+          rows: [{
+            id: 1,
+            user_id: 2, // Different user - admin deleting someone else's placement
+            project_id: 1,
+            site_id: 1,
+            type: 'link',
+            final_price: '25.00',
+            original_price: '25.00',
+            discount_applied: 0,
+            status: 'placed',
+            site_name: 'Test Site',
+            project_name: 'Test Project'
+          }]
+        }) // SELECT placement FOR UPDATE
+        .mockResolvedValueOnce({
+          rows: [{
+            id: 2,
+            balance: '50.00',
+            total_spent: '100.00',
+            current_discount: 10
+          }]
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
         }) // SELECT user FOR UPDATE (placement owner)
         .mockResolvedValueOnce({}) // UPDATE user balance
         .mockResolvedValueOnce({}) // INSERT refund transaction
         .mockResolvedValueOnce({}) // INSERT audit_log (refund)
         .mockResolvedValueOnce({
+<<<<<<< HEAD
           rows: [
             {
               link_ids: [1],
@@ -724,6 +878,14 @@ describe('Billing Service', () => {
               article_count: '0'
             }
           ]
+=======
+          rows: [{
+            link_ids: [1],
+            article_ids: [],
+            link_count: '1',
+            article_count: '0'
+          }]
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
         }) // SELECT placement_content
         .mockResolvedValueOnce({}) // DELETE placements
         .mockResolvedValueOnce({}) // UPDATE sites used_links
@@ -747,6 +909,7 @@ describe('Billing Service', () => {
       mockClient.query
         .mockResolvedValueOnce({}) // BEGIN
         .mockResolvedValueOnce({
+<<<<<<< HEAD
           rows: [
             {
               id: 1,
@@ -763,6 +926,21 @@ describe('Billing Service', () => {
       await expect(billingService.deleteAndRefundPlacement(1, 1, 'user')).rejects.toThrow(
         /admin|unauthorized/i
       );
+=======
+          rows: [{
+            id: 1,
+            user_id: 1,
+            final_price: '25.00',
+            status: 'placed',
+            site_name: 'Test Site',
+            project_name: 'Test Project'
+          }]
+        }) // SELECT placement FOR UPDATE
+        .mockResolvedValueOnce({}); // ROLLBACK
+
+      await expect(billingService.deleteAndRefundPlacement(1, 1, 'user'))
+        .rejects.toThrow(/admin|unauthorized/i);
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
 
     it('should reject deletion of non-existent placement', async () => {
@@ -771,15 +949,21 @@ describe('Billing Service', () => {
         .mockResolvedValueOnce({ rows: [] }) // Empty result
         .mockResolvedValueOnce({}); // ROLLBACK
 
+<<<<<<< HEAD
       await expect(billingService.deleteAndRefundPlacement(999, 1, 'admin')).rejects.toThrow(
         /not found/i
       );
+=======
+      await expect(billingService.deleteAndRefundPlacement(999, 1, 'admin'))
+        .rejects.toThrow(/not found/i);
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
 
     it('should delete free placement without refund', async () => {
       mockClient.query
         .mockResolvedValueOnce({}) // BEGIN
         .mockResolvedValueOnce({
+<<<<<<< HEAD
           rows: [
             {
               id: 1,
@@ -805,6 +989,29 @@ describe('Billing Service', () => {
               article_count: '0'
             }
           ]
+=======
+          rows: [{
+            id: 1,
+            user_id: 1,
+            project_id: 1,
+            site_id: 1,
+            type: 'link',
+            final_price: '0', // Free placement
+            original_price: '0',
+            discount_applied: 0,
+            status: 'placed',
+            site_name: 'Test Site',
+            project_name: 'Test Project'
+          }]
+        }) // SELECT placement FOR UPDATE
+        .mockResolvedValueOnce({
+          rows: [{
+            link_ids: [1],
+            article_ids: [],
+            link_count: '1',
+            article_count: '0'
+          }]
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
         }) // SELECT placement_content
         .mockResolvedValueOnce({}) // DELETE placements
         .mockResolvedValueOnce({}) // UPDATE sites used_links
@@ -824,6 +1031,7 @@ describe('Billing Service', () => {
     it('should enable auto-renewal for link placement', async () => {
       mockQuery
         .mockResolvedValueOnce({
+<<<<<<< HEAD
           rows: [
             {
               id: 1,
@@ -831,6 +1039,13 @@ describe('Billing Service', () => {
               type: 'link'
             }
           ]
+=======
+          rows: [{
+            id: 1,
+            user_id: 1,
+            type: 'link'
+          }]
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
         }) // SELECT placement
         .mockResolvedValueOnce({}); // UPDATE placement
 
@@ -843,6 +1058,7 @@ describe('Billing Service', () => {
     it('should disable auto-renewal', async () => {
       mockQuery
         .mockResolvedValueOnce({
+<<<<<<< HEAD
           rows: [
             {
               id: 1,
@@ -850,6 +1066,13 @@ describe('Billing Service', () => {
               type: 'link'
             }
           ]
+=======
+          rows: [{
+            id: 1,
+            user_id: 1,
+            type: 'link'
+          }]
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
         })
         .mockResolvedValueOnce({});
 
@@ -861,6 +1084,7 @@ describe('Billing Service', () => {
 
     it('should reject auto-renewal for article placement', async () => {
       mockQuery.mockResolvedValueOnce({
+<<<<<<< HEAD
         rows: [
           {
             id: 1,
@@ -871,12 +1095,28 @@ describe('Billing Service', () => {
       });
 
       await expect(billingService.toggleAutoRenewal(1, 1, true)).rejects.toThrow(/link/i);
+=======
+        rows: [{
+          id: 1,
+          user_id: 1,
+          type: 'article'
+        }]
+      });
+
+      await expect(billingService.toggleAutoRenewal(1, 1, true))
+        .rejects.toThrow(/link/i);
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
 
     it('should reject for non-existent placement', async () => {
       mockQuery.mockResolvedValueOnce({ rows: [] });
 
+<<<<<<< HEAD
       await expect(billingService.toggleAutoRenewal(999, 1, true)).rejects.toThrow(/not found/i);
+=======
+      await expect(billingService.toggleAutoRenewal(999, 1, true))
+        .rejects.toThrow(/not found/i);
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
   });
 
@@ -905,7 +1145,13 @@ describe('Billing Service', () => {
     it('should filter by transaction type', async () => {
       mockQuery
         .mockResolvedValueOnce({
+<<<<<<< HEAD
           rows: [{ id: 1, type: 'deposit', amount: '100.00', created_at: new Date() }]
+=======
+          rows: [
+            { id: 1, type: 'deposit', amount: '100.00', created_at: new Date() }
+          ]
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
         })
         .mockResolvedValueOnce({
           rows: [{ count: '5' }]
@@ -937,6 +1183,7 @@ describe('Billing Service', () => {
     it('should publish scheduled placement', async () => {
       // publishScheduledPlacement uses query() not transaction
       mockQuery.mockResolvedValueOnce({
+<<<<<<< HEAD
         rows: [
           {
             id: 1,
@@ -948,6 +1195,17 @@ describe('Billing Service', () => {
             site_type: 'wordpress'
           }
         ]
+=======
+        rows: [{
+          id: 1,
+          user_id: 1,
+          status: 'scheduled',
+          site_id: 1,
+          api_key: 'api_test123',
+          site_url: 'https://example.com',
+          site_type: 'wordpress'
+        }]
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
       });
 
       // publishPlacementAsync uses pool.connect()
@@ -970,6 +1228,7 @@ describe('Billing Service', () => {
 
     it('should reject non-scheduled placement', async () => {
       mockQuery.mockResolvedValueOnce({
+<<<<<<< HEAD
         rows: [
           {
             id: 1,
@@ -984,16 +1243,37 @@ describe('Billing Service', () => {
       });
 
       await expect(billingService.publishScheduledPlacement(1, 1)).rejects.toThrow(/scheduled/i);
+=======
+        rows: [{
+          id: 1,
+          user_id: 1,
+          status: 'placed', // Already placed
+          site_id: 1,
+          api_key: 'api_test123',
+          site_url: 'https://example.com',
+          site_type: 'wordpress'
+        }]
+      });
+
+      await expect(billingService.publishScheduledPlacement(1, 1))
+        .rejects.toThrow(/scheduled/i);
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
 
     it('should reject non-existent placement', async () => {
       mockQuery.mockResolvedValueOnce({ rows: [] });
 
+<<<<<<< HEAD
       await expect(billingService.publishScheduledPlacement(999, 1)).rejects.toThrow(/not found/i);
+=======
+      await expect(billingService.publishScheduledPlacement(999, 1))
+        .rejects.toThrow(/not found/i);
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
 
     it('should reject unauthorized publish attempt', async () => {
       mockQuery.mockResolvedValueOnce({
+<<<<<<< HEAD
         rows: [
           {
             id: 1,
@@ -1005,6 +1285,18 @@ describe('Billing Service', () => {
       });
 
       await expect(billingService.publishScheduledPlacement(1, 1)).rejects.toThrow(/unauthorized/i);
+=======
+        rows: [{
+          id: 1,
+          user_id: 2, // Different user
+          status: 'scheduled',
+          site_id: 1
+        }]
+      });
+
+      await expect(billingService.publishScheduledPlacement(1, 1))
+        .rejects.toThrow(/unauthorized/i);
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
   });
 }); // End of 'Billing Service' describe
