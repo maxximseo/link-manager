@@ -11,7 +11,7 @@ const authMiddleware = require('../middleware/auth');
 const billingService = require('../services/billing.service');
 const exportService = require('../services/export.service');
 const logger = require('../config/logger');
-const { handleError, handleSmartError } = require('../utils/errorHandler');
+const { handleSmartError } = require('../utils/errorHandler');
 
 // Rate limiting for financial operations (adjusted for bulk purchases)
 const financialLimiter = rateLimit({
