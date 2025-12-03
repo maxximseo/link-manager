@@ -12,7 +12,11 @@
     "commit": "bash scripts/auto-commit.sh",
     "test": "jest --coverage",
     "test:watch": "jest --watch",
-    "test:ci": "jest --ci --coverage --forceExit"
+    "test:ci": "jest --ci --coverage --forceExit",
+    "lint": "eslint backend/ tests/ --ignore-pattern 'backend/build/**'",
+    "lint:fix": "eslint backend/ tests/ --ignore-pattern 'backend/build/**' --fix",
+    "format": "prettier --write \"backend/**/*.js\" \"tests/**/*.js\" --ignore-path .prettierignore",
+    "format:check": "prettier --check \"backend/**/*.js\" \"tests/**/*.js\" --ignore-path .prettierignore"
   },
   "dependencies": {
     "axios": "^1.12.2",
@@ -33,8 +37,13 @@
     "winston-daily-rotate-file": "^5.0.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
     "jest": "^30.2.0",
     "nodemon": "^2.0.22",
+    "prettier": "^3.7.4",
     "supertest": "^7.1.4"
   }
 }
