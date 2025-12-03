@@ -108,6 +108,68 @@ TOKEN=$(curl -X POST http://localhost:3003/api/auth/login \
 curl -H "Authorization: Bearer $TOKEN" http://localhost:3003/api/projects
 ```
 
+### Code Quality (ESLint + Prettier)
+
+**Status**: Active since December 2025
+
+```bash
+# Check for errors and warnings
+npm run lint
+
+# Auto-fix most issues (formatting + some code issues)
+npm run lint:fix
+
+# Check formatting only
+npm run format:check
+
+# Auto-format all files
+npm run format
+```
+
+**Configuration Files**:
+- `eslint.config.js` - ESLint 9 flat config with rules
+- `.prettierrc` - Prettier formatting settings
+- `.prettierignore` - Files excluded from formatting
+
+**ESLint Rules** (all set to `warn` except `no-var` which is `error`):
+| Rule | Purpose |
+|------|---------|
+| `no-unused-vars` | Catches dead code (prefix with `_` to ignore) |
+| `require-await` | Flags async functions without await |
+| `no-console` | Reminds to remove console.log (allows warn/error/info) |
+| `prefer-const` | Suggests const where let is unnecessary |
+| `no-var` | **Error** - use let/const instead |
+| `eqeqeq` | Prefer === over == |
+| `prettier/prettier` | Enforces consistent formatting |
+
+**Prettier Settings** (`.prettierrc`):
+```json
+{
+  "semi": true,
+  "singleQuote": true,
+  "tabWidth": 2,
+  "trailingComma": "none",
+  "printWidth": 100
+}
+```
+
+**Ignored Paths**:
+- `node_modules/` - dependencies
+- `backend/build/` - compiled frontend (HTML, minified JS)
+- `coverage/` - Jest coverage reports
+- `*.min.js`, `*.min.css` - minified files
+
+**Typical Workflow**:
+```bash
+# Before committing, run lint to check for issues
+npm run lint
+
+# If mostly formatting warnings, auto-fix them
+npm run lint:fix
+
+# Review remaining warnings (actual code issues to consider)
+```
+
 ### Development Scripts
 
 **Auto-restart with kill on port change** (recommended for development):
