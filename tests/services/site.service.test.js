@@ -585,3 +585,362 @@ describe('Bulk Operations', () => {
     });
   });
 });
+
+// =============================================
+// Additional Coverage Tests
+// =============================================
+
+describe('Error Handling', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+    mockClient.query.mockReset();
+  });
+
+  describe('getUserSites', () => {
+    it('should throw on database error', async () => {
+      mockQuery.mockRejectedValue(new Error('Database connection failed'));
+
+      await expect(siteService.getUserSites(1, 1, 10)).rejects.toThrow(
+        'Database connection failed'
+      );
+    });
+
+    it('should recalculate stats when recalculate=true', async () => {
+      // recalculateSiteStats uses pool.connect()
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({}) // UPDATE query
+        .mockResolvedValueOnce({}); // COMMIT
+
+      mockQuery
+        .mockResolvedValueOnce({ rows: [{ id: 1 }] }) // Sites query
+        .mockResolvedValueOnce({ rows: [{ count: '1' }] }); // Count query
+
+      const result = await siteService.getUserSites(1, 1, 10, true);
+
+      expect(result).toHaveProperty('recalculated', true);
+    });
+  });
+
+  describe('getMarketplaceSites', () => {
+    it('should throw on database error', async () => {
+      mockQuery.mockRejectedValue(new Error('Query failed'));
+
+      await expect(siteService.getMarketplaceSites(1)).rejects.toThrow('Query failed');
+    });
+  });
+
+  describe('createSite', () => {
+    it('should throw for invalid URL format', async () => {
+      await expect(
+        siteService.createSite({
+          userId: 1,
+          site_url: 'not-a-valid-url'
+        })
+      ).rejects.toThrow(/Invalid/i);
+    });
+
+    it('should throw for non-http protocol', async () => {
+      await expect(
+        siteService.createSite({
+          userId: 1,
+          site_url: 'ftp://example.com'
+        })
+      ).rejects.toThrow(/HTTP and HTTPS/i);
+    });
+
+    it('should throw for short hostname', async () => {
+      await expect(
+        siteService.createSite({
+          userId: 1,
+          site_url: 'http://ab'
+        })
+      ).rejects.toThrow(/Invalid hostname/i);
+    });
+
+    it('should throw on database error', async () => {
+      mockQuery.mockRejectedValue(new Error('Insert failed'));
+
+      await expect(
+        siteService.createSite({
+          userId: 1,
+          site_url: 'https://example.com'
+        })
+      ).rejects.toThrow('Insert failed');
+    });
+  });
+
+  describe('updateSite', () => {
+    it('should throw for invalid URL in update', async () => {
+      await expect(
+        siteService.updateSite(1, 1, {
+          site_url: 'not-a-valid-url'
+        })
+      ).rejects.toThrow(/Invalid/i);
+    });
+
+    it('should throw for invalid site_type in update', async () => {
+      await expect(
+        siteService.updateSite(1, 1, {
+          site_type: 'invalid_type'
+        })
+      ).rejects.toThrow(/Invalid site_type/i);
+    });
+
+    it('should force max_articles to 0 for static_php update', async () => {
+      mockQuery.mockResolvedValueOnce({
+        rows: [{
+          id: 1,
+          site_type: 'static_php',
+          max_articles: 0
+        }]
+      });
+
+      const result = await siteService.updateSite(1, 1, {
+        site_type: 'static_php'
+      });
+
+      expect(result.max_articles).toBe(0);
+    });
+
+    it('should throw on database error', async () => {
+      mockQuery.mockRejectedValue(new Error('Update failed'));
+
+      await expect(
+        siteService.updateSite(1, 1, { max_links: 50 })
+      ).rejects.toThrow('Update failed');
+    });
+  });
+
+  describe('deleteSite', () => {
+    it('should throw on database error', async () => {
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockRejectedValueOnce(new Error('Delete failed'));
+
+      await expect(siteService.deleteSite(1, 1)).rejects.toThrow('Delete failed');
+    });
+  });
+});
+
+describe('getSiteById', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+  });
+
+  it('should return site by ID', async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [{
+        id: 1,
+        site_url: 'https://example.com',
+        site_type: 'wordpress'
+      }]
+    });
+
+    const result = await siteService.getSiteById(1, 1);
+
+    expect(result).toBeDefined();
+    expect(result.id).toBe(1);
+  });
+
+  it('should return null for non-existent site', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    const result = await siteService.getSiteById(999, 1);
+
+    expect(result).toBeNull();
+  });
+
+  it('should throw on database error', async () => {
+    mockQuery.mockRejectedValue(new Error('Query failed'));
+
+    await expect(siteService.getSiteById(1, 1)).rejects.toThrow('Query failed');
+  });
+});
+
+describe('getSiteByDomain - Additional Tests', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+  });
+
+  it('should throw on database error', async () => {
+    mockQuery.mockRejectedValue(new Error('Query failed'));
+
+    await expect(siteService.getSiteByDomain('example.com')).rejects.toThrow('Query failed');
+  });
+});
+
+describe('getSiteByUrlForUser', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+  });
+
+  it('should return site by URL for user', async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [{
+        id: 1,
+        site_url: 'https://example.com',
+        user_id: 1
+      }]
+    });
+
+    const result = await siteService.getSiteByUrlForUser('https://example.com', 1);
+
+    expect(result).toBeDefined();
+    expect(result.site_url).toBe('https://example.com');
+  });
+
+  it('should return null for non-existent site', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    const result = await siteService.getSiteByUrlForUser('https://nonexistent.com', 1);
+
+    expect(result).toBeNull();
+  });
+
+  it('should throw on database error', async () => {
+    mockQuery.mockRejectedValue(new Error('Query failed'));
+
+    await expect(
+      siteService.getSiteByUrlForUser('https://example.com', 1)
+    ).rejects.toThrow('Query failed');
+  });
+});
+
+describe('recalculateSiteStats', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+    mockClient.query.mockReset();
+    mockPool.connect.mockResolvedValue(mockClient);
+  });
+
+  it('should recalculate site stats successfully', async () => {
+    mockClient.query
+      .mockResolvedValueOnce({}) // BEGIN
+      .mockResolvedValueOnce({}) // UPDATE with CTE
+      .mockResolvedValueOnce({}); // COMMIT
+
+    // Should not throw
+    await expect(siteService.recalculateSiteStats(1)).resolves.toBeUndefined();
+  });
+
+  it('should rollback on database error', async () => {
+    mockClient.query
+      .mockResolvedValueOnce({}) // BEGIN
+      .mockRejectedValueOnce(new Error('Update failed')); // UPDATE fails
+
+    await expect(siteService.recalculateSiteStats(1)).rejects.toThrow('Update failed');
+  });
+});
+
+describe('Registration Tokens - Error Handling', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+  });
+
+  describe('generateRegistrationToken', () => {
+    it('should throw on database error', async () => {
+      mockQuery.mockRejectedValue(new Error('Insert failed'));
+
+      await expect(
+        siteService.generateRegistrationToken(1, {})
+      ).rejects.toThrow('Insert failed');
+    });
+  });
+
+  describe('validateRegistrationToken', () => {
+    it('should throw on database error', async () => {
+      mockQuery.mockRejectedValue(new Error('Query failed'));
+
+      await expect(
+        siteService.validateRegistrationToken('reg_test')
+      ).rejects.toThrow('Query failed');
+    });
+  });
+
+  describe('incrementTokenUsage', () => {
+    it('should throw on database error', async () => {
+      mockQuery.mockRejectedValue(new Error('Update failed'));
+
+      await expect(
+        siteService.incrementTokenUsage('reg_test')
+      ).rejects.toThrow('Update failed');
+    });
+  });
+
+  describe('getUserTokens', () => {
+    it('should throw on database error', async () => {
+      mockQuery.mockRejectedValue(new Error('Query failed'));
+
+      await expect(siteService.getUserTokens(1)).rejects.toThrow('Query failed');
+    });
+  });
+
+  describe('deleteToken', () => {
+    it('should throw on database error', async () => {
+      mockQuery.mockRejectedValue(new Error('Delete failed'));
+
+      await expect(siteService.deleteToken(1, 1)).rejects.toThrow('Delete failed');
+    });
+  });
+});
+
+describe('Bulk Operations - Additional Tests', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+  });
+
+  describe('bulkUpdateSiteParams', () => {
+    it('should handle site not found', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [] }); // Site not found
+
+      const updates = [{ domain: 'nonexistent.com', value: 50 }];
+
+      const result = await siteService.bulkUpdateSiteParams('dr', updates);
+
+      expect(result.notFound).toBe(1);
+      expect(result.updated).toBe(0);
+    });
+
+    it('should handle empty domain', async () => {
+      const updates = [{ domain: '', value: 50 }];
+
+      const result = await siteService.bulkUpdateSiteParams('dr', updates);
+
+      expect(result.errors).toBe(1);
+    });
+
+    it('should handle database error during update', async () => {
+      mockQuery
+        .mockResolvedValueOnce({ rows: [{ id: 1, site_url: 'https://example.com', old_value: 0 }] }) // Find site
+        .mockRejectedValueOnce(new Error('Update failed')); // Update fails
+
+      const updates = [{ domain: 'example.com', value: 50 }];
+
+      const result = await siteService.bulkUpdateSiteParams('dr', updates);
+
+      expect(result.errors).toBe(1);
+    });
+
+    it('should update site successfully', async () => {
+      mockQuery
+        .mockResolvedValueOnce({ rows: [{ id: 1, site_url: 'https://example.com', old_value: 0 }] }) // Find site
+        .mockResolvedValueOnce({}); // Update succeeds
+
+      const updates = [{ domain: 'example.com', value: 50 }];
+
+      const result = await siteService.bulkUpdateSiteParams('dr', updates);
+
+      expect(result.updated).toBe(1);
+      expect(result.details[0].status).toBe('updated');
+    });
+  });
+
+  describe('getSitesWithZeroParam', () => {
+    it('should throw on database error', async () => {
+      mockQuery.mockRejectedValue(new Error('Query failed'));
+
+      await expect(siteService.getSitesWithZeroParam('dr')).rejects.toThrow('Query failed');
+    });
+  });
+});
