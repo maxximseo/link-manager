@@ -2,7 +2,7 @@
 
 Fast reference for day-to-day technical decisions and patterns. For major architectural decisions, see [ADR.md](ADR.md).
 
-**Last Updated**: November 2025
+**Last Updated**: December 2025
 
 ---
 
@@ -173,6 +173,91 @@ PlacementsAPI.getAll()  // Only gets 20 records!
 ---
 
 ## Frontend Patterns
+
+### ✅ Script Loading Order (ADR-021)
+
+```html
+<!-- ✅ CORRECT - Dependencies loaded first -->
+<!-- 1. Security (XSS protection) -->
+<script src="/js/security.js"></script>
+<!-- 2. Auth (token management) -->
+<script src="/js/auth.js"></script>
+<!-- 3. Shared utilities -->
+<script src="/js/badge-utils.js"></script>
+<script src="/js/api.js"></script>
+<!-- 4. Page-specific -->
+<script src="/js/placements-manager.js"></script>
+
+<!-- ❌ WRONG - Wrong order breaks dependencies -->
+<script src="/js/placements-manager.js"></script>  <!-- Uses escapeHtml() -->
+<script src="/js/security.js"></script>            <!-- Defines escapeHtml() -->
+```
+
+**See**: [ADR-021](ADR.md#adr-021-frontend-shared-utilities-architecture)
+
+---
+
+### ✅ Use Shared Badge Functions
+
+```javascript
+// ✅ CORRECT - Import from badge-utils.js
+const statusBadge = getPlacementStatusBadge(placement.status);
+const typeBadge = getPlacementTypeBadge(placement.type);
+const formattedDate = formatDateTime(placement.created_at);
+
+// ❌ WRONG - Duplicate badge configs in page JS
+const PLACEMENT_STATUS_BADGES = {  // Duplicates badge-utils.js!
+  'placed': '<span class="badge bg-success">Размещено</span>',
+  // ...
+};
+```
+
+**Available from badge-utils.js**:
+- `getPlacementStatusBadge(status)`
+- `getPlacementTypeBadge(type)`
+- `getTransactionTypeBadge(type)`
+- `getSiteTypeBadge(siteType)`
+- `getUserRoleBadge(role)`
+- `formatDate(dateString)`
+- `formatDateTime(dateString)`
+- `getAutoRenewalIcon(enabled)`
+- `getAmountColorClass(amount)`
+- `getBalanceColorClass(balance)`
+- `formatExpiryWithColor(expiresAt)`
+- `getDrColorClass(dr)`, `getDaColorClass(da)`, etc.
+
+---
+
+### ✅ Check Function Location Before Adding
+
+```javascript
+// ✅ CORRECT - Use existing shared function
+// security.js exports: escapeHtml(), showAlert()
+const safeHtml = escapeHtml(userInput);
+showAlert('Success!', 'success');
+
+// ❌ WRONG - Redefining shared function
+function escapeHtml(text) {  // Already in security.js!
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+```
+
+**Function Location Reference**:
+| Function | File | Loaded |
+|----------|------|--------|
+| `escapeHtml()` | security.js | 1st |
+| `showAlert()` | security.js | 1st |
+| `getToken()` | auth.js | 2nd |
+| `isAdmin()` | auth.js | 2nd |
+| `isAuthenticated()` | auth.js | 2nd |
+| `getCurrentUser()` | auth.js | 2nd |
+| `get*Badge()` | badge-utils.js | 3rd |
+| `format*()` | badge-utils.js | 3rd |
+| `apiCall()` | api.js | 4th |
+
+---
 
 ### ✅ API Call Error Handling
 
@@ -528,11 +613,12 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 2. **Authentication** → Check [ADR-002](ADR.md#adr-002-jwt-authentication-without-database-lookups)
 3. **Caching** → Check [ADR-003](ADR.md#adr-003-redis-cache-with-graceful-degradation)
 4. **Security** → Check [ADR-007](ADR.md#adr-007-parameterized-queries-only), [ADR-011](ADR.md#adr-011-static-php-sites-support), [ADR-020](ADR.md#adr-020-admin-only-public-site-control)
-5. **Frontend** → Check [ADR-005](ADR.md#adr-005-modular-frontend-vanilla-js)
-6. **Performance** → Check [RUNBOOK.md](RUNBOOK.md#monitoring--alerts)
-7. **Site parameters** → Check [ADR-018](ADR.md#adr-018-geo-parameter-system)
-8. **Optimization approach** → Check [OPTIMIZATION_PRINCIPLES.md](OPTIMIZATION_PRINCIPLES.md)
-9. **Public sites access** → Check [ADR-020](ADR.md#adr-020-admin-only-public-site-control)
+5. **Frontend architecture** → Check [ADR-005](ADR.md#adr-005-modular-frontend-vanilla-js), [ADR-021](ADR.md#adr-021-frontend-shared-utilities-architecture)
+6. **Frontend shared utilities** → Check [ADR-021](ADR.md#adr-021-frontend-shared-utilities-architecture)
+7. **Performance** → Check [RUNBOOK.md](RUNBOOK.md#monitoring--alerts)
+8. **Site parameters** → Check [ADR-018](ADR.md#adr-018-geo-parameter-system)
+9. **Optimization approach** → Check [OPTIMIZATION_PRINCIPLES.md](OPTIMIZATION_PRINCIPLES.md)
+10. **Public sites access** → Check [ADR-020](ADR.md#adr-020-admin-only-public-site-control)
 
 ---
 
