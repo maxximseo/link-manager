@@ -328,4 +328,9 @@ if (typeof window !== 'undefined') {
     // Date formatting
     window.formatDate = formatDate;
     window.formatDateTime = formatDateTime;
+
+    // Placement helpers
+    window.getPlacementDisplayUrl = getPlacementDisplayUrl;
+    window.calculateExpiryInfo = calculateExpiryInfo;
+    window.getAutoRenewalToggleHtml = getAutoRenewalToggleHtml;
 }
