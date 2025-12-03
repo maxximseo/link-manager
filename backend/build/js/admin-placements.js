@@ -178,7 +178,7 @@ function renderPlacements() {
         });
 
         // Use shared badge-utils functions
-        const expiresAt = formatExpiryWithColor(placement.expires_at);
+        const expiryInfo = formatExpiryWithColor(placement.expires_at);
         const typeBadge = getPlacementTypeBadge(placement.type);
         const statusBadge = getPlacementStatusBadge(placement.status);
         const autoRenewalIcon = getAutoRenewalIcon(placement.auto_renewal);
@@ -194,7 +194,7 @@ function renderPlacements() {
                 <td><small class="text-success">${discountApplied}%</small></td>
                 <td><small class="fw-bold">$${finalPrice.toFixed(2)}</small></td>
                 <td><small>${purchasedAt}</small></td>
-                <td><small>${expiresAt}</small></td>
+                <td><small class="${expiryInfo.class}">${expiryInfo.text}</small></td>
                 <td class="text-center">${autoRenewalIcon}</td>
                 <td>${statusBadge}</td>
             </tr>
