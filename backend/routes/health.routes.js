@@ -9,10 +9,7 @@ const { query } = require('../config/database');
 const cache = require('../services/cache.service');
 const queueService = require('../config/queue');
 const Sentry = require('@sentry/node');
-<<<<<<< HEAD
 const { runManualBackup } = require('../cron/database-backup.cron');
-=======
->>>>>>> b8689d5ae42451f1c89001da7f61b908c80a1516
 
 // Health check endpoint - checks all system components
 router.get('/', async (req, res) => {
@@ -101,7 +98,6 @@ router.get('/sentry-test', (req, res) => {
   }
 });
 
-<<<<<<< HEAD
 // Manual backup endpoint (requires admin key for security)
 router.post('/backup', async (req, res) => {
   // Simple key-based auth for backup endpoint
@@ -131,6 +127,4 @@ router.post('/backup', async (req, res) => {
   }
 });
 
-=======
->>>>>>> b8689d5ae42451f1c89001da7f61b908c80a1516
 module.exports = router;
