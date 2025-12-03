@@ -617,7 +617,6 @@ module.exports = {
   getUserPlacements,
   createPlacement,
   getPlacementById,
-  deletePlacement,
   getStatistics,
   getAvailableSites
 };
