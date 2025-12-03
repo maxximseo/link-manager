@@ -99,7 +99,7 @@ async function startServer() {
 let server;
 
 // Graceful shutdown - defined at module level for access from unhandledRejection handler
-async function gracefulShutdown(signal) {
+function gracefulShutdown(signal) {
   logger.info(`${signal} signal received: starting graceful shutdown`);
 
   if (!server) {
@@ -109,22 +109,27 @@ async function gracefulShutdown(signal) {
   }
 
   // Close HTTP server first
-  server.close(async () => {
+  server.close(() => {
     logger.info('HTTP server closed');
 
     // Shutdown workers if available
     if (workerManager) {
-      try {
-        logger.info('Shutting down queue workers...');
-        await workerManager.shutdown();
-        logger.info('Queue workers shut down successfully');
-      } catch (error) {
-        logger.error('Error shutting down queue workers', { error: error.message });
-      }
+      workerManager
+        .shutdown()
+        .then(() => {
+          logger.info('Queue workers shut down successfully');
+        })
+        .catch(error => {
+          logger.error('Error shutting down queue workers', { error: error.message });
+        })
+        .finally(() => {
+          logger.info('Graceful shutdown complete');
+          process.exit(0);
+        });
+    } else {
+      logger.info('Graceful shutdown complete');
+      process.exit(0);
     }
-
-    logger.info('Graceful shutdown complete');
-    process.exit(0);
   });
 
   // Force shutdown after 30 seconds
