@@ -169,35 +169,11 @@ function renderActivePlacements(placements) {
     placements.forEach(p => {
         const row = document.createElement('tr');
 
-        // Calculate days until expiry
-        let daysLeft = null;
-        let expiryClass = '';
-        let expiryText = '—';
-
-        if (p.expires_at) {
-            const now = new Date();
-            const expiry = new Date(p.expires_at);
-            daysLeft = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
-
-            if (daysLeft <= 7) {
-                expiryClass = 'text-danger fw-bold';
-            } else if (daysLeft <= 30) {
-                expiryClass = 'text-warning';
-            }
-
-            expiryText = `${formatDate(p.expires_at)} (${daysLeft} дн.)`;
-        }
-
-        // Type badge (using badge-utils.js)
+        // Use shared utilities from badge-utils.js
+        const expiryInfo = calculateExpiryInfo(p.expires_at);
         const typeBadge = getPlacementTypeBadge(p.type);
-
-        // Auto-renewal toggle
-        const autoRenewalToggle = p.type === 'link'
-            ? `<div class="form-check form-switch">
-                 <input class="form-check-input" type="checkbox" ${p.auto_renewal ? 'checked' : ''}
-                   onchange="toggleAutoRenewal(${p.id}, this.checked)">
-               </div>`
-            : '—';
+        const autoRenewalToggle = getAutoRenewalToggleHtml(p);
+        const displayUrl = getPlacementDisplayUrl(p);
 
         // Actions - using btn-xs for 3x smaller buttons
         const renewBtn = p.type === 'link' && p.renewal_price
