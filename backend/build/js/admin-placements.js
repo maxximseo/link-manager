@@ -77,7 +77,7 @@ async function loadPlacements() {
         applyFilters();
     } catch (error) {
         console.error('Error loading placements:', error);
-        showError('Ошибка загрузки размещений: ' + error.message);
+        showAlert('Ошибка загрузки размещений: ' + error.message, 'danger');
     }
 }
 
@@ -361,10 +361,10 @@ async function exportPlacements(format) {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
 
-        showSuccess(`Экспорт успешно завершен: ${filename}`);
+        showAlert(`Экспорт успешно завершен: ${filename}`, 'success');
     } catch (error) {
         console.error('Error exporting placements:', error);
-        showError('Ошибка экспорта: ' + error.message);
+        showAlert('Ошибка экспорта: ' + error.message, 'danger');
     }
 }
 
