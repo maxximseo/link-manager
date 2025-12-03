@@ -80,7 +80,7 @@ const createProject = async (req, res) => {
       // Basic URL validation
       try {
         new URL(urlTrimmed);
-      } catch (e) {
+      } catch (_e) {
         return res.status(400).json({ error: 'Invalid URL format' });
       }
     }
@@ -115,7 +115,7 @@ const updateProject = async (req, res) => {
       // Basic URL validation
       try {
         new URL(urlTrimmed);
-      } catch (e) {
+      } catch (_e) {
         return res.status(400).json({ error: 'Invalid URL format' });
       }
     }
