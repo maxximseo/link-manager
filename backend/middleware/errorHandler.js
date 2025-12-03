@@ -6,18 +6,21 @@ const asyncHandler = fn => (req, res, next) => {
 };
 
 // Global error handler
+// Note: Sentry.setupExpressErrorHandler() runs BEFORE this middleware
+// and automatically captures exceptions with request context
 const errorHandler = (err, req, res, _next) => {
   const error = { ...err };
   error.message = err.message;
 
-  // Log error
+  // Log error (Sentry handles the exception capture via setupExpressErrorHandler)
   logger.error('Error handler:', {
     message: error.message,
     stack: error.stack,
     url: req.url,
     method: req.method,
     ip: req.ip,
-    userAgent: req.get('User-Agent')
+    userAgent: req.get('User-Agent'),
+    sentryId: res.sentry // Sentry event ID attached by setupExpressErrorHandler
   });
 
   // Database connection errors

@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.6.2] - 2025-12-03
+
+### 🔐 Encrypted Database Backup System
+
+Automated encrypted backups to DigitalOcean Spaces with 12-hour schedule.
+
+#### New Files
+- **`scripts/backup-database.sh`** - Main backup script with encryption and S3 upload
+- **`scripts/restore-database.sh`** - Restore script with decryption
+- **`backend/cron/database-backup.cron.js`** - Automated backup cron job
+
+#### Features
+- **Encryption**: AES-256-CBC with pbkdf2 (100,000 iterations)
+- **Storage**: DigitalOcean Spaces (S3-compatible)
+- **Schedule**: Every 12 hours (00:00 and 12:00 UTC)
+- **Retention**: Automatic cleanup of backups older than 7 days
+- **Manual trigger**: Via API endpoint `POST /health/backup`
+
+#### Backup Script Options
+```bash
+./scripts/backup-database.sh              # Full backup to DO Spaces
+./scripts/backup-database.sh --local-only # Local backup only
+./scripts/backup-database.sh --no-encrypt # Without encryption (not recommended)
+```
+
+#### Manual Backup via API
+```bash
+ADMIN_KEY=$(grep JWT_SECRET .env | cut -d'=' -f2 | cut -c1-32)
+curl -X POST http://localhost:3003/health/backup -H "X-Admin-Key: $ADMIN_KEY"
+```
+
+#### Environment Variables
+| Variable | Description |
+|----------|-------------|
+| `BACKUP_ENCRYPTION_KEY` | AES-256 key (min 32 chars) |
+| `DO_SPACES_KEY` | DO Spaces access key |
+| `DO_SPACES_SECRET` | DO Spaces secret key |
+| `DO_SPACES_BUCKET` | Bucket name |
+| `DO_SPACES_REGION` | Region (e.g., `atl1`) |
+| `BACKUP_RETENTION_DAYS` | Days to keep (default: 7) |
+
+#### Documentation Updates
+- RUNBOOK.md: Full backup system documentation with troubleshooting
+- CLAUDE.md: Environment variables section updated
+- .env.example: Backup configuration added
+
+---
+
 ## [2.6.1] - 2025-12-03
 
 ### 🛠️ Developer Tools - ESLint + Prettier (ADR-022)

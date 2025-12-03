@@ -6,6 +6,9 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env'), override: true });
 
+// Initialize Sentry FIRST (before any other imports)
+const Sentry = require('./instrument');
+
 const app = require('./app');
 const logger = require('./config/logger');
 const { initDatabase, query } = require('./config/database');
@@ -77,6 +80,11 @@ async function startServer() {
     } catch (error) {
       logger.error('Failed to initialize cron jobs', { error: error.message });
       // Continue without cron jobs - they can be run manually if needed
+    }
+
+    // Log Sentry status
+    if (process.env.SENTRY_DSN) {
+      logger.info('Sentry error monitoring initialized');
     }
 
     logger.info('Application initialized successfully');
@@ -151,11 +159,22 @@ const serverPromise = startServer().then(s => {
 // Handle uncaught exceptions
 process.on('uncaughtException', error => {
   logger.error('Uncaught Exception:', error);
-  process.exit(1);
+  // Send to Sentry before exit
+  if (process.env.SENTRY_DSN) {
+    Sentry.captureException(error);
+    Sentry.close(2000).then(() => process.exit(1));
+  } else {
+    process.exit(1);
+  }
 });
 
 process.on('unhandledRejection', (reason, promise) => {
   logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+
+  // Send to Sentry
+  if (process.env.SENTRY_DSN && reason instanceof Error) {
+    Sentry.captureException(reason);
+  }
 
   // Only exit on critical database/system failures
   // Log and continue for application-level errors

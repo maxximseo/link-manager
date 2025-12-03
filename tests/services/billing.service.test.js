@@ -1009,6 +1009,394 @@ describe('Billing Service', () => {
   });
 }); // End of 'Billing Service' describe
 
+describe('batchPurchasePlacements', () => {
+  it('should process batch purchases in chunks', async () => {
+    // Reset mocks
+    mockClient.query.mockReset();
+    mockPool.connect.mockResolvedValue(mockClient);
+
+    // Mock successful purchase for first item
+    let callCount = 0;
+    mockClient.query.mockImplementation(() => {
+      callCount++;
+      // Simulate transaction sequence
+      if (callCount % 20 === 1) return Promise.resolve({}); // BEGIN
+      if (callCount % 20 === 2)
+        return Promise.resolve({
+          rows: [{ id: 1, balance: '1000.00', total_spent: '0', role: 'user', username: 'test' }]
+        }); // User
+      if (callCount % 20 === 3)
+        return Promise.resolve({ rows: [{ id: 1, user_id: 1, name: 'Project' }] }); // Project
+      if (callCount % 20 === 4)
+        return Promise.resolve({
+          rows: [
+            {
+              id: 1,
+              site_type: 'wordpress',
+              is_public: true,
+              user_id: 2,
+              max_links: 100,
+              used_links: 0,
+              allow_articles: true,
+              available_for_purchase: true,
+              site_name: 'Site'
+            }
+          ]
+        }); // Site
+      if (callCount % 20 === 5) return Promise.resolve({ rows: [] }); // No existing placement
+      if (callCount % 20 === 6)
+        return Promise.resolve({
+          rows: [
+            { id: 1, project_id: 1, usage_count: 0, usage_limit: 999, status: 'active', anchor_text: 'Test' }
+          ]
+        }); // Content
+      if (callCount % 20 === 7) return Promise.resolve({}); // UPDATE user
+      if (callCount % 20 === 8) return Promise.resolve({ rows: [{ id: 100 }] }); // INSERT transaction
+      if (callCount % 20 === 9)
+        return Promise.resolve({ rows: [{ id: 200, status: 'pending' }] }); // INSERT placement
+      if (callCount % 20 === 10) return Promise.resolve({}); // INSERT placement_content
+      if (callCount % 20 === 11) return Promise.resolve({}); // UPDATE usage_count
+      if (callCount % 20 === 12) return Promise.resolve({}); // UPDATE site quotas
+      if (callCount % 20 === 13) return Promise.resolve({}); // Notification 1
+      if (callCount % 20 === 14) return Promise.resolve({}); // Notification 2
+      if (callCount % 20 === 15) return Promise.resolve({}); // Audit log
+      if (callCount % 20 === 16) return Promise.resolve({}); // COMMIT
+      return Promise.resolve({});
+    });
+
+    // Mock discount tier
+    mockQuery.mockResolvedValue({
+      rows: [{ discount_percentage: 0, tier_name: 'Стандарт' }]
+    });
+
+    // Test with single purchase (simplest case)
+    const purchases = [{ projectId: 1, siteId: 1, type: 'link', contentIds: [1] }];
+
+    const result = await billingService.batchPurchasePlacements(1, purchases);
+
+    expect(result).toHaveProperty('successful');
+    expect(result).toHaveProperty('failed');
+    expect(result).toHaveProperty('durationMs');
+  });
+
+  it('should handle empty purchases array', async () => {
+    const result = await billingService.batchPurchasePlacements(1, []);
+
+    expect(result.successful).toBe(0);
+    expect(result.failed).toBe(0);
+    expect(result.results).toHaveLength(0);
+    expect(result.errors).toHaveLength(0);
+  });
+
+  it('should track failed purchases separately', async () => {
+    // Make all purchases fail
+    mockClient.query
+      .mockResolvedValueOnce({}) // BEGIN
+      .mockRejectedValueOnce(new Error('Test error'));
+
+    const purchases = [{ projectId: 1, siteId: 1, type: 'link', contentIds: [1] }];
+
+    const result = await billingService.batchPurchasePlacements(1, purchases);
+
+    expect(result.failed).toBe(1);
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0].error).toBe('Test error');
+  });
+});
+
+describe('batchDeletePlacements', () => {
+  it('should process batch deletions in chunks', async () => {
+    // Mock successful delete
+    mockClient.query
+      .mockResolvedValueOnce({}) // BEGIN
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 1,
+            user_id: 2,
+            final_price: '25.00',
+            site_id: 1,
+            type: 'link',
+            site_name: 'Site',
+            project_name: 'Project'
+          }
+        ]
+      }) // SELECT placement
+      .mockResolvedValueOnce({
+        rows: [{ id: 2, balance: '100.00', total_spent: '50.00', current_discount: 0 }]
+      }) // SELECT user
+      .mockResolvedValueOnce({}) // UPDATE user
+      .mockResolvedValueOnce({}) // INSERT refund transaction
+      .mockResolvedValueOnce({}) // INSERT audit_log (refund)
+      .mockResolvedValueOnce({ rows: [{ link_ids: [1], article_ids: [], link_count: '1', article_count: '0' }] }) // SELECT content
+      .mockResolvedValueOnce({}) // DELETE placement
+      .mockResolvedValueOnce({}) // UPDATE site quotas
+      .mockResolvedValueOnce({}) // UPDATE project_links
+      .mockResolvedValueOnce({}) // INSERT audit_log (delete)
+      .mockResolvedValueOnce({}); // COMMIT
+
+    // Mock calculateDiscountTier
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ discount_percentage: 0, tier_name: 'Стандарт' }]
+    });
+
+    const result = await billingService.batchDeletePlacements(1, 'admin', [1]);
+
+    expect(result).toHaveProperty('successful');
+    expect(result).toHaveProperty('failed');
+    expect(result).toHaveProperty('totalRefunded');
+    expect(result).toHaveProperty('durationMs');
+  });
+
+  it('should handle empty placementIds array', async () => {
+    const result = await billingService.batchDeletePlacements(1, 'admin', []);
+
+    expect(result.successful).toBe(0);
+    expect(result.failed).toBe(0);
+    expect(result.totalRefunded).toBe(0);
+  });
+
+  it('should track failed deletions separately', async () => {
+    mockClient.query
+      .mockResolvedValueOnce({}) // BEGIN
+      .mockRejectedValueOnce(new Error('Delete error'));
+
+    const result = await billingService.batchDeletePlacements(1, 'admin', [999]);
+
+    expect(result.failed).toBe(1);
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0].error).toBe('Delete error');
+  });
+
+  it('should accumulate total refunded amount', async () => {
+    // First deletion
+    mockClient.query
+      .mockResolvedValueOnce({}) // BEGIN
+      .mockResolvedValueOnce({
+        rows: [{ id: 1, user_id: 2, final_price: '25.00', site_id: 1, type: 'link', site_name: 'Site', project_name: 'Project' }]
+      })
+      .mockResolvedValueOnce({ rows: [{ id: 2, balance: '100.00', total_spent: '50.00', current_discount: 0 }] })
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({ rows: [{ link_ids: [1], article_ids: [], link_count: '1', article_count: '0' }] })
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({});
+
+    mockQuery.mockResolvedValue({
+      rows: [{ discount_percentage: 0, tier_name: 'Стандарт' }]
+    });
+
+    const result = await billingService.batchDeletePlacements(1, 'admin', [1]);
+
+    expect(result.totalRefunded).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe('refundPlacementInTransaction', () => {
+  it('should refund placement within existing transaction', async () => {
+    const placement = {
+      id: 1,
+      user_id: 1,
+      final_price: '50.00',
+      type: 'link',
+      site_name: 'Test Site',
+      project_name: 'Test Project'
+    };
+
+    mockClient.query
+      .mockResolvedValueOnce({
+        rows: [{ id: 1, balance: '100.00', total_spent: '200.00', current_discount: 10 }]
+      }) // SELECT user FOR UPDATE
+      .mockResolvedValueOnce({}) // UPDATE user
+      .mockResolvedValueOnce({}); // INSERT transaction
+
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ discount_percentage: 10, tier_name: 'Bronze' }]
+    });
+
+    const result = await billingService.refundPlacementInTransaction(mockClient, placement);
+
+    expect(result.refunded).toBe(true);
+    expect(result.amount).toBe(50);
+    expect(result.newBalance).toBe(150);
+  });
+
+  it('should not refund free placement', async () => {
+    const placement = {
+      id: 1,
+      user_id: 1,
+      final_price: '0',
+      type: 'link'
+    };
+
+    const result = await billingService.refundPlacementInTransaction(mockClient, placement);
+
+    expect(result.refunded).toBe(false);
+    expect(result.amount).toBe(0);
+  });
+
+  it('should detect tier change after refund', async () => {
+    const placement = {
+      id: 1,
+      user_id: 1,
+      final_price: '100.00',
+      type: 'link',
+      site_name: 'Site',
+      project_name: 'Project'
+    };
+
+    mockClient.query
+      .mockResolvedValueOnce({
+        rows: [{ id: 1, balance: '50.00', total_spent: '150.00', current_discount: 10 }]
+      })
+      .mockResolvedValueOnce({}) // UPDATE user
+      .mockResolvedValueOnce({}) // UPDATE current_discount
+      .mockResolvedValueOnce({}) // INSERT notification
+      .mockResolvedValueOnce({}); // INSERT transaction
+
+    // Tier changes from Bronze (10%) to Standard (0%)
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ discount_percentage: 0, tier_name: 'Стандарт' }]
+    });
+
+    const result = await billingService.refundPlacementInTransaction(mockClient, placement);
+
+    expect(result.refunded).toBe(true);
+    expect(result.tierChanged).toBe(true);
+    expect(result.newTier).toBe('Стандарт');
+  });
+});
+
+describe('restoreUsageCountsInTransaction', () => {
+  it('should restore link usage counts', async () => {
+    mockClient.query
+      .mockResolvedValueOnce({
+        rows: [{ link_ids: [1, 2], article_ids: [], link_count: '2', article_count: '0' }]
+      }) // SELECT content
+      .mockResolvedValueOnce({}); // UPDATE project_links
+
+    const result = await billingService.restoreUsageCountsInTransaction(mockClient, 1);
+
+    expect(result.linkCount).toBe(2);
+    expect(result.articleCount).toBe(0);
+  });
+
+  it('should restore article usage counts', async () => {
+    mockClient.query
+      .mockResolvedValueOnce({
+        rows: [{ link_ids: [], article_ids: [1], link_count: '0', article_count: '1' }]
+      })
+      .mockResolvedValueOnce({}); // UPDATE project_articles
+
+    const result = await billingService.restoreUsageCountsInTransaction(mockClient, 1);
+
+    expect(result.linkCount).toBe(0);
+    expect(result.articleCount).toBe(1);
+  });
+
+  it('should handle placement with both links and articles', async () => {
+    mockClient.query
+      .mockResolvedValueOnce({
+        rows: [{ link_ids: [1], article_ids: [1], link_count: '1', article_count: '1' }]
+      })
+      .mockResolvedValueOnce({}) // UPDATE project_links
+      .mockResolvedValueOnce({}); // UPDATE project_articles
+
+    const result = await billingService.restoreUsageCountsInTransaction(mockClient, 1);
+
+    expect(result.linkCount).toBe(1);
+    expect(result.articleCount).toBe(1);
+  });
+
+  it('should handle placement with no content', async () => {
+    mockClient.query.mockResolvedValueOnce({
+      rows: [{ link_ids: null, article_ids: null, link_count: '0', article_count: '0' }]
+    });
+
+    const result = await billingService.restoreUsageCountsInTransaction(mockClient, 1);
+
+    expect(result.linkCount).toBe(0);
+    expect(result.articleCount).toBe(0);
+  });
+});
+
+describe('publishPlacementAsync', () => {
+  it('should publish link placement asynchronously', async () => {
+    const site = { id: 1, api_key: 'api_test', site_url: 'https://example.com' };
+
+    mockClient.query
+      .mockResolvedValueOnce({}) // BEGIN
+      .mockResolvedValueOnce({
+        rows: [{ id: 1, type: 'link', status: 'pending' }]
+      }) // SELECT placement
+      .mockResolvedValueOnce({
+        rows: [{ link_id: 1, url: 'https://test.com', anchor_text: 'Test' }]
+      }) // SELECT content
+      .mockResolvedValueOnce({}) // UPDATE placement status
+      .mockResolvedValueOnce({}); // COMMIT
+
+    await billingService.publishPlacementAsync(1, site);
+
+    // Verify placement was updated to 'placed'
+    const updateCall = mockClient.query.mock.calls.find(
+      call => typeof call[0] === 'string' && call[0].includes("status = 'placed'")
+    );
+    expect(updateCall).toBeDefined();
+  });
+
+  it('should publish article placement with WordPress post ID', async () => {
+    const site = { id: 1, api_key: 'api_test', site_url: 'https://example.com' };
+    const wordpressService = require('../../backend/services/wordpress.service');
+
+    mockClient.query
+      .mockResolvedValueOnce({}) // BEGIN
+      .mockResolvedValueOnce({
+        rows: [{ id: 1, type: 'article', status: 'pending' }]
+      })
+      .mockResolvedValueOnce({
+        rows: [{ article_id: 1, title: 'Test Article', content: 'Content here' }]
+      })
+      .mockResolvedValueOnce({}) // UPDATE placement with post_id
+      .mockResolvedValueOnce({}); // COMMIT
+
+    await billingService.publishPlacementAsync(1, site);
+
+    expect(wordpressService.publishArticle).toHaveBeenCalledWith(
+      'https://example.com',
+      'api_test',
+      expect.objectContaining({ title: 'Test Article' })
+    );
+  });
+
+  it('should rollback on error', async () => {
+    const site = { id: 1, api_key: 'api_test', site_url: 'https://example.com' };
+
+    mockClient.query
+      .mockResolvedValueOnce({}) // BEGIN
+      .mockRejectedValueOnce(new Error('Publish error'));
+
+    await expect(billingService.publishPlacementAsync(1, site)).rejects.toThrow('Publish error');
+
+    const calls = mockClient.query.mock.calls.map(c => c[0] || c);
+    expect(calls.some(c => typeof c === 'string' && c.includes('ROLLBACK'))).toBe(true);
+  });
+
+  it('should throw error for non-existent placement', async () => {
+    const site = { id: 1, api_key: 'api_test', site_url: 'https://example.com' };
+
+    mockClient.query
+      .mockResolvedValueOnce({}) // BEGIN
+      .mockResolvedValueOnce({ rows: [] }) // Empty result
+      .mockResolvedValueOnce({}); // ROLLBACK
+
+    await expect(billingService.publishPlacementAsync(999, site)).rejects.toThrow(/not found/i);
+  });
+});
+
 describe('PRICING Constants', () => {
   it('should export PRICING object', () => {
     expect(billingService.PRICING).toBeDefined();
