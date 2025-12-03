@@ -105,7 +105,7 @@ const createSite = async (req, res) => {
           return res.status(400).json({ error: 'Private IP addresses are not allowed' });
         }
       }
-    } catch (e) {
+    } catch (_e) {
       return res.status(400).json({ error: 'Invalid URL format' });
     }
 
