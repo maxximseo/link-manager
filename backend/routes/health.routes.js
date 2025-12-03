@@ -34,7 +34,7 @@ router.get('/', async (req, res) => {
       value === '1'
         ? { status: 'healthy', message: 'Connected' }
         : { status: 'degraded', message: 'Connection issue' };
-  } catch (error) {
+  } catch (_error) {
     health.components.redis = {
       status: 'degraded',
       message: 'Not available (graceful degradation active)'
@@ -59,7 +59,7 @@ router.get('/', async (req, res) => {
     } else {
       health.components.queue = { status: 'degraded', message: 'Queue not initialized' };
     }
-  } catch (error) {
+  } catch (_error) {
     health.components.queue = { status: 'degraded', message: 'Not available' };
   }
 

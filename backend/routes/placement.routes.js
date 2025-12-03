@@ -11,7 +11,7 @@ const adminMiddleware = require('../middleware/admin');
 const rateLimit = require('express-rate-limit');
 
 // Rate limiting
-const createLimiter = rateLimit({
+const _createLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 20, // 20 placements per minute
   message: { error: 'Too many placement requests, please slow down' }
