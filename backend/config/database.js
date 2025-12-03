@@ -63,9 +63,53 @@ pool.on('connect', () => {
   logger.debug('New client connected to database');
 });
 
+// Connection retry configuration
+const RETRY_CONFIG = {
+  maxRetries: 5,
+  initialDelay: 2000, // 2 seconds
+  maxDelay: 30000 // 30 seconds max
+};
+
+/**
+ * Test database connection with retry logic
+ * Uses exponential backoff for transient failures
+ */
+async function connectWithRetry() {
+  const { maxRetries, initialDelay, maxDelay } = RETRY_CONFIG;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      await pool.query('SELECT 1');
+      logger.info('Database connection established successfully', { attempt });
+      return true;
+    } catch (error) {
+      const isLastAttempt = attempt === maxRetries;
+      const delay = Math.min(initialDelay * Math.pow(2, attempt - 1), maxDelay);
+
+      if (isLastAttempt) {
+        logger.error('Failed to connect to database after multiple retries', {
+          maxRetries,
+          error: error.message
+        });
+        throw new Error(`Database connection failed after ${maxRetries} attempts: ${error.message}`);
+      }
+
+      logger.warn(`Database connection attempt ${attempt}/${maxRetries} failed, retrying in ${delay}ms...`, {
+        error: error.message,
+        nextDelay: `${delay}ms`
+      });
+
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+}
+
 // Database initialization
 async function initDatabase() {
   try {
+    // First, verify we can connect (with retry)
+    await connectWithRetry();
+
     logger.info('Initializing database tables...');
 
     // Create tables if they don't exist
