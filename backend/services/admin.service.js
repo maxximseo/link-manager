@@ -763,19 +763,22 @@ const rejectPlacement = async (placementId, adminId, reason = 'Rejected by admin
     // 1. Refund user balance
     if (finalPrice > 0) {
       // Get current user data for tier recalculation
+      // CRITICAL FIX: Include balance for proper transaction record
       const userResult = await client.query(
-        'SELECT total_spent, current_discount FROM users WHERE id = $1 FOR UPDATE',
+        'SELECT balance, total_spent, current_discount FROM users WHERE id = $1 FOR UPDATE',
         [placement.user_id]
       );
       const user = userResult.rows[0];
+      const balanceBefore = parseFloat(user?.balance || 0);
+      const balanceAfter = balanceBefore + finalPrice;
       const totalSpentBefore = parseFloat(user?.total_spent || 0);
       const totalSpentAfter = Math.max(0, totalSpentBefore - finalPrice);
 
       await client.query(`
         UPDATE users
-        SET balance = balance + $1, total_spent = $2
+        SET balance = $1, total_spent = $2
         WHERE id = $3
-      `, [finalPrice, totalSpentAfter, placement.user_id]);
+      `, [balanceAfter, totalSpentAfter, placement.user_id]);
 
       // CRITICAL FIX (BUG #11): Recalculate discount tier after refund
       const newTier = await billingService.calculateDiscountTier(totalSpentAfter);
@@ -795,12 +798,15 @@ const rejectPlacement = async (placementId, adminId, reason = 'Rejected by admin
       }
 
       // Create refund transaction
+      // CRITICAL FIX: Include balance_before and balance_after for complete audit trail
       await client.query(`
-        INSERT INTO transactions (user_id, type, amount, description, metadata)
-        VALUES ($1, 'refund', $2, $3, $4)
+        INSERT INTO transactions (user_id, type, amount, balance_before, balance_after, description, metadata)
+        VALUES ($1, 'refund', $2, $3, $4, $5, $6)
       `, [
         placement.user_id,
         finalPrice,
+        balanceBefore,
+        balanceAfter,
         `Refund: Placement #${placementId} rejected`,
         JSON.stringify({ placementId, reason, adminId })
       ]);
