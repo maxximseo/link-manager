@@ -230,12 +230,60 @@ JWT-based authentication without database lookups in middleware:
 - Expiry: 7 days
 - Access via `req.user.id`, `req.user.username`, `req.user.role`
 
-### Frontend Architecture
-Vanilla JavaScript with modular structure:
-- **Static files**: `backend/build/` (HTML, CSS, JS)
-- **API client**: `backend/build/js/api.js` - SitesAPI, ProjectsAPI classes
-- **Auth**: `backend/build/js/auth.js` - Token management, login/logout
-- **Pages**: Individual HTML files (dashboard.html, projects.html, sites.html, project-detail.html)
+### Frontend Architecture (ADR-021)
+Vanilla JavaScript with modular shared utilities architecture:
+
+**Static files**: `backend/build/` (HTML, CSS, JS)
+
+**Script Loading Order** (CRITICAL - must be in this order):
+```html
+<!-- 1. Security (XSS protection) - FIRST -->
+<script src="/js/security.js"></script>    <!-- escapeHtml(), showAlert() -->
+
+<!-- 2. Auth (token management) -->
+<script src="/js/auth.js"></script>         <!-- getToken(), isAdmin() -->
+
+<!-- 3. Shared utilities -->
+<script src="/js/badge-utils.js"></script>  <!-- All badge/color functions -->
+<script src="/js/api.js"></script>          <!-- ProjectsAPI, SitesAPI, etc. -->
+
+<!-- 4. Page-specific -->
+<script src="/js/placements-manager.js"></script>
+```
+
+**Key Frontend Files**:
+| File | Purpose | Exports |
+|------|---------|---------|
+| `security.js` | XSS protection | `escapeHtml()`, `showAlert()` |
+| `auth.js` | Auth & tokens | `getToken()`, `isAdmin()`, `isAuthenticated()` |
+| `badge-utils.js` | UI utilities | `getPlacementStatusBadge()`, `formatDate()`, etc. |
+| `api.js` | API client | `ProjectsAPI`, `SitesAPI`, `BillingAPI`, `PlacementsAPI` |
+| `navbar.js` | Navigation | `initNavbar()`, notifications |
+| `purchase-modal.js` | Purchase UI | Modal handlers |
+
+**Badge Utils Functions** (badge-utils.js):
+```javascript
+// Status badges
+getPlacementStatusBadge(status)   // 'placed' → green badge
+getPlacementTypeBadge(type)       // 'link' | 'article'
+getSiteTypeBadge(siteType)        // 'wordpress' | 'static_php'
+getTransactionTypeBadge(type)     // deposit, purchase, renewal...
+getUserRoleBadge(role)            // admin, user
+
+// Color utilities
+getAmountColorClass(amount)       // text-success/danger/muted
+formatExpiryWithColor(expiresAt)  // Returns { text, class, daysLeft }
+getDrColorClass(dr)               // SEO metric colors
+
+// Date formatting
+formatDate(dateString)            // DD.MM.YYYY
+formatDateTime(dateString)        // DD.MM.YYYY HH:MM
+
+// Tier utilities
+getDiscountTierName(discount)     // 0→'Стандарт', 10→'Bronze'...
+```
+
+**Pages**: Individual HTML files (dashboard.html, sites.html, placements-manager.html, etc.)
 
 Bootstrap 5.3.0 for UI with custom styles in `backend/build/css/styles.css`.
 

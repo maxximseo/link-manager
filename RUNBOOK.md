@@ -2,7 +2,7 @@
 
 This document contains step-by-step procedures for common operational tasks in the Link Manager system.
 
-**Last Updated**: November 2025
+**Last Updated**: December 2025
 **Maintainer**: Development Team
 
 ---
@@ -495,6 +495,51 @@ curl -s "http://localhost:3003/api/wordpress/get-content?api_key=XXX" | jq .
 
 ---
 
+### Frontend JavaScript Errors (ADR-021)
+
+**Symptoms**: Page blank, buttons don't work, console shows `undefined is not a function`
+
+**Diagnosis**:
+```bash
+# Check browser console (F12 → Console tab)
+# Common errors:
+# - "escapeHtml is not defined" → security.js not loaded
+# - "getPlacementStatusBadge is not defined" → badge-utils.js not loaded
+# - "apiCall is not defined" → api.js not loaded
+
+# Check script loading order in HTML
+grep -n '<script src="/js/' backend/build/placements-manager.html
+```
+
+**Correct Script Order** (ADR-021):
+```html
+<!-- 1. Security (XSS protection) - FIRST -->
+<script src="/js/security.js"></script>
+<!-- 2. Auth (token management) -->
+<script src="/js/auth.js"></script>
+<!-- 3. Shared utilities -->
+<script src="/js/badge-utils.js"></script>
+<script src="/js/api.js"></script>
+<!-- 4. Page-specific - LAST -->
+<script src="/js/[page].js"></script>
+```
+
+**Solutions**:
+1. Verify script order matches above in affected HTML file
+2. Check all scripts return 200 (DevTools → Network tab)
+3. Look for syntax errors in browser console
+4. If function missing: check [DECISIONS.md](DECISIONS.md#✅-check-function-location-before-adding) for location
+
+**Common Issues**:
+- `escapeHtml()` → Defined in `security.js` (must load first)
+- `getToken()`, `isAdmin()` → Defined in `auth.js`
+- `getPlacementStatusBadge()`, `formatDate()` → Defined in `badge-utils.js`
+- `apiCall()`, `PlacementsAPI` → Defined in `api.js`
+
+**See**: [ADR-021](ADR.md#adr-021-frontend-shared-utilities-architecture)
+
+---
+
 ### Slow Queries (>1000ms)
 
 **Symptoms**: API timeouts, slow page loads
@@ -830,6 +875,7 @@ du -sh backend/logs/*.log | sort -h
 | 2025-01-23 | Initial runbook creation | Development Team |
 | 2025-11-25 | Added GEO migration procedure | Development Team |
 | 2025-11-27 | Added admin-only public sites security procedure | Development Team |
+| 2025-12-03 | Added Frontend JavaScript Errors troubleshooting (ADR-021) | Development Team |
 
 ---
 

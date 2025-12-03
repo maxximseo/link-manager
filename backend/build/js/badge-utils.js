@@ -237,6 +237,56 @@ function getErrorTableRow(colspan, message = 'Ошибка загрузки') {
 }
 
 // ============================================
+// Placement Display URL
+// ============================================
+
+function getPlacementDisplayUrl(placement) {
+    // For articles, show full WordPress post URL; for links, show site URL
+    if (placement.type === 'article' && placement.wordpress_post_id) {
+        return `${placement.site_url}/?p=${placement.wordpress_post_id}`;
+    }
+    return placement.site_url || '';
+}
+
+// ============================================
+// Expiry Calculation
+// ============================================
+
+function calculateExpiryInfo(expiresAt) {
+    if (!expiresAt) {
+        return { daysLeft: null, class: '', text: '—' };
+    }
+
+    const now = new Date();
+    const expiry = new Date(expiresAt);
+    const daysLeft = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
+
+    let expiryClass = '';
+    if (daysLeft <= 7) {
+        expiryClass = 'text-danger fw-bold';
+    } else if (daysLeft <= 30) {
+        expiryClass = 'text-warning';
+    }
+
+    const expiryText = `${formatDate(expiresAt)} (${daysLeft} дн.)`;
+
+    return { daysLeft, class: expiryClass, text: expiryText };
+}
+
+// ============================================
+// Auto-Renewal Toggle HTML
+// ============================================
+
+function getAutoRenewalToggleHtml(placement) {
+    if (placement.type !== 'link') return '—';
+
+    return `<div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" ${placement.auto_renewal ? 'checked' : ''}
+          onchange="toggleAutoRenewal(${placement.id}, this.checked)">
+    </div>`;
+}
+
+// ============================================
 // Export to window
 // ============================================
 
