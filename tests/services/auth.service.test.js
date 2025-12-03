@@ -87,7 +87,13 @@ describe('Auth Service', () => {
 
     it('should increment failed login attempts on wrong password', async () => {
       const mockUser = createMockUser({ failed_login_attempts: 2 });
+<<<<<<< HEAD
       mockQuery.mockResolvedValueOnce({ rows: [mockUser] }).mockResolvedValueOnce({});
+=======
+      mockQuery
+        .mockResolvedValueOnce({ rows: [mockUser] })
+        .mockResolvedValueOnce({});
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
 
       const result = await authService.authenticateUser('testuser', 'wrongpassword');
 
@@ -97,7 +103,13 @@ describe('Auth Service', () => {
 
     it('should lock account after 5 failed attempts', async () => {
       const mockUser = createMockUser({ failed_login_attempts: 4 });
+<<<<<<< HEAD
       mockQuery.mockResolvedValueOnce({ rows: [mockUser] }).mockResolvedValueOnce({});
+=======
+      mockQuery
+        .mockResolvedValueOnce({ rows: [mockUser] })
+        .mockResolvedValueOnce({});
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
 
       const result = await authService.authenticateUser('testuser', 'wrongpassword');
 
@@ -139,7 +151,13 @@ describe('Auth Service', () => {
 
     it('should reset failed attempts on successful login', async () => {
       const mockUser = createMockUser({ failed_login_attempts: 3 });
+<<<<<<< HEAD
       mockQuery.mockResolvedValueOnce({ rows: [mockUser] }).mockResolvedValueOnce({});
+=======
+      mockQuery
+        .mockResolvedValueOnce({ rows: [mockUser] })
+        .mockResolvedValueOnce({});
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
 
       const result = await authService.authenticateUser('testuser', 'password123');
 
@@ -152,7 +170,13 @@ describe('Auth Service', () => {
 
     it('should return remaining attempts count on wrong password', async () => {
       const mockUser = createMockUser({ failed_login_attempts: 1 });
+<<<<<<< HEAD
       mockQuery.mockResolvedValueOnce({ rows: [mockUser] }).mockResolvedValueOnce({});
+=======
+      mockQuery
+        .mockResolvedValueOnce({ rows: [mockUser] })
+        .mockResolvedValueOnce({});
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
 
       const result = await authService.authenticateUser('testuser', 'wrongpassword');
 
@@ -162,7 +186,13 @@ describe('Auth Service', () => {
 
     it('should generate valid JWT access token', async () => {
       const mockUser = createMockUser();
+<<<<<<< HEAD
       mockQuery.mockResolvedValueOnce({ rows: [mockUser] }).mockResolvedValueOnce({});
+=======
+      mockQuery
+        .mockResolvedValueOnce({ rows: [mockUser] })
+        .mockResolvedValueOnce({});
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
 
       const result = await authService.authenticateUser('testuser', 'password123');
 
@@ -176,7 +206,13 @@ describe('Auth Service', () => {
 
     it('should generate refresh token with correct type', async () => {
       const mockUser = createMockUser();
+<<<<<<< HEAD
       mockQuery.mockResolvedValueOnce({ rows: [mockUser] }).mockResolvedValueOnce({});
+=======
+      mockQuery
+        .mockResolvedValueOnce({ rows: [mockUser] })
+        .mockResolvedValueOnce({});
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
 
       const result = await authService.authenticateUser('testuser', 'password123');
 
@@ -192,6 +228,7 @@ describe('Auth Service', () => {
         .mockResolvedValueOnce({ rows: [] }) // Username check
         .mockResolvedValueOnce({ rows: [] }) // Email check
         .mockResolvedValueOnce({
+<<<<<<< HEAD
           rows: [
             {
               id: 1,
@@ -207,6 +244,17 @@ describe('Auth Service', () => {
         'new@example.com',
         'securepassword123'
       );
+=======
+          rows: [{
+            id: 1,
+            username: 'newuser',
+            email: 'new@example.com',
+            role: 'user'
+          }]
+        }); // Insert user
+
+      const result = await authService.registerUser('newuser', 'new@example.com', 'securepassword123');
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
 
       expect(result.success).toBe(true);
       expect(result.user).toBeDefined();
@@ -220,11 +268,15 @@ describe('Auth Service', () => {
         rows: [{ id: 1, username: 'existinguser' }]
       });
 
+<<<<<<< HEAD
       const result = await authService.registerUser(
         'existinguser',
         'new@example.com',
         'password123'
       );
+=======
+      const result = await authService.registerUser('existinguser', 'new@example.com', 'password123');
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
 
       expect(result.success).toBe(false);
       expect(result.error).toMatch(/username.*exists/i);
@@ -235,11 +287,15 @@ describe('Auth Service', () => {
         .mockResolvedValueOnce({ rows: [] }) // Username OK
         .mockResolvedValueOnce({ rows: [{ id: 1, email: 'existing@example.com' }] }); // Email exists
 
+<<<<<<< HEAD
       const result = await authService.registerUser(
         'newuser',
         'existing@example.com',
         'password123'
       );
+=======
+      const result = await authService.registerUser('newuser', 'existing@example.com', 'password123');
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
 
       expect(result.success).toBe(false);
       expect(result.error).toMatch(/email.*registered/i);
@@ -256,7 +312,13 @@ describe('Auth Service', () => {
       await authService.registerUser('newuser', 'new@example.com', 'plainpassword');
 
       // Find the INSERT query
+<<<<<<< HEAD
       const insertCall = mockQuery.mock.calls.find(call => call[0] && call[0].includes('INSERT'));
+=======
+      const insertCall = mockQuery.mock.calls.find(call =>
+        call[0] && call[0].includes('INSERT')
+      );
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
 
       expect(insertCall).toBeDefined();
       // Password should be hashed (bcrypt hash starts with $2)
@@ -290,7 +352,13 @@ describe('Auth Service', () => {
 
       await authService.registerUser('newuser', 'new@example.com', 'password123');
 
+<<<<<<< HEAD
       const insertCall = mockQuery.mock.calls.find(call => call[0] && call[0].includes('INSERT'));
+=======
+      const insertCall = mockQuery.mock.calls.find(call =>
+        call[0] && call[0].includes('INSERT')
+      );
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
       const params = insertCall[1];
       expect(params[3]).toBe('user'); // 4th param is role
     });
@@ -356,6 +424,7 @@ describe('Auth Service', () => {
 
   describe('refreshAccessToken', () => {
     it('should refresh valid token', async () => {
+<<<<<<< HEAD
       const refreshToken = jwt.sign({ userId: 1, type: 'refresh' }, process.env.JWT_SECRET, {
         expiresIn: '7d'
       });
@@ -369,6 +438,21 @@ describe('Auth Service', () => {
             account_locked_until: null
           }
         ]
+=======
+      const refreshToken = jwt.sign(
+        { userId: 1, type: 'refresh' },
+        process.env.JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      mockQuery.mockResolvedValueOnce({
+        rows: [{
+          id: 1,
+          username: 'testuser',
+          role: 'user',
+          account_locked_until: null
+        }]
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
       });
 
       const result = await authService.refreshAccessToken(refreshToken);
@@ -379,9 +463,17 @@ describe('Auth Service', () => {
     });
 
     it('should return error for expired refresh token', async () => {
+<<<<<<< HEAD
       const expiredToken = jwt.sign({ userId: 1, type: 'refresh' }, process.env.JWT_SECRET, {
         expiresIn: '-1h'
       });
+=======
+      const expiredToken = jwt.sign(
+        { userId: 1, type: 'refresh' },
+        process.env.JWT_SECRET,
+        { expiresIn: '-1h' }
+      );
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
 
       const result = await authService.refreshAccessToken(expiredToken);
 
@@ -410,9 +502,17 @@ describe('Auth Service', () => {
     });
 
     it('should return error if user not found', async () => {
+<<<<<<< HEAD
       const refreshToken = jwt.sign({ userId: 999, type: 'refresh' }, process.env.JWT_SECRET, {
         expiresIn: '7d'
       });
+=======
+      const refreshToken = jwt.sign(
+        { userId: 999, type: 'refresh' },
+        process.env.JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
 
       mockQuery.mockResolvedValueOnce({ rows: [] });
 
@@ -423,6 +523,7 @@ describe('Auth Service', () => {
     });
 
     it('should reject refresh for locked account', async () => {
+<<<<<<< HEAD
       const refreshToken = jwt.sign({ userId: 1, type: 'refresh' }, process.env.JWT_SECRET, {
         expiresIn: '7d'
       });
@@ -436,6 +537,21 @@ describe('Auth Service', () => {
             account_locked_until: new Date(Date.now() + 30 * 60 * 1000)
           }
         ]
+=======
+      const refreshToken = jwt.sign(
+        { userId: 1, type: 'refresh' },
+        process.env.JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      mockQuery.mockResolvedValueOnce({
+        rows: [{
+          id: 1,
+          username: 'testuser',
+          role: 'user',
+          account_locked_until: new Date(Date.now() + 30 * 60 * 1000)
+        }]
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
       });
 
       const result = await authService.refreshAccessToken(refreshToken);
@@ -445,6 +561,7 @@ describe('Auth Service', () => {
     });
 
     it('should generate new access token with correct payload', async () => {
+<<<<<<< HEAD
       const refreshToken = jwt.sign({ userId: 1, type: 'refresh' }, process.env.JWT_SECRET, {
         expiresIn: '7d'
       });
@@ -458,6 +575,21 @@ describe('Auth Service', () => {
             account_locked_until: null
           }
         ]
+=======
+      const refreshToken = jwt.sign(
+        { userId: 1, type: 'refresh' },
+        process.env.JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      mockQuery.mockResolvedValueOnce({
+        rows: [{
+          id: 1,
+          username: 'testuser',
+          role: 'admin',
+          account_locked_until: null
+        }]
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
       });
 
       const result = await authService.refreshAccessToken(refreshToken);
@@ -474,9 +606,17 @@ describe('Auth Service', () => {
 
 describe('JWT Token Generation', () => {
   it('should generate valid JWT with user data', () => {
+<<<<<<< HEAD
     const token = jwt.sign({ userId: 1, username: 'test', role: 'user' }, process.env.JWT_SECRET, {
       expiresIn: '1h'
     });
+=======
+    const token = jwt.sign(
+      { userId: 1, username: 'test', role: 'user' },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
@@ -486,7 +626,15 @@ describe('JWT Token Generation', () => {
   });
 
   it('should include expiration in token', () => {
+<<<<<<< HEAD
     const token = jwt.sign({ userId: 1 }, process.env.JWT_SECRET, { expiresIn: '1h' });
+=======
+    const token = jwt.sign(
+      { userId: 1 },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
@@ -496,9 +644,17 @@ describe('JWT Token Generation', () => {
   });
 
   it('should create refresh token with 7 day expiry', () => {
+<<<<<<< HEAD
     const token = jwt.sign({ userId: 1, type: 'refresh' }, process.env.JWT_SECRET, {
       expiresIn: '7d'
     });
+=======
+    const token = jwt.sign(
+      { userId: 1, type: 'refresh' },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+>>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
