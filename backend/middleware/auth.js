@@ -6,7 +6,7 @@
 const jwt = require('jsonwebtoken');
 const logger = require('../config/logger');
 
-const authMiddleware = async (req, res, next) => {
+const authMiddleware = (req, res, next) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
 
