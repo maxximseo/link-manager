@@ -220,7 +220,7 @@ function renderActivePlacements(placements) {
             <td>${p.project_name || '—'}</td>
             <td><a href="${displayUrl}" target="_blank">${displayUrl}</a></td>
             <td>${formatDate(p.published_at || p.placed_at)}</td>
-            <td class="${expiryClass}">${expiryText}</td>
+            <td class="${expiryInfo.class}">${expiryInfo.text}</td>
             <td>$${parseFloat(p.final_price || 0).toFixed(2)}</td>
             <td>${autoRenewalToggle}</td>
             <td class="text-nowrap">
