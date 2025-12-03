@@ -101,6 +101,19 @@ function sanitizeForDisplay(obj) {
     return sanitized;
 }
 
+// Debounce utility - delays execution until wait ms have passed without new calls
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
 // Show Bootstrap alert notification
 function showAlert(message, type = 'info') {
     const alertDiv = document.createElement('div');
