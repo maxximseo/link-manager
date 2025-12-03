@@ -7,6 +7,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.6.1] - 2025-12-03
+
+### 🛠️ Developer Tools - ESLint + Prettier (ADR-022)
+
+Added code quality tooling for consistent code style and early bug detection.
+
+#### New Files
+- **`eslint.config.js`** - ESLint 9 flat config with project rules
+- **`.prettierrc`** - Prettier formatting settings
+- **`.prettierignore`** - Files excluded from formatting
+
+#### New NPM Scripts
+```bash
+npm run lint          # Check for errors and warnings
+npm run lint:fix      # Auto-fix issues
+npm run format        # Format all files
+npm run format:check  # Check formatting
+```
+
+#### ESLint Rules Configured
+| Rule | Level | Purpose |
+|------|-------|---------|
+| `no-unused-vars` | warn | Catches dead code |
+| `require-await` | warn | Flags async without await |
+| `no-console` | warn | Reminds to remove debug logs |
+| `prefer-const` | warn | Encourages immutability |
+| `no-var` | error | Use let/const instead |
+| `eqeqeq` | warn | Type-safe comparisons |
+| `prettier/prettier` | warn | Consistent formatting |
+
+#### Prettier Settings
+- Single quotes, 2-space tabs, no trailing commas
+- 100 character print width
+- LF line endings
+
+#### Dependencies Added
+- `eslint` ^9.39.1
+- `prettier` ^3.7.4
+- `eslint-config-prettier` ^10.1.8
+- `eslint-plugin-prettier` ^5.5.4
+- `@eslint/js` ^9.39.1
+
+#### Initial Linting Results
+- **2158 problems** (1 error, 2157 warnings)
+- Most warnings are Prettier formatting (auto-fixable)
+- Real bugs found: unused variables in billing.service.js
+
+#### Documentation
+- CLAUDE.md updated with Code Quality section
+- ADR-022 added for ESLint + Prettier decision
+
+---
+
 ## [2.6.0] - 2025-12-03
 
 ### 🏗️ Frontend Architecture Refactoring (ADR-021)

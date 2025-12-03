@@ -1548,6 +1548,128 @@ grep -r "function escapeHtml(" backend/build/js/
 
 ---
 
+## ADR-022: ESLint + Prettier Code Quality
+
+**Status**: ✅ ACTIVE
+**Date**: December 2025
+**Decision Makers**: Development Team
+
+### Context
+Need automated code quality tools to:
+- Catch bugs early (unused variables, async/await issues)
+- Enforce consistent code formatting
+- Maintain code style across team members
+- Reduce code review friction on style issues
+
+### Decision
+Implement **ESLint 9** (flat config) + **Prettier** integration for JavaScript linting and formatting.
+
+### Configuration
+
+**ESLint Config** (`eslint.config.js`):
+```javascript
+const js = require('@eslint/js');
+const prettier = require('eslint-plugin-prettier');
+const prettierConfig = require('eslint-config-prettier');
+
+module.exports = [
+  js.configs.recommended,
+  prettierConfig,
+  {
+    files: ['**/*.js'],
+    ignores: ['node_modules/**', 'backend/build/**', 'coverage/**'],
+    rules: {
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      'require-await': 'warn',
+      'no-console': ['warn', { allow: ['warn', 'error', 'info'] }],
+      'prefer-const': 'warn',
+      'no-var': 'error',
+      'eqeqeq': ['warn', 'smart'],
+      'prettier/prettier': 'warn'
+    }
+  }
+];
+```
+
+**Prettier Config** (`.prettierrc`):
+```json
+{
+  "semi": true,
+  "singleQuote": true,
+  "tabWidth": 2,
+  "trailingComma": "none",
+  "printWidth": 100
+}
+```
+
+### Rules Rationale
+
+| Rule | Level | Why |
+|------|-------|-----|
+| `no-unused-vars` | warn | Dead code detection, `_` prefix to ignore intentionally |
+| `require-await` | warn | Catches async functions missing await (common bug) |
+| `no-console` | warn | Reminds to remove debug logs, allows warn/error/info |
+| `prefer-const` | warn | Encourages immutability |
+| `no-var` | **error** | Block-scoped let/const always preferred |
+| `eqeqeq` | warn | Type-safe comparisons (allows == null) |
+| `prettier/prettier` | warn | Consistent formatting |
+
+### NPM Scripts
+
+```json
+{
+  "lint": "eslint backend/ tests/ --ignore-pattern 'backend/build/**'",
+  "lint:fix": "eslint backend/ tests/ --ignore-pattern 'backend/build/**' --fix",
+  "format": "prettier --write \"backend/**/*.js\" \"tests/**/*.js\"",
+  "format:check": "prettier --check \"backend/**/*.js\" \"tests/**/*.js\""
+}
+```
+
+### Usage Workflow
+
+```bash
+# Check for issues
+npm run lint
+
+# Auto-fix formatting and some code issues
+npm run lint:fix
+
+# Format all files
+npm run format
+```
+
+### Rejected Alternatives
+
+| Tool | Why Rejected |
+|------|--------------|
+| **TypeScript** | Too late to migrate (20+ services, 15K+ lines), high effort/low ROI |
+| **Husky** (pre-commit hooks) | Conflicts with auto-commit system (`npm run dev` auto-commits) |
+| **Vitest** | Jest already works with 520+ tests |
+| **ESLint 8** (legacy config) | ESLint 9 flat config is current standard |
+
+### Consequences
+- ✅ **Catches bugs early**: Unused variables, async without await
+- ✅ **Consistent style**: Prettier handles formatting automatically
+- ✅ **2100+ warnings identified**: Mostly formatting (auto-fixable)
+- ✅ **Real bugs found**: Unused `publishPlacement` variable, `placementService` import
+- ⚠️ **Not enforced on commit**: Use `npm run lint` manually before PR
+
+### Files Created/Modified
+- `eslint.config.js` - ESLint 9 flat config (NEW)
+- `.prettierrc` - Prettier settings (NEW)
+- `.prettierignore` - Ignored paths (NEW)
+- `package.json` - Added scripts and devDependencies
+
+### Linting Results (Initial Run)
+```
+Total: 2158 problems (1 error, 2157 warnings)
+- ~2000 Prettier formatting (auto-fix with lint:fix)
+- ~50 unused variables (review and fix)
+- ~100 require-await (verify intent)
+```
+
+---
+
 ## Summary of Active ADRs
 
 | ADR | Title | Impact | Status |
@@ -1573,6 +1695,7 @@ grep -r "function escapeHtml(" backend/build/js/
 | 019 | Optimization Principles Doc | Low | ✅ Active |
 | 020 | Admin-Only Public Site Control | High | ✅ Active |
 | 021 | Frontend Shared Utilities | High | ✅ Active |
+| 022 | ESLint + Prettier Code Quality | Medium | ✅ Active |
 
 ---
 

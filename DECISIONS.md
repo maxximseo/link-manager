@@ -172,6 +172,99 @@ PlacementsAPI.getAll()  // Only gets 20 records!
 
 ---
 
+## Code Quality (ESLint + Prettier)
+
+### ✅ Mark Intentionally Unused Variables with `_`
+
+```javascript
+// ✅ CORRECT - Prefix with _ to ignore ESLint warning
+const [_error, data] = await handleAsync(fetchData());
+function middleware(req, _res, next) { /* ... */ }
+
+// ❌ WRONG - Generates "unused variable" warning
+const [error, data] = await handleAsync(fetchData());  // 'error' is defined but never used
+```
+
+---
+
+### ✅ Use const by Default
+
+```javascript
+// ✅ CORRECT - Use const for values that won't be reassigned
+const userId = req.user.id;
+const result = await query('SELECT * FROM users WHERE id = $1', [userId]);
+
+// ❌ WRONG - Using let when const would work
+let userId = req.user.id;  // ESLint: Prefer const
+```
+
+---
+
+### ✅ Use Strict Equality
+
+```javascript
+// ✅ CORRECT - Use === for type-safe comparison
+if (count === 0) { /* ... */ }
+if (status === 'active') { /* ... */ }
+
+// ✅ OK - == null is allowed by eqeqeq 'smart' rule
+if (value == null) { /* ... */ }  // Catches both null and undefined
+
+// ❌ WRONG - Use === instead
+if (count == 0) { /* ... */ }  // ESLint warning
+```
+
+---
+
+### ✅ Async Functions Must Have Await
+
+```javascript
+// ✅ CORRECT - Async function has await
+async function getUser(id) {
+  const result = await query('SELECT * FROM users WHERE id = $1', [id]);
+  return result.rows[0];
+}
+
+// ❌ WRONG - Async without await (likely a bug)
+async function getUser(id) {  // ESLint: require-await
+  const result = query('SELECT * FROM users WHERE id = $1', [id]);
+  return result.rows[0];  // Returns Promise, not data!
+}
+```
+
+---
+
+### ✅ Use logger Instead of console.log
+
+```javascript
+// ✅ CORRECT - Use Winston logger
+const logger = require('../config/logger');
+logger.info('User logged in', { userId: user.id });
+logger.error('Database error', { error: err.message });
+
+// ✅ OK - console.warn, console.error, console.info are allowed
+console.error('Critical failure');
+
+// ❌ WRONG - console.log triggers ESLint warning
+console.log('Debug:', data);  // ESLint: no-console
+```
+
+---
+
+### ✅ Run Lint Before Committing
+
+```bash
+# Quick check
+npm run lint
+
+# Auto-fix formatting
+npm run lint:fix
+```
+
+**See**: [ADR-022](ADR.md#adr-022-eslint--prettier-code-quality)
+
+---
+
 ## Frontend Patterns
 
 ### ✅ Script Loading Order (ADR-021)
