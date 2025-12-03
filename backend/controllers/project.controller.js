@@ -295,12 +295,17 @@ const addProjectLinksBulk = async (req, res) => {
 const deleteProjectLink = async (req, res) => {
   try {
     const projectId = req.params.id;
-    const linkId = req.params.linkId;
+    const linkId = parseInt(req.params.linkId);
     const userId = req.user.id;
+
+    // Validate linkId is a valid number
+    if (isNaN(linkId) || linkId <= 0) {
+      return res.status(400).json({ error: 'Invalid link ID' });
+    }
 
     // Check if link is used (has placements)
     const link = await projectService.getProjectLinks(projectId, userId);
-    const linkToDelete = link.find(l => l.id === parseInt(linkId));
+    const linkToDelete = link.find(l => l.id === linkId);
 
     if (!linkToDelete) {
       return res.status(404).json({ error: 'Project link not found' });
@@ -437,12 +442,17 @@ const updateProjectArticle = async (req, res) => {
 const deleteProjectArticle = async (req, res) => {
   try {
     const projectId = req.params.id;
-    const articleId = req.params.articleId;
+    const articleId = parseInt(req.params.articleId);
     const userId = req.user.id;
+
+    // Validate articleId is a valid number
+    if (isNaN(articleId) || articleId <= 0) {
+      return res.status(400).json({ error: 'Invalid article ID' });
+    }
 
     // Check if article is used (has placements)
     const articles = await projectService.getProjectArticles(projectId, userId);
-    const articleToDelete = articles.find(a => a.id === parseInt(articleId));
+    const articleToDelete = articles.find(a => a.id === articleId);
 
     if (!articleToDelete) {
       return res.status(404).json({ error: 'Article not found' });
