@@ -770,6 +770,17 @@ Security Configuration (recommended for production):
 Optional:
 - `BCRYPT_ROUNDS` - 8 for dev, 10 for prod
 
+Backup Configuration (optional, enables automated encrypted backups):
+- `BACKUP_ENCRYPTION_KEY` - Min 32 characters, AES-256 encryption key
+- `DO_SPACES_KEY` - DigitalOcean Spaces access key
+- `DO_SPACES_SECRET` - DigitalOcean Spaces secret key
+- `DO_SPACES_BUCKET` - Spaces bucket name (e.g., `serpium`)
+- `DO_SPACES_REGION` - Spaces region (e.g., `atl1`, `nyc3`)
+- `BACKUP_RETENTION_DAYS` - Days to keep backups (default: 7)
+
+Sentry Configuration (optional, enables error tracking):
+- `SENTRY_DSN` - Sentry Data Source Name for error reporting
+
 ## Pagination Limits (Updated January 2025)
 
 **CRITICAL**: System-wide pagination limits increased to support high-volume operations (5000+ placements).

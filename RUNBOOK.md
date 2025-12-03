@@ -645,16 +645,235 @@ psql -d linkmanager -c "EXPLAIN ANALYZE SELECT ..."
 
 ## Backup & Recovery
 
+### 🔐 Encrypted Backup System
+
+**Status**: Active (December 2025)
+
+Система автоматических зашифрованных бэкапов на DigitalOcean Spaces.
+
+#### Features
+- **Encryption**: AES-256-CBC с pbkdf2 (100,000 iterations)
+- **Storage**: DigitalOcean Spaces (S3-compatible)
+- **Retention**: 7 дней (автоматическая очистка старых бэкапов)
+- **Schedule**: Каждые 12 часов (00:00 и 12:00 UTC)
+
+#### Required Environment Variables
+```bash
+# .env
+BACKUP_ENCRYPTION_KEY=your-32-char-minimum-secret-key
+DO_SPACES_KEY=DO801...        # DigitalOcean Spaces access key
+DO_SPACES_SECRET=xxx...       # DigitalOcean Spaces secret key
+DO_SPACES_BUCKET=serpium      # Bucket name
+DO_SPACES_REGION=atl1         # Region (atl1, nyc3, etc.)
+BACKUP_RETENTION_DAYS=7       # Optional, default 7
+```
+
+---
+
 ### Automated Backup Schedule
 
-**Daily backups** (configured in DigitalOcean):
+**Cron Job**: `backend/cron/database-backup.cron.js`
+- **Schedule**: `0 0,12 * * *` (00:00 и 12:00 UTC)
+- **Timezone**: UTC
+- **Timeout**: 10 минут max
+
+**Проверка статуса cron**:
+```bash
+# В логах сервера при запуске
+grep "Database backup cron" backend/logs/combined-*.log
+# Expected: "Database backup cron initialized (every 12 hours at 00:00 and 12:00 UTC)"
+```
+
+**DigitalOcean managed backups** (дополнительно):
 - **Time**: 02:00 UTC
 - **Retention**: 7 days
 - **Location**: DigitalOcean managed backups
 
-**Manual backup before major changes**:
+---
+
+### Manual Backup (via Script)
+
+```bash
+# Полный бэкап с шифрованием на DO Spaces
+./scripts/backup-database.sh
+
+# Только локальный бэкап (без upload)
+./scripts/backup-database.sh --local-only
+
+# Бэкап без шифрования (NOT recommended)
+./scripts/backup-database.sh --no-encrypt
+```
+
+**Expected Output**:
+```
+==========================================
+  Database Backup Script
+  Tue Dec  3 21:56:00 UTC 2025
+==========================================
+
+Backup directory: /path/to/project/backups
+Using pg_dump: /opt/homebrew/opt/postgresql@17/bin/pg_dump
+Dump created: /path/to/backups/backup_20251203_215600.dump (1.2M)
+Encrypting backup with AES-256...
+Encrypted: /path/to/backups/backup_20251203_215600.dump.enc (127K)
+Uploading to DigitalOcean Spaces...
+Uploaded to: s3://serpium/backups/database/backup_20251203_215600.dump.enc
+Cleaning up local backups older than 7 days...
+No old backups to remove
+Cleaning up remote backups older than 7 days...
+Remote cleanup complete
+
+==========================================
+  Backup completed successfully!
+  File: /path/to/backups/backup_20251203_215600.dump.enc
+==========================================
+```
+
+---
+
+### Manual Backup (via API)
+
+**Endpoint**: `POST /health/backup`
+
+**Authentication**: Требуется `X-Admin-Key` header (первые 32 символа JWT_SECRET)
+
+```bash
+# Get admin key (first 32 chars of JWT_SECRET)
+ADMIN_KEY=$(grep JWT_SECRET .env | cut -d'=' -f2 | cut -c1-32)
+
+# Trigger manual backup
+curl -X POST http://localhost:3003/health/backup \
+  -H "X-Admin-Key: $ADMIN_KEY"
+
+# Expected response:
+# {
+#   "success": true,
+#   "message": "Backup completed successfully",
+#   "duration": "12.5",
+#   "backupFile": "/path/to/backup_20251203_220000.dump.enc"
+# }
+```
+
+**Error responses**:
+- `403 Unauthorized`: Invalid admin key
+- `400 Bad Request`: Backup not configured (missing env vars)
+- `500 Internal Server Error`: Backup failed (check logs)
+
+---
+
+### Backup Before Deploy
+
 ```bash
 ./scripts/backup-before-deploy.sh
+```
+
+Этот скрипт создаёт бэкап и ждёт подтверждения перед деплоем.
+
+---
+
+### View Backups on DO Spaces
+
+```bash
+# Configure s3cmd (one-time)
+s3cmd --configure
+# Use DO_SPACES_KEY and DO_SPACES_SECRET
+# Host: atl1.digitaloceanspaces.com
+# Host bucket: %(bucket)s.atl1.digitaloceanspaces.com
+
+# List all backups
+s3cmd ls s3://serpium/backups/database/
+
+# Download specific backup
+s3cmd get s3://serpium/backups/database/backup_20251203_215600.dump.enc ./
+```
+
+---
+
+### Restore from Encrypted Backup
+
+```bash
+# 1. Download backup (if needed)
+s3cmd get s3://serpium/backups/database/backup_XXXXXXXX_XXXXXX.dump.enc ./backups/
+
+# 2. Run restore script
+./scripts/restore-database.sh backups/backup_XXXXXXXX_XXXXXX.dump.enc
+
+# OR manual restore:
+
+# 2a. Decrypt backup
+openssl enc -aes-256-cbc -d -pbkdf2 -iter 100000 \
+  -in backup_20251203_215600.dump.enc \
+  -out backup_20251203_215600.dump \
+  -pass pass:"$BACKUP_ENCRYPTION_KEY"
+
+# 2b. Restore to database
+PGPASSWORD="$DB_PASSWORD" pg_restore \
+  -h "$DB_HOST" \
+  -p "$DB_PORT" \
+  -U "$DB_USER" \
+  -d "$DB_NAME" \
+  -v \
+  --clean \
+  backup_20251203_215600.dump
+```
+
+**⚠️ Warning**: `--clean` option will DROP existing tables before restore!
+
+---
+
+### Backup Troubleshooting
+
+#### pg_dump not found
+```bash
+# Find pg_dump location
+find /opt/homebrew -name "pg_dump" 2>/dev/null
+find /usr/local -name "pg_dump" 2>/dev/null
+
+# Install PostgreSQL (macOS)
+brew install postgresql@17
+
+# Add to PATH
+export PATH="/opt/homebrew/opt/postgresql@17/bin:$PATH"
+```
+
+#### s3cmd not found
+```bash
+# Install s3cmd (macOS)
+brew install s3cmd
+
+# Install s3cmd (Linux)
+apt install s3cmd  # or yum install s3cmd
+```
+
+#### 403 Access Denied on DO Spaces
+1. Зайти в DigitalOcean → Spaces → API Keys
+2. Проверить что ключ имеет права **Read+Write** (не только Read)
+3. Проверить что bucket name и region правильные
+
+#### Backup cron not starting
+```bash
+# Check server logs
+grep -i "backup" backend/logs/combined-*.log | tail -20
+
+# Verify env vars are set
+echo $DO_SPACES_KEY
+echo $BACKUP_ENCRYPTION_KEY
+# Both must be non-empty for cron to start
+```
+
+#### Decryption fails
+```bash
+# Убедитесь что используете ТОЧНО такой же BACKUP_ENCRYPTION_KEY
+# который использовался при шифровании
+
+# Проверка версии OpenSSL (должна поддерживать pbkdf2)
+openssl version
+# OpenSSL 3.x required
+
+# Если старый OpenSSL, используйте:
+openssl enc -aes-256-cbc -d -md sha256 \
+  -in backup.enc -out backup.dump \
+  -pass pass:"$BACKUP_ENCRYPTION_KEY"
 ```
 
 ---
@@ -953,6 +1172,7 @@ du -sh backend/logs/*.log | sort -h
 | 2025-11-25 | Added GEO migration procedure | Development Team |
 | 2025-11-27 | Added admin-only public sites security procedure | Development Team |
 | 2025-12-03 | Added Frontend JavaScript Errors troubleshooting (ADR-021) | Development Team |
+| 2025-12-03 | Added Encrypted Backup System documentation (DO Spaces + AES-256) | Development Team |
 
 ---
 

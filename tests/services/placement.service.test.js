@@ -726,3 +726,649 @@ describe('Placement Quotas', () => {
     });
   });
 });
+
+// =============================================
+// Additional Coverage Tests
+// =============================================
+
+describe('getUserPlacements - Cache and Error Handling', () => {
+  const cacheService = require('../../backend/services/cache.service');
+
+  beforeEach(() => {
+    mockQuery.mockReset();
+    cacheService.get.mockReset();
+    cacheService.set.mockReset();
+  });
+
+  it('should return cached data when available', async () => {
+    const cachedData = {
+      data: [{ id: 1, type: 'link' }],
+      pagination: { page: 1, limit: 10, total: 1, pages: 1 }
+    };
+    cacheService.get.mockResolvedValue(cachedData);
+
+    const result = await placementService.getUserPlacements(1, 1, 10);
+
+    expect(cacheService.get).toHaveBeenCalledWith(
+      expect.stringContaining('placements:user:1')
+    );
+    expect(result).toEqual(cachedData);
+    expect(mockQuery).not.toHaveBeenCalled();
+  });
+
+  it('should handle database error in getUserPlacements', async () => {
+    cacheService.get.mockResolvedValue(null);
+    mockQuery.mockRejectedValue(new Error('Database connection failed'));
+
+    await expect(placementService.getUserPlacements(1, 1, 10)).rejects.toThrow(
+      'Database connection failed'
+    );
+  });
+});
+
+describe('getPlacementById - Error Handling', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+  });
+
+  it('should handle database error in getPlacementById', async () => {
+    mockQuery.mockRejectedValue(new Error('Query failed'));
+
+    await expect(placementService.getPlacementById(1, 1)).rejects.toThrow(
+      'Query failed'
+    );
+  });
+});
+
+describe('getStatistics - Error Handling', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+  });
+
+  it('should handle database error in getStatistics', async () => {
+    mockQuery.mockRejectedValue(new Error('Statistics query failed'));
+
+    await expect(placementService.getStatistics(1)).rejects.toThrow(
+      'Statistics query failed'
+    );
+  });
+});
+
+describe('getAvailableSites - Additional Tests', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+  });
+
+  it('should return sites with availability flags', async () => {
+    mockQuery.mockResolvedValue({
+      rows: [
+        {
+          id: 1,
+          site_name: 'Test Site',
+          site_url: 'https://test.com',
+          max_links: 10,
+          used_links: 2,
+          max_articles: 5,
+          used_articles: 1,
+          project_links_on_site: '0',
+          project_articles_on_site: '0'
+        }
+      ]
+    });
+
+    const result = await placementService.getAvailableSites(1, 1);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].can_place_link).toBe(true);
+    expect(result[0].can_place_article).toBe(true);
+  });
+
+  it('should mark sites as unavailable when project already has content', async () => {
+    mockQuery.mockResolvedValue({
+      rows: [
+        {
+          id: 1,
+          site_name: 'Test Site',
+          site_url: 'https://test.com',
+          max_links: 10,
+          used_links: 2,
+          max_articles: 5,
+          used_articles: 1,
+          project_links_on_site: '1', // Already has link
+          project_articles_on_site: '1' // Already has article
+        }
+      ]
+    });
+
+    const result = await placementService.getAvailableSites(1, 1);
+
+    expect(result[0].can_place_link).toBe(false);
+    expect(result[0].can_place_article).toBe(false);
+  });
+
+  it('should mark sites as unavailable when quotas are exhausted', async () => {
+    mockQuery.mockResolvedValue({
+      rows: [
+        {
+          id: 1,
+          site_name: 'Full Site',
+          site_url: 'https://full.com',
+          max_links: 10,
+          used_links: 10, // Quota exhausted
+          max_articles: 5,
+          used_articles: 5, // Quota exhausted
+          project_links_on_site: '0',
+          project_articles_on_site: '0'
+        }
+      ]
+    });
+
+    const result = await placementService.getAvailableSites(1, 1);
+
+    expect(result[0].can_place_link).toBe(false);
+    expect(result[0].can_place_article).toBe(false);
+  });
+
+  it('should handle database error in getAvailableSites', async () => {
+    mockQuery.mockRejectedValue(new Error('Sites query failed'));
+
+    await expect(placementService.getAvailableSites(1, 1)).rejects.toThrow(
+      'Sites query failed'
+    );
+  });
+});
+
+describe('createPlacement - Link not found', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+    mockClient.query.mockReset();
+    mockClient.release.mockReset();
+    mockPool.connect.mockResolvedValue(mockClient);
+  });
+
+  const mockSite = {
+    id: 1,
+    max_links: 10,
+    used_links: 2,
+    max_articles: 5,
+    used_articles: 1,
+    site_url: 'https://example.com',
+    api_key: 'api_test123'
+  };
+
+  it('should reject when link not found in database', async () => {
+    mockClient.query
+      .mockResolvedValueOnce({}) // BEGIN
+      .mockResolvedValueOnce({}) // pg_advisory_xact_lock
+      .mockResolvedValueOnce({ rows: [{ existing_links: '0', existing_articles: '0' }] }) // no existing
+      .mockResolvedValueOnce({ rows: [mockSite] }) // Get site FOR UPDATE
+      .mockResolvedValueOnce({ rows: [] }) // No existing placement
+      .mockResolvedValueOnce({ rows: [{ id: 1 }] }) // INSERT placement RETURNING
+      .mockResolvedValueOnce({ rows: [] }) // Check existing link in placement
+      .mockResolvedValueOnce({ rows: [] }) // Link not found!
+      .mockResolvedValueOnce({}); // ROLLBACK
+
+    await expect(
+      placementService.createPlacement({
+        site_id: 1,
+        project_id: 1,
+        link_ids: [999],
+        userId: 1
+      })
+    ).rejects.toThrow(/Link 999 not found/i);
+  });
+
+  it('should reject when article not found in database', async () => {
+    mockClient.query
+      .mockResolvedValueOnce({}) // BEGIN
+      .mockResolvedValueOnce({}) // pg_advisory_xact_lock
+      .mockResolvedValueOnce({ rows: [{ existing_links: '0', existing_articles: '0' }] }) // no existing
+      .mockResolvedValueOnce({ rows: [mockSite] }) // Get site FOR UPDATE
+      .mockResolvedValueOnce({ rows: [] }) // No existing placement
+      .mockResolvedValueOnce({ rows: [{ id: 1 }] }) // INSERT placement RETURNING
+      .mockResolvedValueOnce({ rows: [] }) // Check existing article in placement
+      .mockResolvedValueOnce({ rows: [] }) // Article not found!
+      .mockResolvedValueOnce({}); // ROLLBACK
+
+    await expect(
+      placementService.createPlacement({
+        site_id: 1,
+        project_id: 1,
+        article_ids: [999],
+        userId: 1
+      })
+    ).rejects.toThrow(/Article 999 not found/i);
+  });
+});
+
+describe('createPlacement - Unique Constraint Violations', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+    mockClient.query.mockReset();
+    mockClient.release.mockReset();
+    mockPool.connect.mockResolvedValue(mockClient);
+  });
+
+  const mockSite = {
+    id: 1,
+    max_links: 10,
+    used_links: 2,
+    max_articles: 5,
+    used_articles: 1,
+    site_url: 'https://example.com',
+    api_key: 'api_test123'
+  };
+
+  it('should handle link unique constraint violation (race condition)', async () => {
+    const mockLink = {
+      id: 1,
+      usage_count: 0,
+      usage_limit: 999,
+      status: 'active'
+    };
+
+    const uniqueViolationError = new Error('duplicate key value');
+    uniqueViolationError.code = '23505';
+    uniqueViolationError.constraint = 'placement_content_link_unique';
+
+    mockClient.query
+      .mockResolvedValueOnce({}) // BEGIN
+      .mockResolvedValueOnce({}) // pg_advisory_xact_lock
+      .mockResolvedValueOnce({ rows: [{ existing_links: '0', existing_articles: '0' }] }) // no existing
+      .mockResolvedValueOnce({ rows: [mockSite] }) // Get site FOR UPDATE
+      .mockResolvedValueOnce({ rows: [] }) // No existing placement
+      .mockResolvedValueOnce({ rows: [{ id: 1 }] }) // INSERT placement RETURNING
+      .mockResolvedValueOnce({ rows: [] }) // Check existing link in placement
+      .mockResolvedValueOnce({ rows: [mockLink] }) // Get link FOR UPDATE
+      .mockRejectedValueOnce(uniqueViolationError) // INSERT placement_content - race condition!
+      .mockResolvedValueOnce({}) // UPDATE sites used_links
+      .mockResolvedValueOnce({}) // UPDATE placement status
+      .mockResolvedValueOnce({}); // COMMIT
+
+    // Should not throw - race condition is handled gracefully
+    const result = await placementService.createPlacement({
+      site_id: 1,
+      project_id: 1,
+      link_ids: [1],
+      userId: 1
+    });
+
+    expect(result).toBeDefined();
+    expect(result.id).toBe(1);
+  });
+
+  it('should rethrow non-unique-constraint errors', async () => {
+    const mockLink = {
+      id: 1,
+      usage_count: 0,
+      usage_limit: 999,
+      status: 'active'
+    };
+
+    const otherError = new Error('Some other database error');
+    otherError.code = '12345';
+
+    mockClient.query
+      .mockResolvedValueOnce({}) // BEGIN
+      .mockResolvedValueOnce({}) // pg_advisory_xact_lock
+      .mockResolvedValueOnce({ rows: [{ existing_links: '0', existing_articles: '0' }] }) // no existing
+      .mockResolvedValueOnce({ rows: [mockSite] }) // Get site FOR UPDATE
+      .mockResolvedValueOnce({ rows: [] }) // No existing placement
+      .mockResolvedValueOnce({ rows: [{ id: 1 }] }) // INSERT placement RETURNING
+      .mockResolvedValueOnce({ rows: [] }) // Check existing link in placement
+      .mockResolvedValueOnce({ rows: [mockLink] }) // Get link FOR UPDATE
+      .mockRejectedValueOnce(otherError); // INSERT placement_content - other error!
+
+    await expect(
+      placementService.createPlacement({
+        site_id: 1,
+        project_id: 1,
+        link_ids: [1],
+        userId: 1
+      })
+    ).rejects.toThrow('Some other database error');
+  });
+});
+
+describe('createPlacement - Existing Placement Update', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+    mockClient.query.mockReset();
+    mockClient.release.mockReset();
+    mockPool.connect.mockResolvedValue(mockClient);
+  });
+
+  const mockSite = {
+    id: 1,
+    max_links: 10,
+    used_links: 2,
+    max_articles: 5,
+    used_articles: 1,
+    site_url: 'https://example.com',
+    api_key: 'api_test123'
+  };
+
+  it('should use existing placement when found', async () => {
+    const existingPlacement = {
+      id: 100,
+      project_id: 1,
+      site_id: 1,
+      type: 'manual',
+      status: 'pending',
+      wordpress_post_id: null,
+      placed_at: new Date()
+    };
+
+    const mockLink = {
+      id: 1,
+      usage_count: 0,
+      usage_limit: 999,
+      status: 'active'
+    };
+
+    mockClient.query
+      .mockResolvedValueOnce({}) // BEGIN
+      .mockResolvedValueOnce({}) // pg_advisory_xact_lock
+      // Return empty existing_links to pass the duplicate check
+      .mockResolvedValueOnce({ rows: [{ existing_links: '0', existing_articles: '0' }] })
+      .mockResolvedValueOnce({ rows: [mockSite] }) // Get site FOR UPDATE
+      .mockResolvedValueOnce({ rows: [existingPlacement] }) // Found existing placement!
+      .mockResolvedValueOnce({ rows: [] }) // Check existing link in placement
+      .mockResolvedValueOnce({ rows: [mockLink] }) // Get link FOR UPDATE
+      .mockResolvedValueOnce({}) // INSERT placement_content
+      .mockResolvedValueOnce({}) // UPDATE project_links usage_count
+      .mockResolvedValueOnce({}) // UPDATE sites used_links
+      .mockResolvedValueOnce({}) // UPDATE placement status
+      .mockResolvedValueOnce({}); // COMMIT
+
+    const result = await placementService.createPlacement({
+      site_id: 1,
+      project_id: 1,
+      link_ids: [1],
+      userId: 1
+    });
+
+    expect(result).toBeDefined();
+    expect(result.id).toBe(100); // Uses existing placement ID
+  });
+
+  it('should skip link already in placement', async () => {
+    const existingPlacement = {
+      id: 100,
+      project_id: 1,
+      site_id: 1,
+      type: 'manual'
+    };
+
+    mockClient.query
+      .mockResolvedValueOnce({}) // BEGIN
+      .mockResolvedValueOnce({}) // pg_advisory_xact_lock
+      .mockResolvedValueOnce({ rows: [{ existing_links: '0', existing_articles: '0' }] })
+      .mockResolvedValueOnce({ rows: [mockSite] }) // Get site FOR UPDATE
+      .mockResolvedValueOnce({ rows: [existingPlacement] }) // Found existing placement
+      .mockResolvedValueOnce({ rows: [{ id: 5 }] }) // Link already in placement!
+      .mockResolvedValueOnce({}) // UPDATE sites used_links
+      .mockResolvedValueOnce({}) // UPDATE placement status
+      .mockResolvedValueOnce({}); // COMMIT
+
+    const result = await placementService.createPlacement({
+      site_id: 1,
+      project_id: 1,
+      link_ids: [1],
+      userId: 1
+    });
+
+    expect(result).toBeDefined();
+    expect(result.id).toBe(100);
+  });
+
+  it('should skip article already in placement', async () => {
+    const existingPlacement = {
+      id: 100,
+      project_id: 1,
+      site_id: 1,
+      type: 'manual'
+    };
+
+    mockClient.query
+      .mockResolvedValueOnce({}) // BEGIN
+      .mockResolvedValueOnce({}) // pg_advisory_xact_lock
+      .mockResolvedValueOnce({ rows: [{ existing_links: '0', existing_articles: '0' }] })
+      .mockResolvedValueOnce({ rows: [mockSite] }) // Get site FOR UPDATE
+      .mockResolvedValueOnce({ rows: [existingPlacement] }) // Found existing placement
+      .mockResolvedValueOnce({ rows: [{ id: 5 }] }) // Article already in placement!
+      .mockResolvedValueOnce({}) // UPDATE sites used_articles
+      // WordPress publishing section - article_ids is not empty so it checks site details
+      .mockResolvedValueOnce({ rows: [] }) // No site details (empty) - skips WP publishing
+      .mockResolvedValueOnce({}); // COMMIT
+
+    const result = await placementService.createPlacement({
+      site_id: 1,
+      project_id: 1,
+      article_ids: [1],
+      userId: 1
+    });
+
+    expect(result).toBeDefined();
+    expect(result.id).toBe(100);
+  });
+});
+
+describe('createPlacement - WordPress Publishing', () => {
+  const wordpressService = require('../../backend/services/wordpress.service');
+
+  beforeEach(() => {
+    mockQuery.mockReset();
+    mockClient.query.mockReset();
+    mockClient.release.mockReset();
+    mockPool.connect.mockResolvedValue(mockClient);
+    jest.clearAllMocks();
+  });
+
+  const mockSite = {
+    id: 1,
+    max_links: 10,
+    used_links: 2,
+    max_articles: 5,
+    used_articles: 1,
+    site_url: 'https://wordpress-site.com',
+    api_key: 'api_wp123'
+  };
+
+  const mockArticle = {
+    id: 1,
+    usage_count: 0,
+    usage_limit: 1,
+    status: 'active'
+  };
+
+  it('should publish article to WordPress successfully', async () => {
+    wordpressService.publishArticle = jest.fn().mockResolvedValue({
+      success: true,
+      post_id: 456
+    });
+
+    mockClient.query
+      .mockResolvedValueOnce({}) // BEGIN
+      .mockResolvedValueOnce({}) // pg_advisory_xact_lock
+      .mockResolvedValueOnce({ rows: [{ existing_links: '0', existing_articles: '0' }] })
+      .mockResolvedValueOnce({ rows: [mockSite] }) // Get site FOR UPDATE
+      .mockResolvedValueOnce({ rows: [] }) // No existing placement
+      .mockResolvedValueOnce({ rows: [{ id: 1 }] }) // INSERT placement RETURNING
+      .mockResolvedValueOnce({ rows: [] }) // Check existing article in placement
+      .mockResolvedValueOnce({ rows: [mockArticle] }) // Get article FOR UPDATE
+      .mockResolvedValueOnce({}) // INSERT placement_content
+      .mockResolvedValueOnce({}) // UPDATE project_articles usage_count
+      .mockResolvedValueOnce({}) // UPDATE sites used_articles
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            site_url: 'https://wordpress-site.com',
+            api_key: 'api_wp123'
+          }
+        ]
+      }) // Get site details for WordPress
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 1,
+            title: 'Test Article',
+            content: 'Article content',
+            slug: 'test-article'
+          }
+        ]
+      }) // Get article details
+      .mockResolvedValueOnce({}) // UPDATE placements with wordpress_post_id
+      .mockResolvedValueOnce({}); // COMMIT
+
+    const result = await placementService.createPlacement({
+      site_id: 1,
+      project_id: 1,
+      article_ids: [1],
+      userId: 1
+    });
+
+    expect(result).toBeDefined();
+    expect(wordpressService.publishArticle).toHaveBeenCalledWith(
+      'https://wordpress-site.com',
+      'api_wp123',
+      expect.objectContaining({
+        title: 'Test Article',
+        content: 'Article content',
+        slug: 'test-article'
+      })
+    );
+  });
+
+  it('should rollback when all articles fail to publish', async () => {
+    wordpressService.publishArticle = jest.fn().mockRejectedValue(
+      new Error('WordPress API error')
+    );
+
+    mockClient.query
+      .mockResolvedValueOnce({}) // BEGIN
+      .mockResolvedValueOnce({}) // pg_advisory_xact_lock
+      .mockResolvedValueOnce({ rows: [{ existing_links: '0', existing_articles: '0' }] })
+      .mockResolvedValueOnce({ rows: [mockSite] }) // Get site FOR UPDATE
+      .mockResolvedValueOnce({ rows: [] }) // No existing placement
+      .mockResolvedValueOnce({ rows: [{ id: 1 }] }) // INSERT placement RETURNING
+      .mockResolvedValueOnce({ rows: [] }) // Check existing article in placement
+      .mockResolvedValueOnce({ rows: [mockArticle] }) // Get article FOR UPDATE
+      .mockResolvedValueOnce({}) // INSERT placement_content
+      .mockResolvedValueOnce({}) // UPDATE project_articles usage_count
+      .mockResolvedValueOnce({}) // UPDATE sites used_articles
+      .mockResolvedValueOnce({
+        rows: [{ site_url: 'https://wordpress-site.com', api_key: 'api_wp123' }]
+      }) // Get site details
+      .mockResolvedValueOnce({
+        rows: [{ id: 1, title: 'Test Article', content: 'Content', slug: 'test' }]
+      }) // Get article details
+      .mockResolvedValueOnce({}); // ROLLBACK
+
+    await expect(
+      placementService.createPlacement({
+        site_id: 1,
+        project_id: 1,
+        article_ids: [1],
+        userId: 1
+      })
+    ).rejects.toThrow(/failed to publish to WordPress/i);
+
+    // Verify rollback was called
+    const calls = mockClient.query.mock.calls.map(c => c[0] || c);
+    expect(calls.some(c => typeof c === 'string' && c.includes('ROLLBACK'))).toBe(true);
+  });
+
+  it('should handle article not found in database during WordPress publishing', async () => {
+    // When article not found in DB during WP publishing, the loop just skips it
+    // (articleResult.rows.length > 0 is false so block is skipped)
+    // Neither failedCount nor publishedCount is incremented, so placement succeeds
+    mockClient.query
+      .mockResolvedValueOnce({}) // BEGIN
+      .mockResolvedValueOnce({}) // pg_advisory_xact_lock
+      .mockResolvedValueOnce({ rows: [{ existing_links: '0', existing_articles: '0' }] })
+      .mockResolvedValueOnce({ rows: [mockSite] }) // Get site FOR UPDATE
+      .mockResolvedValueOnce({ rows: [] }) // No existing placement
+      .mockResolvedValueOnce({ rows: [{ id: 1 }] }) // INSERT placement RETURNING
+      .mockResolvedValueOnce({ rows: [] }) // Check existing article in placement
+      .mockResolvedValueOnce({ rows: [mockArticle] }) // Get article FOR UPDATE
+      .mockResolvedValueOnce({}) // INSERT placement_content
+      .mockResolvedValueOnce({}) // UPDATE project_articles usage_count
+      .mockResolvedValueOnce({}) // UPDATE sites used_articles
+      .mockResolvedValueOnce({
+        rows: [{ site_url: 'https://wordpress-site.com', api_key: 'api_wp123' }]
+      }) // Get site details
+      .mockResolvedValueOnce({ rows: [] }) // Article not found during WP publishing - loop skips
+      .mockResolvedValueOnce({}); // COMMIT - neither failed nor published, so commits
+
+    // When article is not found in DB for WordPress publishing, the loop just skips it
+    // The placement still succeeds since no error is thrown
+    const result = await placementService.createPlacement({
+      site_id: 1,
+      project_id: 1,
+      article_ids: [1],
+      userId: 1
+    });
+
+    expect(result).toBeDefined();
+    expect(result.id).toBe(1);
+  });
+});
+
+describe('createPlacement - Article Unique Constraint', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+    mockClient.query.mockReset();
+    mockClient.release.mockReset();
+    mockPool.connect.mockResolvedValue(mockClient);
+  });
+
+  const mockSite = {
+    id: 1,
+    max_links: 10,
+    used_links: 2,
+    max_articles: 5,
+    used_articles: 1,
+    site_url: 'https://example.com',
+    api_key: 'api_test123'
+  };
+
+  it('should handle article unique constraint violation (race condition)', async () => {
+    const mockArticle = {
+      id: 1,
+      usage_count: 0,
+      usage_limit: 1,
+      status: 'active'
+    };
+
+    const uniqueViolationError = new Error('duplicate key value');
+    uniqueViolationError.code = '23505';
+    uniqueViolationError.constraint = 'placement_content_article_unique';
+
+    mockClient.query
+      .mockResolvedValueOnce({}) // BEGIN
+      .mockResolvedValueOnce({}) // pg_advisory_xact_lock
+      .mockResolvedValueOnce({ rows: [{ existing_links: '0', existing_articles: '0' }] })
+      .mockResolvedValueOnce({ rows: [mockSite] }) // Get site FOR UPDATE
+      .mockResolvedValueOnce({ rows: [] }) // No existing placement
+      .mockResolvedValueOnce({ rows: [{ id: 1 }] }) // INSERT placement RETURNING
+      .mockResolvedValueOnce({ rows: [] }) // Check existing article in placement
+      .mockResolvedValueOnce({ rows: [mockArticle] }) // Get article FOR UPDATE
+      .mockRejectedValueOnce(uniqueViolationError) // INSERT placement_content - race condition!
+      .mockResolvedValueOnce({}) // UPDATE sites used_articles
+      // WordPress publishing section - site details returns empty so skips publishing
+      .mockResolvedValueOnce({ rows: [] }) // No site details - skip WP publishing
+      .mockResolvedValueOnce({}); // COMMIT
+
+    // Should not throw - race condition is handled gracefully
+    const result = await placementService.createPlacement({
+      site_id: 1,
+      project_id: 1,
+      article_ids: [1],
+      userId: 1
+    });
+
+    expect(result).toBeDefined();
+    expect(result.id).toBe(1);
+  });
+});

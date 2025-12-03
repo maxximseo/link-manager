@@ -7,6 +7,7 @@ const logger = require('../config/logger');
 const { initAutoRenewalCron } = require('./auto-renewal.cron');
 const { initScheduledPlacementsCron } = require('./scheduled-placements.cron');
 const { scheduleLogCleanup } = require('./cleanup-logs.cron');
+const { initDatabaseBackupCron } = require('./database-backup.cron');
 
 /**
  * Initialize all cron jobs
@@ -23,6 +24,9 @@ function initCronJobs() {
 
     // Initialize log cleanup cron (daily at 03:00)
     scheduleLogCleanup();
+
+    // Initialize database backup cron (every 12 hours at 00:00 and 12:00 UTC)
+    initDatabaseBackupCron();
 
     logger.info('All cron jobs initialized successfully');
   } catch (error) {
