@@ -370,20 +370,6 @@ async function exportPlacements(format) {
 
 // Helper functions
 // escapeHtml() is provided by security.js (loaded first)
-
-function showSuccess(message) {
-    alert(message);
-}
-
-function showError(message) {
-    alert(message);
-}
-
+// showAlert() is provided by security.js - use showAlert(message, 'success') or showAlert(message, 'danger')
 // getToken() is provided by auth.js (loaded first)
-
-// Logout function
-function logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = '/index.html';
-}
+// logout() is provided by auth.js (loaded first)
