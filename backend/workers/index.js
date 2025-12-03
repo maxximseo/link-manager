@@ -23,7 +23,7 @@ class WorkerManager {
     this.isHealthy = false;
   }
 
-  async initialize() {
+  initialize() {
     if (!queueService) {
       logger.warn('Queue service not available - Redis/Valkey not configured');
       return {
