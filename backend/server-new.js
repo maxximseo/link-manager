@@ -26,7 +26,7 @@ let workerManager;
 try {
   const { getWorkerManager } = require('./workers');
   workerManager = getWorkerManager();
-} catch (error) {
+} catch (_error) {
   logger.warn('Queue workers not available - running without queue support');
 }
 
