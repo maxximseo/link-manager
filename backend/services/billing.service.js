@@ -872,7 +872,10 @@ const renewPlacement = async (placementId, userId, isAutoRenewal = false) => {
     // CRITICAL FIX (BUG #12): Recalculate discount tier after renewal
     // User may qualify for higher tier after total_spent increase from renewal
     const newTier = await calculateDiscountTier(newTotalSpent);
-    if (newTier.discount !== personalDiscount) {
+    // CRITICAL FIX: Compare with actual current_discount from locked user row, not personalDiscount
+    // personalDiscount could be 0 for own-site renewals, but current_discount is the real value
+    const currentUserDiscount = parseFloat(placement.current_discount) || 0;
+    if (newTier.discount !== currentUserDiscount) {
       await client.query(
         'UPDATE users SET current_discount = $1 WHERE id = $2',
         [newTier.discount, userId]
