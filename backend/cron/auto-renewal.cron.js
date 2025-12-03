@@ -45,35 +45,14 @@ async function processAutoRenewals() {
             placementId: placement.id,
             userId: placement.user_id,
             expiresAt: placement.expires_at,
-            renewalPrice: placement.renewal_price,
-            userBalance: placement.balance
+            renewalPrice: placement.renewal_price
           });
 
-          // Check if user has sufficient balance
-          if (parseFloat(placement.balance) < parseFloat(placement.renewal_price)) {
-            logger.warn('Insufficient balance for auto-renewal', {
-              placementId: placement.id,
-              userId: placement.user_id,
-              required: placement.renewal_price,
-              available: placement.balance
-            });
+          // CRITICAL FIX: Don't check stale balance here!
+          // renewPlacement() will check balance with FOR UPDATE lock for thread safety.
+          // If balance is insufficient, it will throw an error which we catch below.
 
-            // Send notification about failed auto-renewal
-            await query(`
-              INSERT INTO notifications (user_id, type, title, message)
-              VALUES ($1, 'auto_renewal_failed', $2, $3)
-            `, [
-              placement.user_id,
-              'Автопродление не удалось',
-              `Не удалось автоматически продлить размещение #${placement.id} из-за недостаточного баланса. ` +
-              `Требуется: $${placement.renewal_price}, Доступно: $${placement.balance}. ` +
-              `Пожалуйста, пополните баланс.`
-            ]);
-
-            return { success: false, reason: 'insufficient_balance' };
-          }
-
-          // Renew the placement
+          // Renew the placement (handles balance check with proper locking)
           const renewalResult = await billingService.renewPlacement(
             placement.id,
             placement.user_id,
