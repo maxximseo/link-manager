@@ -224,24 +224,15 @@ function renderTransactions(transactions) {
     transactions.forEach(tx => {
         const row = document.createElement('tr');
 
+        // Use shared badge-utils functions
         const amount = parseFloat(tx.amount);
-        const amountClass = amount > 0 ? 'text-success' : 'text-danger';
+        const amountClass = getAmountColorClass(amount);
         const amountPrefix = amount > 0 ? '+' : '';
-
-        // Transaction type badges
-        const typeBadges = {
-            'deposit': '<span class="badge bg-success">Пополнение</span>',
-            'purchase': '<span class="badge bg-primary">Покупка</span>',
-            'renewal': '<span class="badge bg-info">Продление</span>',
-            'auto_renewal': '<span class="badge bg-info">Авто-продление</span>',
-            'refund': '<span class="badge bg-warning">Возврат</span>',
-            'admin_adjustment': '<span class="badge bg-secondary">Корректировка</span>'
-        };
 
         row.innerHTML = `
             <td>#${tx.id}</td>
             <td>${new Date(tx.created_at).toLocaleString('ru-RU')}</td>
-            <td>${typeBadges[tx.type] || tx.type}</td>
+            <td>${getTransactionTypeBadge(tx.type)}</td>
             <td class="${amountClass} fw-bold">${amountPrefix}$${Math.abs(amount).toFixed(2)}</td>
             <td>$${parseFloat(tx.balance_after).toFixed(2)}</td>
             <td>${tx.description || '—'}</td>
