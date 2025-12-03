@@ -167,6 +167,24 @@ function getCfColorClass(cf) {
 }
 
 // ============================================
+// Discount Tier Names
+// ============================================
+
+const DISCOUNT_TIER_NAMES = {
+    0: 'Стандарт',
+    10: 'Bronze',
+    15: 'Silver',
+    20: 'Gold',
+    25: 'Platinum',
+    30: 'Diamond'
+};
+
+function getDiscountTierName(discount) {
+    const discountInt = parseInt(discount) || 0;
+    return DISCOUNT_TIER_NAMES[discountInt] || 'Стандарт';
+}
+
+// ============================================
 // Discount Tier Status
 // ============================================
 
