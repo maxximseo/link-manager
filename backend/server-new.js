@@ -174,7 +174,13 @@ const serverPromise = startServer().then(s => {
 // Handle uncaught exceptions
 process.on('uncaughtException', error => {
   logger.error('Uncaught Exception:', error);
-  process.exit(1);
+  // Send to Sentry before exit
+  if (process.env.SENTRY_DSN) {
+    Sentry.captureException(error);
+    Sentry.close(2000).then(() => process.exit(1));
+  } else {
+    process.exit(1);
+  }
 });
 
 process.on('unhandledRejection', (reason, promise) => {
