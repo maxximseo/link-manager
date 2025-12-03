@@ -4,7 +4,6 @@
  */
 
 const wordpressService = require('../services/wordpress.service');
-const logger = require('../config/logger');
 const { handleError, handleSmartError } = require('../utils/errorHandler');
 
 // Get content by API key (for WordPress plugin)

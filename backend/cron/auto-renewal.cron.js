@@ -4,7 +4,7 @@
  */
 
 const cron = require('node-cron');
-const { query, pool } = require('../config/database');
+const { query } = require('../config/database');
 const logger = require('../config/logger');
 const billingService = require('../services/billing.service');
 
