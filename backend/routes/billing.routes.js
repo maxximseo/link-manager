@@ -83,7 +83,7 @@ router.get('/balance', authMiddleware, async (req, res) => {
 router.post(
   '/deposit',
   authMiddleware,
-  financialLimiter,
+  depositLimiter, // Stricter rate limit for deposits (5/min)
   [
     body('amount')
       .isFloat({ min: 0.01, max: 10000 })
