@@ -20,7 +20,7 @@ const resetMocks = () => {
 };
 
 // Helper to setup cache hit
-const setupCacheHit = (value) => {
+const setupCacheHit = value => {
   mockGet.mockResolvedValueOnce(value);
 };
 

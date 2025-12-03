@@ -1,5 +1,5 @@
 /**
- * Placement controller  
+ * Placement controller
  * Handles placement-related business logic
  */
 
@@ -20,7 +20,10 @@ const getPlacements = async (req, res) => {
 
     const { project_id, status } = req.query;
 
-    const result = await placementService.getUserPlacements(req.user.id, page, limit, { project_id, status });
+    const result = await placementService.getUserPlacements(req.user.id, page, limit, {
+      project_id,
+      status
+    });
 
     res.json(result);
   } catch (error) {
@@ -46,7 +49,8 @@ const getPlacementsBySite = async (req, res) => {
 
     // Get placements with financial information
     const { query } = require('../config/database');
-    const result = await query(`
+    const result = await query(
+      `
       SELECT
         p.id,
         p.user_id,
@@ -64,7 +68,9 @@ const getPlacementsBySite = async (req, res) => {
       LEFT JOIN projects proj ON p.project_id = proj.id
       WHERE p.site_id = $1 AND s.user_id = $2
       ORDER BY p.purchased_at DESC
-    `, [siteId, userId]);
+    `,
+      [siteId, userId]
+    );
 
     // Calculate totals
     let totalRefund = 0;
@@ -97,13 +103,13 @@ const getPlacement = async (req, res) => {
   try {
     const placementId = req.params.id;
     const userId = req.user.id;
-    
+
     const placement = await placementService.getPlacementById(placementId, userId);
-    
+
     if (!placement) {
       return res.status(404).json({ error: 'Placement not found' });
     }
-    
+
     res.json(placement);
   } catch (error) {
     logger.error('Get placement error:', error);
@@ -115,14 +121,14 @@ const getPlacement = async (req, res) => {
 const createBatchPlacement = async (req, res) => {
   try {
     const { project_id, site_ids = [], link_ids = [], article_ids = [] } = req.body;
-    
+
     // Input validation
     if (!project_id || !site_ids || !Array.isArray(site_ids) || site_ids.length === 0) {
       return res.status(400).json({
         error: 'Invalid input: project_id and non-empty site_ids array are required'
       });
     }
-    
+
     if (!Array.isArray(link_ids) || !Array.isArray(article_ids)) {
       return res.status(400).json({
         error: 'Invalid input: link_ids and article_ids must be arrays'
@@ -157,35 +163,35 @@ const createBatchPlacement = async (req, res) => {
         error: `Maximum ${MAX_ARTICLES_PER_BATCH} articles per batch operation`
       });
     }
-    
+
     // Validate project existence and ownership BEFORE database operations
     const { query } = require('../config/database');
-    const projectCheck = await query(
-      'SELECT id FROM projects WHERE id = $1 AND user_id = $2',
-      [project_id, req.user.id]
-    );
-    
+    const projectCheck = await query('SELECT id FROM projects WHERE id = $1 AND user_id = $2', [
+      project_id,
+      req.user.id
+    ]);
+
     if (projectCheck.rows.length === 0) {
       return res.status(404).json({
         error: `Project ${project_id} not found or access denied`
       });
     }
-    
+
     // Validate sites existence and ownership BEFORE database operations
-    const sitesCheck = await query(
-      'SELECT id FROM sites WHERE id = ANY($1) AND user_id = $2',
-      [site_ids, req.user.id]
-    );
-    
+    const sitesCheck = await query('SELECT id FROM sites WHERE id = ANY($1) AND user_id = $2', [
+      site_ids,
+      req.user.id
+    ]);
+
     const validSiteIds = sitesCheck.rows.map(row => row.id);
     const invalidSiteIds = site_ids.filter(id => !validSiteIds.includes(id));
-    
+
     if (invalidSiteIds.length > 0) {
       return res.status(400).json({
         error: `Invalid or inaccessible site IDs: ${invalidSiteIds.join(', ')}`
       });
     }
-    
+
     // Distribute links and articles across sites
     // Strategy: Round-robin distribution
     // Example: 2 sites, 2 links -> Site1 gets Link1, Site2 gets Link2
@@ -349,7 +355,8 @@ const createBatchPlacementAsync = async (req, res) => {
     const placementQueue = queueService.createQueue('placement');
     if (!placementQueue) {
       return res.status(503).json({
-        error: 'Background job processing unavailable. Please use /api/placements/batch/create instead.',
+        error:
+          'Background job processing unavailable. Please use /api/placements/batch/create instead.',
         fallback_endpoint: '/api/placements/batch/create'
       });
     }
@@ -358,24 +365,28 @@ const createBatchPlacementAsync = async (req, res) => {
     const jobId = crypto.randomBytes(16).toString('hex');
 
     // Add job to queue
-    const job = await placementQueue.add('batch-placement', {
-      jobId,
-      userId: req.user.id,
-      project_id,
-      site_ids,
-      link_ids,
-      article_ids,
-      createdAt: new Date().toISOString()
-    }, {
-      jobId,
-      attempts: 3,
-      backoff: {
-        type: 'exponential',
-        delay: 5000
+    const job = await placementQueue.add(
+      'batch-placement',
+      {
+        jobId,
+        userId: req.user.id,
+        project_id,
+        site_ids,
+        link_ids,
+        article_ids,
+        createdAt: new Date().toISOString()
       },
-      removeOnComplete: false, // Keep completed jobs for status checks
-      removeOnFail: false
-    });
+      {
+        jobId,
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 5000
+        },
+        removeOnComplete: false, // Keep completed jobs for status checks
+        removeOnFail: false
+      }
+    );
 
     // Estimate time (conservative: 2-5 seconds per site)
     const estimatedSeconds = site_ids.length * 3;
@@ -393,7 +404,8 @@ const createBatchPlacementAsync = async (req, res) => {
       job_id: jobId,
       status: 'queued',
       total_sites: site_ids.length,
-      estimated_time: estimatedMinutes > 1 ? `${estimatedMinutes} minutes` : `${estimatedSeconds} seconds`,
+      estimated_time:
+        estimatedMinutes > 1 ? `${estimatedMinutes} minutes` : `${estimatedSeconds} seconds`,
       status_endpoint: `/api/placements/job/${jobId}`,
       cancel_endpoint: `/api/placements/job/${jobId}/cancel`
     });
@@ -524,7 +536,7 @@ const publishScheduledPlacement = async (req, res) => {
     if (error.message.includes('Unauthorized')) {
       return res.status(403).json({ error: 'Unauthorized to publish this placement' });
     }
-    if (error.message.includes('not \'scheduled\'')) {
+    if (error.message.includes("not 'scheduled'")) {
       return res.status(400).json({ error: error.message });
     }
 
@@ -579,7 +591,6 @@ const batchDeletePlacements = async (req, res) => {
         durationMs: result.durationMs
       }
     });
-
   } catch (error) {
     logger.error('Batch delete placements error:', error);
     res.status(500).json({ error: 'Failed to batch delete placements', details: error.message });

@@ -132,11 +132,13 @@ describe('Placement Service', () => {
   describe('getStatistics', () => {
     it('should return placement statistics', async () => {
       mockQuery.mockResolvedValueOnce({
-        rows: [{
-          total_placements: '10',
-          total_links_placed: '7',
-          total_articles_placed: '3'
-        }]
+        rows: [
+          {
+            total_placements: '10',
+            total_links_placed: '7',
+            total_articles_placed: '3'
+          }
+        ]
       });
 
       const result = await placementService.getStatistics(1);

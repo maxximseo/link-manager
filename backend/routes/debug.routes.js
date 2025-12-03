@@ -17,7 +17,7 @@ router.use(adminMiddleware);
 router.get('/redis-test', async (req, res) => {
   try {
     const Redis = require('ioredis');
-    
+
     const config = {
       host: process.env.REDIS_HOST || 'localhost',
       port: process.env.REDIS_PORT || 6379,
@@ -30,39 +30,42 @@ router.get('/redis-test', async (req, res) => {
       maxRetriesPerRequest: 10, // Increased from 1
       retryDelayOnFailover: 100,
       enableReadyCheck: false,
-      
+
       // TLS/SSL configuration for DigitalOcean Valkey
-      tls: process.env.REDIS_HOST && process.env.REDIS_HOST.includes('digitalocean.com') ? {
-        rejectUnauthorized: false
-      } : undefined,
-      
+      tls:
+        process.env.REDIS_HOST && process.env.REDIS_HOST.includes('digitalocean.com')
+          ? {
+              rejectUnauthorized: false
+            }
+          : undefined,
+
       // Connection pooling
       family: 4,
       keepAlive: true
     };
-    
-    logger.info('Testing Redis connection', { 
+
+    logger.info('Testing Redis connection', {
       host: config.host,
       port: config.port,
       hasUser: !!config.username,
       hasPassword: !!config.password,
       db: config.db
     });
-    
+
     const redis = new Redis(config);
-    
+
     // Test connection
     const start = Date.now();
     const result = await redis.ping();
     const duration = Date.now() - start;
-    
+
     // Get server info
     const info = await redis.info();
     const version = info.split('\n').find(line => line.startsWith('redis_version'));
     const clients = info.split('\n').find(line => line.startsWith('connected_clients'));
-    
+
     await redis.disconnect();
-    
+
     res.json({
       success: true,
       ping: result,
@@ -78,14 +81,13 @@ router.get('/redis-test', async (req, res) => {
         db: config.db
       }
     });
-    
   } catch (error) {
-    logger.error('Redis connection test failed', { 
+    logger.error('Redis connection test failed', {
       error: error.message,
       code: error.code,
       stack: error.stack
     });
-    
+
     res.status(500).json({
       success: false,
       error: error.message,

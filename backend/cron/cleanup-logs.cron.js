@@ -58,7 +58,6 @@ const cleanupOldLogs = async () => {
       // Silent fail - cleanup happened, just couldn't log it
       logger.debug('Could not log cleanup stats:', auditError.message);
     }
-
   } catch (error) {
     logger.error('Failed to cleanup old logs:', error);
     throw error;
@@ -72,16 +71,20 @@ const cleanupOldLogs = async () => {
 const scheduleLogCleanup = () => {
   // Cron format: second minute hour day month weekday
   // '0 3 * * *' = Every day at 03:00 AM
-  const job = cron.schedule('0 3 * * *', async () => {
-    try {
-      await cleanupOldLogs();
-    } catch (error) {
-      logger.error('Scheduled log cleanup failed:', error);
+  const job = cron.schedule(
+    '0 3 * * *',
+    async () => {
+      try {
+        await cleanupOldLogs();
+      } catch (error) {
+        logger.error('Scheduled log cleanup failed:', error);
+      }
+    },
+    {
+      scheduled: true,
+      timezone: 'UTC' // Use UTC for consistency
     }
-  }, {
-    scheduled: true,
-    timezone: "UTC" // Use UTC for consistency
-  });
+  );
 
   logger.info('Log cleanup cron job scheduled (daily at 03:00 UTC)');
 

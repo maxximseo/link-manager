@@ -40,7 +40,7 @@ async function processAutoRenewals() {
       const chunk = placements.slice(i, i + CONCURRENCY_LIMIT);
 
       const chunkResults = await Promise.allSettled(
-        chunk.map(async (placement) => {
+        chunk.map(async placement => {
           logger.info('Processing auto-renewal', {
             placementId: placement.id,
             userId: placement.user_id,
@@ -84,7 +84,8 @@ async function processAutoRenewals() {
         } else {
           // Promise rejected - error occurred
           const error = result.reason;
-          const isInsufficientBalance = error.message && error.message.includes('Insufficient balance');
+          const isInsufficientBalance =
+            error.message && error.message.includes('Insufficient balance');
 
           logger.error('Auto-renewal failed for placement', {
             placementId: placement.id,
@@ -103,14 +104,13 @@ async function processAutoRenewals() {
             ? `Не удалось автоматически продлить размещение #${placement.id} из-за недостаточного баланса. Пожалуйста, пополните баланс.`
             : `Произошла ошибка при автопродлении размещения #${placement.id}. Пожалуйста, свяжитесь с поддержкой.`;
 
-          await query(`
+          await query(
+            `
             INSERT INTO notifications (user_id, type, title, message)
             VALUES ($1, 'auto_renewal_failed', $2, $3)
-          `, [
-            placement.user_id,
-            notificationTitle,
-            notificationMessage
-          ]);
+          `,
+            [placement.user_id, notificationTitle, notificationMessage]
+          );
 
           failCount++;
         }
@@ -124,7 +124,6 @@ async function processAutoRenewals() {
     });
 
     return { total: placements.length, success: successCount, failed: failCount };
-
   } catch (error) {
     logger.error('Auto-renewal processing failed', {
       error: error.message,
@@ -177,14 +176,16 @@ async function sendExpiryReminders() {
         let paramIndex = 1;
 
         for (const placement of result.rows) {
-          values.push(`($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2}, $${paramIndex + 3}, $${paramIndex + 4})`);
+          values.push(
+            `($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2}, $${paramIndex + 3}, $${paramIndex + 4})`
+          );
           params.push(
             placement.user_id,
             'placement_expiring',
             'Размещение скоро истекает',
             `Размещение #${placement.id} на сайте "${placement.site_name}" истекает через ${interval.message}. ` +
-            `Проект: "${placement.project_name}". ` +
-            `${placement.auto_renewal ? 'Автопродление включено.' : 'Вы можете продлить размещение вручную.'}`,
+              `Проект: "${placement.project_name}". ` +
+              `${placement.auto_renewal ? 'Автопродление включено.' : 'Вы можете продлить размещение вручную.'}`,
             JSON.stringify({
               placement_id: placement.id,
               days_remaining: interval.days
@@ -193,10 +194,13 @@ async function sendExpiryReminders() {
           paramIndex += 5;
         }
 
-        await query(`
+        await query(
+          `
           INSERT INTO notifications (user_id, type, title, message, metadata)
           VALUES ${values.join(', ')}
-        `, params);
+        `,
+          params
+        );
 
         totalSent += result.rows.length;
       }
@@ -206,7 +210,6 @@ async function sendExpiryReminders() {
 
     logger.info('Expiry reminders sent', { total: totalSent });
     return { total: totalSent };
-
   } catch (error) {
     logger.error('Failed to send expiry reminders', {
       error: error.message,

@@ -18,14 +18,17 @@ async function processScheduledPlacements() {
     const now = new Date();
 
     // Find all scheduled placements that are due for publication
-    const result = await query(`
+    const result = await query(
+      `
       SELECT p.*, s.api_key, s.site_url, s.site_name
       FROM placements p
       JOIN sites s ON p.site_id = s.id
       WHERE p.status = 'scheduled'
         AND p.scheduled_publish_date <= $1
       ORDER BY p.scheduled_publish_date ASC
-    `, [now]);
+    `,
+      [now]
+    );
 
     const placements = result.rows;
     logger.info(`Found ${placements.length} scheduled placements due for publication`);
@@ -35,7 +38,7 @@ async function processScheduledPlacements() {
     const CONCURRENCY_LIMIT = 5; // Limit parallel WordPress HTTP calls
 
     // Helper function to process a single placement
-    const processPlacement = async (placement) => {
+    const processPlacement = async placement => {
       const placementClient = await pool.connect();
       try {
         logger.info('Processing scheduled placement', {
@@ -48,7 +51,8 @@ async function processScheduledPlacements() {
         await placementClient.query('BEGIN');
 
         // Get content
-        const contentResult = await placementClient.query(`
+        const contentResult = await placementClient.query(
+          `
           SELECT
             pc.*,
             pl.url, pl.anchor_text,
@@ -57,7 +61,9 @@ async function processScheduledPlacements() {
           LEFT JOIN project_links pl ON pc.link_id = pl.id
           LEFT JOIN project_articles pa ON pc.article_id = pa.id
           WHERE pc.placement_id = $1
-        `, [placement.id]);
+        `,
+          [placement.id]
+        );
 
         const content = contentResult.rows[0];
 
@@ -84,29 +90,34 @@ async function processScheduledPlacements() {
           );
 
           // Update placement status
-          await placementClient.query(`
+          await placementClient.query(
+            `
             UPDATE placements
             SET status = 'placed',
                 published_at = NOW(),
                 wordpress_post_id = $1,
                 updated_at = NOW()
             WHERE id = $2
-          `, [publishResult.post_id, placement.id]);
+          `,
+            [publishResult.post_id, placement.id]
+          );
 
           logger.info('Article published successfully', {
             placementId: placement.id,
             wordpressPostId: publishResult.post_id
           });
-
         } else if (placement.type === 'link' && content.link_id) {
           // For links, just mark as placed (WordPress plugin will display them)
-          await placementClient.query(`
+          await placementClient.query(
+            `
             UPDATE placements
             SET status = 'placed',
                 published_at = NOW(),
                 updated_at = NOW()
             WHERE id = $1
-          `, [placement.id]);
+          `,
+            [placement.id]
+          );
 
           logger.info('Link placement marked as placed', {
             placementId: placement.id
@@ -114,30 +125,41 @@ async function processScheduledPlacements() {
         }
 
         // Send notification to user
-        await placementClient.query(`
+        await placementClient.query(
+          `
           INSERT INTO notifications (user_id, type, title, message)
           VALUES ($1, 'placement_published', $2, $3)
-        `, [
-          placement.user_id,
-          'Размещение опубликовано',
-          `Запланированное размещение #${placement.id} на сайте "${placement.site_name}" успешно опубликовано.`
-        ]);
+        `,
+          [
+            placement.user_id,
+            'Размещение опубликовано',
+            `Запланированное размещение #${placement.id} на сайте "${placement.site_name}" успешно опубликовано.`
+          ]
+        );
 
         // Send notification to other admins (exclude placement owner to avoid duplicates)
-        await placementClient.query(`
+        await placementClient.query(
+          `
           INSERT INTO notifications (user_id, type, title, message, metadata)
           SELECT id, 'admin_placement_published', $1, $2, $3
           FROM users WHERE role = 'admin' AND id != $4
-        `, [
-          'Размещение опубликовано',
-          `Запланированное размещение #${placement.id} на сайте "${placement.site_name}" успешно опубликовано (${placement.type}).`,
-          JSON.stringify({ placementId: placement.id, type: placement.type, siteId: placement.site_id, siteName: placement.site_name, userId: placement.user_id }),
-          placement.user_id
-        ]);
+        `,
+          [
+            'Размещение опубликовано',
+            `Запланированное размещение #${placement.id} на сайте "${placement.site_name}" успешно опубликовано (${placement.type}).`,
+            JSON.stringify({
+              placementId: placement.id,
+              type: placement.type,
+              siteId: placement.site_id,
+              siteName: placement.site_name,
+              userId: placement.user_id
+            }),
+            placement.user_id
+          ]
+        );
 
         await placementClient.query('COMMIT');
         return { success: true };
-
       } catch (error) {
         await placementClient.query('ROLLBACK');
 
@@ -151,11 +173,14 @@ async function processScheduledPlacements() {
         // CRITICAL FIX (BUG #6): Refund money on scheduled placement failure
         try {
           // Get placement details for refund
-          const placementResult = await query(`
+          const placementResult = await query(
+            `
             SELECT final_price, user_id
             FROM placements
             WHERE id = $1
-          `, [placement.id]);
+          `,
+            [placement.id]
+          );
 
           const placementData = placementResult.rows[0];
           const refundAmount = parseFloat(placementData.final_price || 0);
@@ -164,7 +189,11 @@ async function processScheduledPlacements() {
             // Use atomic delete and refund operation from billing service
             // SYSTEM: Cron jobs run as 'admin' to perform automatic cleanup
             const billingService = require('../services/billing.service');
-            await billingService.deleteAndRefundPlacement(placement.id, placementData.user_id, 'admin');
+            await billingService.deleteAndRefundPlacement(
+              placement.id,
+              placementData.user_id,
+              'admin'
+            );
 
             logger.info('Scheduled placement failed - automatic refund issued', {
               placementId: placement.id,
@@ -173,36 +202,43 @@ async function processScheduledPlacements() {
             });
 
             // Send notification about failure WITH refund (no technical details for user)
-            await query(`
+            await query(
+              `
               INSERT INTO notifications (user_id, type, title, message)
               VALUES ($1, 'placement_failed_refund', $2, $3)
-            `, [
-              placement.user_id,
-              'Возврат средств',
-              `Размещение #${placement.id} на сайте "${placement.site_name}" не удалось опубликовать. ` +
-              `Сумма $${refundAmount.toFixed(2)} автоматически возвращена на ваш баланс.`
-            ]);
-
+            `,
+              [
+                placement.user_id,
+                'Возврат средств',
+                `Размещение #${placement.id} на сайте "${placement.site_name}" не удалось опубликовать. ` +
+                  `Сумма $${refundAmount.toFixed(2)} автоматически возвращена на ваш баланс.`
+              ]
+            );
           } else {
             // No refund needed (free placement or already refunded)
-            await query(`
+            await query(
+              `
               UPDATE placements
               SET status = 'failed',
                   updated_at = NOW()
               WHERE id = $1
-            `, [placement.id]);
+            `,
+              [placement.id]
+            );
 
             // Send notification about failure (no refund, no technical details)
-            await query(`
+            await query(
+              `
               INSERT INTO notifications (user_id, type, title, message)
               VALUES ($1, 'placement_failed', $2, $3)
-            `, [
-              placement.user_id,
-              'Ошибка публикации',
-              `Размещение #${placement.id} на сайте "${placement.site_name}" не удалось опубликовать. Обратитесь в поддержку.`
-            ]);
+            `,
+              [
+                placement.user_id,
+                'Ошибка публикации',
+                `Размещение #${placement.id} на сайте "${placement.site_name}" не удалось опубликовать. Обратитесь в поддержку.`
+              ]
+            );
           }
-
         } catch (refundError) {
           logger.error('Failed to refund scheduled placement', {
             placementId: placement.id,
@@ -213,12 +249,15 @@ async function processScheduledPlacements() {
 
           // Fallback: at least mark as failed
           try {
-            await query(`
+            await query(
+              `
               UPDATE placements
               SET status = 'failed',
                   updated_at = NOW()
               WHERE id = $1
-            `, [placement.id]);
+            `,
+              [placement.id]
+            );
           } catch (updateError) {
             logger.error('Failed to update placement status to failed', {
               placementId: placement.id,
@@ -228,7 +267,6 @@ async function processScheduledPlacements() {
         }
 
         return { success: false };
-
       } finally {
         placementClient.release();
       }
@@ -259,7 +297,6 @@ async function processScheduledPlacements() {
     });
 
     return { total: placements.length, success: successCount, failed: failCount };
-
   } catch (error) {
     logger.error('Scheduled placements processing failed', {
       error: error.message,

@@ -28,7 +28,8 @@ router.get('/', authMiddleware, async (req, res) => {
     }
 
     // Single optimized query with counts
-    const result = await query(`
+    const result = await query(
+      `
       SELECT
         n.*,
         (SELECT COUNT(*) FROM notifications WHERE user_id = $1) as total_count,
@@ -37,7 +38,9 @@ router.get('/', authMiddleware, async (req, res) => {
       WHERE n.user_id = $1 ${unreadOnly === 'true' ? 'AND n.read = false' : ''}
       ORDER BY n.created_at DESC
       LIMIT $2 OFFSET $3
-    `, [userId, parseInt(limit), parseInt(offset)]);
+    `,
+      [userId, parseInt(limit), parseInt(offset)]
+    );
 
     const total = parseInt(result.rows[0]?.total_count || 0);
     const unread = parseInt(result.rows[0]?.unread_count || 0);
@@ -61,7 +64,6 @@ router.get('/', authMiddleware, async (req, res) => {
     await cache.set(cacheKey, response, 60);
 
     res.json(response);
-
   } catch (error) {
     logger.error('Failed to get notifications', { userId: req.user.id, error: error.message });
     res.status(500).json({ error: 'Failed to get notifications' });
@@ -74,11 +76,14 @@ router.get('/', authMiddleware, async (req, res) => {
  */
 router.get('/unread-count', authMiddleware, async (req, res) => {
   try {
-    const result = await query(`
+    const result = await query(
+      `
       SELECT COUNT(*) as count
       FROM notifications
       WHERE user_id = $1 AND read = false
-    `, [req.user.id]);
+    `,
+      [req.user.id]
+    );
 
     res.json({
       success: true,
@@ -86,7 +91,6 @@ router.get('/unread-count', authMiddleware, async (req, res) => {
         count: parseInt(result.rows[0].count)
       }
     });
-
   } catch (error) {
     logger.error('Failed to get unread count', { userId: req.user.id, error: error.message });
     res.status(500).json({ error: 'Failed to get unread count' });
@@ -106,12 +110,15 @@ router.patch('/:id/read', authMiddleware, async (req, res) => {
     }
 
     // Verify ownership and mark as read
-    const result = await query(`
+    const result = await query(
+      `
       UPDATE notifications
       SET read = true
       WHERE id = $1 AND user_id = $2
       RETURNING *
-    `, [notificationId, req.user.id]);
+    `,
+      [notificationId, req.user.id]
+    );
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Notification not found' });
@@ -121,7 +128,6 @@ router.patch('/:id/read', authMiddleware, async (req, res) => {
       success: true,
       data: result.rows[0]
     });
-
   } catch (error) {
     logger.error('Failed to mark notification as read', {
       userId: req.user.id,
@@ -138,12 +144,15 @@ router.patch('/:id/read', authMiddleware, async (req, res) => {
  */
 router.patch('/mark-all-read', authMiddleware, async (req, res) => {
   try {
-    const result = await query(`
+    const result = await query(
+      `
       UPDATE notifications
       SET read = true
       WHERE user_id = $1 AND read = false
       RETURNING COUNT(*) as count
-    `, [req.user.id]);
+    `,
+      [req.user.id]
+    );
 
     // Clear notification cache for this user
     await cache.delPattern(`notifications:${req.user.id}:*`);
@@ -154,7 +163,6 @@ router.patch('/mark-all-read', authMiddleware, async (req, res) => {
         markedCount: parseInt(result.rowCount || 0)
       }
     });
-
   } catch (error) {
     logger.error('Failed to mark all notifications as read', {
       userId: req.user.id,
@@ -170,10 +178,13 @@ router.patch('/mark-all-read', authMiddleware, async (req, res) => {
  */
 router.delete('/all', authMiddleware, async (req, res) => {
   try {
-    const result = await query(`
+    const result = await query(
+      `
       DELETE FROM notifications
       WHERE user_id = $1
-    `, [req.user.id]);
+    `,
+      [req.user.id]
+    );
 
     // Clear notification cache for this user
     await cache.delPattern(`notifications:${req.user.id}:*`);
@@ -184,7 +195,6 @@ router.delete('/all', authMiddleware, async (req, res) => {
         deletedCount: result.rowCount || 0
       }
     });
-
   } catch (error) {
     logger.error('Failed to delete all notifications', {
       userId: req.user.id,
@@ -206,11 +216,14 @@ router.delete('/:id', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'Invalid notification ID' });
     }
 
-    const result = await query(`
+    const result = await query(
+      `
       DELETE FROM notifications
       WHERE id = $1 AND user_id = $2
       RETURNING id
-    `, [notificationId, req.user.id]);
+    `,
+      [notificationId, req.user.id]
+    );
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Notification not found' });
@@ -222,7 +235,6 @@ router.delete('/:id', authMiddleware, async (req, res) => {
         deletedId: result.rows[0].id
       }
     });
-
   } catch (error) {
     logger.error('Failed to delete notification', {
       userId: req.user.id,

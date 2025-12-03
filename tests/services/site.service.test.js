@@ -99,14 +99,16 @@ describe('Site Service', () => {
     describe('WordPress Sites', () => {
       it('should create WordPress site with API key', async () => {
         mockQuery.mockResolvedValueOnce({
-          rows: [{
-            id: 1,
-            site_url: 'https://wordpress.example.com',
-            site_type: 'wordpress',
-            api_key: 'api_abc123',
-            max_links: 10,
-            max_articles: 5
-          }]
+          rows: [
+            {
+              id: 1,
+              site_url: 'https://wordpress.example.com',
+              site_type: 'wordpress',
+              api_key: 'api_abc123',
+              max_links: 10,
+              max_articles: 5
+            }
+          ]
         });
 
         const result = await siteService.createSite({
@@ -126,14 +128,16 @@ describe('Site Service', () => {
 
       it('should auto-generate API key if not provided', async () => {
         mockQuery.mockResolvedValueOnce({
-          rows: [{
-            id: 1,
-            site_url: 'https://wordpress.example.com',
-            site_type: 'wordpress',
-            api_key: 'api_generated123',
-            max_links: 10,
-            max_articles: 5
-          }]
+          rows: [
+            {
+              id: 1,
+              site_url: 'https://wordpress.example.com',
+              site_type: 'wordpress',
+              api_key: 'api_generated123',
+              max_links: 10,
+              max_articles: 5
+            }
+          ]
         });
 
         const result = await siteService.createSite({
@@ -152,14 +156,16 @@ describe('Site Service', () => {
     describe('Static PHP Sites', () => {
       it('should create static_php site with null API key', async () => {
         mockQuery.mockResolvedValueOnce({
-          rows: [{
-            id: 1,
-            site_url: 'https://static.example.com',
-            site_type: 'static_php',
-            api_key: null,
-            max_links: 20,
-            max_articles: 0
-          }]
+          rows: [
+            {
+              id: 1,
+              site_url: 'https://static.example.com',
+              site_type: 'static_php',
+              api_key: null,
+              max_links: 20,
+              max_articles: 0
+            }
+          ]
         });
 
         const result = await siteService.createSite({
@@ -176,14 +182,16 @@ describe('Site Service', () => {
 
       it('should force max_articles to 0 for static sites', async () => {
         mockQuery.mockResolvedValueOnce({
-          rows: [{
-            id: 1,
-            site_url: 'https://static.example.com',
-            site_type: 'static_php',
-            api_key: null,
-            max_links: 20,
-            max_articles: 0 // Should be 0 even if requested otherwise
-          }]
+          rows: [
+            {
+              id: 1,
+              site_url: 'https://static.example.com',
+              site_type: 'static_php',
+              api_key: null,
+              max_links: 20,
+              max_articles: 0 // Should be 0 even if requested otherwise
+            }
+          ]
         });
 
         const result = await siteService.createSite({
@@ -200,18 +208,22 @@ describe('Site Service', () => {
 
     describe('Validation', () => {
       it('should throw for missing site_url', async () => {
-        await expect(siteService.createSite({
-          userId: 1,
-          site_type: 'wordpress'
-        })).rejects.toThrow();
+        await expect(
+          siteService.createSite({
+            userId: 1,
+            site_type: 'wordpress'
+          })
+        ).rejects.toThrow();
       });
 
       it('should throw for invalid site_type', async () => {
-        await expect(siteService.createSite({
-          userId: 1,
-          site_url: 'https://example.com',
-          site_type: 'invalid'
-        })).rejects.toThrow();
+        await expect(
+          siteService.createSite({
+            userId: 1,
+            site_url: 'https://example.com',
+            site_type: 'invalid'
+          })
+        ).rejects.toThrow();
       });
     });
   });
@@ -219,11 +231,13 @@ describe('Site Service', () => {
   describe('updateSite', () => {
     it('should update site properties', async () => {
       mockQuery.mockResolvedValueOnce({
-        rows: [{
-          id: 1,
-          site_url: 'https://updated.example.com',
-          max_links: 50
-        }]
+        rows: [
+          {
+            id: 1,
+            site_url: 'https://updated.example.com',
+            max_links: 50
+          }
+        ]
       });
 
       const result = await siteService.updateSite(1, 1, {
@@ -276,11 +290,13 @@ describe('Site Service', () => {
   describe('getSiteByDomain', () => {
     it('should find site by normalized domain', async () => {
       mockQuery.mockResolvedValueOnce({
-        rows: [{
-          id: 1,
-          site_url: 'https://example.com',
-          site_type: 'static_php'
-        }]
+        rows: [
+          {
+            id: 1,
+            site_url: 'https://example.com',
+            site_type: 'static_php'
+          }
+        ]
       });
 
       const result = await siteService.getSiteByDomain('example.com');
@@ -291,10 +307,12 @@ describe('Site Service', () => {
 
     it('should normalize www prefix', async () => {
       mockQuery.mockResolvedValueOnce({
-        rows: [{
-          id: 1,
-          site_url: 'https://example.com'
-        }]
+        rows: [
+          {
+            id: 1,
+            site_url: 'https://example.com'
+          }
+        ]
       });
 
       const result = await siteService.getSiteByDomain('www.example.com');
@@ -320,13 +338,15 @@ describe('Registration Tokens', () => {
   describe('generateRegistrationToken', () => {
     it('should generate token with default options', async () => {
       mockQuery.mockResolvedValueOnce({
-        rows: [{
-          id: 1,
-          token: 'reg_abc123',
-          max_uses: 0,
-          current_uses: 0,
-          expires_at: null
-        }]
+        rows: [
+          {
+            id: 1,
+            token: 'reg_abc123',
+            max_uses: 0,
+            current_uses: 0,
+            expires_at: null
+          }
+        ]
       });
 
       const result = await siteService.generateRegistrationToken(1, {});
@@ -337,12 +357,14 @@ describe('Registration Tokens', () => {
 
     it('should generate token with max_uses limit', async () => {
       mockQuery.mockResolvedValueOnce({
-        rows: [{
-          id: 1,
-          token: 'reg_abc123',
-          max_uses: 10,
-          current_uses: 0
-        }]
+        rows: [
+          {
+            id: 1,
+            token: 'reg_abc123',
+            max_uses: 10,
+            current_uses: 0
+          }
+        ]
       });
 
       const result = await siteService.generateRegistrationToken(1, {
@@ -356,11 +378,13 @@ describe('Registration Tokens', () => {
       const expiryDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
       mockQuery.mockResolvedValueOnce({
-        rows: [{
-          id: 1,
-          token: 'reg_abc123',
-          expires_at: expiryDate.toISOString()
-        }]
+        rows: [
+          {
+            id: 1,
+            token: 'reg_abc123',
+            expires_at: expiryDate.toISOString()
+          }
+        ]
       });
 
       const result = await siteService.generateRegistrationToken(1, {
@@ -374,14 +398,16 @@ describe('Registration Tokens', () => {
   describe('validateRegistrationToken', () => {
     it('should validate valid token', async () => {
       mockQuery.mockResolvedValueOnce({
-        rows: [{
-          id: 1,
-          token: 'reg_valid123',
-          user_id: 1,
-          max_uses: 10,
-          current_uses: 5,
-          expires_at: new Date(Date.now() + 86400000).toISOString() // Tomorrow
-        }]
+        rows: [
+          {
+            id: 1,
+            token: 'reg_valid123',
+            user_id: 1,
+            max_uses: 10,
+            current_uses: 5,
+            expires_at: new Date(Date.now() + 86400000).toISOString() // Tomorrow
+          }
+        ]
       });
 
       const result = await siteService.validateRegistrationToken('reg_valid123');
@@ -402,11 +428,13 @@ describe('Registration Tokens', () => {
 
     it('should return null for expired token', async () => {
       mockQuery.mockResolvedValueOnce({
-        rows: [{
-          id: 1,
-          token: 'reg_expired',
-          expires_at: new Date(Date.now() - 86400000).toISOString() // Yesterday
-        }]
+        rows: [
+          {
+            id: 1,
+            token: 'reg_expired',
+            expires_at: new Date(Date.now() - 86400000).toISOString() // Yesterday
+          }
+        ]
       });
 
       const result = await siteService.validateRegistrationToken('reg_expired');
@@ -416,12 +444,14 @@ describe('Registration Tokens', () => {
 
     it('should return null for exhausted token (max_uses reached)', async () => {
       mockQuery.mockResolvedValueOnce({
-        rows: [{
-          id: 1,
-          token: 'reg_exhausted',
-          max_uses: 5,
-          current_uses: 5
-        }]
+        rows: [
+          {
+            id: 1,
+            token: 'reg_exhausted',
+            max_uses: 5,
+            current_uses: 5
+          }
+        ]
       });
 
       const result = await siteService.validateRegistrationToken('reg_exhausted');
@@ -527,8 +557,9 @@ describe('Bulk Operations', () => {
     });
 
     it('should throw for invalid parameter', async () => {
-      await expect(siteService.bulkUpdateSiteParams('invalid_param', []))
-        .rejects.toThrow(/not allowed/i);
+      await expect(siteService.bulkUpdateSiteParams('invalid_param', [])).rejects.toThrow(
+        /not allowed/i
+      );
     });
   });
 
@@ -550,8 +581,7 @@ describe('Bulk Operations', () => {
     });
 
     it('should throw for invalid parameter', async () => {
-      await expect(siteService.getSitesWithZeroParam('invalid'))
-        .rejects.toThrow(/not allowed/i);
+      await expect(siteService.getSitesWithZeroParam('invalid')).rejects.toThrow(/not allowed/i);
     });
   });
 });

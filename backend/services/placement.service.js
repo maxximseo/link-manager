@@ -129,7 +129,7 @@ const getUserPlacements = async (userId, page = 0, limit = 0, filters = {}) => {
       }
 
       const countResult = await query(countQuery, countParams);
-      
+
       const total = parseInt(countResult.rows[0].count);
       const totalPages = Math.ceil(total / limit);
 
@@ -166,7 +166,7 @@ const getUserPlacements = async (userId, page = 0, limit = 0, filters = {}) => {
 };
 
 // Create placement with duplicate handling (UPSERT approach)
-const createPlacement = async (data) => {
+const createPlacement = async data => {
   // Get database client for transaction
   const client = await pool.connect();
 
@@ -182,14 +182,17 @@ const createPlacement = async (data) => {
     await client.query('SELECT pg_advisory_xact_lock($1)', [lockKey]);
 
     // Check existing placements for this project on this site
-    const existingContentResult = await client.query(`
+    const existingContentResult = await client.query(
+      `
       SELECT
         COALESCE(COUNT(DISTINCT pc.link_id) FILTER (WHERE pc.link_id IS NOT NULL), 0) as existing_links,
         COALESCE(COUNT(DISTINCT pc.article_id) FILTER (WHERE pc.article_id IS NOT NULL), 0) as existing_articles
       FROM placements p
       LEFT JOIN placement_content pc ON p.id = pc.placement_id
       WHERE p.project_id = $1 AND p.site_id = $2
-    `, [project_id, site_id]);
+    `,
+      [project_id, site_id]
+    );
 
     const existing = existingContentResult.rows[0] || { existing_links: 0, existing_articles: 0 };
     const hasExistingLinks = parseInt(existing.existing_links || 0) > 0;
@@ -206,7 +209,9 @@ const createPlacement = async (data) => {
 
     // NEW LOGIC: Only ONE placement (link OR article) allowed per site per project
     if (hasExistingLinks || hasExistingArticles) {
-      throw new Error('На этом сайте уже есть размещение для данного проекта. Повторная покупка запрещена.');
+      throw new Error(
+        'На этом сайте уже есть размещение для данного проекта. Повторная покупка запрещена.'
+      );
     }
 
     if (link_ids.length > 1) {
@@ -257,7 +262,7 @@ const createPlacement = async (data) => {
       );
       placement = placementResult.rows[0];
     }
-    
+
     // Add links to placement_content with duplicate check
     for (const linkId of link_ids) {
       // Check if link already in placement
@@ -269,12 +274,15 @@ const createPlacement = async (data) => {
       if (existingLink.rows.length === 0) {
         try {
           // CRITICAL FIX: Check if link is not exhausted before using it
-          const linkCheck = await client.query(`
+          const linkCheck = await client.query(
+            `
             SELECT id, usage_count, usage_limit, status
             FROM project_links
             WHERE id = $1
             FOR UPDATE
-          `, [linkId]);
+          `,
+            [linkId]
+          );
 
           if (linkCheck.rows.length === 0) {
             throw new Error(`Link ${linkId} not found`);
@@ -282,7 +290,9 @@ const createPlacement = async (data) => {
 
           const link = linkCheck.rows[0];
           if (link.status === 'exhausted' || link.usage_count >= link.usage_limit) {
-            throw new Error(`Link ${linkId} is exhausted (${link.usage_count}/${link.usage_limit} uses)`);
+            throw new Error(
+              `Link ${linkId} is exhausted (${link.usage_count}/${link.usage_limit} uses)`
+            );
           }
 
           await client.query(
@@ -291,12 +301,15 @@ const createPlacement = async (data) => {
           );
 
           // Increment usage_count and update status
-          await client.query(`
+          await client.query(
+            `
             UPDATE project_links
             SET usage_count = usage_count + 1,
                 status = CASE WHEN usage_count + 1 >= usage_limit THEN 'exhausted' ELSE 'active' END
             WHERE id = $1
-          `, [linkId]);
+          `,
+            [linkId]
+          );
 
           logger.debug('Link added to placement', {
             placementId: placement.id,
@@ -332,12 +345,15 @@ const createPlacement = async (data) => {
       if (existingArticle.rows.length === 0) {
         try {
           // CRITICAL FIX: Check if article is not exhausted before using it
-          const articleCheck = await client.query(`
+          const articleCheck = await client.query(
+            `
             SELECT id, usage_count, usage_limit, status
             FROM project_articles
             WHERE id = $1
             FOR UPDATE
-          `, [articleId]);
+          `,
+            [articleId]
+          );
 
           if (articleCheck.rows.length === 0) {
             throw new Error(`Article ${articleId} not found`);
@@ -345,7 +361,9 @@ const createPlacement = async (data) => {
 
           const article = articleCheck.rows[0];
           if (article.status === 'exhausted' || article.usage_count >= article.usage_limit) {
-            throw new Error(`Article ${articleId} is exhausted (${article.usage_count}/${article.usage_limit} uses)`);
+            throw new Error(
+              `Article ${articleId} is exhausted (${article.usage_count}/${article.usage_limit} uses)`
+            );
           }
 
           await client.query(
@@ -354,12 +372,15 @@ const createPlacement = async (data) => {
           );
 
           // Increment usage_count and update status
-          await client.query(`
+          await client.query(
+            `
             UPDATE project_articles
             SET usage_count = usage_count + 1,
                 status = CASE WHEN usage_count + 1 >= usage_limit THEN 'exhausted' ELSE 'active' END
             WHERE id = $1
-          `, [articleId]);
+          `,
+            [articleId]
+          );
 
           logger.debug('Article added to placement', {
             placementId: placement.id,
@@ -380,31 +401,34 @@ const createPlacement = async (data) => {
           }
         }
       } else {
-        logger.debug('Article already in placement, skipping', { placementId: placement.id, articleId });
+        logger.debug('Article already in placement, skipping', {
+          placementId: placement.id,
+          articleId
+        });
       }
     }
 
     // Update site quotas
     if (link_ids.length > 0) {
-      await client.query(
-        'UPDATE sites SET used_links = used_links + $1 WHERE id = $2',
-        [link_ids.length, site_id]
-      );
+      await client.query('UPDATE sites SET used_links = used_links + $1 WHERE id = $2', [
+        link_ids.length,
+        site_id
+      ]);
     }
 
     if (article_ids.length > 0) {
-      await client.query(
-        'UPDATE sites SET used_articles = used_articles + $1 WHERE id = $2',
-        [article_ids.length, site_id]
-      );
+      await client.query('UPDATE sites SET used_articles = used_articles + $1 WHERE id = $2', [
+        article_ids.length,
+        site_id
+      ]);
     }
 
     // Set default status for placements without articles (links only)
     if (article_ids.length === 0) {
-      await client.query(
-        'UPDATE placements SET status = $1 WHERE id = $2',
-        ['placed', placement.id]
-      );
+      await client.query('UPDATE placements SET status = $1 WHERE id = $2', [
+        'placed',
+        placement.id
+      ]);
     }
 
     // Publish articles to WordPress if any
@@ -473,15 +497,17 @@ const createPlacement = async (data) => {
       // If ALL articles failed to publish, rollback transaction
       if (failedCount > 0 && publishedCount === 0) {
         await client.query('ROLLBACK');
-        throw new Error(`All ${failedCount} article(s) failed to publish to WordPress: ${publishErrors.map(e => e.error).join('; ')}`);
+        throw new Error(
+          `All ${failedCount} article(s) failed to publish to WordPress: ${publishErrors.map(e => e.error).join('; ')}`
+        );
       }
 
       // If some failed but some succeeded, mark placement as partially failed
       if (failedCount > 0 && publishedCount > 0) {
-        await client.query(
-          'UPDATE placements SET status = $1 WHERE id = $2',
-          ['partial_fail', placement.id]
-        );
+        await client.query('UPDATE placements SET status = $1 WHERE id = $2', [
+          'partial_fail',
+          placement.id
+        ]);
         logger.warn('Some articles failed to publish', {
           placementId: placement.id,
           published: publishedCount,
@@ -516,7 +542,8 @@ const createPlacement = async (data) => {
 // Get placement by ID
 const getPlacementById = async (placementId, userId) => {
   try {
-    const result = await query(`
+    const result = await query(
+      `
       SELECT 
         p.id,
         p.project_id,
@@ -532,8 +559,10 @@ const getPlacementById = async (placementId, userId) => {
       LEFT JOIN sites s ON p.site_id = s.id
       LEFT JOIN projects proj ON p.project_id = proj.id
       WHERE p.id = $1 AND (s.user_id = $2 OR proj.user_id = $2)
-    `, [placementId, userId]);
-    
+    `,
+      [placementId, userId]
+    );
+
     return result.rows.length > 0 ? result.rows[0] : null;
   } catch (error) {
     logger.error('Get placement by ID error:', error);
@@ -545,16 +574,19 @@ const getPlacementById = async (placementId, userId) => {
 // It provides proper admin-only access control and atomic refund handling
 
 // Get placement statistics for user
-const getStatistics = async (userId) => {
+const getStatistics = async userId => {
   try {
-    const result = await query(`
+    const result = await query(
+      `
       SELECT
         COUNT(DISTINCT p.id) as total_placements,
         COUNT(DISTINCT CASE WHEN p.type = 'link' THEN p.id END) as total_links_placed,
         COUNT(DISTINCT CASE WHEN p.type = 'article' THEN p.id END) as total_articles_placed
       FROM placements p
       WHERE p.user_id = $1
-    `, [userId]);
+    `,
+      [userId]
+    );
 
     // CRITICAL: PostgreSQL COUNT returns strings, must convert to numbers
     const row = result.rows[0];
@@ -572,7 +604,8 @@ const getStatistics = async (userId) => {
 // Get available sites for placement (checks which sites already have content from this project)
 const getAvailableSites = async (projectId, userId) => {
   try {
-    const result = await query(`
+    const result = await query(
+      `
       SELECT
         s.id,
         s.site_name,
@@ -597,13 +630,17 @@ const getAvailableSites = async (projectId, userId) => {
         ) as project_articles_on_site
       FROM sites s
       WHERE s.user_id = $2
-    `, [projectId, userId]);
+    `,
+      [projectId, userId]
+    );
 
     // Add availability flags
     const sitesWithAvailability = result.rows.map(site => ({
       ...site,
-      can_place_link: parseInt(site.project_links_on_site || 0) === 0 && site.used_links < site.max_links,
-      can_place_article: parseInt(site.project_articles_on_site || 0) === 0 && site.used_articles < site.max_articles
+      can_place_link:
+        parseInt(site.project_links_on_site || 0) === 0 && site.used_links < site.max_links,
+      can_place_article:
+        parseInt(site.project_articles_on_site || 0) === 0 && site.used_articles < site.max_articles
     }));
 
     return sitesWithAvailability;

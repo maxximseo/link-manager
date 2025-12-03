@@ -101,7 +101,6 @@ module.exports = async function wordpressWorker(job) {
             articleId,
             wordpress_post_id: publishResult.post_id
           });
-
         } catch (dbError) {
           await client.query('ROLLBACK');
           throw dbError;
@@ -111,7 +110,6 @@ module.exports = async function wordpressWorker(job) {
       } else {
         throw new Error(publishResult.error || 'Unknown publishing error');
       }
-
     } catch (error) {
       // Mark placement as failed
       try {

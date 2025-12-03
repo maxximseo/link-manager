@@ -82,7 +82,7 @@ class WorkerManager {
       this.workers.push('placement-worker');
     }
 
-    // WordPress worker  
+    // WordPress worker
     if (queues.wordpress) {
       queues.wordpress.process('publish-articles', 3, require('./wordpress.worker'));
       this.workers.push('wordpress-worker');
@@ -108,7 +108,7 @@ class WorkerManager {
         await queue.close();
         logger.info(`Queue ${name} closed`);
       }
-      
+
       this.isHealthy = false;
       logger.info('All queue workers shut down');
     } catch (error) {

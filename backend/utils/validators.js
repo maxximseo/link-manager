@@ -9,12 +9,7 @@
  * @returns {object} Validated { page, limit } parameters
  */
 const validatePagination = (query, options = {}) => {
-  const {
-    maxLimit = 5000,
-    defaultLimit = 20,
-    defaultPage = 1,
-    maxPage = 10000
-  } = options;
+  const { maxLimit = 5000, defaultLimit = 20, defaultPage = 1, maxPage = 10000 } = options;
 
   let page = parseInt(query.page);
   let limit = parseInt(query.limit);

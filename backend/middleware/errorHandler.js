@@ -1,13 +1,13 @@
 const logger = require('../config/logger');
 
 // Async handler wrapper
-const asyncHandler = (fn) => (req, res, next) => {
+const asyncHandler = fn => (req, res, next) => {
   Promise.resolve(fn(req, res, next)).catch(next);
 };
 
 // Global error handler
 const errorHandler = (err, req, res, next) => {
-  let error = { ...err };
+  const error = { ...err };
   error.message = err.message;
 
   // Log error

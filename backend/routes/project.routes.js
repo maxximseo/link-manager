@@ -13,7 +13,7 @@ const projectController = require('../controllers/project.controller');
 const createLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 10, // 10 requests per minute
-  message: 'Too many create requests, please try again later.',
+  message: 'Too many create requests, please try again later.'
 });
 
 // Project CRUD routes
@@ -27,7 +27,12 @@ router.delete('/:id', authMiddleware, projectController.deleteProject);
 router.get('/:id/links', authMiddleware, projectController.getProjectLinks);
 router.post('/:id/links', authMiddleware, createLimiter, projectController.addProjectLink);
 router.put('/:id/links/:linkId', authMiddleware, projectController.updateProjectLink);
-router.post('/:id/links/bulk', authMiddleware, createLimiter, projectController.addProjectLinksBulk);
+router.post(
+  '/:id/links/bulk',
+  authMiddleware,
+  createLimiter,
+  projectController.addProjectLinksBulk
+);
 router.delete('/:id/links/:linkId', authMiddleware, projectController.deleteProjectLink);
 
 // Project articles routes

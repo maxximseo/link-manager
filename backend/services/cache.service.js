@@ -19,7 +19,7 @@ function initRedis() {
       host: process.env.REDIS_HOST || 'localhost',
       port: parseInt(process.env.REDIS_PORT) || 6379,
       db: parseInt(process.env.REDIS_DB) || 0,
-      retryStrategy: (times) => {
+      retryStrategy: times => {
         if (times > 10) {
           logger.warn('Redis connection failed after 10 retries - cache disabled');
           return null; // Stop retrying
@@ -58,7 +58,7 @@ function initRedis() {
       logger.info('Redis cache connected successfully');
     });
 
-    redis.on('error', (err) => {
+    redis.on('error', err => {
       cacheAvailable = false;
       logger.warn('Redis cache error:', err.message);
     });
@@ -69,11 +69,10 @@ function initRedis() {
     });
 
     // Connect to Redis
-    redis.connect().catch((err) => {
+    redis.connect().catch(err => {
       logger.warn('Failed to connect to Redis cache:', err.message);
       cacheAvailable = false;
     });
-
   } catch (error) {
     logger.warn('Redis initialization failed:', error.message);
     cacheAvailable = false;

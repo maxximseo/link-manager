@@ -19,7 +19,7 @@ const financialLimiter = rateLimit({
   max: 50, // 50 financial operations per minute (allows bulk purchases)
   message: 'Too many financial operations, please try again later.',
   standardHeaders: true,
-  legacyHeaders: false,
+  legacyHeaders: false
 });
 
 // Validation middleware
@@ -48,7 +48,6 @@ router.get('/balance', authMiddleware, async (req, res) => {
         discountTier: user.tier_name
       }
     });
-
   } catch (error) {
     logger.error('Failed to get balance', { userId: req.user.id, error: error.message });
     res.status(500).json({ error: 'Failed to get balance' });
@@ -60,11 +59,14 @@ router.get('/balance', authMiddleware, async (req, res) => {
  * Add balance to user account
  * Note: In production, this should be called by payment gateway webhook
  */
-router.post('/deposit',
+router.post(
+  '/deposit',
   authMiddleware,
   financialLimiter,
   [
-    body('amount').isFloat({ min: 0.01, max: 10000 }).withMessage('Amount must be between $0.01 and $10,000'),
+    body('amount')
+      .isFloat({ min: 0.01, max: 10000 })
+      .withMessage('Amount must be between $0.01 and $10,000'),
     body('description').optional().isString().trim()
   ],
   validateRequest,
@@ -85,7 +87,6 @@ router.post('/deposit',
           amount: result.amount
         }
       });
-
     } catch (error) {
       return handleSmartError(res, error, 'Failed to deposit balance', 500);
     }
@@ -111,7 +112,6 @@ router.get('/transactions', authMiddleware, async (req, res) => {
       data: transactions.data,
       pagination: transactions.pagination
     });
-
   } catch (error) {
     logger.error('Failed to get transactions', { userId: req.user.id, error: error.message });
     res.status(500).json({ error: 'Failed to get transactions' });
@@ -130,7 +130,6 @@ router.get('/pricing', authMiddleware, async (req, res) => {
       success: true,
       data: pricing
     });
-
   } catch (error) {
     logger.error('Failed to get pricing', { userId: req.user.id, error: error.message });
     res.status(500).json({ error: 'Failed to get pricing' });
@@ -149,7 +148,6 @@ router.get('/discount-tiers', authMiddleware, async (req, res) => {
       success: true,
       data: tiers
     });
-
   } catch (error) {
     logger.error('Failed to get discount tiers', { error: error.message });
     res.status(500).json({ error: 'Failed to get discount tiers' });
@@ -160,16 +158,22 @@ router.get('/discount-tiers', authMiddleware, async (req, res) => {
  * POST /api/billing/purchase
  * Purchase a placement (link or article)
  */
-router.post('/purchase',
+router.post(
+  '/purchase',
   authMiddleware,
   financialLimiter,
   [
     body('projectId').isInt({ min: 1 }).withMessage('Valid project ID required'),
     body('siteId').isInt({ min: 1 }).withMessage('Valid site ID required'),
     body('type').isIn(['link', 'article']).withMessage('Type must be "link" or "article"'),
-    body('contentIds').isArray({ min: 1, max: 1 }).withMessage('Content IDs must be an array with exactly 1 item'),
+    body('contentIds')
+      .isArray({ min: 1, max: 1 })
+      .withMessage('Content IDs must be an array with exactly 1 item'),
     body('contentIds.*').isInt({ min: 1 }).withMessage('Each content ID must be a valid integer'),
-    body('scheduledDate').optional().isISO8601().withMessage('Scheduled date must be valid ISO8601 date'),
+    body('scheduledDate')
+      .optional()
+      .isISO8601()
+      .withMessage('Scheduled date must be valid ISO8601 date'),
     body('autoRenewal').optional().isBoolean().withMessage('Auto renewal must be boolean')
   ],
   validateRequest,
@@ -184,7 +188,9 @@ router.post('/purchase',
         maxDate.setDate(maxDate.getDate() + 90);
 
         if (scheduled > maxDate) {
-          return res.status(400).json({ error: 'Scheduled date cannot be more than 90 days in the future' });
+          return res
+            .status(400)
+            .json({ error: 'Scheduled date cannot be more than 90 days in the future' });
         }
 
         if (scheduled < new Date()) {
@@ -211,7 +217,6 @@ router.post('/purchase',
           newTier: result.newTier
         }
       });
-
     } catch (error) {
       return handleSmartError(res, error, 'Failed to purchase placement', 400);
     }
@@ -222,16 +227,30 @@ router.post('/purchase',
  * POST /api/billing/batch-purchase
  * Batch purchase multiple placements in parallel (5-10x faster)
  */
-router.post('/batch-purchase',
+router.post(
+  '/batch-purchase',
   authMiddleware,
   financialLimiter,
   [
-    body('purchases').isArray({ min: 1, max: 100 }).withMessage('Purchases must be an array with 1-100 items'),
-    body('purchases.*.projectId').isInt({ min: 1 }).withMessage('Each purchase requires valid project ID'),
-    body('purchases.*.siteId').isInt({ min: 1 }).withMessage('Each purchase requires valid site ID'),
-    body('purchases.*.type').isIn(['link', 'article']).withMessage('Type must be "link" or "article"'),
-    body('purchases.*.contentIds').isArray({ min: 1, max: 1 }).withMessage('Content IDs must be an array with exactly 1 item'),
-    body('purchases.*.scheduledDate').optional().isISO8601().withMessage('Scheduled date must be valid ISO8601')
+    body('purchases')
+      .isArray({ min: 1, max: 100 })
+      .withMessage('Purchases must be an array with 1-100 items'),
+    body('purchases.*.projectId')
+      .isInt({ min: 1 })
+      .withMessage('Each purchase requires valid project ID'),
+    body('purchases.*.siteId')
+      .isInt({ min: 1 })
+      .withMessage('Each purchase requires valid site ID'),
+    body('purchases.*.type')
+      .isIn(['link', 'article'])
+      .withMessage('Type must be "link" or "article"'),
+    body('purchases.*.contentIds')
+      .isArray({ min: 1, max: 1 })
+      .withMessage('Content IDs must be an array with exactly 1 item'),
+    body('purchases.*.scheduledDate')
+      .optional()
+      .isISO8601()
+      .withMessage('Scheduled date must be valid ISO8601')
   ],
   validateRequest,
   async (req, res) => {
@@ -256,7 +275,6 @@ router.post('/batch-purchase',
           durationMs: result.durationMs
         }
       });
-
     } catch (error) {
       logger.error('Batch purchase failed', { userId: req.user.id, error: error.message });
       return handleSmartError(res, error, 'Failed to process batch purchase', 500);
@@ -268,47 +286,41 @@ router.post('/batch-purchase',
  * POST /api/billing/renew/:placementId
  * Renew a placement (links only)
  */
-router.post('/renew/:placementId',
-  authMiddleware,
-  financialLimiter,
-  async (req, res) => {
-    try {
-      const placementId = parseInt(req.params.placementId);
+router.post('/renew/:placementId', authMiddleware, financialLimiter, async (req, res) => {
+  try {
+    const placementId = parseInt(req.params.placementId);
 
-      if (isNaN(placementId)) {
-        return res.status(400).json({ error: 'Invalid placement ID' });
-      }
-
-      const result = await billingService.renewPlacement(
-        placementId,
-        req.user.id,
-        false // not auto-renewal
-      );
-
-      res.json({
-        success: true,
-        data: {
-          newExpiryDate: result.newExpiryDate,
-          pricePaid: result.pricePaid,
-          newBalance: result.newBalance
-        }
-      });
-
-    } catch (error) {
-      return handleSmartError(res, error, 'Failed to renew placement', 400);
+    if (isNaN(placementId)) {
+      return res.status(400).json({ error: 'Invalid placement ID' });
     }
+
+    const result = await billingService.renewPlacement(
+      placementId,
+      req.user.id,
+      false // not auto-renewal
+    );
+
+    res.json({
+      success: true,
+      data: {
+        newExpiryDate: result.newExpiryDate,
+        pricePaid: result.pricePaid,
+        newBalance: result.newBalance
+      }
+    });
+  } catch (error) {
+    return handleSmartError(res, error, 'Failed to renew placement', 400);
   }
-);
+});
 
 /**
  * PATCH /api/billing/auto-renewal/:placementId
  * Toggle auto-renewal for placement
  */
-router.patch('/auto-renewal/:placementId',
+router.patch(
+  '/auto-renewal/:placementId',
   authMiddleware,
-  [
-    body('enabled').isBoolean().withMessage('Enabled must be boolean')
-  ],
+  [body('enabled').isBoolean().withMessage('Enabled must be boolean')],
   validateRequest,
   async (req, res) => {
     try {
@@ -319,11 +331,7 @@ router.patch('/auto-renewal/:placementId',
         return res.status(400).json({ error: 'Invalid placement ID' });
       }
 
-      const result = await billingService.toggleAutoRenewal(
-        placementId,
-        req.user.id,
-        enabled
-      );
+      const result = await billingService.toggleAutoRenewal(placementId, req.user.id, enabled);
 
       res.json({
         success: true,
@@ -331,7 +339,6 @@ router.patch('/auto-renewal/:placementId',
           enabled: result.enabled
         }
       });
-
     } catch (error) {
       return handleSmartError(res, error, 'Failed to toggle auto-renewal', 400);
     }
@@ -358,7 +365,6 @@ router.get('/export/placements', authMiddleware, async (req, res) => {
       res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
       res.json(result.data);
     }
-
   } catch (error) {
     logger.error('Failed to export placements', { userId: req.user.id, error: error.message });
     res.status(500).json({ error: 'Failed to export placements' });
@@ -384,7 +390,6 @@ router.get('/export/transactions', authMiddleware, async (req, res) => {
       res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
       res.json(result.data);
     }
-
   } catch (error) {
     logger.error('Failed to export transactions', { userId: req.user.id, error: error.message });
     res.status(500).json({ error: 'Failed to export transactions' });

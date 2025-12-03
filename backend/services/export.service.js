@@ -19,27 +19,29 @@ function arrayToCSV(data, headers) {
 
   // CSV rows
   const csvRows = data.map(row => {
-    return headers.map(header => {
-      const value = row[header];
+    return headers
+      .map(header => {
+        const value = row[header];
 
-      // Handle null/undefined
-      if (value === null || value === undefined) {
-        return '';
-      }
+        // Handle null/undefined
+        if (value === null || value === undefined) {
+          return '';
+        }
 
-      // Handle dates
-      if (value instanceof Date) {
-        return value.toISOString();
-      }
+        // Handle dates
+        if (value instanceof Date) {
+          return value.toISOString();
+        }
 
-      // Handle strings with commas or quotes
-      const stringValue = String(value);
-      if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
-        return `"${stringValue.replace(/"/g, '""')}"`;
-      }
+        // Handle strings with commas or quotes
+        const stringValue = String(value);
+        if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+          return `"${stringValue.replace(/"/g, '""')}"`;
+        }
 
-      return stringValue;
-    }).join(',');
+        return stringValue;
+      })
+      .join(',');
   });
 
   return [csvHeaders, ...csvRows].join('\n');
@@ -63,7 +65,8 @@ const exportUserPlacements = async (userId, format = 'csv', projectId = null) =>
     }
 
     // Get placements for user (optionally filtered by project)
-    const result = await query(`
+    const result = await query(
+      `
       SELECT
         p.id,
         p.type,
@@ -105,7 +108,9 @@ const exportUserPlacements = async (userId, format = 'csv', projectId = null) =>
       JOIN sites s ON p.site_id = s.id
       ${whereClause}
       ORDER BY p.purchased_at DESC
-    `, params);
+    `,
+      params
+    );
 
     const placements = result.rows;
 
@@ -144,11 +149,13 @@ const exportUserPlacements = async (userId, format = 'csv', projectId = null) =>
 
       const csv = arrayToCSV(placements, headers);
       return { format: 'csv', data: csv, filename: `placements-${userId}-${Date.now()}.csv` };
-
     } else {
-      return { format: 'json', data: placements, filename: `placements-${userId}-${Date.now()}.json` };
+      return {
+        format: 'json',
+        data: placements,
+        filename: `placements-${userId}-${Date.now()}.json`
+      };
     }
-
   } catch (error) {
     logger.error('Failed to export placements', { userId, format, error: error.message });
     throw error;
@@ -160,7 +167,8 @@ const exportUserPlacements = async (userId, format = 'csv', projectId = null) =>
  */
 const exportUserTransactions = async (userId, format = 'csv') => {
   try {
-    const result = await query(`
+    const result = await query(
+      `
       SELECT
         id,
         type,
@@ -173,7 +181,9 @@ const exportUserTransactions = async (userId, format = 'csv') => {
       FROM transactions
       WHERE user_id = $1
       ORDER BY created_at DESC
-    `, [userId]);
+    `,
+      [userId]
+    );
 
     const transactions = result.rows;
 
@@ -191,11 +201,13 @@ const exportUserTransactions = async (userId, format = 'csv') => {
 
       const csv = arrayToCSV(transactions, headers);
       return { format: 'csv', data: csv, filename: `transactions-${userId}-${Date.now()}.csv` };
-
     } else {
-      return { format: 'json', data: transactions, filename: `transactions-${userId}-${Date.now()}.json` };
+      return {
+        format: 'json',
+        data: transactions,
+        filename: `transactions-${userId}-${Date.now()}.json`
+      };
     }
-
   } catch (error) {
     logger.error('Failed to export transactions', { userId, format, error: error.message });
     throw error;
@@ -207,7 +219,8 @@ const exportUserTransactions = async (userId, format = 'csv') => {
  */
 const exportAdminRevenue = async (startDate, endDate, format = 'csv') => {
   try {
-    const result = await query(`
+    const result = await query(
+      `
       SELECT
         t.id,
         t.type,
@@ -226,7 +239,9 @@ const exportAdminRevenue = async (startDate, endDate, format = 'csv') => {
       WHERE t.type IN ('purchase', 'renewal', 'auto_renewal')
         AND t.created_at BETWEEN $1 AND $2
       ORDER BY t.created_at DESC
-    `, [startDate, endDate]);
+    `,
+      [startDate, endDate]
+    );
 
     const revenue = result.rows;
 
@@ -245,11 +260,9 @@ const exportAdminRevenue = async (startDate, endDate, format = 'csv') => {
 
       const csv = arrayToCSV(revenue, headers);
       return { format: 'csv', data: csv, filename: `revenue-${Date.now()}.csv` };
-
     } else {
       return { format: 'json', data: revenue, filename: `revenue-${Date.now()}.json` };
     }
-
   } catch (error) {
     logger.error('Failed to export revenue', { startDate, endDate, format, error: error.message });
     throw error;

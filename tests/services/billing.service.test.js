@@ -60,15 +60,17 @@ describe('Billing Service', () => {
   describe('getUserBalance', () => {
     it('should return user balance data', async () => {
       mockQuery.mockResolvedValueOnce({
-        rows: [{
-          id: 1,
-          username: 'testuser',
-          balance: '150.00',
-          total_spent: '500.00',
-          current_discount: 15,
-          tier_name: 'Silver',
-          discount_percentage: 15
-        }]
+        rows: [
+          {
+            id: 1,
+            username: 'testuser',
+            balance: '150.00',
+            total_spent: '500.00',
+            current_discount: 15,
+            tier_name: 'Silver',
+            discount_percentage: 15
+          }
+        ]
       });
 
       const result = await billingService.getUserBalance(1);
@@ -82,15 +84,13 @@ describe('Billing Service', () => {
     it('should throw error for non-existent user', async () => {
       mockQuery.mockResolvedValueOnce({ rows: [] });
 
-      await expect(billingService.getUserBalance(999))
-        .rejects.toThrow('User not found');
+      await expect(billingService.getUserBalance(999)).rejects.toThrow('User not found');
     });
 
     it('should handle database errors', async () => {
       mockQuery.mockRejectedValueOnce(new Error('Database connection failed'));
 
-      await expect(billingService.getUserBalance(1))
-        .rejects.toThrow('Database connection failed');
+      await expect(billingService.getUserBalance(1)).rejects.toThrow('Database connection failed');
     });
   });
 
@@ -173,8 +173,9 @@ describe('Billing Service', () => {
         .mockResolvedValueOnce({ rows: [] }) // SELECT user - empty
         .mockResolvedValueOnce({}); // ROLLBACK (handled in catch)
 
-      await expect(billingService.addBalance(999, 50, 'Test deposit'))
-        .rejects.toThrow('User not found');
+      await expect(billingService.addBalance(999, 50, 'Test deposit')).rejects.toThrow(
+        'User not found'
+      );
     });
 
     it('should rollback on database error', async () => {
@@ -182,8 +183,9 @@ describe('Billing Service', () => {
         .mockResolvedValueOnce({}) // BEGIN
         .mockRejectedValueOnce(new Error('Database error'));
 
-      await expect(billingService.addBalance(1, 50, 'Test deposit'))
-        .rejects.toThrow('Database error');
+      await expect(billingService.addBalance(1, 50, 'Test deposit')).rejects.toThrow(
+        'Database error'
+      );
 
       // Verify rollback was called
       expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
@@ -195,20 +197,20 @@ describe('Billing Service', () => {
       // getPricingForUser calls getUserBalance which calls query, then getDiscountTiers
       mockQuery
         .mockResolvedValueOnce({
-          rows: [{
-            id: 1,
-            username: 'testuser',
-            balance: '100.00',
-            total_spent: '0',
-            current_discount: 0,
-            tier_name: 'Стандарт',
-            discount_percentage: 0
-          }]
+          rows: [
+            {
+              id: 1,
+              username: 'testuser',
+              balance: '100.00',
+              total_spent: '0',
+              current_discount: 0,
+              tier_name: 'Стандарт',
+              discount_percentage: 0
+            }
+          ]
         })
         .mockResolvedValueOnce({
-          rows: [
-            { tier_name: 'Стандарт', min_spent: 0, discount_percentage: 0 }
-          ]
+          rows: [{ tier_name: 'Стандарт', min_spent: 0, discount_percentage: 0 }]
         });
 
       const result = await billingService.getPricingForUser(1);
@@ -217,28 +219,28 @@ describe('Billing Service', () => {
       expect(result).toHaveProperty('article');
       expect(result).toHaveProperty('renewal');
       // Base price is LINK_HOMEPAGE = 25.00
-      expect(result.link.basePrice).toBe(25.00);
+      expect(result.link.basePrice).toBe(25.0);
       expect(result.link.discount).toBe(0);
-      expect(result.link.finalPrice).toBe(25.00);
+      expect(result.link.finalPrice).toBe(25.0);
     });
 
     it('should apply 15% discount for Silver tier', async () => {
       mockQuery
         .mockResolvedValueOnce({
-          rows: [{
-            id: 1,
-            username: 'testuser',
-            balance: '500.00',
-            total_spent: '500.00',
-            current_discount: 15,
-            tier_name: 'Silver',
-            discount_percentage: 15
-          }]
+          rows: [
+            {
+              id: 1,
+              username: 'testuser',
+              balance: '500.00',
+              total_spent: '500.00',
+              current_discount: 15,
+              tier_name: 'Silver',
+              discount_percentage: 15
+            }
+          ]
         })
         .mockResolvedValueOnce({
-          rows: [
-            { tier_name: 'Silver', min_spent: 500, discount_percentage: 15 }
-          ]
+          rows: [{ tier_name: 'Silver', min_spent: 500, discount_percentage: 15 }]
         });
 
       const result = await billingService.getPricingForUser(1);
@@ -253,93 +255,104 @@ describe('Billing Service', () => {
     it('should apply 30% discount for Diamond tier', async () => {
       mockQuery
         .mockResolvedValueOnce({
-          rows: [{
-            id: 1,
-            username: 'testuser',
-            balance: '1000.00',
-            total_spent: '5000.00',
-            current_discount: 30,
-            tier_name: 'Diamond',
-            discount_percentage: 30
-          }]
+          rows: [
+            {
+              id: 1,
+              username: 'testuser',
+              balance: '1000.00',
+              total_spent: '5000.00',
+              current_discount: 30,
+              tier_name: 'Diamond',
+              discount_percentage: 30
+            }
+          ]
         })
         .mockResolvedValueOnce({
-          rows: [
-            { tier_name: 'Diamond', min_spent: 5000, discount_percentage: 30 }
-          ]
+          rows: [{ tier_name: 'Diamond', min_spent: 5000, discount_percentage: 30 }]
         });
 
       const result = await billingService.getPricingForUser(1);
 
       expect(result.link.discount).toBe(30);
       // 25.00 * 0.70 = 17.50
-      expect(result.link.finalPrice).toBeCloseTo(17.50, 2);
+      expect(result.link.finalPrice).toBeCloseTo(17.5, 2);
       // 15.00 * 0.70 = 10.50
-      expect(result.article.finalPrice).toBeCloseTo(10.50, 2);
+      expect(result.article.finalPrice).toBeCloseTo(10.5, 2);
     });
   });
 
   describe('purchasePlacement', () => {
     describe('Validation', () => {
       it('should reject empty data', async () => {
-        await expect(billingService.purchasePlacement({}))
-          .rejects.toThrow();
+        await expect(billingService.purchasePlacement({})).rejects.toThrow();
       });
 
       it('should reject missing userId', async () => {
-        await expect(billingService.purchasePlacement({
-          projectId: 1,
-          siteId: 1,
-          type: 'link',
-          contentIds: [1]
-        })).rejects.toThrow();
+        await expect(
+          billingService.purchasePlacement({
+            projectId: 1,
+            siteId: 1,
+            type: 'link',
+            contentIds: [1]
+          })
+        ).rejects.toThrow();
       });
 
       it('should reject missing projectId', async () => {
-        await expect(billingService.purchasePlacement({
-          userId: 1,
-          siteId: 1,
-          type: 'link',
-          contentIds: [1]
-        })).rejects.toThrow();
+        await expect(
+          billingService.purchasePlacement({
+            userId: 1,
+            siteId: 1,
+            type: 'link',
+            contentIds: [1]
+          })
+        ).rejects.toThrow();
       });
 
       it('should reject missing siteId', async () => {
-        await expect(billingService.purchasePlacement({
-          userId: 1,
-          projectId: 1,
-          type: 'link',
-          contentIds: [1]
-        })).rejects.toThrow();
+        await expect(
+          billingService.purchasePlacement({
+            userId: 1,
+            projectId: 1,
+            type: 'link',
+            contentIds: [1]
+          })
+        ).rejects.toThrow();
       });
 
       it('should reject missing type', async () => {
-        await expect(billingService.purchasePlacement({
-          userId: 1,
-          projectId: 1,
-          siteId: 1,
-          contentIds: [1]
-        })).rejects.toThrow();
+        await expect(
+          billingService.purchasePlacement({
+            userId: 1,
+            projectId: 1,
+            siteId: 1,
+            contentIds: [1]
+          })
+        ).rejects.toThrow();
       });
 
       it('should reject empty contentIds', async () => {
-        await expect(billingService.purchasePlacement({
-          userId: 1,
-          projectId: 1,
-          siteId: 1,
-          type: 'link',
-          contentIds: []
-        })).rejects.toThrow();
+        await expect(
+          billingService.purchasePlacement({
+            userId: 1,
+            projectId: 1,
+            siteId: 1,
+            type: 'link',
+            contentIds: []
+          })
+        ).rejects.toThrow();
       });
 
       it('should reject invalid type', async () => {
-        await expect(billingService.purchasePlacement({
-          userId: 1,
-          projectId: 1,
-          siteId: 1,
-          type: 'invalid',
-          contentIds: [1]
-        })).rejects.toThrow();
+        await expect(
+          billingService.purchasePlacement({
+            userId: 1,
+            projectId: 1,
+            siteId: 1,
+            type: 'invalid',
+            contentIds: [1]
+          })
+        ).rejects.toThrow();
       });
     });
 
@@ -360,25 +373,29 @@ describe('Billing Service', () => {
             rows: [{ id: 1, user_id: 1, name: 'Test Project' }]
           }) // Validate project
           .mockResolvedValueOnce({
-            rows: [{
-              id: 1,
-              site_type: 'static_php',
-              site_url: 'https://static.example.com',
-              site_name: 'Static Site',
-              is_public: true,
-              max_links: 10,
-              used_links: 0
-            }]
+            rows: [
+              {
+                id: 1,
+                site_type: 'static_php',
+                site_url: 'https://static.example.com',
+                site_name: 'Static Site',
+                is_public: true,
+                max_links: 10,
+                used_links: 0
+              }
+            ]
           }) // Get site - static_php type triggers error
           .mockResolvedValueOnce({}); // ROLLBACK
 
-        await expect(billingService.purchasePlacement({
-          userId: 1,
-          projectId: 1,
-          siteId: 1,
-          type: 'article',
-          contentIds: [1]
-        })).rejects.toThrow(/static/i);
+        await expect(
+          billingService.purchasePlacement({
+            userId: 1,
+            projectId: 1,
+            siteId: 1,
+            type: 'article',
+            contentIds: [1]
+          })
+        ).rejects.toThrow(/static/i);
 
         // Verify rollback was called
         const calls = mockClient.query.mock.calls.map(c => c[0] || c);
@@ -398,13 +415,15 @@ describe('Billing Service', () => {
         .mockResolvedValueOnce({}) // BEGIN
         .mockRejectedValueOnce(new Error('Database error'));
 
-      await expect(billingService.purchasePlacement({
-        userId: 1,
-        projectId: 1,
-        siteId: 1,
-        type: 'link',
-        contentIds: [1]
-      })).rejects.toThrow();
+      await expect(
+        billingService.purchasePlacement({
+          userId: 1,
+          projectId: 1,
+          siteId: 1,
+          type: 'link',
+          contentIds: [1]
+        })
+      ).rejects.toThrow();
 
       // Verify ROLLBACK was called
       const calls = mockClient.query.mock.calls.map(c => c[0] || c);
@@ -416,18 +435,579 @@ describe('Billing Service', () => {
         .mockResolvedValueOnce({}) // BEGIN
         .mockRejectedValueOnce(new Error('Some error'));
 
-      await expect(billingService.purchasePlacement({
-        userId: 1,
-        projectId: 1,
-        siteId: 1,
-        type: 'link',
-        contentIds: [1]
-      })).rejects.toThrow();
+      await expect(
+        billingService.purchasePlacement({
+          userId: 1,
+          projectId: 1,
+          siteId: 1,
+          type: 'link',
+          contentIds: [1]
+        })
+      ).rejects.toThrow();
 
       expect(mockClient.release).toHaveBeenCalled();
     });
   });
-});
+
+  describe('renewPlacement', () => {
+    // Note: renewPlacement has complex transaction flow with 10+ queries
+    // Full success tests require integration testing with real database
+    // Unit tests focus on validation and error paths
+
+    it('should reject non-link placement renewal', async () => {
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 1,
+              user_id: 1,
+              type: 'article', // Articles cannot be renewed
+              balance: '100.00',
+              current_discount: 0,
+              total_spent: '0',
+              expires_at: new Date().toISOString(),
+              site_owner_id: 2
+            }
+          ]
+        }) // SELECT placement
+        .mockResolvedValueOnce({}); // ROLLBACK
+
+      await expect(billingService.renewPlacement(1, 1)).rejects.toThrow(/link/i);
+    });
+
+    it('should reject renewal for non-existent placement', async () => {
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [] }) // Empty result - placement not found
+        .mockResolvedValueOnce({}); // ROLLBACK
+
+      await expect(billingService.renewPlacement(999, 1)).rejects.toThrow(
+        /not found|unauthorized/i
+      );
+    });
+
+    it('should reject renewal with insufficient balance', async () => {
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 1,
+              user_id: 1,
+              type: 'link',
+              balance: '5.00', // Not enough for renewal
+              current_discount: 0,
+              total_spent: '0',
+              expires_at: new Date().toISOString(),
+              site_owner_id: 2
+            }
+          ]
+        })
+        .mockResolvedValueOnce({}); // ROLLBACK
+
+      await expect(billingService.renewPlacement(1, 1)).rejects.toThrow(/insufficient/i);
+    });
+
+    // Note: Owner rate success test removed - requires 10+ queries in exact sequence
+    // Owner pricing ($0.10 for own sites) is tested via integration tests
+
+    it('should rollback on transaction error', async () => {
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 1,
+              user_id: 1,
+              type: 'link',
+              balance: '100.00',
+              current_discount: 0,
+              total_spent: '0',
+              expires_at: new Date().toISOString(),
+              site_owner_id: 2
+            }
+          ]
+        })
+        .mockRejectedValueOnce(new Error('Database error')); // Error during UPDATE
+
+      await expect(billingService.renewPlacement(1, 1)).rejects.toThrow('Database error');
+
+      const calls = mockClient.query.mock.calls.map(c => c[0] || c);
+      expect(calls.some(c => typeof c === 'string' && c.includes('ROLLBACK'))).toBe(true);
+    });
+  });
+
+  describe('refundPlacement', () => {
+    it('should refund paid placement successfully', async () => {
+      // refundPlacement uses pool.connect() for transaction
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 1,
+              user_id: 1,
+              final_price: '25.00',
+              original_price: '25.00',
+              discount_applied: 0,
+              site_name: 'Test Site',
+              project_name: 'Test Project',
+              type: 'link'
+            }
+          ]
+        }) // SELECT placement FOR UPDATE
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 1,
+              balance: '50.00',
+              total_spent: '100.00',
+              current_discount: 10
+            }
+          ]
+        }) // SELECT user FOR UPDATE
+        .mockResolvedValueOnce({}) // UPDATE user balance and total_spent
+        .mockResolvedValueOnce({ rows: [{ id: 1, created_at: new Date() }] }) // INSERT refund transaction
+        .mockResolvedValueOnce({}) // INSERT audit_log
+        .mockResolvedValueOnce({}); // COMMIT
+
+      // Mock calculateDiscountTier
+      mockQuery.mockResolvedValueOnce({
+        rows: [{ discount_percentage: 10, tier_name: 'Bronze' }]
+      });
+
+      const result = await billingService.refundPlacement(1, 1);
+
+      expect(result).toBeDefined();
+      expect(result.refunded).toBe(true);
+      expect(result.amount).toBe(25);
+      expect(result.newBalance).toBe(75); // 50 + 25
+    });
+
+    it('should not refund free placement', async () => {
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 1,
+              user_id: 1,
+              final_price: '0', // Free placement
+              original_price: '0',
+              discount_applied: 0,
+              site_name: 'Test Site',
+              project_name: 'Test Project',
+              type: 'link'
+            }
+          ]
+        }) // SELECT placement FOR UPDATE
+        .mockResolvedValueOnce({}); // ROLLBACK
+
+      const result = await billingService.refundPlacement(1, 1);
+
+      expect(result.refunded).toBe(false);
+      expect(result.amount).toBe(0);
+      expect(result.reason).toMatch(/no payment/i);
+    });
+
+    it('should reject refund for non-existent placement', async () => {
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [] }) // Empty result - placement not found
+        .mockResolvedValueOnce({}); // ROLLBACK
+
+      await expect(billingService.refundPlacement(999, 1)).rejects.toThrow(/not found/i);
+    });
+
+    it('should update discount tier after refund if needed', async () => {
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 1,
+              user_id: 1,
+              final_price: '100.00',
+              original_price: '100.00',
+              discount_applied: 0,
+              site_name: 'Test Site',
+              project_name: 'Test Project',
+              type: 'link'
+            }
+          ]
+        }) // SELECT placement FOR UPDATE
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 1,
+              balance: '50.00',
+              total_spent: '150.00', // Will go to 50 after refund
+              current_discount: 10 // Current Bronze tier
+            }
+          ]
+        }) // SELECT user FOR UPDATE
+        .mockResolvedValueOnce({}) // UPDATE user balance and total_spent
+        .mockResolvedValueOnce({}) // UPDATE user current_discount (tier downgrade)
+        .mockResolvedValueOnce({ rows: [{ id: 1, created_at: new Date() }] }) // INSERT refund transaction
+        .mockResolvedValueOnce({}) // INSERT audit_log
+        .mockResolvedValueOnce({}); // COMMIT
+
+      // Mock calculateDiscountTier - returns lower tier
+      mockQuery.mockResolvedValueOnce({
+        rows: [{ discount_percentage: 0, tier_name: 'Стандарт' }]
+      });
+
+      const result = await billingService.refundPlacement(1, 1);
+
+      expect(result.refunded).toBe(true);
+      expect(result.amount).toBe(100);
+      // Verify UPDATE current_discount was called
+      const updateCalls = mockClient.query.mock.calls.filter(
+        c => typeof c[0] === 'string' && c[0].includes('UPDATE users SET current_discount')
+      );
+      expect(updateCalls.length).toBeGreaterThan(0);
+    });
+
+    it('should rollback on database error', async () => {
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockRejectedValueOnce(new Error('Database error'));
+
+      await expect(billingService.refundPlacement(1, 1)).rejects.toThrow('Database error');
+
+      const calls = mockClient.query.mock.calls.map(c => c[0] || c);
+      expect(calls.some(c => typeof c === 'string' && c.includes('ROLLBACK'))).toBe(true);
+    });
+  });
+
+  describe('deleteAndRefundPlacement', () => {
+    it('should delete placement and refund as admin', async () => {
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 1,
+              user_id: 2, // Different user - admin deleting someone else's placement
+              project_id: 1,
+              site_id: 1,
+              type: 'link',
+              final_price: '25.00',
+              original_price: '25.00',
+              discount_applied: 0,
+              status: 'placed',
+              site_name: 'Test Site',
+              project_name: 'Test Project'
+            }
+          ]
+        }) // SELECT placement FOR UPDATE
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 2,
+              balance: '50.00',
+              total_spent: '100.00',
+              current_discount: 10
+            }
+          ]
+        }) // SELECT user FOR UPDATE (placement owner)
+        .mockResolvedValueOnce({}) // UPDATE user balance
+        .mockResolvedValueOnce({}) // INSERT refund transaction
+        .mockResolvedValueOnce({}) // INSERT audit_log (refund)
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              link_ids: [1],
+              article_ids: [],
+              link_count: '1',
+              article_count: '0'
+            }
+          ]
+        }) // SELECT placement_content
+        .mockResolvedValueOnce({}) // DELETE placements
+        .mockResolvedValueOnce({}) // UPDATE sites used_links
+        .mockResolvedValueOnce({}) // UPDATE project_links usage_count
+        .mockResolvedValueOnce({}) // INSERT audit_log (delete)
+        .mockResolvedValueOnce({}); // COMMIT
+
+      // Mock calculateDiscountTier
+      mockQuery.mockResolvedValueOnce({
+        rows: [{ discount_percentage: 10, tier_name: 'Bronze' }]
+      });
+
+      const result = await billingService.deleteAndRefundPlacement(1, 1, 'admin');
+
+      expect(result.deleted).toBe(true);
+      expect(result.refunded).toBe(true);
+      expect(result.amount).toBe(25);
+    });
+
+    it('should reject deletion by non-admin', async () => {
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 1,
+              user_id: 1,
+              final_price: '25.00',
+              status: 'placed',
+              site_name: 'Test Site',
+              project_name: 'Test Project'
+            }
+          ]
+        }) // SELECT placement FOR UPDATE
+        .mockResolvedValueOnce({}); // ROLLBACK
+
+      await expect(billingService.deleteAndRefundPlacement(1, 1, 'user')).rejects.toThrow(
+        /admin|unauthorized/i
+      );
+    });
+
+    it('should reject deletion of non-existent placement', async () => {
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [] }) // Empty result
+        .mockResolvedValueOnce({}); // ROLLBACK
+
+      await expect(billingService.deleteAndRefundPlacement(999, 1, 'admin')).rejects.toThrow(
+        /not found/i
+      );
+    });
+
+    it('should delete free placement without refund', async () => {
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 1,
+              user_id: 1,
+              project_id: 1,
+              site_id: 1,
+              type: 'link',
+              final_price: '0', // Free placement
+              original_price: '0',
+              discount_applied: 0,
+              status: 'placed',
+              site_name: 'Test Site',
+              project_name: 'Test Project'
+            }
+          ]
+        }) // SELECT placement FOR UPDATE
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              link_ids: [1],
+              article_ids: [],
+              link_count: '1',
+              article_count: '0'
+            }
+          ]
+        }) // SELECT placement_content
+        .mockResolvedValueOnce({}) // DELETE placements
+        .mockResolvedValueOnce({}) // UPDATE sites used_links
+        .mockResolvedValueOnce({}) // UPDATE project_links usage_count
+        .mockResolvedValueOnce({}) // INSERT audit_log
+        .mockResolvedValueOnce({}); // COMMIT
+
+      const result = await billingService.deleteAndRefundPlacement(1, 1, 'admin');
+
+      expect(result.deleted).toBe(true);
+      expect(result.refunded).toBe(false);
+      expect(result.amount).toBe(0);
+    });
+  });
+
+  describe('toggleAutoRenewal', () => {
+    it('should enable auto-renewal for link placement', async () => {
+      mockQuery
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 1,
+              user_id: 1,
+              type: 'link'
+            }
+          ]
+        }) // SELECT placement
+        .mockResolvedValueOnce({}); // UPDATE placement
+
+      const result = await billingService.toggleAutoRenewal(1, 1, true);
+
+      expect(result.success).toBe(true);
+      expect(result.enabled).toBe(true);
+    });
+
+    it('should disable auto-renewal', async () => {
+      mockQuery
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 1,
+              user_id: 1,
+              type: 'link'
+            }
+          ]
+        })
+        .mockResolvedValueOnce({});
+
+      const result = await billingService.toggleAutoRenewal(1, 1, false);
+
+      expect(result.success).toBe(true);
+      expect(result.enabled).toBe(false);
+    });
+
+    it('should reject auto-renewal for article placement', async () => {
+      mockQuery.mockResolvedValueOnce({
+        rows: [
+          {
+            id: 1,
+            user_id: 1,
+            type: 'article'
+          }
+        ]
+      });
+
+      await expect(billingService.toggleAutoRenewal(1, 1, true)).rejects.toThrow(/link/i);
+    });
+
+    it('should reject for non-existent placement', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [] });
+
+      await expect(billingService.toggleAutoRenewal(999, 1, true)).rejects.toThrow(/not found/i);
+    });
+  });
+
+  describe('getUserTransactions', () => {
+    it('should return paginated transactions', async () => {
+      mockQuery
+        .mockResolvedValueOnce({
+          rows: [
+            { id: 1, type: 'deposit', amount: '100.00', created_at: new Date() },
+            { id: 2, type: 'purchase', amount: '-25.00', created_at: new Date() }
+          ]
+        }) // SELECT transactions
+        .mockResolvedValueOnce({
+          rows: [{ count: '10' }]
+        }); // COUNT
+
+      const result = await billingService.getUserTransactions(1, { page: 1, limit: 10 });
+
+      expect(result).toHaveProperty('data');
+      expect(result).toHaveProperty('pagination');
+      expect(result.data).toHaveLength(2);
+      expect(result.pagination.total).toBe(10);
+      expect(result.pagination.pages).toBe(1);
+    });
+
+    it('should filter by transaction type', async () => {
+      mockQuery
+        .mockResolvedValueOnce({
+          rows: [{ id: 1, type: 'deposit', amount: '100.00', created_at: new Date() }]
+        })
+        .mockResolvedValueOnce({
+          rows: [{ count: '5' }]
+        });
+
+      const result = await billingService.getUserTransactions(1, {
+        page: 1,
+        limit: 10,
+        type: 'deposit'
+      });
+
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].type).toBe('deposit');
+    });
+
+    it('should return empty array for user with no transactions', async () => {
+      mockQuery
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [{ count: '0' }] });
+
+      const result = await billingService.getUserTransactions(1, { page: 1, limit: 10 });
+
+      expect(result.data).toHaveLength(0);
+      expect(result.pagination.total).toBe(0);
+    });
+  });
+
+  describe('publishScheduledPlacement', () => {
+    it('should publish scheduled placement', async () => {
+      // publishScheduledPlacement uses query() not transaction
+      mockQuery.mockResolvedValueOnce({
+        rows: [
+          {
+            id: 1,
+            user_id: 1,
+            status: 'scheduled',
+            site_id: 1,
+            api_key: 'api_test123',
+            site_url: 'https://example.com',
+            site_type: 'wordpress'
+          }
+        ]
+      });
+
+      // publishPlacementAsync uses pool.connect()
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({
+          rows: [{ id: 1, type: 'link' }]
+        }) // SELECT placement
+        .mockResolvedValueOnce({
+          rows: [{ link_id: 1, url: 'https://test.com', anchor_text: 'Test' }]
+        }) // SELECT placement_content
+        .mockResolvedValueOnce({}) // UPDATE placement status
+        .mockResolvedValueOnce({}); // COMMIT
+
+      const result = await billingService.publishScheduledPlacement(1, 1);
+
+      expect(result.success).toBe(true);
+      expect(result.placementId).toBe(1);
+    });
+
+    it('should reject non-scheduled placement', async () => {
+      mockQuery.mockResolvedValueOnce({
+        rows: [
+          {
+            id: 1,
+            user_id: 1,
+            status: 'placed', // Already placed
+            site_id: 1,
+            api_key: 'api_test123',
+            site_url: 'https://example.com',
+            site_type: 'wordpress'
+          }
+        ]
+      });
+
+      await expect(billingService.publishScheduledPlacement(1, 1)).rejects.toThrow(/scheduled/i);
+    });
+
+    it('should reject non-existent placement', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [] });
+
+      await expect(billingService.publishScheduledPlacement(999, 1)).rejects.toThrow(/not found/i);
+    });
+
+    it('should reject unauthorized publish attempt', async () => {
+      mockQuery.mockResolvedValueOnce({
+        rows: [
+          {
+            id: 1,
+            user_id: 2, // Different user
+            status: 'scheduled',
+            site_id: 1
+          }
+        ]
+      });
+
+      await expect(billingService.publishScheduledPlacement(1, 1)).rejects.toThrow(/unauthorized/i);
+    });
+  });
+}); // End of 'Billing Service' describe
 
 describe('PRICING Constants', () => {
   it('should export PRICING object', () => {
@@ -435,15 +1015,15 @@ describe('PRICING Constants', () => {
   });
 
   it('should have correct LINK_HOMEPAGE price', () => {
-    expect(billingService.PRICING.LINK_HOMEPAGE).toBe(25.00);
+    expect(billingService.PRICING.LINK_HOMEPAGE).toBe(25.0);
   });
 
   it('should have correct ARTICLE_GUEST_POST price', () => {
-    expect(billingService.PRICING.ARTICLE_GUEST_POST).toBe(15.00);
+    expect(billingService.PRICING.ARTICLE_GUEST_POST).toBe(15.0);
   });
 
   it('should have OWNER_RATE discount', () => {
-    expect(billingService.PRICING.OWNER_RATE).toBe(0.10);
+    expect(billingService.PRICING.OWNER_RATE).toBe(0.1);
   });
 
   it('should have BASE_RENEWAL_DISCOUNT', () => {

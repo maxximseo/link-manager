@@ -7,8 +7,8 @@
  */
 
 const BASE_PRICES = {
-  link: 0.10,
-  article: 5.00,
+  link: 0.1,
+  article: 5.0,
   renewal: 0.05
 };
 
@@ -40,7 +40,7 @@ function calculateTotal(items, discountPercent) {
 describe('Price Calculation', () => {
   describe('Link Prices (base: $0.10)', () => {
     const testCases = [
-      { discount: 0, expected: 0.10 },
+      { discount: 0, expected: 0.1 },
       { discount: 10, expected: 0.09 },
       { discount: 15, expected: 0.085 },
       { discount: 20, expected: 0.08 },
@@ -58,12 +58,12 @@ describe('Price Calculation', () => {
 
   describe('Article Prices (base: $5.00)', () => {
     const testCases = [
-      { discount: 0, expected: 5.00 },
-      { discount: 10, expected: 4.50 },
+      { discount: 0, expected: 5.0 },
+      { discount: 10, expected: 4.5 },
       { discount: 15, expected: 4.25 },
-      { discount: 20, expected: 4.00 },
+      { discount: 20, expected: 4.0 },
       { discount: 25, expected: 3.75 },
-      { discount: 30, expected: 3.50 }
+      { discount: 30, expected: 3.5 }
     ];
 
     testCases.forEach(({ discount, expected }) => {
@@ -126,7 +126,7 @@ describe('Price Calculation', () => {
   describe('Floating Point Precision', () => {
     it('should handle small decimal prices correctly', () => {
       // 0.10 * 0.85 should be exactly 0.085, not 0.08499999999...
-      const price = calculatePrice(0.10, 15);
+      const price = calculatePrice(0.1, 15);
       expect(price).toBe(0.085);
     });
 
@@ -141,19 +141,19 @@ describe('Total Calculation', () => {
   describe('Single Item', () => {
     it('should calculate single link total', () => {
       const total = calculateTotal([{ type: 'link', quantity: 1 }], 0);
-      expect(total).toBeCloseTo(0.10, 2);
+      expect(total).toBeCloseTo(0.1, 2);
     });
 
     it('should calculate single article total', () => {
       const total = calculateTotal([{ type: 'article', quantity: 1 }], 0);
-      expect(total).toBeCloseTo(5.00, 2);
+      expect(total).toBeCloseTo(5.0, 2);
     });
   });
 
   describe('Multiple Items', () => {
     it('should calculate 10 links total', () => {
       const total = calculateTotal([{ type: 'link', quantity: 10 }], 0);
-      expect(total).toBeCloseTo(1.00, 2);
+      expect(total).toBeCloseTo(1.0, 2);
     });
 
     it('should calculate mixed items total', () => {
@@ -163,16 +163,16 @@ describe('Total Calculation', () => {
       ];
       const total = calculateTotal(items, 0);
       // 5 * 0.10 + 2 * 5.00 = 0.50 + 10.00 = 10.50
-      expect(total).toBeCloseTo(10.50, 2);
+      expect(total).toBeCloseTo(10.5, 2);
     });
 
     it('should apply discount to all items', () => {
       const items = [
-        { type: 'link', quantity: 10 },  // 10 * 0.09 = 0.90
+        { type: 'link', quantity: 10 }, // 10 * 0.09 = 0.90
         { type: 'article', quantity: 1 } // 1 * 4.50 = 4.50
       ];
       const total = calculateTotal(items, 10);
-      expect(total).toBeCloseTo(5.40, 2);
+      expect(total).toBeCloseTo(5.4, 2);
     });
   });
 
@@ -184,22 +184,22 @@ describe('Total Calculation', () => {
     // Base total: 100 * 0.10 + 10 * 5.00 = 10 + 50 = $60
 
     it('should calculate 0% discount total', () => {
-      expect(calculateTotal(items, 0)).toBeCloseTo(60.00, 2);
+      expect(calculateTotal(items, 0)).toBeCloseTo(60.0, 2);
     });
 
     it('should calculate 10% discount total', () => {
       // 60 * 0.90 = 54
-      expect(calculateTotal(items, 10)).toBeCloseTo(54.00, 2);
+      expect(calculateTotal(items, 10)).toBeCloseTo(54.0, 2);
     });
 
     it('should calculate 20% discount total', () => {
       // 60 * 0.80 = 48
-      expect(calculateTotal(items, 20)).toBeCloseTo(48.00, 2);
+      expect(calculateTotal(items, 20)).toBeCloseTo(48.0, 2);
     });
 
     it('should calculate 30% discount total', () => {
       // 60 * 0.70 = 42
-      expect(calculateTotal(items, 30)).toBeCloseTo(42.00, 2);
+      expect(calculateTotal(items, 30)).toBeCloseTo(42.0, 2);
     });
   });
 });
@@ -220,7 +220,7 @@ describe('Real-World Scenarios', () => {
     // VIP user with $5000+ spent, buying 50 links
     const total = calculateTotal([{ type: 'link', quantity: 50 }], 30);
     // 50 * 0.07 = 3.50
-    expect(total).toBeCloseTo(3.50, 2);
+    expect(total).toBeCloseTo(3.5, 2);
   });
 
   it('should calculate bulk link purchase savings', () => {

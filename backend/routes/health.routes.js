@@ -30,11 +30,15 @@ router.get('/', async (req, res) => {
   try {
     await cache.set('health:check', '1', 10);
     const value = await cache.get('health:check');
-    health.components.redis = value === '1'
-      ? { status: 'healthy', message: 'Connected' }
-      : { status: 'degraded', message: 'Connection issue' };
+    health.components.redis =
+      value === '1'
+        ? { status: 'healthy', message: 'Connected' }
+        : { status: 'degraded', message: 'Connection issue' };
   } catch (error) {
-    health.components.redis = { status: 'degraded', message: 'Not available (graceful degradation active)' };
+    health.components.redis = {
+      status: 'degraded',
+      message: 'Not available (graceful degradation active)'
+    };
   }
 
   // Check queue system

@@ -10,17 +10,17 @@ const logger = require('../config/logger');
 const login = async (req, res) => {
   try {
     const { username, password } = req.body;
-    
+
     if (!username || !password) {
       return res.status(400).json({ error: 'Username and password are required' });
     }
-    
+
     const result = await authService.authenticateUser(username, password);
-    
+
     if (!result.success) {
       return res.status(401).json({ error: result.error });
     }
-    
+
     logger.info('User logged in:', username);
     res.json({
       token: result.token,
@@ -28,7 +28,6 @@ const login = async (req, res) => {
       expiresIn: result.expiresIn,
       user: result.user
     });
-    
   } catch (error) {
     logger.error('Login error:', error);
     res.status(500).json({ error: 'Server error during login' });
@@ -59,7 +58,9 @@ const register = async (req, res) => {
     }
 
     if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-      return res.status(400).json({ error: 'Username can only contain letters, numbers, and underscores' });
+      return res
+        .status(400)
+        .json({ error: 'Username can only contain letters, numbers, and underscores' });
     }
 
     // Email validation (if provided)
@@ -81,7 +82,6 @@ const register = async (req, res) => {
       message: result.message,
       user: result.user
     });
-
   } catch (error) {
     logger.error('Registration error:', error);
     res.status(500).json({ error: 'Server error during registration' });
@@ -105,7 +105,6 @@ const verifyEmail = async (req, res) => {
 
     logger.info('Email verified successfully');
     res.json({ message: result.message });
-
   } catch (error) {
     logger.error('Email verification error:', error);
     res.status(500).json({ error: 'Server error during email verification' });
@@ -132,7 +131,6 @@ const refreshToken = async (req, res) => {
       expiresIn: result.expiresIn,
       user: result.user
     });
-
   } catch (error) {
     logger.error('Token refresh error:', error);
     res.status(500).json({ error: 'Server error during token refresh' });

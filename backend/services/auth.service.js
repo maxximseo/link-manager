@@ -12,17 +12,29 @@ const logger = require('../config/logger');
 // Validate JWT secret is provided and strong enough
 if (!process.env.JWT_SECRET) {
   logger.error('JWT_SECRET is not set in environment variables. This is a security risk.');
-  throw new Error('JWT_SECRET environment variable is required for security. Please set it in .env file.');
+  throw new Error(
+    'JWT_SECRET environment variable is required for security. Please set it in .env file.'
+  );
 }
 
 // Check secret strength (minimum 32 characters)
 if (process.env.JWT_SECRET.length < 32) {
   logger.error('JWT_SECRET is too short. Must be at least 32 characters for security.');
-  throw new Error('JWT_SECRET must be at least 32 characters long. Please use a stronger secret in .env file.');
+  throw new Error(
+    'JWT_SECRET must be at least 32 characters long. Please use a stronger secret in .env file.'
+  );
 }
 
 // Warn about weak common secrets (only flag exact matches of very weak values)
-const weakSecrets = ['your-secret-key', 'changeme', 'password', '12345', 'test123', 'admin', 'secret'];
+const weakSecrets = [
+  'your-secret-key',
+  'changeme',
+  'password',
+  '12345',
+  'test123',
+  'admin',
+  'secret'
+];
 const secretLower = process.env.JWT_SECRET.toLowerCase();
 if (weakSecrets.includes(secretLower)) {
   logger.error('JWT_SECRET is a common weak value. This is a security risk.');
@@ -93,10 +105,10 @@ const authenticateUser = async (username, password) => {
         };
       } else {
         // Just increment the counter
-        await query(
-          'UPDATE users SET failed_login_attempts = $1 WHERE id = $2',
-          [newAttempts, user.id]
-        );
+        await query('UPDATE users SET failed_login_attempts = $1 WHERE id = $2', [
+          newAttempts,
+          user.id
+        ]);
 
         const attemptsRemaining = 5 - newAttempts;
         return {
@@ -141,7 +153,6 @@ const authenticateUser = async (username, password) => {
         role: user.role
       }
     };
-
   } catch (error) {
     logger.error('Authentication service error:', error);
     return {
@@ -155,10 +166,7 @@ const authenticateUser = async (username, password) => {
 const registerUser = async (username, email, password) => {
   try {
     // Check if username already exists
-    const usernameCheck = await query(
-      'SELECT id FROM users WHERE username = $1',
-      [username]
-    );
+    const usernameCheck = await query('SELECT id FROM users WHERE username = $1', [username]);
 
     if (usernameCheck.rows.length > 0) {
       return {
@@ -169,10 +177,7 @@ const registerUser = async (username, email, password) => {
 
     // Check if email already exists
     if (email) {
-      const emailCheck = await query(
-        'SELECT id FROM users WHERE email = $1',
-        [email]
-      );
+      const emailCheck = await query('SELECT id FROM users WHERE email = $1', [email]);
 
       if (emailCheck.rows.length > 0) {
         return {
@@ -194,7 +199,7 @@ const registerUser = async (username, email, password) => {
       `INSERT INTO users (username, email, password, role, email_verified, verification_token, balance, total_spent, current_discount)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING id, username, email, role`,
-      [username, email, hashedPassword, 'user', false, verificationToken, 0.00, 0.00, 0]
+      [username, email, hashedPassword, 'user', false, verificationToken, 0.0, 0.0, 0]
     );
 
     const newUser = result.rows[0];
@@ -215,7 +220,6 @@ const registerUser = async (username, email, password) => {
       verificationToken: verificationToken, // Remove this in production, send via email instead
       message: 'User registered successfully. Please verify your email.'
     };
-
   } catch (error) {
     logger.error('Registration service error:', error);
     return {
@@ -226,12 +230,11 @@ const registerUser = async (username, email, password) => {
 };
 
 // Verify email with token
-const verifyEmail = async (token) => {
+const verifyEmail = async token => {
   try {
-    const result = await query(
-      'SELECT id, username FROM users WHERE verification_token = $1',
-      [token]
-    );
+    const result = await query('SELECT id, username FROM users WHERE verification_token = $1', [
+      token
+    ]);
 
     if (result.rows.length === 0) {
       return {
@@ -243,10 +246,9 @@ const verifyEmail = async (token) => {
     const user = result.rows[0];
 
     // Mark email as verified and clear token
-    await query(
-      'UPDATE users SET email_verified = true, verification_token = NULL WHERE id = $1',
-      [user.id]
-    );
+    await query('UPDATE users SET email_verified = true, verification_token = NULL WHERE id = $1', [
+      user.id
+    ]);
 
     logger.info(`Email verified for user: ${user.username}`);
 
@@ -254,7 +256,6 @@ const verifyEmail = async (token) => {
       success: true,
       message: 'Email verified successfully. You can now login.'
     };
-
   } catch (error) {
     logger.error('Email verification error:', error);
     return {
@@ -265,7 +266,7 @@ const verifyEmail = async (token) => {
 };
 
 // Refresh access token using refresh token
-const refreshAccessToken = async (refreshToken) => {
+const refreshAccessToken = async refreshToken => {
   try {
     // Verify the refresh token
     const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
@@ -322,7 +323,6 @@ const refreshAccessToken = async (refreshToken) => {
         role: user.role
       }
     };
-
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
       return {

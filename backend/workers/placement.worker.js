@@ -33,20 +33,20 @@ module.exports = async function placementWorker(job) {
   try {
     // Pre-flight validation (5% progress)
     const { query } = require('../config/database');
-    const projectCheck = await query(
-      'SELECT id FROM projects WHERE id = $1 AND user_id = $2',
-      [project_id, userId]
-    );
+    const projectCheck = await query('SELECT id FROM projects WHERE id = $1 AND user_id = $2', [
+      project_id,
+      userId
+    ]);
 
     if (projectCheck.rows.length === 0) {
       throw new Error('Project not found or access denied');
     }
 
     // Validate site ownership
-    const sitesCheck = await query(
-      'SELECT id FROM sites WHERE id = ANY($1) AND user_id = $2',
-      [site_ids, userId]
-    );
+    const sitesCheck = await query('SELECT id FROM sites WHERE id = ANY($1) AND user_id = $2', [
+      site_ids,
+      userId
+    ]);
 
     if (sitesCheck.rows.length !== site_ids.length) {
       const validSiteIds = sitesCheck.rows.map(row => row.id);
@@ -128,7 +128,6 @@ module.exports = async function placementWorker(job) {
           links: assignedLinks.length,
           articles: assignedArticles.length
         });
-
       } catch (error) {
         errors.push({
           site_id,
@@ -194,7 +193,6 @@ module.exports = async function placementWorker(job) {
     });
 
     return summary;
-
   } catch (error) {
     logger.error('Async batch placement job failed', {
       jobId,

@@ -40,18 +40,18 @@ async function startServer() {
   try {
     // Initialize database
     await initDatabase();
-    
+
     // Warm up bcrypt to avoid cold start delay
     const bcrypt = require('bcryptjs');
     const warmupStart = Date.now();
     await bcrypt.hash('warmup', process.env.NODE_ENV === 'development' ? 8 : 10);
     logger.info(`Bcrypt warmed up in ${Date.now() - warmupStart}ms`);
-    
+
     // Warm up database connection pool
     const dbStart = Date.now();
     await query('SELECT 1');
     logger.info(`Database pool warmed up in ${Date.now() - dbStart}ms`);
-    
+
     // Initialize queue workers if available
     if (workerManager) {
       try {
@@ -80,14 +80,14 @@ async function startServer() {
     }
 
     logger.info('Application initialized successfully');
-    
+
     // Start server
     const server = app.listen(PORT, () => {
       logger.info(`🚀 New architecture server running on port ${PORT}`);
       logger.info(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
       logger.info(`🔧 Architecture: Modular with Redis Queue support`);
     });
-    
+
     return server;
   } catch (error) {
     logger.error('Failed to initialize application:', error);
@@ -99,15 +99,15 @@ async function startServer() {
 let server;
 const serverPromise = startServer().then(s => {
   server = s;
-  
+
   // Graceful shutdown
   async function gracefulShutdown(signal) {
     logger.info(`${signal} signal received: starting graceful shutdown`);
-    
+
     // Close HTTP server first
     server.close(async () => {
       logger.info('HTTP server closed');
-      
+
       // Shutdown workers if available
       if (workerManager) {
         try {
@@ -118,11 +118,11 @@ const serverPromise = startServer().then(s => {
           logger.error('Error shutting down queue workers', { error: error.message });
         }
       }
-      
+
       logger.info('Graceful shutdown complete');
       process.exit(0);
     });
-    
+
     // Force shutdown after 30 seconds
     setTimeout(() => {
       logger.error('Could not close connections in time, forcefully shutting down');
@@ -132,12 +132,12 @@ const serverPromise = startServer().then(s => {
 
   process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
   process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-  
+
   return server;
 });
 
 // Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
+process.on('uncaughtException', error => {
   logger.error('Uncaught Exception:', error);
   process.exit(1);
 });
