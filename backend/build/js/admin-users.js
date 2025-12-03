@@ -356,25 +356,16 @@ async function viewUserTransactions(userId, username) {
         }
 
         tbody.innerHTML = transactions.map(tx => {
-            const typeMap = {
-                'deposit': '<span class="badge bg-success">Пополнение</span>',
-                'purchase': '<span class="badge bg-primary">Покупка</span>',
-                'renewal': '<span class="badge bg-info">Продление</span>',
-                'auto_renewal': '<span class="badge bg-warning">Авто-продление</span>',
-                'refund': '<span class="badge bg-danger">Возврат</span>',
-                'adjustment': '<span class="badge bg-secondary">Корректировка</span>'
-            };
-
+            // Use shared badge-utils functions
             const amount = parseFloat(tx.amount);
-            const amountClass = amount >= 0 ? 'text-success' : 'text-danger';
+            const amountClass = getAmountColorClass(amount);
             const amountSign = amount >= 0 ? '+' : '';
-
             const date = new Date(tx.created_at).toLocaleString('ru-RU');
 
             return `
                 <tr>
                     <td>${tx.id}</td>
-                    <td>${typeMap[tx.type] || tx.type}</td>
+                    <td>${getTransactionTypeBadge(tx.type)}</td>
                     <td class="${amountClass} fw-bold">${amountSign}$${Math.abs(amount).toFixed(2)}</td>
                     <td>$${parseFloat(tx.balance_before).toFixed(2)}</td>
                     <td>$${parseFloat(tx.balance_after).toFixed(2)}</td>
