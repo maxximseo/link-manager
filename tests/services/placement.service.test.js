@@ -410,7 +410,6 @@ describe('createPlacement', () => {
         .mockResolvedValueOnce({ rows: [] }) // Site not found
         .mockResolvedValueOnce({}); // ROLLBACK
 
-<<<<<<< HEAD
       await expect(
         placementService.createPlacement({
           site_id: 999,
@@ -419,14 +418,6 @@ describe('createPlacement', () => {
           userId: 1
         })
       ).rejects.toThrow(/site not found/i);
-=======
-      await expect(placementService.createPlacement({
-        site_id: 999,
-        project_id: 1,
-        link_ids: [1],
-        userId: 1
-      })).rejects.toThrow(/site not found/i);
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
 
     it('should reject when site link quota exhausted', async () => {
@@ -437,7 +428,6 @@ describe('createPlacement', () => {
         .mockResolvedValueOnce({ rows: [{ ...mockSite, used_links: 10, max_links: 10 }] }) // Site with full quota
         .mockResolvedValueOnce({}); // ROLLBACK
 
-<<<<<<< HEAD
       await expect(
         placementService.createPlacement({
           site_id: 1,
@@ -446,14 +436,6 @@ describe('createPlacement', () => {
           userId: 1
         })
       ).rejects.toThrow(/link limit/i);
-=======
-      await expect(placementService.createPlacement({
-        site_id: 1,
-        project_id: 1,
-        link_ids: [1],
-        userId: 1
-      })).rejects.toThrow(/link limit/i);
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
 
     it('should reject when site article quota exhausted', async () => {
@@ -464,7 +446,6 @@ describe('createPlacement', () => {
         .mockResolvedValueOnce({ rows: [{ ...mockSite, used_articles: 5, max_articles: 5 }] }) // Site with full quota
         .mockResolvedValueOnce({}); // ROLLBACK
 
-<<<<<<< HEAD
       await expect(
         placementService.createPlacement({
           site_id: 1,
@@ -473,14 +454,6 @@ describe('createPlacement', () => {
           userId: 1
         })
       ).rejects.toThrow(/article limit/i);
-=======
-      await expect(placementService.createPlacement({
-        site_id: 1,
-        project_id: 1,
-        article_ids: [1],
-        userId: 1
-      })).rejects.toThrow(/article limit/i);
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
 
     it('should reject multiple links per site', async () => {
@@ -490,7 +463,6 @@ describe('createPlacement', () => {
         .mockResolvedValueOnce({ rows: [{ existing_links: '0', existing_articles: '0' }] }) // existing content
         .mockResolvedValueOnce({}); // ROLLBACK
 
-<<<<<<< HEAD
       await expect(
         placementService.createPlacement({
           site_id: 1,
@@ -499,14 +471,6 @@ describe('createPlacement', () => {
           userId: 1
         })
       ).rejects.toThrow(/1 link/i);
-=======
-      await expect(placementService.createPlacement({
-        site_id: 1,
-        project_id: 1,
-        link_ids: [1, 2, 3], // Multiple links not allowed
-        userId: 1
-      })).rejects.toThrow(/1 link/i);
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
 
     it('should reject multiple articles per site', async () => {
@@ -516,7 +480,6 @@ describe('createPlacement', () => {
         .mockResolvedValueOnce({ rows: [{ existing_links: '0', existing_articles: '0' }] }) // existing content
         .mockResolvedValueOnce({}); // ROLLBACK
 
-<<<<<<< HEAD
       await expect(
         placementService.createPlacement({
           site_id: 1,
@@ -525,14 +488,6 @@ describe('createPlacement', () => {
           userId: 1
         })
       ).rejects.toThrow(/1 article/i);
-=======
-      await expect(placementService.createPlacement({
-        site_id: 1,
-        project_id: 1,
-        article_ids: [1, 2], // Multiple articles not allowed
-        userId: 1
-      })).rejects.toThrow(/1 article/i);
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
 
     it('should reject duplicate placement for same project/site', async () => {
@@ -540,7 +495,6 @@ describe('createPlacement', () => {
         .mockResolvedValueOnce({}) // BEGIN
         .mockResolvedValueOnce({}) // pg_advisory_xact_lock
         .mockResolvedValueOnce({
-<<<<<<< HEAD
           rows: [
             {
               existing_links: '1', // Already has placement
@@ -558,21 +512,6 @@ describe('createPlacement', () => {
           userId: 1
         })
       ).rejects.toThrow(/уже есть размещение/i);
-=======
-          rows: [{
-            existing_links: '1', // Already has placement
-            existing_articles: '0'
-          }]
-        }) // existing content check
-        .mockResolvedValueOnce({}); // ROLLBACK
-
-      await expect(placementService.createPlacement({
-        site_id: 1,
-        project_id: 1,
-        link_ids: [1],
-        userId: 1
-      })).rejects.toThrow(/уже есть размещение/i);
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
   });
 
@@ -630,7 +569,6 @@ describe('createPlacement', () => {
         .mockResolvedValueOnce({ rows: [exhaustedLink] }) // Get exhausted link
         .mockResolvedValueOnce({}); // ROLLBACK
 
-<<<<<<< HEAD
       await expect(
         placementService.createPlacement({
           site_id: 1,
@@ -639,14 +577,6 @@ describe('createPlacement', () => {
           userId: 1
         })
       ).rejects.toThrow(/exhausted/i);
-=======
-      await expect(placementService.createPlacement({
-        site_id: 1,
-        project_id: 1,
-        link_ids: [1],
-        userId: 1
-      })).rejects.toThrow(/exhausted/i);
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
   });
 
@@ -670,7 +600,6 @@ describe('createPlacement', () => {
         .mockResolvedValueOnce({ rows: [exhaustedArticle] }) // Get exhausted article
         .mockResolvedValueOnce({}); // ROLLBACK
 
-<<<<<<< HEAD
       await expect(
         placementService.createPlacement({
           site_id: 1,
@@ -679,14 +608,6 @@ describe('createPlacement', () => {
           userId: 1
         })
       ).rejects.toThrow(/exhausted/i);
-=======
-      await expect(placementService.createPlacement({
-        site_id: 1,
-        project_id: 1,
-        article_ids: [1],
-        userId: 1
-      })).rejects.toThrow(/exhausted/i);
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
 
     // Note: WordPress publication tests require jest.mock with implementation
@@ -699,7 +620,6 @@ describe('createPlacement', () => {
         .mockResolvedValueOnce({}) // BEGIN
         .mockRejectedValueOnce(new Error('Database error'));
 
-<<<<<<< HEAD
       await expect(
         placementService.createPlacement({
           site_id: 1,
@@ -708,14 +628,6 @@ describe('createPlacement', () => {
           userId: 1
         })
       ).rejects.toThrow('Database error');
-=======
-      await expect(placementService.createPlacement({
-        site_id: 1,
-        project_id: 1,
-        link_ids: [1],
-        userId: 1
-      })).rejects.toThrow('Database error');
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
 
       const calls = mockClient.query.mock.calls.map(c => c[0] || c);
       expect(calls.some(c => typeof c === 'string' && c.includes('ROLLBACK'))).toBe(true);
@@ -726,7 +638,6 @@ describe('createPlacement', () => {
         .mockResolvedValueOnce({}) // BEGIN
         .mockRejectedValueOnce(new Error('Some error'));
 
-<<<<<<< HEAD
       await expect(
         placementService.createPlacement({
           site_id: 1,
@@ -735,14 +646,6 @@ describe('createPlacement', () => {
           userId: 1
         })
       ).rejects.toThrow();
-=======
-      await expect(placementService.createPlacement({
-        site_id: 1,
-        project_id: 1,
-        link_ids: [1],
-        userId: 1
-      })).rejects.toThrow();
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
 
       expect(mockClient.release).toHaveBeenCalled();
     });
@@ -756,13 +659,9 @@ describe('createPlacement', () => {
         .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({ rows: [{ id: 1 }] })
         .mockResolvedValueOnce({ rows: [] })
-<<<<<<< HEAD
         .mockResolvedValueOnce({
           rows: [{ id: 1, usage_count: 0, usage_limit: 999, status: 'active' }]
         })
-=======
-        .mockResolvedValueOnce({ rows: [{ id: 1, usage_count: 0, usage_limit: 999, status: 'active' }] })
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
         .mockResolvedValueOnce({})
         .mockResolvedValueOnce({})
         .mockResolvedValueOnce({})
@@ -778,13 +677,9 @@ describe('createPlacement', () => {
 
       // Verify advisory lock was called
       const calls = mockClient.query.mock.calls.map(c => c[0] || c);
-<<<<<<< HEAD
       expect(calls.some(c => typeof c === 'string' && c.includes('pg_advisory_xact_lock'))).toBe(
         true
       );
-=======
-      expect(calls.some(c => typeof c === 'string' && c.includes('pg_advisory_xact_lock'))).toBe(true);
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
   });
 });

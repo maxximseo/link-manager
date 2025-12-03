@@ -50,16 +50,12 @@ jest.mock('../../backend/services/cache.service', () => ({
 // Mock billing service
 jest.mock('../../backend/services/billing.service', () => ({
   calculateDiscountTier: jest.fn().mockResolvedValue({ discount: 0, tier: 'Standard' }),
-<<<<<<< HEAD
   refundPlacementInTransaction: jest.fn().mockResolvedValue({
     refunded: true,
     newBalance: 100,
     tierChanged: false,
     newTier: 'Standard'
   }),
-=======
-  refundPlacementInTransaction: jest.fn().mockResolvedValue({ refunded: true, newBalance: 100, tierChanged: false, newTier: 'Standard' }),
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
   restoreUsageCountsInTransaction: jest.fn().mockResolvedValue(true),
   publishPlacementAsync: jest.fn().mockResolvedValue(true)
 }));
@@ -82,7 +78,6 @@ describe('Admin Service', () => {
 
   describe('getAdminStats', () => {
     const mockRevenueStats = {
-<<<<<<< HEAD
       rows: [
         {
           total_revenue: '1500.00',
@@ -114,33 +109,6 @@ describe('Admin Service', () => {
           total_user_spending: '15000.00'
         }
       ]
-=======
-      rows: [{
-        total_revenue: '1500.00',
-        purchases_count: '25',
-        renewals_count: '10',
-        avg_transaction: '42.86'
-      }]
-    };
-
-    const mockPlacementStats = {
-      rows: [{
-        total_placements: '35',
-        link_placements: '25',
-        article_placements: '10',
-        scheduled_placements: '5',
-        active_placements: '28',
-        auto_renewal_count: '15'
-      }]
-    };
-
-    const mockUserStats = {
-      rows: [{
-        new_users: '8',
-        total_user_balance: '5000.00',
-        total_user_spending: '15000.00'
-      }]
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     };
 
     it('should return stats for day period', async () => {
@@ -171,11 +139,7 @@ describe('Admin Service', () => {
       expect(result.period).toBe('week');
       // Verify date filter in query
       const revenueQuery = mockQuery.mock.calls[0][0];
-<<<<<<< HEAD
       expect(revenueQuery).toContain('7 days');
-=======
-      expect(revenueQuery).toContain("7 days");
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
 
     it('should return stats for month period', async () => {
@@ -188,11 +152,7 @@ describe('Admin Service', () => {
 
       expect(result.period).toBe('month');
       const revenueQuery = mockQuery.mock.calls[0][0];
-<<<<<<< HEAD
       expect(revenueQuery).toContain('30 days');
-=======
-      expect(revenueQuery).toContain("30 days");
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
 
     it('should return stats for year period', async () => {
@@ -205,11 +165,7 @@ describe('Admin Service', () => {
 
       expect(result.period).toBe('year');
       const revenueQuery = mockQuery.mock.calls[0][0];
-<<<<<<< HEAD
       expect(revenueQuery).toContain('365 days');
-=======
-      expect(revenueQuery).toContain("365 days");
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
 
     it('should default to week for invalid period', async () => {
@@ -221,16 +177,11 @@ describe('Admin Service', () => {
       const result = await adminService.getAdminStats('invalid');
 
       const revenueQuery = mockQuery.mock.calls[0][0];
-<<<<<<< HEAD
       expect(revenueQuery).toContain('7 days');
-=======
-      expect(revenueQuery).toContain("7 days");
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
 
     it('should handle null values', async () => {
       mockQuery
-<<<<<<< HEAD
         .mockResolvedValueOnce({
           rows: [
             {
@@ -256,11 +207,6 @@ describe('Admin Service', () => {
         .mockResolvedValueOnce({
           rows: [{ new_users: '0', total_user_balance: null, total_user_spending: null }]
         });
-=======
-        .mockResolvedValueOnce({ rows: [{ total_revenue: null, purchases_count: '0', renewals_count: '0', avg_transaction: null }] })
-        .mockResolvedValueOnce({ rows: [{ total_placements: '0', link_placements: '0', article_placements: '0', scheduled_placements: '0', active_placements: '0', auto_renewal_count: '0' }] })
-        .mockResolvedValueOnce({ rows: [{ new_users: '0', total_user_balance: null, total_user_spending: null }] });
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
 
       const result = await adminService.getAdminStats('day');
 
@@ -273,16 +219,12 @@ describe('Admin Service', () => {
     it('should return revenue breakdown by day', async () => {
       mockQuery.mockResolvedValueOnce({
         rows: [
-<<<<<<< HEAD
           {
             period: '2025-01-01',
             type: 'purchase',
             transaction_count: '10',
             total_amount: '250.00'
           },
-=======
-          { period: '2025-01-01', type: 'purchase', transaction_count: '10', total_amount: '250.00' },
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
           { period: '2025-01-01', type: 'renewal', transaction_count: '5', total_amount: '100.00' }
         ]
       });
@@ -325,7 +267,6 @@ describe('Admin Service', () => {
 
   describe('getUsers', () => {
     const mockUsers = [
-<<<<<<< HEAD
       {
         id: 1,
         username: 'user1',
@@ -344,10 +285,6 @@ describe('Admin Service', () => {
         placement_count: '10',
         project_count: '3'
       }
-=======
-      { id: 1, username: 'user1', email: 'user1@test.com', role: 'user', balance: '100.00', placement_count: '5', project_count: '2' },
-      { id: 2, username: 'admin', email: 'admin@test.com', role: 'admin', balance: '500.00', placement_count: '10', project_count: '3' }
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     ];
 
     it('should return users with pagination', async () => {
@@ -440,14 +377,9 @@ describe('Admin Service', () => {
         .mockResolvedValueOnce({}) // BEGIN
         .mockResolvedValueOnce({ rows: [] }); // User not found
 
-<<<<<<< HEAD
       await expect(adminService.adjustUserBalance(999, 50, 'Test', 1)).rejects.toThrow(
         'User not found'
       );
-=======
-      await expect(adminService.adjustUserBalance(999, 50, 'Test', 1))
-        .rejects.toThrow('User not found');
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
 
     it('should throw error for insufficient balance', async () => {
@@ -455,14 +387,9 @@ describe('Admin Service', () => {
         .mockResolvedValueOnce({}) // BEGIN
         .mockResolvedValueOnce({ rows: [mockUser] }); // User with $100
 
-<<<<<<< HEAD
       await expect(adminService.adjustUserBalance(1, -150, 'Overdraft', 999)).rejects.toThrow(
         'Insufficient balance'
       );
-=======
-      await expect(adminService.adjustUserBalance(1, -150, 'Overdraft', 999))
-        .rejects.toThrow('Insufficient balance');
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
 
     it('should rollback on error', async () => {
@@ -470,12 +397,7 @@ describe('Admin Service', () => {
         .mockResolvedValueOnce({}) // BEGIN
         .mockRejectedValueOnce(new Error('DB error'));
 
-<<<<<<< HEAD
       await expect(adminService.adjustUserBalance(1, 50, 'Test', 999)).rejects.toThrow('DB error');
-=======
-      await expect(adminService.adjustUserBalance(1, 50, 'Test', 999))
-        .rejects.toThrow('DB error');
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
 
       expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
     });
@@ -492,13 +414,8 @@ describe('Admin Service', () => {
 
       await adminService.adjustUserBalance(1, 50, 'Test', 999);
 
-<<<<<<< HEAD
       const auditCall = mockClient.query.mock.calls.find(
         call => call[0] && call[0].includes('audit_log')
-=======
-      const auditCall = mockClient.query.mock.calls.find(call =>
-        call[0] && call[0].includes('audit_log')
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
       );
       expect(auditCall).toBeDefined();
     });
@@ -534,13 +451,9 @@ describe('Admin Service', () => {
     it('should return placements for admin sites', async () => {
       mockQuery
         .mockResolvedValueOnce({
-<<<<<<< HEAD
           rows: [
             { id: 1, type: 'link', status: 'placed', username: 'buyer1', site_name: 'Admin Site' }
           ]
-=======
-          rows: [{ id: 1, type: 'link', status: 'placed', username: 'buyer1', site_name: 'Admin Site' }]
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
         })
         .mockResolvedValueOnce({ rows: [{ count: '1' }] });
 
@@ -578,7 +491,6 @@ describe('Admin Service', () => {
   describe('getPendingApprovals', () => {
     it('should return pending approval placements', async () => {
       mockQuery.mockResolvedValueOnce({
-<<<<<<< HEAD
         rows: [
           {
             id: 1,
@@ -587,14 +499,6 @@ describe('Admin Service', () => {
             site_owner_username: 'admin'
           }
         ]
-=======
-        rows: [{
-          id: 1,
-          status: 'pending_approval',
-          buyer_username: 'user1',
-          site_owner_username: 'admin'
-        }]
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
       });
 
       const result = await adminService.getPendingApprovals();
@@ -669,18 +573,9 @@ describe('Admin Service', () => {
     });
 
     it('should throw error for non-existent placement', async () => {
-<<<<<<< HEAD
       mockClient.query.mockResolvedValueOnce({}).mockResolvedValueOnce({ rows: [] });
 
       await expect(adminService.approvePlacement(999, 1)).rejects.toThrow('Placement not found');
-=======
-      mockClient.query
-        .mockResolvedValueOnce({})
-        .mockResolvedValueOnce({ rows: [] });
-
-      await expect(adminService.approvePlacement(999, 1))
-        .rejects.toThrow('Placement not found');
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
 
     it('should throw error if not pending_approval status', async () => {
@@ -688,12 +583,7 @@ describe('Admin Service', () => {
         .mockResolvedValueOnce({})
         .mockResolvedValueOnce({ rows: [{ ...mockPlacement, status: 'placed' }] });
 
-<<<<<<< HEAD
       await expect(adminService.approvePlacement(1, 999)).rejects.toThrow(/not pending approval/i);
-=======
-      await expect(adminService.approvePlacement(1, 999))
-        .rejects.toThrow(/not pending approval/i);
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
   });
 
@@ -739,14 +629,9 @@ describe('Admin Service', () => {
         .mockResolvedValueOnce({})
         .mockResolvedValueOnce({ rows: [{ ...mockPlacement, status: 'placed' }] });
 
-<<<<<<< HEAD
       await expect(adminService.rejectPlacement(1, 999, 'Test')).rejects.toThrow(
         /not pending approval/i
       );
-=======
-      await expect(adminService.rejectPlacement(1, 999, 'Test'))
-        .rejects.toThrow(/not pending approval/i);
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
 
     it('should handle free placements (no refund)', async () => {
@@ -796,14 +681,9 @@ describe('Admin Service', () => {
     it('should throw error for non-existent site', async () => {
       mockQuery.mockResolvedValueOnce({ rows: [] });
 
-<<<<<<< HEAD
       await expect(adminService.setSitePublicStatus(999, true, 1)).rejects.toThrow(
         'Site not found'
       );
-=======
-      await expect(adminService.setSitePublicStatus(999, true, 1))
-        .rejects.toThrow('Site not found');
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
 
     it('should create audit log', async () => {
@@ -898,20 +778,11 @@ describe('Admin Service', () => {
     });
 
     it('should throw error for non-existent placement', async () => {
-<<<<<<< HEAD
       mockClient.query.mockResolvedValueOnce({}).mockResolvedValueOnce({ rows: [] });
 
       await expect(adminService.refundPlacement(999, 'Test', 1, false)).rejects.toThrow(
         'Placement not found'
       );
-=======
-      mockClient.query
-        .mockResolvedValueOnce({})
-        .mockResolvedValueOnce({ rows: [] });
-
-      await expect(adminService.refundPlacement(999, 'Test', 1, false))
-        .rejects.toThrow('Placement not found');
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
 
     it('should throw error for free placement', async () => {
@@ -919,28 +790,19 @@ describe('Admin Service', () => {
         .mockResolvedValueOnce({})
         .mockResolvedValueOnce({ rows: [{ ...mockPlacement, final_price: '0.00' }] });
 
-<<<<<<< HEAD
       await expect(adminService.refundPlacement(1, 'Test', 999, false)).rejects.toThrow(
         /no refundable amount/i
       );
-=======
-      await expect(adminService.refundPlacement(1, 'Test', 999, false))
-        .rejects.toThrow(/no refundable amount/i);
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     });
 
     it('should delete WordPress post if requested', async () => {
       const wordpressService = require('../../backend/services/wordpress.service');
       wordpressService.deleteArticle.mockResolvedValueOnce({ success: true });
       billingService.refundPlacementInTransaction.mockResolvedValueOnce({
-<<<<<<< HEAD
         refunded: true,
         newBalance: 125,
         tierChanged: false,
         newTier: 'Standard'
-=======
-        refunded: true, newBalance: 125, tierChanged: false, newTier: 'Standard'
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
       });
 
       mockClient.query
@@ -977,13 +839,8 @@ describe('Admin Audit Trail', () => {
 
     await adminService.adjustUserBalance(1, 50, 'Test', 999);
 
-<<<<<<< HEAD
     const auditCall = mockClient.query.mock.calls.find(
       call => call[0] && call[0].includes('audit_log') && call[0].includes('admin_adjust_balance')
-=======
-    const auditCall = mockClient.query.mock.calls.find(call =>
-      call[0] && call[0].includes('audit_log') && call[0].includes('admin_adjust_balance')
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     );
     expect(auditCall).toBeDefined();
   });
@@ -995,13 +852,8 @@ describe('Admin Audit Trail', () => {
 
     await adminService.setSitePublicStatus(1, true, 999);
 
-<<<<<<< HEAD
     const auditCall = mockQuery.mock.calls.find(
       call => call[0] && call[0].includes('audit_log') && call[0].includes('set_site_public_status')
-=======
-    const auditCall = mockQuery.mock.calls.find(call =>
-      call[0] && call[0].includes('audit_log') && call[0].includes('set_site_public_status')
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
     );
     expect(auditCall).toBeDefined();
   });
@@ -1017,33 +869,17 @@ describe('Error Handling', () => {
   it('should throw error on database failure in getAdminStats', async () => {
     mockQuery.mockRejectedValueOnce(new Error('DB error'));
 
-<<<<<<< HEAD
     await expect(adminService.getAdminStats('day')).rejects.toThrow('DB error');
-=======
-    await expect(adminService.getAdminStats('day'))
-      .rejects.toThrow('DB error');
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
   });
 
   it('should throw error on database failure in getUsers', async () => {
     mockQuery.mockRejectedValueOnce(new Error('DB error'));
 
-<<<<<<< HEAD
     await expect(adminService.getUsers({})).rejects.toThrow('DB error');
   });
 
   it('should release client on error in adjustUserBalance', async () => {
     mockClient.query.mockResolvedValueOnce({}).mockRejectedValueOnce(new Error('DB error'));
-=======
-    await expect(adminService.getUsers({}))
-      .rejects.toThrow('DB error');
-  });
-
-  it('should release client on error in adjustUserBalance', async () => {
-    mockClient.query
-      .mockResolvedValueOnce({})
-      .mockRejectedValueOnce(new Error('DB error'));
->>>>>>> a85c16f (Auto-commit: Development changes at 2025-12-03 18:27:00)
 
     try {
       await adminService.adjustUserBalance(1, 50, 'Test', 999);
