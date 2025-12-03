@@ -30,7 +30,7 @@ const placementHandlers = {
 };
 
 const wordpressHandlers = {
-  publish: async data => {
+  publish: data => {
     logger.info('Publishing to WordPress:', data);
     // WordPress API integration here
     return { success: true, post_id: 123 };
@@ -38,7 +38,7 @@ const wordpressHandlers = {
 };
 
 const batchHandlers = {
-  bulk_placement: async data => {
+  bulk_placement: data => {
     logger.info('Processing bulk placements:', data);
     // Bulk operations here
     return { success: true, processed: data.items.length };
@@ -67,7 +67,7 @@ const process = async job => {
     throw new Error(`Unknown job type: ${type} for queue: ${queue}`);
   }
 
-  return await handler(job.data);
+  return handler(job.data);
 };
 
 module.exports = { process };
