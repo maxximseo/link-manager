@@ -79,6 +79,19 @@ app.use('/api', routes);
 const healthRoutes = require('./routes/health.routes');
 app.use('/health', healthRoutes);
 
+// Sentry test endpoint (development only)
+app.get('/debug-sentry', (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(403).json({ error: 'Not available in production' });
+  }
+  throw new Error('Sentry test error - triggered manually for verification');
+});
+
+// Sentry error handler - MUST be before other error middleware
+if (process.env.SENTRY_DSN) {
+  Sentry.setupExpressErrorHandler(app);
+}
+
 // Error handling for API routes
 app.use('/api', errorHandler);
 
