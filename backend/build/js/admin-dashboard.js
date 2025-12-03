@@ -346,7 +346,7 @@ function renderRecentPurchases(purchases) {
         const typeBadge = getPlacementTypeBadge(p.type);
 
         row.innerHTML = `
-            <td>${formatDate(p.purchased_at)}</td>
+            <td>${formatDateTime(p.purchased_at)}</td>
             <td>
                 ${p.username}
                 <br><small class="text-muted">${p.email}</small>
