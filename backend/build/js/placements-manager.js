@@ -728,33 +728,10 @@ async function confirmExport(scope) {
 
 // Purchase Modal Logic moved to shared purchase-modal.js
 
-// ============================================
-// Utility Functions
-// ============================================
-
-function formatDate(dateString) {
-    if (!dateString) return '—';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ru-RU', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-    });
-}
-
+// Utility functions provided by shared modules:
+// formatDate() is provided by badge-utils.js (loaded first)
 // showAlert() is provided by security.js (loaded first)
-// getToken() is provided by auth.js (loaded first)
-
-function isAdmin() {
-    const token = getToken();
-    if (!token) return false;
-    try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        return payload.role === 'admin';
-    } catch (e) {
-        return false;
-    }
-}
+// getToken(), isAdmin() is provided by auth.js (loaded first)
 
 /**
  * Load all placements (active, scheduled, history)
