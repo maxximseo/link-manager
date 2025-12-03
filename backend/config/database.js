@@ -1,5 +1,6 @@
 const { Pool } = require('pg');
 const path = require('path');
+const fs = require('fs');
 
 // Load environment variables first
 require('dotenv').config({ path: path.join(__dirname, '..', '.env'), override: true });

@@ -365,7 +365,7 @@ const createBatchPlacementAsync = async (req, res) => {
     const jobId = crypto.randomBytes(16).toString('hex');
 
     // Add job to queue
-    const _job = await placementQueue.add(
+    const job = await placementQueue.add(
       'batch-placement',
       {
         jobId,
