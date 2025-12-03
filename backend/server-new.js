@@ -186,6 +186,11 @@ process.on('uncaughtException', error => {
 process.on('unhandledRejection', (reason, promise) => {
   logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
 
+  // Send to Sentry
+  if (process.env.SENTRY_DSN && reason instanceof Error) {
+    Sentry.captureException(reason);
+  }
+
   // Only exit on critical database/system failures
   // Log and continue for application-level errors
   const isCritical =
