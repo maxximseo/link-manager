@@ -832,7 +832,7 @@ const publishScheduledPlacement = async (placementId, userId = null) => {
  * Publish placement to WordPress (internal helper) - DEPRECATED
  * Use publishPlacementAsync instead for better performance
  */
-const publishPlacement = async (client, placementId) => {
+const _publishPlacement = async (client, placementId) => {
   // Get placement details
   const placementResult = await client.query(
     `
@@ -1637,7 +1637,6 @@ const restoreUsageCountsInTransaction = async (client, placementId) => {
  */
 const deleteAndRefundPlacement = async (placementId, userId, userRole = 'user') => {
   const client = await pool.connect();
-  const placementService = require('./placement.service');
 
   try {
     await client.query('BEGIN');
