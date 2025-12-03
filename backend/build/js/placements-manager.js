@@ -73,15 +73,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('historyTypeFilter').addEventListener('change', () => loadHistoryPlacements());
     document.getElementById('historyStatusFilter').addEventListener('change', () => loadHistoryPlacements());
 
-    // Purchase modal listeners
-    document.getElementById('purchaseProjectSelect').addEventListener('change', onProjectChange);
+    // Purchase modal listeners (using shared purchase-modal.js)
+    document.getElementById('purchaseProjectSelect').addEventListener('change', onPurchaseProjectChange);
     document.querySelectorAll('input[name="purchaseType"]').forEach(radio => {
-        radio.addEventListener('change', onTypeChange);
+        radio.addEventListener('change', onPurchaseTypeChange);
     });
-    document.getElementById('purchaseSiteSelect').addEventListener('change', onSiteChange);
-    document.getElementById('purchaseContentSelect').addEventListener('change', onContentChange);
+    document.getElementById('purchaseSiteSelect').addEventListener('change', onPurchaseSiteChange);
+    document.getElementById('purchaseContentSelect').addEventListener('change', onPurchaseContentChange);
     document.querySelectorAll('input[name="publishTime"]').forEach(radio => {
-        radio.addEventListener('change', onPublishTimeChange);
+        radio.addEventListener('change', onPurchaseTimeChange);
     });
 
     // Load data for purchase modal
@@ -144,55 +144,8 @@ async function loadActivePlacements() {
     }
 }
 
-/**
- * Apply placement filters
- */
-function applyPlacementFilters(placements) {
-    return placements.filter(p => {
-        // Project filter
-        if (activeFilters.projectId && p.project_id != activeFilters.projectId) {
-            return false;
-        }
-
-        // Type filter
-        if (activeFilters.type && p.type !== activeFilters.type) {
-            return false;
-        }
-
-        // Date range filter
-        if (activeFilters.dateFrom || activeFilters.dateTo) {
-            const placementDate = new Date(p.purchased_at);
-
-            if (activeFilters.dateFrom) {
-                const fromDate = new Date(activeFilters.dateFrom);
-                if (placementDate < fromDate) return false;
-            }
-
-            if (activeFilters.dateTo) {
-                const toDate = new Date(activeFilters.dateTo);
-                toDate.setHours(23, 59, 59, 999); // End of day
-                if (placementDate > toDate) return false;
-            }
-        }
-
-        return true;
-    });
-}
-
-/**
- * Apply filters from UI inputs
- */
-function applyFilters() {
-    // Update filter state from UI
-    activeFilters.projectId = document.getElementById('projectFilter').value;
-    activeFilters.type = document.getElementById('typeFilter').value;
-    activeFilters.dateFrom = document.getElementById('dateFrom').value;
-    activeFilters.dateTo = document.getElementById('dateTo').value;
-
-    // Re-filter and re-render active placements
-    const filtered = applyPlacementFilters(allActivePlacements);
-    renderActivePlacements(filtered);
-}
+// Filter functions moved to placements-manager-filters.js
+// applyPlacementFilters() and applyFilters() are defined there
 
 /**
  * Render active placements
@@ -235,10 +188,8 @@ function renderActivePlacements(placements) {
             expiryText = `${formatDate(p.expires_at)} (${daysLeft} дн.)`;
         }
 
-        // Type badge
-        const typeBadge = p.type === 'link'
-            ? '<span class="badge bg-primary">Главная</span>'
-            : '<span class="badge bg-success">Статья</span>';
+        // Type badge (using badge-utils.js)
+        const typeBadge = getPlacementTypeBadge(p.type);
 
         // Auto-renewal toggle
         const autoRenewalToggle = p.type === 'link'
@@ -301,11 +252,9 @@ function renderActivePlacements(placements) {
         // GEO value
         const geoValue = p.site_geo || 'EN';
 
-        // Site type badge (WP/PHP)
+        // Site type badge (WP/PHP) - using badge-utils.js
         const siteType = p.site_type || 'wordpress';
-        const siteTypeBadge = siteType === 'wordpress'
-            ? '<span class="badge bg-secondary"><i class="bi bi-wordpress"></i> WP</span>'
-            : '<span class="badge bg-success"><i class="bi bi-filetype-php"></i> PHP</span>';
+        const siteTypeBadge = getSiteTypeBadge(siteType);
 
         row.innerHTML = `
             <td><input type="checkbox" class="active-checkbox" data-id="${p.id}" data-type="${p.type}" onchange="updateActiveBulkActions()"></td>
@@ -391,9 +340,7 @@ function renderScheduledPlacements(placements) {
     placements.forEach(p => {
         const row = document.createElement('tr');
 
-        const typeBadge = p.type === 'link'
-            ? '<span class="badge bg-primary">Главная</span>'
-            : '<span class="badge bg-success">Статья</span>';
+        const typeBadge = getPlacementTypeBadge(p.type);
 
         // For articles, show full WordPress post URL; for links, show site URL
         const displayUrl = (p.type === 'article' && p.wordpress_post_id)
@@ -430,11 +377,9 @@ function renderScheduledPlacements(placements) {
         // GEO value
         const geoValue = p.site_geo || 'EN';
 
-        // Site type badge (WP/PHP)
+        // Site type badge (WP/PHP) - using badge-utils.js
         const siteType = p.site_type || 'wordpress';
-        const siteTypeBadge = siteType === 'wordpress'
-            ? '<span class="badge bg-secondary"><i class="bi bi-wordpress"></i> WP</span>'
-            : '<span class="badge bg-success"><i class="bi bi-filetype-php"></i> PHP</span>';
+        const siteTypeBadge = getSiteTypeBadge(siteType);
 
         const finalPrice = parseFloat(p.final_price || 0);
         row.innerHTML = `
@@ -514,20 +459,8 @@ function renderHistoryPlacements(placements) {
     placements.forEach(p => {
         const row = document.createElement('tr');
 
-        const typeBadge = p.type === 'link'
-            ? '<span class="badge bg-primary">Главная</span>'
-            : '<span class="badge bg-success">Статья</span>';
-
-        const statusBadges = {
-            'placed': '<span class="badge bg-success">Размещено</span>',
-            'pending': '<span class="badge bg-warning">Ожидание</span>',
-            'pending_approval': '<span class="badge bg-warning"><i class="bi bi-hourglass-split"></i> На модерации</span>',
-            'scheduled': '<span class="badge bg-info">Запланировано</span>',
-            'expired': '<span class="badge bg-secondary">Истекло</span>',
-            'cancelled': '<span class="badge bg-danger">Отменено</span>',
-            'rejected': '<span class="badge bg-danger"><i class="bi bi-x-circle"></i> Отклонено</span>',
-            'failed': '<span class="badge bg-danger">Ошибка</span>'
-        };
+        const typeBadge = getPlacementTypeBadge(p.type);
+        // Status badges from badge-utils.js (PLACEMENT_STATUS_BADGES)
 
         // For articles, show full WordPress post URL; for links, show site URL
         const displayUrl = (p.type === 'article' && p.wordpress_post_id)
@@ -562,17 +495,15 @@ function renderHistoryPlacements(placements) {
         // GEO value
         const geoValue = p.site_geo || 'EN';
 
-        // Site type badge (WP/PHP)
+        // Site type badge (WP/PHP) - using badge-utils.js
         const siteType = p.site_type || 'wordpress';
-        const siteTypeBadge = siteType === 'wordpress'
-            ? '<span class="badge bg-secondary"><i class="bi bi-wordpress"></i> WP</span>'
-            : '<span class="badge bg-success"><i class="bi bi-filetype-php"></i> PHP</span>';
+        const siteTypeBadge = getSiteTypeBadge(siteType);
 
         row.innerHTML = `
             <td>#${p.id}</td>
             <td>${p.project_name || '—'}</td>
             <td><a href="${displayUrl}" target="_blank">${displayUrl}</a></td>
-            <td>${statusBadges[p.status] || p.status}</td>
+            <td>${getPlacementStatusBadge(p.status)}</td>
             <td>${formatDate(p.published_at || p.placed_at)}</td>
             <td>${p.expires_at ? formatDate(p.expires_at) : '—'}</td>
             <td>$${parseFloat(p.final_price || 0).toFixed(2)}</td>
@@ -739,7 +670,7 @@ async function deletePlacement(placementId) {
         await loadBalance();
         await loadActivePlacements();
         await loadScheduledPlacements();
-        await loadHistory();
+        await loadHistoryPlacements();
 
     } catch (error) {
         console.error('Failed to delete placement:', error);
@@ -795,338 +726,7 @@ async function confirmExport(scope) {
     }
 }
 
-// ============================================
-// Purchase Modal Logic
-// ============================================
-
-/**
- * Load purchase modal data
- */
-async function loadPurchaseModalData() {
-    await loadProjects();
-    await loadSites();
-    await loadPricing();
-
-    // Reset form
-    document.getElementById('purchaseProjectSelect').value = '';
-    document.getElementById('purchaseSiteSelect').value = '';
-    document.getElementById('purchaseContentSelect').innerHTML = '<option value="">Сначала выберите проект и тип</option>';
-    document.getElementById('purchaseTypeLink').checked = true;
-    document.getElementById('publishImmediate').checked = true;
-    document.getElementById('autoRenewalCheckbox').checked = false;
-    document.getElementById('confirmPurchaseBtn').disabled = true;
-
-    updatePriceCalculator();
-}
-
-/**
- * Load projects
- */
-async function loadProjects() {
-    try {
-        const response = await fetch('/api/projects', {
-            headers: { 'Authorization': `Bearer ${getToken()}` }
-        });
-
-        if (!response.ok) throw new Error('Failed to load projects');
-
-        const result = await response.json();
-        projects = Array.isArray(result.data) ? result.data : result;
-
-        const select = document.getElementById('purchaseProjectSelect');
-        select.innerHTML = '<option value="">-- Выберите проект --</option>';
-
-        projects.forEach(p => {
-            const option = document.createElement('option');
-            option.value = p.id;
-            option.textContent = p.name;
-            select.appendChild(option);
-        });
-
-    } catch (error) {
-        console.error('Failed to load projects:', error);
-    }
-}
-
-/**
- * Load sites
- */
-async function loadSites() {
-    try {
-        const response = await fetch('/api/sites', {
-            headers: { 'Authorization': `Bearer ${getToken()}` }
-        });
-
-        if (!response.ok) throw new Error('Failed to load sites');
-
-        const result = await response.json();
-        sites = Array.isArray(result.data) ? result.data : result;
-
-        const select = document.getElementById('purchaseSiteSelect');
-        select.innerHTML = '<option value="">-- Выберите сайт --</option>';
-
-        sites.forEach(s => {
-            const option = document.createElement('option');
-            option.value = s.id;
-            option.textContent = `${s.site_name} (${s.site_url})`;
-            select.appendChild(option);
-        });
-
-    } catch (error) {
-        console.error('Failed to load sites:', error);
-    }
-}
-
-/**
- * Load pricing
- */
-async function loadPricing() {
-    try {
-        const response = await fetch('/api/billing/pricing', {
-            headers: { 'Authorization': `Bearer ${getToken()}` }
-        });
-
-        if (!response.ok) throw new Error('Failed to load pricing');
-
-        const result = await response.json();
-        pricing = result.data;
-
-        // Update prices in modal
-        document.getElementById('purchaseLinkPrice').textContent = pricing.link.finalPrice.toFixed(2);
-        document.getElementById('purchaseLinkRenewalPrice').textContent = pricing.renewal.finalPrice.toFixed(2);
-        document.getElementById('purchaseArticlePrice').textContent = pricing.article.finalPrice.toFixed(2);
-        document.getElementById('purchaseUserDiscount').textContent = pricing.link.discount;
-
-    } catch (error) {
-        console.error('Failed to load pricing:', error);
-    }
-}
-
-/**
- * On project change
- */
-async function onProjectChange() {
-    const projectId = document.getElementById('purchaseProjectSelect').value;
-    if (!projectId) {
-        document.getElementById('purchaseContentSelect').disabled = true;
-        return;
-    }
-
-    await loadContentForProject(projectId);
-    validatePurchaseForm();
-}
-
-/**
- * On type change
- */
-function onTypeChange() {
-    const type = document.querySelector('input[name="purchaseType"]:checked').value;
-
-    // Show/hide auto-renewal option
-    document.getElementById('autoRenewalOption').style.display = type === 'link' ? 'block' : 'none';
-
-    // Reload content
-    const projectId = document.getElementById('purchaseProjectSelect').value;
-    if (projectId) {
-        loadContentForProject(projectId);
-    }
-
-    updatePriceCalculator();
-    validatePurchaseForm();
-}
-
-/**
- * Load content for project
- */
-async function loadContentForProject(projectId) {
-    const type = document.querySelector('input[name="purchaseType"]:checked').value;
-    const endpoint = type === 'link' ? 'links' : 'articles';
-
-    try {
-        const response = await fetch(`/api/projects/${projectId}/${endpoint}`, {
-            headers: { 'Authorization': `Bearer ${getToken()}` }
-        });
-
-        if (!response.ok) throw new Error('Failed to load content');
-
-        const result = await response.json();
-        const content = Array.isArray(result.data) ? result.data : result;
-
-        const select = document.getElementById('purchaseContentSelect');
-        select.innerHTML = '';
-        select.disabled = false;
-
-        if (content.length === 0) {
-            select.innerHTML = `<option value="">Нет доступных ${type === 'link' ? 'ссылок' : 'статей'}</option>`;
-            select.disabled = true;
-            return;
-        }
-
-        content.forEach(item => {
-            const option = document.createElement('option');
-            option.value = item.id;
-
-            if (type === 'link') {
-                option.textContent = `${item.anchor_text} → ${item.url}`;
-            } else {
-                option.textContent = item.title;
-            }
-
-            select.appendChild(option);
-        });
-
-    } catch (error) {
-        console.error('Failed to load content:', error);
-    }
-}
-
-/**
- * On site change
- */
-function onSiteChange() {
-    validatePurchaseForm();
-}
-
-/**
- * On content change
- */
-function onContentChange() {
-    validatePurchaseForm();
-}
-
-/**
- * On publish time change
- */
-function onPublishTimeChange() {
-    const isScheduled = document.getElementById('publishScheduled').checked;
-    document.getElementById('scheduledDatePicker').style.display = isScheduled ? 'block' : 'none';
-
-    if (isScheduled) {
-        // Set min date to now
-        const now = new Date();
-        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-        document.getElementById('scheduledDate').min = now.toISOString().slice(0, 16);
-
-        // Set max date to 90 days from now
-        const maxDate = new Date();
-        maxDate.setDate(maxDate.getDate() + 90);
-        maxDate.setMinutes(maxDate.getMinutes() - maxDate.getTimezoneOffset());
-        document.getElementById('scheduledDate').max = maxDate.toISOString().slice(0, 16);
-    }
-
-    validatePurchaseForm();
-}
-
-/**
- * Update price calculator
- */
-function updatePriceCalculator() {
-    if (!pricing) return;
-
-    const type = document.querySelector('input[name="purchaseType"]:checked').value;
-    const priceData = type === 'link' ? pricing.link : pricing.article;
-
-    document.getElementById('purchaseBasePrice').textContent = priceData.basePrice.toFixed(2);
-    document.getElementById('purchaseDiscountAmount').textContent = (priceData.basePrice - priceData.finalPrice).toFixed(2);
-    document.getElementById('purchaseFinalPrice').textContent = priceData.finalPrice.toFixed(2);
-    document.getElementById('purchaseCurrentBalance').textContent = userBalance.toFixed(2);
-
-    // Check if balance is sufficient
-    const finalPrice = priceData.finalPrice;
-    const sufficient = userBalance >= finalPrice;
-
-    if (!sufficient) {
-        document.getElementById('insufficientBalanceAlert').style.display = 'block';
-        document.getElementById('amountNeeded').textContent = (finalPrice - userBalance).toFixed(2);
-        document.getElementById('currentBalanceDisplay').classList.add('text-danger');
-    } else {
-        document.getElementById('insufficientBalanceAlert').style.display = 'none';
-        document.getElementById('currentBalanceDisplay').classList.remove('text-danger');
-    }
-}
-
-/**
- * Validate purchase form
- */
-function validatePurchaseForm() {
-    const projectId = document.getElementById('purchaseProjectSelect').value;
-    const siteId = document.getElementById('purchaseSiteSelect').value;
-    const contentId = document.getElementById('purchaseContentSelect').value;
-    const isScheduled = document.getElementById('publishScheduled').checked;
-    const scheduledDate = document.getElementById('scheduledDate').value;
-
-    const valid = projectId && siteId && contentId && (!isScheduled || scheduledDate) && userBalance >= getCurrentPrice();
-
-    document.getElementById('confirmPurchaseBtn').disabled = !valid;
-}
-
-/**
- * Get current price
- */
-function getCurrentPrice() {
-    if (!pricing) return 0;
-
-    const type = document.querySelector('input[name="purchaseType"]:checked').value;
-    const priceData = type === 'link' ? pricing.link : pricing.article;
-
-    return priceData.finalPrice;
-}
-
-/**
- * Confirm purchase
- */
-async function confirmPurchase() {
-    const projectId = parseInt(document.getElementById('purchaseProjectSelect').value);
-    const siteId = parseInt(document.getElementById('purchaseSiteSelect').value);
-    const contentId = parseInt(document.getElementById('purchaseContentSelect').value);
-    const type = document.querySelector('input[name="purchaseType"]:checked').value;
-    const isScheduled = document.getElementById('publishScheduled').checked;
-    const scheduledDate = isScheduled ? document.getElementById('scheduledDate').value : null;
-    const autoRenewal = document.getElementById('autoRenewalCheckbox').checked;
-
-    try {
-        const response = await fetch('/api/billing/purchase', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${getToken()}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                projectId,
-                siteId,
-                type,
-                contentIds: [contentId],
-                scheduledDate: scheduledDate ? new Date(scheduledDate).toISOString() : null,
-                autoRenewal
-            })
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Purchase failed');
-        }
-
-        const result = await response.json();
-
-        // Close modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('purchasePlacementModal'));
-        modal.hide();
-
-        // Reload data
-        await loadBalance();
-        await loadActivePlacements();
-        if (isScheduled) {
-            await loadScheduledPlacements();
-        }
-        await updateTabCounts();
-
-        showAlert(`Размещение успешно куплено! Новый баланс: $${result.data.newBalance.toFixed(2)}`, 'success');
-
-    } catch (error) {
-        console.error('Purchase failed:', error);
-        showAlert(error.message || 'Ошибка покупки размещения', 'danger');
-    }
-}
+// Purchase Modal Logic moved to shared purchase-modal.js
 
 // ============================================
 // Utility Functions
@@ -1142,25 +742,8 @@ function formatDate(dateString) {
     });
 }
 
-function showAlert(message, type = 'info') {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3`;
-    alertDiv.style.zIndex = '9999';
-    alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-
-    document.body.appendChild(alertDiv);
-
-    setTimeout(() => {
-        alertDiv.remove();
-    }, 5000);
-}
-
-function getToken() {
-    return localStorage.getItem('token') || localStorage.getItem('authToken');
-}
+// showAlert() is provided by security.js (loaded first)
+// getToken() is provided by auth.js (loaded first)
 
 function isAdmin() {
     const token = getToken();
@@ -1185,35 +768,7 @@ async function loadAllPlacements() {
     await updateTabCounts();
 }
 
-/**
- * Load filter dropdowns (projects for filter selector)
- */
-async function loadFilterDropdowns() {
-    try {
-        const response = await fetch('/api/projects', {
-            headers: { 'Authorization': `Bearer ${getToken()}` }
-        });
-
-        if (!response.ok) throw new Error('Failed to load projects');
-
-        const result = await response.json();
-        projects = Array.isArray(result.data) ? result.data : result;
-
-        const select = document.getElementById('projectFilter');
-        if (select) {
-            select.innerHTML = '<option value="">Все проекты</option>';
-            projects.forEach(p => {
-                const option = document.createElement('option');
-                option.value = p.id;
-                option.textContent = p.name;
-                select.appendChild(option);
-            });
-        }
-
-    } catch (error) {
-        console.error('Failed to load filter dropdowns:', error);
-    }
-}
+// loadFilterDropdowns() moved to placements-manager-filters.js
 
 // ============================================
 // Sorting Functions

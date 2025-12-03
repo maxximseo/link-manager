@@ -101,6 +101,23 @@ function sanitizeForDisplay(obj) {
     return sanitized;
 }
 
+// Show Bootstrap alert notification
+function showAlert(message, type = 'info') {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3`;
+    alertDiv.style.zIndex = '9999';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+
+    document.body.appendChild(alertDiv);
+
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 5000);
+}
+
 // Export for use in modules (if using ES modules in future)
 if (typeof window !== 'undefined') {
     window.escapeHtml = escapeHtml;
@@ -110,4 +127,5 @@ if (typeof window !== 'undefined') {
     window.safeTextContent = safeTextContent;
     window.html = html;
     window.sanitizeForDisplay = sanitizeForDisplay;
+    window.showAlert = showAlert;
 }

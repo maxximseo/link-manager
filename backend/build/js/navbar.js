@@ -344,8 +344,13 @@ Navbar.updateNotificationsList = function(notifications) {
 
 /**
  * Escape HTML to prevent XSS
+ * Uses global escapeHtml() from security.js if available
  */
 Navbar.escapeHtml = function(text) {
+    if (typeof escapeHtml === 'function') {
+        return escapeHtml(text);
+    }
+    // Fallback if security.js not loaded
     if (!text) return '';
     const div = document.createElement('div');
     div.textContent = text;

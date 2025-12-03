@@ -177,54 +177,11 @@ function renderPlacements() {
             year: 'numeric'
         });
 
-        let expiresAt = 'Не истекает';
-        if (placement.expires_at) {
-            const expiryDate = new Date(placement.expires_at);
-            expiresAt = expiryDate.toLocaleDateString('ru-RU', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric'
-            });
-
-            // Check if expired
-            if (expiryDate < new Date()) {
-                expiresAt = `<span class="text-danger">${expiresAt}</span>`;
-            } else {
-                const daysLeft = Math.ceil((expiryDate - new Date()) / (1000 * 60 * 60 * 24));
-                if (daysLeft <= 7) {
-                    expiresAt = `<span class="text-warning">${expiresAt}</span>`;
-                }
-            }
-        }
-
-        // Type badge
-        const typeBadge = placement.type === 'link'
-            ? '<span class="badge bg-primary">Главная</span>'
-            : '<span class="badge bg-success">Статья</span>';
-
-        // Status badge
-        let statusBadge;
-        switch(placement.status) {
-            case 'placed':
-                statusBadge = '<span class="badge bg-success">Размещено</span>';
-                break;
-            case 'scheduled':
-                statusBadge = '<span class="badge bg-info">Запланировано</span>';
-                break;
-            case 'expired':
-                statusBadge = '<span class="badge bg-danger">Истекло</span>';
-                break;
-            case 'pending':
-                statusBadge = '<span class="badge bg-warning">Ожидание</span>';
-                break;
-            default:
-                statusBadge = `<span class="badge bg-secondary">${placement.status}</span>`;
-        }
-
-        // Auto-renewal icon
-        const autoRenewalIcon = placement.auto_renewal
-            ? '<i class="bi bi-arrow-repeat text-success" title="Включено"></i>'
-            : '<i class="bi bi-dash-circle text-muted" title="Выключено"></i>';
+        // Use shared badge-utils functions
+        const expiresAt = formatExpiryWithColor(placement.expires_at);
+        const typeBadge = getPlacementTypeBadge(placement.type);
+        const statusBadge = getPlacementStatusBadge(placement.status);
+        const autoRenewalIcon = getAutoRenewalIcon(placement.auto_renewal);
 
         return `
             <tr onclick="viewPlacementDetails(${placement.id})" style="cursor: pointer;">
@@ -412,12 +369,7 @@ async function exportPlacements(format) {
 }
 
 // Helper functions
-function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
+// escapeHtml() is provided by security.js (loaded first)
 
 function showSuccess(message) {
     alert(message);
@@ -427,10 +379,7 @@ function showError(message) {
     alert(message);
 }
 
-// Get token from auth.js
-function getToken() {
-    return localStorage.getItem('token') || localStorage.getItem('authToken');
-}
+// getToken() is provided by auth.js (loaded first)
 
 // Logout function
 function logout() {

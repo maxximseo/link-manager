@@ -1,12 +1,6 @@
 // API Helper Functions
 // Note: API_BASE is defined in auth.js
-
-// Escape HTML to prevent XSS
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
+// Note: escapeHtml() is provided by security.js (loaded first)
 
 // Show notification
 function showNotification(message, type = 'success') {
