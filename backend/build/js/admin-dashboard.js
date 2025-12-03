@@ -367,20 +367,7 @@ function renderRecentPurchases(purchases) {
     });
 }
 
-/**
- * Utility functions
- */
-function formatDate(dateString) {
-    if (!dateString) return '—';
-    const date = new Date(dateString);
-    return date.toLocaleString('ru-RU', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-}
-
+// Utility functions provided by shared modules:
+// formatDateTime() is provided by badge-utils.js (loaded first)
 // showAlert() is provided by security.js (loaded first)
 // getToken() is provided by auth.js (loaded first)
