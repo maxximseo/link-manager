@@ -112,7 +112,7 @@ const verifyConnection = async (req, res) => {
 };
 
 // Generic content endpoint (compatibility)
-const handleContent = async (req, res) => {
+const handleContent = (req, res) => {
   try {
     // This endpoint handles various WordPress content operations
     // For now, return success with basic info
