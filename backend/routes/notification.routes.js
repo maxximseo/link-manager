@@ -39,11 +39,11 @@ router.get('/', authMiddleware, async (req, res) => {
       ORDER BY n.created_at DESC
       LIMIT $2 OFFSET $3
     `,
-      [userId, parseInt(limit), parseInt(offset)]
+      [userId, parseInt(limit, 10), parseInt(offset, 10)]
     );
 
-    const total = parseInt(result.rows[0]?.total_count || 0);
-    const unread = parseInt(result.rows[0]?.unread_count || 0);
+    const total = parseInt(result.rows[0]?.total_count || 0, 10);
+    const unread = parseInt(result.rows[0]?.unread_count || 0, 10);
 
     // Remove count columns from response
     const notifications = result.rows.map(({ total_count: _tc, unread_count: _uc, ...n }) => n);
@@ -52,8 +52,8 @@ router.get('/', authMiddleware, async (req, res) => {
       success: true,
       data: notifications,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10),
         total,
         unread,
         pages: Math.ceil(total / limit)
