@@ -11,7 +11,7 @@ const authMiddleware = (req, res, next) => {
     const token = req.header('Authorization')?.replace('Bearer ', '');
 
     if (!token) {
-      return res.status(401).json({ error: 'No token, authorization denied' });
+      return res.status(401).json({ error: 'No token, authorization denied', code: 'NO_TOKEN' });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -22,8 +22,20 @@ const authMiddleware = (req, res, next) => {
     };
     next();
   } catch (error) {
-    logger.error('Auth middleware error:', error);
-    res.status(401).json({ error: 'Token is not valid' });
+    // SECURITY: Differentiate JWT error types for better client handling
+    logger.error('Auth middleware error:', { name: error.name, message: error.message });
+
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: 'Token has expired', code: 'TOKEN_EXPIRED' });
+    }
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ error: 'Token is invalid', code: 'INVALID_TOKEN' });
+    }
+    if (error.name === 'NotBeforeError') {
+      return res.status(401).json({ error: 'Token not yet active', code: 'TOKEN_NOT_ACTIVE' });
+    }
+
+    res.status(401).json({ error: 'Token is not valid', code: 'INVALID_TOKEN' });
   }
 };
 
