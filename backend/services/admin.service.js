@@ -615,10 +615,17 @@ const refundPlacement = async (placementId, reason, adminId, deleteWordPressPost
 
 /**
  * Get placements pending admin approval (moderation queue)
+ * Supports pagination to prevent memory issues with large queues
  */
-const getPendingApprovals = async () => {
+const getPendingApprovals = async ({ page = 1, limit = 50 } = {}) => {
   try {
-    const result = await query(`
+    // Validate pagination params with radix=10
+    const safeLimit = Math.min(Math.max(1, parseInt(limit, 10) || 50), 500);
+    const safePage = Math.max(1, parseInt(page, 10) || 1);
+    const offset = (safePage - 1) * safeLimit;
+
+    const result = await query(
+      `
       SELECT
         p.*,
         u.username as buyer_username,
@@ -644,9 +651,29 @@ const getPendingApprovals = async () => {
       LEFT JOIN project_articles pa ON pc.article_id = pa.id
       WHERE p.status = 'pending_approval'
       ORDER BY p.purchased_at DESC
-    `);
+      LIMIT $1 OFFSET $2
+    `,
+      [safeLimit, offset]
+    );
 
-    return result.rows;
+    // Get total count for pagination
+    const countResult = await query(
+      "SELECT COUNT(*) as count FROM placements WHERE status = 'pending_approval'"
+    );
+    const total = parseInt(countResult.rows[0].count, 10);
+    const totalPages = Math.ceil(total / safeLimit);
+
+    return {
+      data: result.rows,
+      pagination: {
+        page: safePage,
+        limit: safeLimit,
+        total,
+        pages: totalPages,
+        hasNext: safePage < totalPages,
+        hasPrev: safePage > 1
+      }
+    };
   } catch (error) {
     logger.error('Failed to get pending approvals', { error: error.message });
     throw error;
