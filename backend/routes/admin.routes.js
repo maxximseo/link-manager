@@ -98,8 +98,8 @@ router.get('/users', async (req, res) => {
     const { page = 1, limit = 50, search, role } = req.query;
 
     const users = await adminService.getUsers({
-      page: parseInt(page),
-      limit: parseInt(limit),
+      page: parseInt(page, 10),
+      limit: parseInt(limit, 10),
       search,
       role
     });
