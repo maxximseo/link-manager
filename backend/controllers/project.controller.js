@@ -38,7 +38,11 @@ const getProjects = async (req, res) => {
 // Get single project with details
 const getProject = async (req, res) => {
   try {
-    const projectId = req.params.id;
+    // SECURITY: Validate projectId as integer
+    const projectId = parseInt(req.params.id, 10);
+    if (isNaN(projectId) || projectId <= 0) {
+      return res.status(400).json({ error: 'Invalid project ID' });
+    }
     const userId = req.user.id;
 
     const project = await projectService.getProjectWithDetails(projectId, userId);
