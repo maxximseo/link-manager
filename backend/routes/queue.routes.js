@@ -254,9 +254,10 @@ router.post(
   })
 );
 
-// Cleanup old jobs
+// Cleanup old jobs - DESTRUCTIVE OPERATION
 router.post(
   '/cleanup',
+  destructiveLimiter,
   asyncHandler(async (req, res) => {
     if (!queueService) {
       return res.status(503).json({
