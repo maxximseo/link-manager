@@ -17,8 +17,8 @@ function initRedis() {
   try {
     const config = {
       host: process.env.REDIS_HOST || 'localhost',
-      port: parseInt(process.env.REDIS_PORT) || 6379,
-      db: parseInt(process.env.REDIS_DB) || 0,
+      port: parseInt(process.env.REDIS_PORT, 10) || 6379,
+      db: parseInt(process.env.REDIS_DB, 10) || 0,
       retryStrategy: times => {
         if (times > 10) {
           logger.warn('Redis connection failed after 10 retries - cache disabled');
