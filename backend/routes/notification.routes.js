@@ -88,7 +88,7 @@ router.get('/unread-count', authMiddleware, async (req, res) => {
     res.json({
       success: true,
       data: {
-        count: parseInt(result.rows[0].count)
+        count: parseInt(result.rows[0].count, 10)
       }
     });
   } catch (error) {
