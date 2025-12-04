@@ -90,9 +90,9 @@ router.get('/projects', authMiddleware, async (req, res) => {
     const values = [req.user.userId];
 
     if (usePagination) {
-      const offset = (parseInt(page) - 1) * parseInt(limit);
+      const offset = (parseInt(page, 10) - 1) * parseInt(limit, 10);
       query_text += ' LIMIT $2 OFFSET $3';
-      values.push(parseInt(limit), offset);
+      values.push(parseInt(limit, 10), offset);
     }
 
     const result = await query(query_text, values);
@@ -101,18 +101,18 @@ router.get('/projects', authMiddleware, async (req, res) => {
       const countResult = await query('SELECT COUNT(*) FROM projects WHERE user_id = $1', [
         req.user.userId
       ]);
-      const total = parseInt(countResult.rows[0].count);
-      const totalPages = Math.ceil(total / parseInt(limit));
+      const total = parseInt(countResult.rows[0].count, 10);
+      const totalPages = Math.ceil(total / parseInt(limit, 10));
 
       res.json({
         data: result.rows,
         pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
+          page: parseInt(page, 10),
+          limit: parseInt(limit, 10),
           total,
           pages: totalPages,
-          hasNext: parseInt(page) < totalPages,
-          hasPrev: parseInt(page) > 1
+          hasNext: parseInt(page, 10) < totalPages,
+          hasPrev: parseInt(page, 10) > 1
         }
       });
     } else {
