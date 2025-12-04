@@ -178,7 +178,7 @@ router.patch('/mark-all-read', authMiddleware, apiLimiter, async (req, res) => {
  * DELETE /api/notifications/all
  * Delete all notifications for current user
  */
-router.delete('/all', authMiddleware, async (req, res) => {
+router.delete('/all', authMiddleware, apiLimiter, async (req, res) => {
   try {
     const result = await query(
       `
