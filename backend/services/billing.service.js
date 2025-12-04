@@ -7,6 +7,7 @@ const { pool, query } = require('../config/database');
 const logger = require('../config/logger');
 const cache = require('./cache.service');
 const wordpressService = require('./wordpress.service');
+const { checkAnomalousTransaction } = require('./security-alerts.service');
 
 // Pricing constants
 const PRICING = {
