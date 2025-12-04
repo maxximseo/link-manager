@@ -76,7 +76,7 @@ router.get('/', authMiddleware, apiLimiter, async (req, res) => {
  * GET /api/notifications/unread-count
  * Get count of unread notifications
  */
-router.get('/unread-count', authMiddleware, async (req, res) => {
+router.get('/unread-count', authMiddleware, apiLimiter, async (req, res) => {
   try {
     const result = await query(
       `
