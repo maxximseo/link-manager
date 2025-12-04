@@ -13,6 +13,14 @@ const getUserPlacements = async (userId, page = 0, limit = 0, filters = {}) => {
   try {
     const { project_id, status } = filters;
 
+    // Validate pagination params to prevent resource exhaustion
+    const safeLimit = limit > 0 ? Math.min(Math.max(1, parseInt(limit, 10) || 5000), 5000) : 0;
+    const safePage = page > 0 ? Math.max(1, parseInt(page, 10) || 1) : 0;
+
+    // Validate status against whitelist to prevent injection
+    const allowedStatuses = ['pending', 'pending_approval', 'placed', 'failed', 'expired', 'rejected', 'scheduled'];
+    const safeStatus = status && allowedStatuses.includes(status) ? status : null;
+
     // Check cache first (2 minutes TTL for placements list)
     const cacheKey = `placements:user:${userId}:p${page}:l${limit}:proj${project_id || 'all'}:st${status || 'all'}`;
     const cached = await cache.get(cacheKey);
