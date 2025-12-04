@@ -40,7 +40,7 @@ const getPlacements = async (req, res) => {
 // Get placements for a specific site (for site deletion warning)
 const getPlacementsBySite = async (req, res) => {
   try {
-    const siteId = parseInt(req.params.siteId);
+    const siteId = parseInt(req.params.siteId, 10);
     const userId = req.user.id;
 
     if (isNaN(siteId)) {
