@@ -7,11 +7,21 @@
 const express = require('express');
 const router = express.Router();
 const rateLimit = require('express-rate-limit');
+const crypto = require('crypto');
 const { query } = require('../config/database');
 const cache = require('../services/cache.service');
 const queueService = require('../config/queue');
 const Sentry = require('@sentry/node');
 const { runManualBackup } = require('../cron/database-backup.cron');
+
+// SECURITY: Constant-time comparison to prevent timing attacks
+function secureCompare(a, b) {
+  if (!a || !b) return false;
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
 
 // Rate limiting for health check (60 req/min - allow monitoring systems)
 const healthLimiter = rateLimit({
