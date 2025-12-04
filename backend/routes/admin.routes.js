@@ -456,15 +456,17 @@ router.put(
 
 /**
  * GET /api/admin/moderation
- * Get all placements pending admin approval
+ * Get all placements pending admin approval (with pagination)
  */
 router.get('/moderation', async (req, res) => {
   try {
-    const pendingApprovals = await adminService.getPendingApprovals();
+    const { page, limit } = req.query;
+    const result = await adminService.getPendingApprovals({ page, limit });
 
     res.json({
       success: true,
-      data: pendingApprovals
+      data: result.data,
+      pagination: result.pagination
     });
   } catch (error) {
     logger.error('Failed to get pending approvals', { error: error.message });
