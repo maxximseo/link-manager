@@ -626,6 +626,11 @@ const purchasePlacement = async ({
 
     await client.query('COMMIT');
 
+    // SECURITY: Check for anomalous purchase amounts (async, don't block response)
+    checkAnomalousTransaction(userId, finalPrice, 'purchase').catch(err =>
+      logger.error('Failed to check anomalous transaction', { err: err.message })
+    );
+
     // OPTIMIZATION: Async cache invalidation (don't await - save 60-150ms)
     // Cache staleness is acceptable (2 min TTL)
     cache
