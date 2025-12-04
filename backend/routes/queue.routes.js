@@ -92,6 +92,7 @@ router.get(
 // Get job status
 router.get(
   '/jobs/:queueName/:jobId',
+  readLimiter,
   asyncHandler(async (req, res) => {
     if (!queueService) {
       return res.status(503).json({
