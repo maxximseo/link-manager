@@ -170,8 +170,8 @@ router.get('/placements', async (req, res) => {
     const { page = 1, limit = 5000, status, type } = req.query;
 
     const placements = await adminService.getAdminPlacements(req.user.id, {
-      page: parseInt(page),
-      limit: parseInt(limit),
+      page: parseInt(page, 10),
+      limit: parseInt(limit, 10),
       status,
       type
     });
