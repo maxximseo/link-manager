@@ -147,7 +147,7 @@ router.get('/sites', authMiddleware, apiLimiter, async (req, res) => {
 });
 
 // Basic placements route
-router.get('/placements', authMiddleware, async (req, res) => {
+router.get('/placements', authMiddleware, apiLimiter, async (req, res) => {
   try {
     const result = await query(
       `
