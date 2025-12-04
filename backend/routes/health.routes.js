@@ -119,7 +119,7 @@ router.get('/sentry-test', healthLimiter, (req, res) => {
 });
 
 // Manual backup endpoint (requires admin key for security)
-router.post('/backup', async (req, res) => {
+router.post('/backup', backupLimiter, async (req, res) => {
   // Simple key-based auth for backup endpoint
   const adminKey = req.headers['x-admin-key'];
   if (adminKey !== process.env.JWT_SECRET?.slice(0, 32)) {
