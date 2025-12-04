@@ -220,12 +220,19 @@ const getUsers = async ({ page = 1, limit = 50, search = null, role = null }) =>
 
 /**
  * Adjust user balance (admin only)
+ * Includes defense-in-depth role verification
  */
 const adjustUserBalance = async (userId, amount, reason, adminId) => {
   const client = await pool.connect();
 
   try {
     await client.query('BEGIN');
+
+    // Defense-in-depth: verify admin role even if middleware should have checked
+    const adminCheck = await client.query('SELECT role FROM users WHERE id = $1', [adminId]);
+    if (!adminCheck.rows[0] || adminCheck.rows[0].role !== 'admin') {
+      throw new Error('Unauthorized: admin role required for balance adjustment');
+    }
 
     // Get user with lock
     const userResult = await client.query('SELECT * FROM users WHERE id = $1 FOR UPDATE', [userId]);
@@ -443,6 +450,7 @@ const getMultiPeriodRevenue = async () => {
 
 /**
  * Manually refund a placement (admin only)
+ * Includes defense-in-depth role verification
  * @param {number} placementId - Placement ID to refund
  * @param {string} reason - Reason for manual refund
  * @param {number} adminId - Admin user ID issuing refund
@@ -454,6 +462,12 @@ const refundPlacement = async (placementId, reason, adminId, deleteWordPressPost
 
   try {
     await client.query('BEGIN');
+
+    // Defense-in-depth: verify admin role even if middleware should have checked
+    const adminCheck = await client.query('SELECT role FROM users WHERE id = $1', [adminId]);
+    if (!adminCheck.rows[0] || adminCheck.rows[0].role !== 'admin') {
+      throw new Error('Unauthorized: admin role required for refund operation');
+    }
 
     // 1. Get placement details with site info
     const placementResult = await client.query(
@@ -834,6 +848,12 @@ const rejectPlacement = async (placementId, adminId, reason = 'Rejected by admin
   try {
     await client.query('BEGIN');
 
+    // Defense-in-depth: verify admin role in service layer
+    const adminCheck = await client.query('SELECT role FROM users WHERE id = $1', [adminId]);
+    if (!adminCheck.rows[0] || adminCheck.rows[0].role !== 'admin') {
+      throw new Error('Unauthorized: admin role required for reject operation');
+    }
+
     // Get placement details
     const placementResult = await client.query(
       `
@@ -961,10 +981,16 @@ const rejectPlacement = async (placementId, adminId, reason = 'Rejected by admin
  */
 const setSitePublicStatus = async (siteId, isPublic, adminId) => {
   try {
+    // Defense-in-depth: verify admin role in service layer
+    const adminCheck = await query('SELECT role FROM users WHERE id = $1', [adminId]);
+    if (!adminCheck.rows[0] || adminCheck.rows[0].role !== 'admin') {
+      throw new Error('Unauthorized: admin role required for site public status change');
+    }
+
     // Update site public status
     const result = await query(
       `UPDATE sites
-       SET is_public = $1, updated_at = NOW()
+       SET is_public = $1
        WHERE id = $2
        RETURNING *`,
       [isPublic, siteId]
