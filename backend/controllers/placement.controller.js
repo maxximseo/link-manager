@@ -320,12 +320,12 @@ const getStatistics = async (req, res) => {
 // Get available sites for placement (with project filter)
 const getAvailableSites = async (req, res) => {
   try {
-    const projectId = req.params.projectId;
-    const userId = req.user.id;
-
-    if (!projectId) {
-      return res.status(400).json({ error: 'Project ID is required' });
+    // SECURITY: Validate projectId as integer
+    const projectId = parseInt(req.params.projectId, 10);
+    if (isNaN(projectId) || projectId <= 0) {
+      return res.status(400).json({ error: 'Invalid project ID' });
     }
+    const userId = req.user.id;
 
     const sites = await placementService.getAvailableSites(projectId, userId);
     res.json(sites);
