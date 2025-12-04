@@ -27,27 +27,27 @@ const apiLimiter = rateLimit({
 
 // Project CRUD routes
 router.get('/', authMiddleware, apiLimiter, projectController.getProjects);
-router.get('/:id', authMiddleware, projectController.getProject);
+router.get('/:id', authMiddleware, apiLimiter, projectController.getProject);
 router.post('/', authMiddleware, createLimiter, projectController.createProject);
-router.put('/:id', authMiddleware, projectController.updateProject);
-router.delete('/:id', authMiddleware, projectController.deleteProject);
+router.put('/:id', authMiddleware, apiLimiter, projectController.updateProject);
+router.delete('/:id', authMiddleware, apiLimiter, projectController.deleteProject);
 
 // Project links routes
-router.get('/:id/links', authMiddleware, projectController.getProjectLinks);
+router.get('/:id/links', authMiddleware, apiLimiter, projectController.getProjectLinks);
 router.post('/:id/links', authMiddleware, createLimiter, projectController.addProjectLink);
-router.put('/:id/links/:linkId', authMiddleware, projectController.updateProjectLink);
+router.put('/:id/links/:linkId', authMiddleware, apiLimiter, projectController.updateProjectLink);
 router.post(
   '/:id/links/bulk',
   authMiddleware,
   createLimiter,
   projectController.addProjectLinksBulk
 );
-router.delete('/:id/links/:linkId', authMiddleware, projectController.deleteProjectLink);
+router.delete('/:id/links/:linkId', authMiddleware, apiLimiter, projectController.deleteProjectLink);
 
 // Project articles routes
-router.get('/:id/articles', authMiddleware, projectController.getProjectArticles);
+router.get('/:id/articles', authMiddleware, apiLimiter, projectController.getProjectArticles);
 router.post('/:id/articles', authMiddleware, createLimiter, projectController.addProjectArticle);
-router.put('/:id/articles/:articleId', authMiddleware, projectController.updateProjectArticle);
-router.delete('/:id/articles/:articleId', authMiddleware, projectController.deleteProjectArticle);
+router.put('/:id/articles/:articleId', authMiddleware, apiLimiter, projectController.updateProjectArticle);
+router.delete('/:id/articles/:articleId', authMiddleware, apiLimiter, projectController.deleteProjectArticle);
 
 module.exports = router;
