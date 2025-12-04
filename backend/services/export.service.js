@@ -61,7 +61,7 @@ const exportUserPlacements = async (userId, format = 'csv', projectId = null) =>
 
     if (projectId) {
       whereClause += ' AND p.project_id = $2';
-      params.push(parseInt(projectId));
+      params.push(parseInt(projectId, 10));
     }
 
     // Get placements for user (optionally filtered by project)
