@@ -1,17 +1,28 @@
 /**
  * Debug routes for Redis/Valkey connection diagnostics
- * SECURITY: Protected by admin authentication + development mode only
+ * SECURITY: Protected by admin authentication + development mode only + rate limiting
  */
 
 const express = require('express');
 const router = express.Router();
+const rateLimit = require('express-rate-limit');
 const logger = require('../config/logger');
 const authMiddleware = require('../middleware/auth');
 const adminMiddleware = require('../middleware/admin');
 
-// SECURITY: All debug routes require admin authentication
+// Rate limiting for debug operations (30 req/min - more restrictive)
+const debugLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 30, // 30 requests per minute
+  message: { error: 'Too many debug requests, please slow down' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// SECURITY: All debug routes require admin authentication + rate limiting
 router.use(authMiddleware);
 router.use(adminMiddleware);
+router.use(debugLimiter);
 
 // Test Redis connection with detailed diagnostics
 router.get('/redis-test', async (req, res) => {
