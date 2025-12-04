@@ -596,8 +596,9 @@ const batchDeletePlacements = async (req, res) => {
       }
     });
   } catch (error) {
-    logger.error('Batch delete placements error:', error);
-    res.status(500).json({ error: 'Failed to batch delete placements', details: error.message });
+    // SECURITY: Log detailed error server-side, return generic message to client
+    logger.error('Batch delete placements error:', { error: error.message, stack: error.stack });
+    res.status(500).json({ error: 'Failed to batch delete placements' });
   }
 };
 
