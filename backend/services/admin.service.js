@@ -284,7 +284,8 @@ const adjustUserBalance = async (userId, amount, reason, adminId) => {
 
     await client.query('COMMIT');
 
-    logger.info('User balance adjusted by admin', { userId, adminId, amount, reason });
+    // Note: reason not logged to avoid PII in logs
+    logger.info('User balance adjusted by admin', { userId, adminId, amount, hasReason: !!reason });
 
     return { success: true, newBalance };
   } catch (error) {
