@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.6.3] - 2025-12-04
+
+### 🔒 Security: Complete Rate Limiting Coverage
+
+Full audit and implementation of rate limiting across ALL route files (13/13 = 100% coverage).
+
+#### Files Updated
+- **`backend/routes/project.routes.js`** - Added `apiLimiter` to all GET/PUT/DELETE endpoints
+- **`backend/routes/queue.routes.js`** - Added global `adminLimiter` (100 req/min)
+- **`backend/routes/debug.routes.js`** - Added global `debugLimiter` (30 req/min)
+- **`backend/routes/health.routes.js`** - Added `healthLimiter` (60 req/min) and `backupLimiter` (5 req/min)
+- **`backend/routes/legacy.js`** - Added `apiLimiter` to /projects, /sites, /placements
+
+#### Rate Limit Tiers
+| Tier | Limit | Purpose |
+|------|-------|---------|
+| LOGIN | 50/15min | Brute force protection |
+| REGISTER | 5/hour | Account creation abuse |
+| API | 100/min | General API operations |
+| CREATE | 10/min | Resource creation |
+| FINANCIAL | 50/min | Billing batch operations |
+| PURCHASE | 10/min | Single purchases |
+| DEPOSIT | 5/min | Fraud prevention |
+| PUBLIC_API | 10/min | Unauthenticated endpoints |
+| HEALTH | 60/min | Monitoring systems |
+| DEBUG | 30/min | Debug operations |
+
+#### Route Coverage
+All 13 route files now have rate limiting:
+- ✅ admin.routes.js
+- ✅ notification.routes.js
+- ✅ auth.routes.js
+- ✅ billing.routes.js
+- ✅ site.routes.js
+- ✅ project.routes.js
+- ✅ placement.routes.js
+- ✅ wordpress.routes.js
+- ✅ static.routes.js
+- ✅ queue.routes.js
+- ✅ debug.routes.js
+- ✅ health.routes.js
+- ✅ legacy.js
+
+#### Documentation
+- Updated ADR-006 with full coverage audit table
+- Added implementation patterns documentation
+
+---
+
 ## [2.6.2] - 2025-12-03
 
 ### 🔐 Encrypted Database Backup System

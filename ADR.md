@@ -249,50 +249,85 @@ backend/build/js/
 
 ---
 
-## ADR-006: 5-Tier Rate Limiting Strategy
+## ADR-006: Comprehensive Rate Limiting Strategy
 
 **Status**: ✅ ACTIVE
 **Date**: October 2024
+**Updated**: December 2024 - Full coverage audit completed
 
 ### Context
-Need DDoS protection without blocking legitimate users.
+Need DDoS protection without blocking legitimate users. All API endpoints must be rate limited.
 
 ### Decision
-Implement **5 different rate limit tiers** based on operation sensitivity.
+Implement **multi-tier rate limiting** based on operation sensitivity. **100% route coverage required**.
 
-### Configuration
+### Rate Limit Tiers
 ```javascript
-LOGIN:     5 requests / 15 minutes  // Brute force protection
-API:       100 requests / minute    // General API
-CREATE:    10 requests / minute     // Resource creation
-PLACEMENT: 20 requests / minute     // Placement operations
-WORDPRESS: 30 requests / minute     // Plugin endpoints
-FINANCIAL: 50 requests / minute     // Billing operations (bulk support)
+LOGIN:       50 requests / 15 minutes  // Brute force protection (temporary increase from 5)
+REGISTER:    5 requests / hour         // Account creation abuse prevention
+REFRESH:     10 requests / minute      // Token refresh
+API:         100 requests / minute     // General API operations
+CREATE:      10 requests / minute      // Resource creation
+PLACEMENT:   20 requests / minute      // Placement operations
+WORDPRESS:   30 requests / minute      // Plugin endpoints
+PUBLIC_API:  10 requests / minute      // Unauthenticated public endpoints
+FINANCIAL:   50 requests / minute      // Billing batch operations
+PURCHASE:    10 requests / minute      // Single purchase operations
+DEPOSIT:     5 requests / minute       // Deposit operations (fraud prevention)
+HEALTH:      60 requests / minute      // Monitoring systems (1/sec)
+BACKUP:      5 requests / minute       // Manual backup trigger
+DEBUG:       30 requests / minute      // Debug operations (admin only)
+QUEUE:       100 requests / minute     // Queue management (admin only)
 ```
 
-### Rationale
-**Why different tiers**:
-- Login: Most critical (credential stuffing attacks)
-- Create: Prevent spam resource creation
-- Financial: Higher limit for bulk purchases
-- WordPress: External plugin calls (higher volume)
+### Route Coverage (December 2024 Audit)
+| Route File | Rate Limiters | Status |
+|------------|---------------|--------|
+| admin.routes.js | apiLimiter (global) + financialLimiter | ✅ |
+| notification.routes.js | apiLimiter (all 6 endpoints) | ✅ |
+| auth.routes.js | loginLimiter, registerLimiter, refreshLimiter | ✅ |
+| billing.routes.js | purchaseLimiter, depositLimiter, financialLimiter | ✅ |
+| site.routes.js | createLimiter, generalLimiter, registerLimiter | ✅ |
+| project.routes.js | apiLimiter + createLimiter | ✅ |
+| placement.routes.js | generalLimiter | ✅ |
+| wordpress.routes.js | wordpressLimiter, publicApiLimiter | ✅ |
+| static.routes.js | publicApiLimiter | ✅ |
+| queue.routes.js | adminLimiter (global) | ✅ |
+| debug.routes.js | debugLimiter (global) | ✅ |
+| health.routes.js | healthLimiter, backupLimiter | ✅ |
+| legacy.js | loginLimiter, apiLimiter | ✅ |
 
-### Implementation
+**Coverage**: 13/13 route files (100%)
+
+### Implementation Patterns
+
+**Pattern 1: Global middleware for all routes**
 ```javascript
-const rateLimit = require('express-rate-limit');
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 5,
-  message: 'Too many login attempts'
-});
+router.use(authMiddleware);
+router.use(adminMiddleware);
+router.use(apiLimiter);  // Applied to ALL routes in file
+```
 
-router.post('/login', loginLimiter, authController.login);
+**Pattern 2: Per-route middleware**
+```javascript
+router.get('/', authMiddleware, apiLimiter, controller.getAll);
+router.post('/', authMiddleware, createLimiter, controller.create);
+```
+
+**Pattern 3: Stricter limits for sensitive operations**
+```javascript
+// Financial operations get stricter limits
+router.post('/users/:id/adjust-balance', financialLimiter, ...);
+router.post('/placements/:id/refund', financialLimiter, ...);
 ```
 
 ### Consequences
-- ✅ Prevents abuse without frustrating users
-- ✅ Different limits for different risk levels
-- ⚠️ Must communicate limits in API docs
+- ✅ 100% API endpoint protection
+- ✅ DDoS mitigation at application level
+- ✅ Different limits based on operation risk
+- ✅ Public endpoints protected from enumeration attacks
+- ⚠️ Must update docs when adding new routes
+- ⚠️ Rate limit headers returned in all responses
 
 ---
 
