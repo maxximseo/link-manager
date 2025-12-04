@@ -1,4 +1,5 @@
 const logger = require('../config/logger');
+const { notify500Error } = require('../services/security-alerts.service');
 
 // Async handler wrapper
 const asyncHandler = fn => (req, res, next) => {
@@ -47,8 +48,18 @@ const errorHandler = (err, req, res, _next) => {
     error.statusCode = 401;
   }
 
+  // Determine final status code
+  const statusCode = error.statusCode || 500;
+
+  // SECURITY: Notify admins about 500 errors (async, don't block response)
+  if (statusCode >= 500) {
+    notify500Error(err, req).catch(notifyErr =>
+      logger.error('Failed to send 500 error notification', { err: notifyErr.message })
+    );
+  }
+
   // Default error response (NEVER expose stack traces to clients)
-  res.status(error.statusCode || 500).json({
+  res.status(statusCode).json({
     success: false,
     error: error.message || 'Server Error'
     // Stack traces are logged server-side only (line 14-21)
