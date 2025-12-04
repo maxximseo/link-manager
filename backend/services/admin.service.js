@@ -382,8 +382,8 @@ const getAdminPlacements = async (
     let whereClause = 'WHERE s.user_id = $1'; // Admin can only see placements on their sites
     const params = [adminId];
 
-    if (status) {
-      params.push(status);
+    if (safeStatus) {
+      params.push(safeStatus);
       whereClause += ` AND p.status = $${params.length}`;
     }
 
