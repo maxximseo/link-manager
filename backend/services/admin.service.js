@@ -412,18 +412,22 @@ const getAdminPlacements = async (
 
 /**
  * Get multi-period revenue stats (day, week, month, year)
+ * Uses Promise.all for parallel execution to minimize race condition window
  */
 const getMultiPeriodRevenue = async () => {
   try {
     const periods = ['day', 'week', 'month', 'year'];
-    const results = {};
 
-    for (const period of periods) {
-      const stats = await getAdminStats(period);
-      results[period] = stats.revenue;
-    }
+    // Execute all queries in parallel to minimize time window for data inconsistency
+    const statsArray = await Promise.all(periods.map((period) => getAdminStats(period)));
 
-    return results;
+    // Map results to period keys
+    return {
+      day: statsArray[0].revenue,
+      week: statsArray[1].revenue,
+      month: statsArray[2].revenue,
+      year: statsArray[3].revenue
+    };
   } catch (error) {
     logger.error('Failed to get multi-period revenue', { error: error.message });
     throw error;
