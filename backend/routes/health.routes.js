@@ -96,7 +96,7 @@ router.get('/', healthLimiter, async (req, res) => {
 });
 
 // Sentry test endpoint (development only)
-router.get('/sentry-test', (req, res) => {
+router.get('/sentry-test', healthLimiter, (req, res) => {
   if (process.env.NODE_ENV === 'production') {
     return res.status(403).json({ error: 'Not available in production' });
   }
