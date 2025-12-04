@@ -90,7 +90,7 @@ router.post('/auth/login', loginLimiter, async (req, res) => {
 });
 
 // Projects routes
-router.get('/projects', authMiddleware, async (req, res) => {
+router.get('/projects', authMiddleware, apiLimiter, async (req, res) => {
   try {
     const { page, limit } = req.query;
     const usePagination = page && limit;
