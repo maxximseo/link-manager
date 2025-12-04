@@ -90,10 +90,10 @@ const getUserPlacements = async (userId, page = 0, limit = 0, filters = {}) => {
       paramIndex++;
     }
 
-    // Add status filter
-    if (status) {
+    // Add status filter (using validated safeStatus)
+    if (safeStatus) {
       placementsQuery += ` AND p.status = $${paramIndex}`;
-      queryParams.push(status);
+      queryParams.push(safeStatus);
       paramIndex++;
     }
 
