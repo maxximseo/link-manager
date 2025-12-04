@@ -210,7 +210,7 @@ router.delete('/all', authMiddleware, async (req, res) => {
  */
 router.delete('/:id', authMiddleware, async (req, res) => {
   try {
-    const notificationId = parseInt(req.params.id);
+    const notificationId = parseInt(req.params.id, 10);
 
     if (isNaN(notificationId)) {
       return res.status(400).json({ error: 'Invalid notification ID' });
