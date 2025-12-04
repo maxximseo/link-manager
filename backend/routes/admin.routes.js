@@ -498,7 +498,7 @@ router.get('/moderation/count', async (req, res) => {
  */
 router.post('/moderation/:id/approve', async (req, res) => {
   try {
-    const placementId = parseInt(req.params.id);
+    const placementId = parseInt(req.params.id, 10);
 
     if (isNaN(placementId)) {
       return res.status(400).json({ error: 'Invalid placement ID' });
