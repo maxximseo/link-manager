@@ -353,13 +353,32 @@ const getRecentPurchases = async (limit = 20) => {
 
 /**
  * Get all placements for admin (only on their sites)
+ * Includes defense-in-depth role verification
  */
 const getAdminPlacements = async (
   adminId,
   { page = 1, limit = 5000, status = null, type = null }
 ) => {
   try {
-    const offset = (page - 1) * limit;
+    // Defense-in-depth: verify admin role in service layer
+    const adminCheck = await query('SELECT role FROM users WHERE id = $1', [adminId]);
+    if (!adminCheck.rows[0] || adminCheck.rows[0].role !== 'admin') {
+      throw new Error('Unauthorized: admin role required for admin placements');
+    }
+
+    // Validate pagination params
+    const safeLimit = Math.min(Math.max(1, parseInt(limit, 10) || 5000), 5000);
+    const safePage = Math.max(1, parseInt(page, 10) || 1);
+    const offset = (safePage - 1) * safeLimit;
+
+    // Validate status against whitelist
+    const allowedStatuses = ['pending', 'pending_approval', 'placed', 'failed', 'expired', 'rejected'];
+    const safeStatus = status && allowedStatuses.includes(status) ? status : null;
+
+    // Validate type against whitelist
+    const allowedTypes = ['link', 'article'];
+    const safeType = type && allowedTypes.includes(type) ? type : null;
+
     let whereClause = 'WHERE s.user_id = $1'; // Admin can only see placements on their sites
     const params = [adminId];
 
