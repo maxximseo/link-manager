@@ -119,9 +119,11 @@ router.get('/users', async (req, res) => {
 /**
  * POST /api/admin/users/:id/adjust-balance
  * Adjust user balance (add or subtract)
+ * SECURITY: financialLimiter (10 req/min) - stricter limit for financial operations
  */
 router.post(
   '/users/:id/adjust-balance',
+  financialLimiter,
   [
     body('amount')
       .isFloat({ min: -10000, max: 10000 })
