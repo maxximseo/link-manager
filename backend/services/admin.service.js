@@ -393,7 +393,7 @@ const getAdminPlacements = async (
       params
     );
 
-    const total = parseInt(countResult.rows[0].count);
+    const total = parseInt(countResult.rows[0].count, 10);
     const totalPages = Math.ceil(total / limit);
 
     return {
