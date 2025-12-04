@@ -383,7 +383,7 @@ const getTokens = async (req, res) => {
 // Delete a registration token
 const deleteToken = async (req, res) => {
   try {
-    const tokenId = parseInt(req.params.id);
+    const tokenId = parseInt(req.params.id, 10);
     const userId = req.user.id;
 
     if (isNaN(tokenId)) {

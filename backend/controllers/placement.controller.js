@@ -516,7 +516,7 @@ const cancelJob = async (req, res) => {
 // Publish scheduled placement NOW (manual trigger)
 const publishScheduledPlacement = async (req, res) => {
   try {
-    const placementId = parseInt(req.params.id);
+    const placementId = parseInt(req.params.id, 10);
     const userId = req.user.id;
 
     if (isNaN(placementId)) {
