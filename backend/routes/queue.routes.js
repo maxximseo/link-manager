@@ -131,7 +131,7 @@ router.get(
         const jobs = await queue.getJobs(
           ['active', 'waiting', 'completed', 'failed'],
           0,
-          parseInt(limit)
+          parseInt(limit, 10)
         );
         allJobs = jobs;
       } else {
@@ -140,7 +140,7 @@ router.get(
           const jobs = await queue.getJobs(
             ['active', 'waiting', 'completed', 'failed'],
             0,
-            parseInt(limit)
+            parseInt(limit, 10)
           );
           allJobs = allJobs.concat(jobs.map(job => ({ ...job, queueName: name })));
         }
@@ -150,7 +150,7 @@ router.get(
       allJobs.sort((a, b) => b.timestamp - a.timestamp);
 
       // Apply pagination
-      const paginatedJobs = allJobs.slice(parseInt(offset), parseInt(offset) + parseInt(limit));
+      const paginatedJobs = allJobs.slice(parseInt(offset, 10), parseInt(offset, 10) + parseInt(limit, 10));
 
       const formattedJobs = await Promise.all(
         paginatedJobs.map(async job => ({
@@ -170,8 +170,8 @@ router.get(
       res.json({
         jobs: formattedJobs,
         total: allJobs.length,
-        limit: parseInt(limit),
-        offset: parseInt(offset)
+        limit: parseInt(limit, 10),
+        offset: parseInt(offset, 10)
       });
     } catch (error) {
       logger.error('Error getting jobs list', { error: error.message });
