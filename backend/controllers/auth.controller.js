@@ -81,10 +81,8 @@ const login = async (req, res) => {
           { username: result.user.username, ip: clientIP, timestamp: new Date().toISOString() }
         ).catch(err => logger.error('Failed to notify about blocked admin login', { err: err.message }));
 
-        return res.status(403).json({
-          error: 'Access denied: Your IP is not authorized for admin access',
-          code: 'IP_NOT_WHITELISTED'
-        });
+        // SECURITY: Return generic error to not reveal IP restriction exists
+        return res.status(401).json({ error: 'Invalid credentials' });
       }
     }
 
