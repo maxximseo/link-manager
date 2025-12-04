@@ -345,7 +345,7 @@ router.patch(
   validateRequest,
   async (req, res) => {
     try {
-      const placementId = parseInt(req.params.placementId);
+      const placementId = parseInt(req.params.placementId, 10);
       const { enabled } = req.body;
 
       if (isNaN(placementId)) {
