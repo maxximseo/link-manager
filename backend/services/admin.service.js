@@ -387,8 +387,8 @@ const getAdminPlacements = async (
       whereClause += ` AND p.status = $${params.length}`;
     }
 
-    if (type) {
-      params.push(type);
+    if (safeType) {
+      params.push(safeType);
       whereClause += ` AND p.type = $${params.length}`;
     }
 
