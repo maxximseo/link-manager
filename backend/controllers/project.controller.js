@@ -321,7 +321,6 @@ const deleteProjectLink = async (req, res) => {
       return res.status(400).json({ error: 'Invalid project or link ID' });
     }
     const userId = req.user.id;
-    }
 
     // Check if link is used (has placements)
     const link = await projectService.getProjectLinks(projectId, userId);
