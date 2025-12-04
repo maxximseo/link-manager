@@ -413,8 +413,11 @@ const deleteArticle = async (siteUrl, apiKey, wordpressPostId) => {
 // Verify WordPress connection via Link Manager plugin
 const verifyWordPressConnection = async (siteUrl, _apiKey) => {
   try {
+    // SECURITY: Validate URL to prevent SSRF attacks
+    const validatedUrl = await validateExternalUrl(siteUrl);
+
     // Check if Link Manager plugin REST API is available
-    const testUrl = `${siteUrl}/wp-json/link-manager/v1/create-article`;
+    const testUrl = `${validatedUrl}/wp-json/link-manager/v1/create-article`;
 
     // Use retry wrapper for network resilience
     const response = await axiosWithRetry(
