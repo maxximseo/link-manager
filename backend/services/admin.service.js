@@ -409,7 +409,7 @@ const getAdminPlacements = async (
       ORDER BY p.purchased_at DESC
       LIMIT $${params.length + 1} OFFSET $${params.length + 2}
     `,
-      [...params, limit, offset]
+      [...params, safeLimit, offset]
     );
 
     // Get total count
@@ -424,13 +424,13 @@ const getAdminPlacements = async (
     );
 
     const total = parseInt(countResult.rows[0].count, 10);
-    const totalPages = Math.ceil(total / limit);
+    const totalPages = Math.ceil(total / safeLimit);
 
     return {
       data: result.rows,
       pagination: {
-        page,
-        limit,
+        page: safePage,
+        limit: safeLimit,
         total,
         pages: totalPages,
         hasNext: page < totalPages,
