@@ -346,7 +346,7 @@ Navbar.updateNotificationsList = function(notifications) {
             <li class="notification-item">
                 <div class="dropdown-item ${bgClass} py-2" style="white-space: normal;">
                     <div class="${fontClass} small">${Navbar.escapeHtml(notification.title)}</div>
-                    <div class="text-muted small" style="max-width: 300px;">${Navbar.escapeHtml(notification.message)}</div>
+                    <div class="text-muted small" style="max-width: 300px;">${Navbar.formatNotificationMessage(notification.message)}</div>
                     <div class="text-muted" style="font-size: 0.7rem;">${dateStr}</div>
                 </div>
             </li>
