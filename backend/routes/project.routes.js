@@ -16,8 +16,17 @@ const createLimiter = rateLimit({
   message: 'Too many create requests, please try again later.'
 });
 
+// General API rate limiting (100 req/min)
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 100, // 100 requests per minute
+  message: 'Too many requests, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
 // Project CRUD routes
-router.get('/', authMiddleware, projectController.getProjects);
+router.get('/', authMiddleware, apiLimiter, projectController.getProjects);
 router.get('/:id', authMiddleware, projectController.getProject);
 router.post('/', authMiddleware, createLimiter, projectController.createProject);
 router.put('/:id', authMiddleware, projectController.updateProject);
