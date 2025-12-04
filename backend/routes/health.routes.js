@@ -130,9 +130,16 @@ router.get('/sentry-test', healthLimiter, (req, res) => {
 
 // Manual backup endpoint (requires admin key for security)
 router.post('/backup', backupLimiter, async (req, res) => {
-  // Simple key-based auth for backup endpoint
+  // SECURITY: Use dedicated BACKUP_ADMIN_KEY env var with constant-time comparison
+  // NEVER derive backup key from JWT_SECRET (weak key derivation)
   const adminKey = req.headers['x-admin-key'];
-  if (adminKey !== process.env.JWT_SECRET?.slice(0, 32)) {
+  const expectedKey = process.env.BACKUP_ADMIN_KEY;
+
+  if (!expectedKey) {
+    return res.status(500).json({ error: 'Backup admin key not configured' });
+  }
+
+  if (!secureCompare(adminKey, expectedKey)) {
     return res.status(403).json({ error: 'Unauthorized' });
   }
 
