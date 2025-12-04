@@ -213,21 +213,23 @@ Use **Vanilla JavaScript** with modular architecture, no React/Vue/Angular.
 - Bundle size: 0 KB framework overhead
 - Fast page loads (no hydration)
 
-**Module structure**:
+**Actual module structure** (December 2024):
 ```
 backend/build/js/
-├── core/
-│   ├── api.js         # Centralized API client
-│   ├── utils.js       # Shared utilities
-│   └── app.js         # Initialization
-├── components/
-│   ├── notifications.js
-│   ├── modals.js
-│   └── pagination.js
-└── modules/
-    ├── projects.js    # Page-specific logic
-    ├── sites.js
-    └── placements.js
+├── security.js           # XSS protection, escapeHtml(), showAlert()
+├── auth.js               # Token management, getToken(), isAdmin()
+├── api.js                # Centralized API client (ProjectsAPI, SitesAPI, etc.)
+├── badge-utils.js        # UI utilities (badges, colors, formatting)
+├── navbar.js             # Navigation, notifications dropdown
+├── navbar-config.js      # Navigation configuration
+├── purchase-modal.js     # Purchase modal handlers
+├── register.js           # Registration page logic
+├── balance.js            # Balance page logic
+├── placements-manager.js # Placements manager page
+├── placements-manager-filters.js # Filters for placements
+├── admin-dashboard.js    # Admin dashboard
+├── admin-users.js        # Admin user management
+└── admin-placements.js   # Admin placements management
 ```
 
 ### Benefits
