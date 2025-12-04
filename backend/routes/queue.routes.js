@@ -206,9 +206,10 @@ router.get(
   })
 );
 
-// Cancel job
+// Cancel job - DESTRUCTIVE OPERATION
 router.post(
   '/jobs/:queueName/:jobId/cancel',
+  destructiveLimiter,
   asyncHandler(async (req, res) => {
     if (!queueService) {
       return res.status(503).json({
