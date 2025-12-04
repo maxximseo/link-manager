@@ -427,7 +427,7 @@ router.put(
   validateRequest,
   async (req, res) => {
     try {
-      const siteId = parseInt(req.params.id);
+      const siteId = parseInt(req.params.id, 10);
       const { is_public } = req.body;
 
       if (isNaN(siteId)) {
