@@ -144,7 +144,7 @@ router.patch('/:id/read', authMiddleware, apiLimiter, async (req, res) => {
  * PATCH /api/notifications/mark-all-read
  * Mark all notifications as read
  */
-router.patch('/mark-all-read', authMiddleware, async (req, res) => {
+router.patch('/mark-all-read', authMiddleware, apiLimiter, async (req, res) => {
   try {
     const result = await query(
       `
