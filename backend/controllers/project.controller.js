@@ -487,7 +487,6 @@ const deleteProjectArticle = async (req, res) => {
       return res.status(400).json({ error: 'Invalid project or article ID' });
     }
     const userId = req.user.id;
-    }
 
     // Check if article is used (has placements)
     const articles = await projectService.getProjectArticles(projectId, userId);
