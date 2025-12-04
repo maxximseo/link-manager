@@ -385,7 +385,11 @@ const getProjectArticles = async (req, res) => {
 
 const addProjectArticle = async (req, res) => {
   try {
-    const projectId = req.params.id;
+    // SECURITY: Validate projectId as integer
+    const projectId = parseInt(req.params.id, 10);
+    if (isNaN(projectId) || projectId <= 0) {
+      return res.status(400).json({ error: 'Invalid project ID' });
+    }
     const userId = req.user.id;
     const {
       title,
