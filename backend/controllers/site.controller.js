@@ -4,6 +4,7 @@
  */
 
 const siteService = require('../services/site.service');
+const { validateExternalUrl } = require('../services/wordpress.service');
 const logger = require('../config/logger');
 const { validatePagination } = require('../utils/validators');
 
