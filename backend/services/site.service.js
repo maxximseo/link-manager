@@ -34,7 +34,7 @@ const getUserSites = async (userId, page = 0, limit = 0, recalculate = false) =>
     if (usePagination) {
       // Get total count
       const countResult = await query('SELECT COUNT(*) FROM sites WHERE user_id = $1', [userId]);
-      const total = parseInt(countResult.rows[0].count);
+      const total = parseInt(countResult.rows[0].count, 10);
       const totalPages = Math.ceil(total / limit);
 
       return {

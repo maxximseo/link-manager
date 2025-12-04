@@ -50,7 +50,7 @@ const getUserProjects = async (userId, page = 1, limit = 20) => {
     // If pagination requested, get total count
     if (page > 1 || limit < 100) {
       const countResult = await query('SELECT COUNT(*) FROM projects WHERE user_id = $1', [userId]);
-      const total = parseInt(countResult.rows[0].count);
+      const total = parseInt(countResult.rows[0].count, 10);
       const pages = Math.ceil(total / limit);
 
       return {
