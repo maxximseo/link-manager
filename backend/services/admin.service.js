@@ -688,7 +688,7 @@ const getPendingApprovalsCount = async () => {
     const result = await query(
       "SELECT COUNT(*) as count FROM placements WHERE status = 'pending_approval'"
     );
-    return parseInt(result.rows[0].count);
+    return parseInt(result.rows[0].count, 10);
   } catch (error) {
     logger.error('Failed to get pending approvals count', { error: error.message });
     throw error;
