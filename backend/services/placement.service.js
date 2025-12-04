@@ -131,25 +131,25 @@ const getUserPlacements = async (userId, page = 0, limit = 0, filters = {}) => {
         countParamIndex++;
       }
 
-      if (status) {
+      if (safeStatus) {
         countQuery += ` AND p.status = $${countParamIndex}`;
-        countParams.push(status);
+        countParams.push(safeStatus);
       }
 
       const countResult = await query(countQuery, countParams);
 
-      const total = parseInt(countResult.rows[0].count);
-      const totalPages = Math.ceil(total / limit);
+      const total = parseInt(countResult.rows[0].count, 10);
+      const totalPages = Math.ceil(total / safeLimit);
 
       const response = {
         data: result.rows,
         pagination: {
-          page,
-          limit,
+          page: safePage,
+          limit: safeLimit,
           total,
           pages: totalPages,
-          hasNext: page < totalPages,
-          hasPrev: page > 1
+          hasNext: safePage < totalPages,
+          hasPrev: safePage > 1
         }
       };
 
