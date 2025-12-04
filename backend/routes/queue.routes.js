@@ -11,19 +11,28 @@ const logger = require('../config/logger');
 const authMiddleware = require('../middleware/auth');
 const adminMiddleware = require('../middleware/admin');
 
-// Rate limiting for admin queue operations (100 req/min)
-const adminLimiter = rateLimit({
+// SECURITY: Differentiated rate limiting for read vs destructive operations
+// Read operations (GET) - more lenient for monitoring
+const readLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 100, // 100 requests per minute
-  message: { error: 'Too many queue requests, please slow down' },
+  max: 200, // 200 read requests per minute for monitoring dashboards
+  message: { error: 'Too many queue read requests, please slow down' },
   standardHeaders: true,
   legacyHeaders: false
 });
 
-// SECURITY: All queue routes require admin authentication + rate limiting
+// Destructive operations (POST cleanup, cancel, retry) - stricter limits
+const destructiveLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // Only 10 destructive operations per minute
+  message: { error: 'Too many destructive operations, please slow down' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// SECURITY: All queue routes require admin authentication
 router.use(authMiddleware);
 router.use(adminMiddleware);
-router.use(adminLimiter);
 
 // Import queue service and workers
 let queueService;
