@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.6.4] - 2025-12-04
+
+### 🧹 Code Quality: DRY Principle - Remove Duplicate Functions
+
+Audit and refactoring of duplicate function definitions across service files.
+
+#### Removed Duplicates
+- **`getSiteById`** - Removed from `wordpress.service.js` (duplicate of `site.service.js`)
+  - `wordpress.service.js` had simplified version (4 fields)
+  - `site.service.js` has complete version (22 fields)
+  - Updated `wordpress.controller.js` to use `siteService.getSiteById`
+
+#### Intentional Duplicates (Kept)
+- **`refundPlacement`** - Different implementations for different contexts:
+  - `billing.service.js:1318` - User-initiated refunds
+  - `admin.service.js:485` - Admin-initiated refunds with additional logging
+
+#### Files Modified
+- `backend/services/wordpress.service.js` - Removed `getSiteById` function
+- `backend/controllers/wordpress.controller.js` - Added `siteService` import, switched to use canonical function
+
+---
+
 ## [2.6.3] - 2025-12-04
 
 ### 🔒 Security: Complete Rate Limiting Coverage
