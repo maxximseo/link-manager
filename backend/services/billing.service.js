@@ -1230,7 +1230,7 @@ const getUserTransactions = async (userId, { page = 1, limit = 50, type = null }
       params
     );
 
-    const total = parseInt(countResult.rows[0].count);
+    const total = parseInt(countResult.rows[0].count, 10);
     const totalPages = Math.ceil(total / limit);
 
     return {
@@ -1641,8 +1641,8 @@ const restoreUsageCountsInTransaction = async (client, placementId) => {
   }
 
   return {
-    linkCount: parseInt(link_count) || 0,
-    articleCount: parseInt(article_count) || 0
+    linkCount: parseInt(link_count, 10) || 0,
+    articleCount: parseInt(article_count, 10) || 0
   };
 };
 
@@ -1848,13 +1848,13 @@ const deleteAndRefundPlacement = async (placementId, userId, userRole = 'user') 
     await client.query('DELETE FROM placements WHERE id = $1', [placementId]);
 
     // Update site quotas
-    if (parseInt(link_count) > 0) {
+    if (parseInt(link_count, 10) > 0) {
       await client.query(
         'UPDATE sites SET used_links = GREATEST(0, used_links - $1) WHERE id = $2',
         [link_count, placement.site_id]
       );
     }
-    if (parseInt(article_count) > 0) {
+    if (parseInt(article_count, 10) > 0) {
       await client.query(
         'UPDATE sites SET used_articles = GREATEST(0, used_articles - $1) WHERE id = $2',
         [article_count, placement.site_id]
