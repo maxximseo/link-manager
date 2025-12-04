@@ -1,11 +1,13 @@
 /**
  * Notification routes
  * Handles user notifications
+ * SECURITY: All endpoints protected by apiLimiter (100 req/min)
  */
 
 const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/auth');
+const { apiLimiter } = require('../middleware/rateLimiter');
 const { query } = require('../config/database');
 const logger = require('../config/logger');
 const cache = require('../services/cache.service');
