@@ -505,7 +505,7 @@ module.exports = {
   deleteArticle,
   verifyWordPressConnection,
   getSiteByApiKey,
-  getSiteById,
+  // getSiteById REMOVED - use siteService.getSiteById instead (DRY principle)
   getArticleById,
   updatePlacementWithPostId,
   // Exported for reuse in site.controller.js SSRF protection
