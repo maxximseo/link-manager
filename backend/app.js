@@ -55,8 +55,23 @@ const helmetConfig = {
 app.use(helmet(helmetConfig));
 
 // CORS configuration
+// SECURITY: Strict CORS in production, permissive in development
+const isProduction = process.env.NODE_ENV === 'production';
+let corsOrigin;
+
+if (process.env.CORS_ORIGINS) {
+  corsOrigin = process.env.CORS_ORIGINS.split(',').map(o => o.trim());
+} else if (isProduction) {
+  // SECURITY: In production, fail-safe to deny all cross-origin requests if not configured
+  console.error('WARNING: CORS_ORIGINS not set in production. Using restrictive default.');
+  corsOrigin = false; // Deny all cross-origin requests
+} else {
+  // Development: allow all origins
+  corsOrigin = '*';
+}
+
 const corsOptions = {
-  origin: process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : '*',
+  origin: corsOrigin,
   credentials: true,
   optionsSuccessStatus: 200
 };
