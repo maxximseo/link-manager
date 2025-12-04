@@ -296,9 +296,10 @@ router.post(
   })
 );
 
-// Retry failed job
+// Retry failed job - DESTRUCTIVE OPERATION
 router.post(
   '/jobs/:queueName/:jobId/retry',
+  destructiveLimiter,
   asyncHandler(async (req, res) => {
     if (!queueService) {
       return res.status(503).json({
