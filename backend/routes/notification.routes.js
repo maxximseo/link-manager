@@ -16,7 +16,7 @@ const cache = require('../services/cache.service');
  * GET /api/notifications
  * Get user notifications (OPTIMIZED: Redis cache + single query)
  */
-router.get('/', authMiddleware, async (req, res) => {
+router.get('/', authMiddleware, apiLimiter, async (req, res) => {
   try {
     const { page = 1, limit = 20, unreadOnly = false } = req.query;
     const offset = (page - 1) * limit;
