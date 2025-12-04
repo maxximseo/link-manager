@@ -480,13 +480,13 @@ const updateProjectArticle = async (req, res) => {
 
 const deleteProjectArticle = async (req, res) => {
   try {
-    const projectId = req.params.id;
+    // SECURITY: Validate projectId and articleId as integers
+    const projectId = parseInt(req.params.id, 10);
     const articleId = parseInt(req.params.articleId, 10);
+    if (isNaN(projectId) || projectId <= 0 || isNaN(articleId) || articleId <= 0) {
+      return res.status(400).json({ error: 'Invalid project or article ID' });
+    }
     const userId = req.user.id;
-
-    // Validate articleId is a valid number
-    if (isNaN(articleId) || articleId <= 0) {
-      return res.status(400).json({ error: 'Invalid article ID' });
     }
 
     // Check if article is used (has placements)
