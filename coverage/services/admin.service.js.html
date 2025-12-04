@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">90.07% </span>
+                <span class="strong">90.03% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>245/272</span>
+                <span class='fraction'>253/281</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">85% </span>
+                <span class="strong">84.55% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>102/120</span>
+                <span class='fraction'>115/136</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">90.74% </span>
+                <span class="strong">90.68% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>245/270</span>
+                <span class='fraction'>253/279</span>
             </div>
         
             
@@ -1180,7 +1180,26 @@
 <a name='L1115'></a><a href='#L1115'>1115</a>
 <a name='L1116'></a><a href='#L1116'>1116</a>
 <a name='L1117'></a><a href='#L1117'>1117</a>
-<a name='L1118'></a><a href='#L1118'>1118</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L1118'></a><a href='#L1118'>1118</a>
+<a name='L1119'></a><a href='#L1119'>1119</a>
+<a name='L1120'></a><a href='#L1120'>1120</a>
+<a name='L1121'></a><a href='#L1121'>1121</a>
+<a name='L1122'></a><a href='#L1122'>1122</a>
+<a name='L1123'></a><a href='#L1123'>1123</a>
+<a name='L1124'></a><a href='#L1124'>1124</a>
+<a name='L1125'></a><a href='#L1125'>1125</a>
+<a name='L1126'></a><a href='#L1126'>1126</a>
+<a name='L1127'></a><a href='#L1127'>1127</a>
+<a name='L1128'></a><a href='#L1128'>1128</a>
+<a name='L1129'></a><a href='#L1129'>1129</a>
+<a name='L1130'></a><a href='#L1130'>1130</a>
+<a name='L1131'></a><a href='#L1131'>1131</a>
+<a name='L1132'></a><a href='#L1132'>1132</a>
+<a name='L1133'></a><a href='#L1133'>1133</a>
+<a name='L1134'></a><a href='#L1134'>1134</a>
+<a name='L1135'></a><a href='#L1135'>1135</a>
+<a name='L1136'></a><a href='#L1136'>1136</a>
+<a name='L1137'></a><a href='#L1137'>1137</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1536,12 +1555,31 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -2652,23 +2690,42 @@ const getRecentPurchases = async (limit = 20) =&gt; {
 &nbsp;
 /**
  * Get all placements for admin (only on their sites)
+ * Includes defense-in-depth role verification
  */
 const getAdminPlacements = async (
   adminId,
   { page = 1, limit = 5000, status = null, type = null }
 ) =&gt; {
   try {
-    const offset = (page - 1) * limit;
+    // Defense-in-depth: verify admin role in service layer
+    const adminCheck = await query('SELECT role FROM users WHERE id = $1', [adminId]);
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (!adminCheck.rows[0] || adminCheck.rows[0].role !== 'admin') {
+<span class="cstat-no" title="statement not covered" >      throw new Error('Unauthorized: admin role required for admin placements');</span>
+    }
+&nbsp;
+    // Validate pagination params
+    const safeLimit = Math.min(Math.max(1, parseInt(limit, 10) || <span class="branch-1 cbranch-no" title="branch not covered" >5000)</span>, 5000);
+    const safePage = Math.max(1, parseInt(page, 10) || <span class="branch-1 cbranch-no" title="branch not covered" >1)</span>;
+    const offset = (safePage - 1) * safeLimit;
+&nbsp;
+    // Validate status against whitelist
+    const allowedStatuses = ['pending', 'pending_approval', 'placed', 'failed', 'expired', 'rejected'];
+    const safeStatus = status &amp;&amp; allowedStatuses.includes(status) ? status : null;
+&nbsp;
+    // Validate type against whitelist
+    const allowedTypes = ['link', 'article'];
+    const safeType = type &amp;&amp; allowedTypes.includes(type) ? type : null;
+&nbsp;
     let whereClause = 'WHERE s.user_id = $1'; // Admin can only see placements on their sites
     const params = [adminId];
 &nbsp;
-    if (status) {
-      params.push(status);
+    if (safeStatus) {
+      params.push(safeStatus);
       whereClause += ` AND p.status = $${params.length}`;
     }
 &nbsp;
-    if (type) {
-      params.push(type);
+    if (safeType) {
+      params.push(safeType);
       whereClause += ` AND p.type = $${params.length}`;
     }
 &nbsp;
@@ -2689,7 +2746,7 @@ const getAdminPlacements = async (
       ORDER BY p.purchased_at DESC
       LIMIT $${params.length + 1} OFFSET $${params.length + 2}
     `,
-      [...params, limit, offset]
+      [...params, safeLimit, offset]
     );
 &nbsp;
     // Get total count
@@ -2704,17 +2761,17 @@ const getAdminPlacements = async (
     );
 &nbsp;
     const total = parseInt(countResult.rows[0].count, 10);
-    const totalPages = Math.ceil(total / limit);
+    const totalPages = Math.ceil(total / safeLimit);
 &nbsp;
     return {
       data: result.rows,
       pagination: {
-        page,
-        limit,
+        page: safePage,
+        limit: safeLimit,
         total,
         pages: totalPages,
-        hasNext: page &lt; totalPages,
-        hasPrev: page &gt; 1
+        hasNext: safePage &lt; totalPages,
+        hasPrev: safePage &gt; 1
       }
     };
   } catch (error) {
@@ -3289,7 +3346,7 @@ const setSitePublicStatus = async (siteId, isPublic, adminId) =&gt; {
     // Update site public status
     const result = await query(
       `UPDATE sites
-       SET is_public = $1, updated_at = NOW()
+       SET is_public = $1
        WHERE id = $2
        RETURNING *`,
       [isPublic, siteId]
@@ -3421,7 +3478,7 @@ module.exports = {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-12-04T08:36:40.394Z
+                at 2025-12-04T10:31:00.193Z
             </div>
         <script src="../prettify.js"></script>
         <script>

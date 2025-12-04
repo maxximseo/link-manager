@@ -465,8 +465,11 @@ describe('Admin Service', () => {
   });
 
   describe('getAdminPlacements', () => {
+    const mockAdmin = { role: 'admin' };
+
     it('should return placements for admin sites', async () => {
       mockQuery
+        .mockResolvedValueOnce({ rows: [mockAdmin] }) // Admin role check
         .mockResolvedValueOnce({
           rows: [
             { id: 1, type: 'link', status: 'placed', username: 'buyer1', site_name: 'Admin Site' }
@@ -477,30 +480,32 @@ describe('Admin Service', () => {
       const result = await adminService.getAdminPlacements(999, { page: 1, limit: 50 });
 
       expect(result.data).toHaveLength(1);
-      // Verify admin filter in query
-      const queryCall = mockQuery.mock.calls[0][0];
+      // Verify admin filter in query (second call, after admin check)
+      const queryCall = mockQuery.mock.calls[1][0];
       expect(queryCall).toContain('s.user_id = $1');
     });
 
     it('should filter by status', async () => {
       mockQuery
+        .mockResolvedValueOnce({ rows: [mockAdmin] }) // Admin role check
         .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({ rows: [{ count: '0' }] });
 
       await adminService.getAdminPlacements(999, { status: 'placed' });
 
-      const queryCall = mockQuery.mock.calls[0][0];
+      const queryCall = mockQuery.mock.calls[1][0];
       expect(queryCall).toContain('p.status =');
     });
 
     it('should filter by type', async () => {
       mockQuery
+        .mockResolvedValueOnce({ rows: [mockAdmin] }) // Admin role check
         .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({ rows: [{ count: '0' }] });
 
       await adminService.getAdminPlacements(999, { type: 'article' });
 
-      const queryCall = mockQuery.mock.calls[0][0];
+      const queryCall = mockQuery.mock.calls[1][0];
       expect(queryCall).toContain('p.type =');
     });
   });
