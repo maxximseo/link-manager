@@ -213,6 +213,7 @@ router.get('/recent-purchases', async (req, res) => {
 /**
  * POST /api/admin/placements/:id/refund
  * Manually refund a placement (admin only)
+ * SECURITY: financialLimiter (10 req/min) - stricter limit for financial operations
  *
  * Use cases:
  * - Customer dispute/complaint
@@ -226,6 +227,7 @@ router.get('/recent-purchases', async (req, res) => {
  */
 router.post(
   '/placements/:id/refund',
+  financialLimiter,
   [
     body('reason').isString().trim().notEmpty().withMessage('Refund reason is required'),
     body('deleteWordPressPost')
