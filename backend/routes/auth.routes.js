@@ -9,9 +9,10 @@ const rateLimit = require('express-rate-limit');
 const authController = require('../controllers/auth.controller');
 
 // Rate limiting for login attempts
+// SECURITY: Strict limit to prevent brute force attacks (5 attempts per 15 min)
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 50, // Temporary increase from 5 to 50 for login issues
+  max: 5, // SECURITY: 5 attempts per 15 minutes (brute force protection)
   message: 'Too many login attempts, please try again later.',
   standardHeaders: true,
   legacyHeaders: false
