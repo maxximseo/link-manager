@@ -11,8 +11,8 @@
 const validatePagination = (query, options = {}) => {
   const { maxLimit = 5000, defaultLimit = 20, defaultPage = 1, maxPage = 10000 } = options;
 
-  let page = parseInt(query.page);
-  let limit = parseInt(query.limit);
+  let page = parseInt(query.page, 10);
+  let limit = parseInt(query.limit, 10);
 
   // Validate page
   if (isNaN(page) || page < 1) {
@@ -38,7 +38,7 @@ const validatePagination = (query, options = {}) => {
  * @returns {number} Validated positive integer ID
  */
 const validateId = (id, paramName = 'id') => {
-  const numId = parseInt(id);
+  const numId = parseInt(id, 10);
 
   if (isNaN(numId) || numId < 1 || !Number.isInteger(numId)) {
     throw new Error(`Invalid ${paramName}: must be a positive integer`);
