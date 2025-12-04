@@ -205,7 +205,28 @@ router.post(
   validateRequest,
   async (req, res) => {
     try {
-      const { projectId, siteId, type, contentIds, scheduledDate, autoRenewal } = req.body;
+      const { projectId, siteId, type, contentIds, scheduledDate, autoRenewal, idempotencyKey } =
+        req.body;
+
+      // SECURITY: Check idempotency key to prevent duplicate purchases
+      if (idempotencyKey) {
+        const cache = require('../services/cache.service');
+        const idempotencyKeyCache = `idempotency:purchase:${req.user.id}:${idempotencyKey}`;
+        const existingResult = await cache.get(idempotencyKeyCache);
+
+        if (existingResult) {
+          // Return cached result for duplicate request
+          logger.info('Idempotent purchase request detected', {
+            userId: req.user.id,
+            idempotencyKey
+          });
+          return res.json({
+            success: true,
+            data: existingResult,
+            idempotent: true
+          });
+        }
+      }
 
       // Validate scheduled date if provided
       if (scheduledDate) {
