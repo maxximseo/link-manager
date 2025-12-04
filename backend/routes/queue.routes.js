@@ -72,6 +72,7 @@ router.get(
 // Queue status
 router.get(
   '/status',
+  readLimiter,
   asyncHandler(async (req, res) => {
     if (!queueService) {
       return res.status(503).json({
