@@ -102,9 +102,9 @@ const getUserPlacements = async (userId, page = 0, limit = 0, filters = {}) => {
     const DEFAULT_MAX_RESULTS = 10000; // Prevent unbounded queries
 
     if (usePagination) {
-      const offset = (page - 1) * limit;
+      const offset = (safePage - 1) * safeLimit;
       placementsQuery += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
-      queryParams.push(limit, offset);
+      queryParams.push(safeLimit, offset);
     } else {
       // Always add LIMIT for safety even without pagination
       placementsQuery += ` LIMIT $${paramIndex}`;
