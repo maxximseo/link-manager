@@ -186,6 +186,20 @@ function initNavbar(type, activePage, options = {}) {
 
     // Refresh notifications every 60 seconds
     setInterval(Navbar.loadNotifications, 60000);
+
+    // Prevent notifications dropdown from closing when clicking inside
+    const notificationsList = document.getElementById('notificationsList');
+    if (notificationsList) {
+        notificationsList.addEventListener('click', function(e) {
+            // Allow clicks on external links to work normally
+            const link = e.target.closest('a[href]');
+            if (link && !link.getAttribute('href').startsWith('#')) {
+                return; // Let the link work and close dropdown
+            }
+            // Stop all other clicks from closing dropdown
+            e.stopPropagation();
+        });
+    }
 }
 
 /**
