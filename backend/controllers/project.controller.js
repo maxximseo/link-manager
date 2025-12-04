@@ -193,7 +193,11 @@ const getProjectLinks = async (req, res) => {
 
 const addProjectLink = async (req, res) => {
   try {
-    const projectId = req.params.id;
+    // SECURITY: Validate projectId as integer
+    const projectId = parseInt(req.params.id, 10);
+    if (isNaN(projectId) || projectId <= 0) {
+      return res.status(400).json({ error: 'Invalid project ID' });
+    }
     const userId = req.user.id;
     const { url, anchor_text, position, usage_limit, html_context } = req.body;
 
