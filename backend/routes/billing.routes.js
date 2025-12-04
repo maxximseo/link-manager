@@ -123,8 +123,8 @@ router.get('/transactions', authMiddleware, async (req, res) => {
     const { page = 1, limit = 50, type } = req.query;
 
     const transactions = await billingService.getUserTransactions(req.user.id, {
-      page: parseInt(page),
-      limit: parseInt(limit),
+      page: parseInt(page, 10),
+      limit: parseInt(limit, 10),
       type
     });
 
