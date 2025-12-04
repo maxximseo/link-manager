@@ -534,7 +534,7 @@ router.post(
   validateRequest,
   async (req, res) => {
     try {
-      const placementId = parseInt(req.params.id);
+      const placementId = parseInt(req.params.id, 10);
       const { reason = 'Отклонено администратором' } = req.body;
 
       if (isNaN(placementId)) {
