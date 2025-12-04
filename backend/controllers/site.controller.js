@@ -329,11 +329,11 @@ const registerFromWordPress = async (req, res) => {
     }
 
     // Check if site already registered for this user
+    // SECURITY: Do NOT expose site_id in error response (IDOR prevention)
     const existing = await siteService.getSiteByUrlForUser(site_url, tokenData.user_id);
     if (existing) {
       return res.status(409).json({
-        error: 'Site already registered',
-        site_id: existing.id
+        error: 'Site already registered'
       });
     }
 
