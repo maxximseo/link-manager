@@ -130,7 +130,7 @@ router.post(
   validateRequest,
   async (req, res) => {
     try {
-      const userId = parseInt(req.params.id);
+      const userId = parseInt(req.params.id, 10);
       const { amount, reason } = req.body;
 
       if (isNaN(userId)) {
