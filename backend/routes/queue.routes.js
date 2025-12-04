@@ -48,6 +48,7 @@ try {
 // Queue health check
 router.get(
   '/health',
+  readLimiter,
   asyncHandler(async (req, res) => {
     if (!queueService) {
       return res.status(503).json({
