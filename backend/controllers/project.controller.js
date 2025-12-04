@@ -295,7 +295,7 @@ const addProjectLinksBulk = async (req, res) => {
 const deleteProjectLink = async (req, res) => {
   try {
     const projectId = req.params.id;
-    const linkId = parseInt(req.params.linkId);
+    const linkId = parseInt(req.params.linkId, 10);
     const userId = req.user.id;
 
     // Validate linkId is a valid number
@@ -442,7 +442,7 @@ const updateProjectArticle = async (req, res) => {
 const deleteProjectArticle = async (req, res) => {
   try {
     const projectId = req.params.id;
-    const articleId = parseInt(req.params.articleId);
+    const articleId = parseInt(req.params.articleId, 10);
     const userId = req.user.id;
 
     // Validate articleId is a valid number
