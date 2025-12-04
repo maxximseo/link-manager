@@ -203,8 +203,8 @@ const createPlacement = async data => {
     );
 
     const existing = existingContentResult.rows[0] || { existing_links: 0, existing_articles: 0 };
-    const hasExistingLinks = parseInt(existing.existing_links || 0) > 0;
-    const hasExistingArticles = parseInt(existing.existing_articles || 0) > 0;
+    const hasExistingLinks = parseInt(existing.existing_links || 0, 10) > 0;
+    const hasExistingArticles = parseInt(existing.existing_articles || 0, 10) > 0;
 
     logger.debug('Checking existing placements', {
       project_id,
@@ -599,9 +599,9 @@ const getStatistics = async userId => {
     // CRITICAL: PostgreSQL COUNT returns strings, must convert to numbers
     const row = result.rows[0];
     return {
-      total_placements: parseInt(row.total_placements) || 0,
-      total_links_placed: parseInt(row.total_links_placed) || 0,
-      total_articles_placed: parseInt(row.total_articles_placed) || 0
+      total_placements: parseInt(row.total_placements, 10) || 0,
+      total_links_placed: parseInt(row.total_links_placed, 10) || 0,
+      total_articles_placed: parseInt(row.total_articles_placed, 10) || 0
     };
   } catch (error) {
     logger.error('Get placement statistics error:', error);
@@ -646,9 +646,9 @@ const getAvailableSites = async (projectId, userId) => {
     const sitesWithAvailability = result.rows.map(site => ({
       ...site,
       can_place_link:
-        parseInt(site.project_links_on_site || 0) === 0 && site.used_links < site.max_links,
+        parseInt(site.project_links_on_site || 0, 10) === 0 && site.used_links < site.max_links,
       can_place_article:
-        parseInt(site.project_articles_on_site || 0) === 0 && site.used_articles < site.max_articles
+        parseInt(site.project_articles_on_site || 0, 10) === 0 && site.used_articles < site.max_articles
     }));
 
     return sitesWithAvailability;
