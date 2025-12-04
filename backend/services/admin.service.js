@@ -7,6 +7,9 @@ const { pool, query } = require('../config/database');
 const logger = require('../config/logger');
 const billingService = require('./billing.service');
 
+// Minimum date for analytics queries (system launch date)
+const ANALYTICS_MIN_DATE = '2020-01-01';
+
 /**
  * Get dashboard statistics for admin
  * Uses parameterized queries with make_interval() for security
