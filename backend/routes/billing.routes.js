@@ -195,7 +195,12 @@ router.post(
       .optional()
       .isISO8601()
       .withMessage('Scheduled date must be valid ISO8601 date'),
-    body('autoRenewal').optional().isBoolean().withMessage('Auto renewal must be boolean')
+    body('autoRenewal').optional().isBoolean().withMessage('Auto renewal must be boolean'),
+    // SECURITY: Optional idempotency key to prevent duplicate purchases
+    body('idempotencyKey')
+      .optional()
+      .isUUID()
+      .withMessage('Idempotency key must be a valid UUID')
   ],
   validateRequest,
   async (req, res) => {
