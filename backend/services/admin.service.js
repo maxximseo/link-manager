@@ -306,6 +306,9 @@ const adjustUserBalance = async (userId, amount, reason, adminId) => {
  */
 const getRecentPurchases = async (limit = 20) => {
   try {
+    // Validate limit to prevent resource exhaustion (max 1000)
+    const safeLimit = Math.min(Math.max(1, parseInt(limit) || 20), 1000);
+
     const result = await query(
       `
       SELECT
@@ -327,7 +330,7 @@ const getRecentPurchases = async (limit = 20) => {
       ORDER BY p.purchased_at DESC
       LIMIT $1
     `,
-      [limit]
+      [safeLimit]
     );
 
     return result.rows;
