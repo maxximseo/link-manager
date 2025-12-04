@@ -149,6 +149,11 @@ const addBalance = async (userId, amount, description = 'Balance deposit', admin
 
     await client.query('COMMIT');
 
+    // SECURITY: Check for anomalous deposit amounts (async, don't block response)
+    checkAnomalousTransaction(userId, amount, 'deposit').catch(err =>
+      logger.error('Failed to check anomalous transaction', { err: err.message })
+    );
+
     logger.info('Balance added successfully', { userId, amount, newBalance });
 
     return { success: true, newBalance, amount };
