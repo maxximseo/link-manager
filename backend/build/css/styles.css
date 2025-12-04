@@ -615,6 +615,29 @@ body {
     background: #667eea;
 }
 
+/* Notification dropdown - disable Bootstrap hover effects for text selection */
+.notification-dropdown .notification-item .dropdown-item:hover,
+.notification-dropdown .notification-item .dropdown-item:focus,
+.notification-dropdown .notification-item .dropdown-item:active {
+    background-color: inherit !important;
+    color: inherit !important;
+}
+
+.notification-dropdown .notification-item .dropdown-item.bg-light:hover,
+.notification-dropdown .notification-item .dropdown-item.bg-light:focus,
+.notification-dropdown .notification-item .dropdown-item.bg-light:active {
+    background-color: #f8f9fa !important;
+}
+
+/* Keep text colors for notification content */
+.notification-dropdown .notification-item .dropdown-item .text-muted {
+    color: #6c757d !important;
+}
+
+.notification-dropdown .notification-item .dropdown-item .fw-semibold {
+    color: #212529 !important;
+}
+
 /* Loading Spinner */
 .loading {
     display: inline-block;
