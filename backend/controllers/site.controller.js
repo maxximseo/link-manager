@@ -157,11 +157,12 @@ const updateSite = async (req, res) => {
       is_public = undefined; // Ignore is_public for non-admin users
     }
 
-    // Validate URL format if provided
+    // SSRF protection: validate URL with full checks if provided
     if (site_url) {
-      const urlPattern = /^https?:\/\/.+/;
-      if (!urlPattern.test(site_url)) {
-        return res.status(400).json({ error: 'Site URL must be a valid HTTP/HTTPS URL' });
+      try {
+        await validateExternalUrl(site_url);
+      } catch (error) {
+        return res.status(400).json({ error: error.message });
       }
     }
 
