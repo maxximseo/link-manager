@@ -101,7 +101,11 @@ const getPlacementsBySite = async (req, res) => {
 // Get single placement
 const getPlacement = async (req, res) => {
   try {
-    const placementId = req.params.id;
+    // SECURITY: Validate placementId as integer
+    const placementId = parseInt(req.params.id, 10);
+    if (isNaN(placementId) || placementId <= 0) {
+      return res.status(400).json({ error: 'Invalid placement ID' });
+    }
     const userId = req.user.id;
 
     const placement = await placementService.getPlacementById(placementId, userId);
