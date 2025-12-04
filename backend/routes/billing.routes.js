@@ -255,14 +255,23 @@ router.post(
         autoRenewal
       });
 
+      const responseData = {
+        placement: result.placement,
+        newBalance: result.newBalance,
+        newDiscount: result.newDiscount,
+        newTier: result.newTier
+      };
+
+      // SECURITY: Cache result for idempotency (24 hour TTL)
+      if (idempotencyKey) {
+        const cache = require('../services/cache.service');
+        const idempotencyKeyCache = `idempotency:purchase:${req.user.id}:${idempotencyKey}`;
+        await cache.set(idempotencyKeyCache, responseData, 86400); // 24 hours
+      }
+
       res.json({
         success: true,
-        data: {
-          placement: result.placement,
-          newBalance: result.newBalance,
-          newDiscount: result.newDiscount,
-          newTier: result.newTier
-        }
+        data: responseData
       });
     } catch (error) {
       return handleSmartError(res, error, 'Failed to purchase placement', 400);
