@@ -533,7 +533,18 @@ const purchasePlacement = async ({
 
     // 16. Get project name for notifications
     const project = projectResult.rows[0];
+    const contentData = contentResult.rows[0]; // First content item (we only allow 1 per placement)
     const typeLabel = type === 'link' ? 'ссылка' : 'статья';
+
+    // Build notification message with content details
+    let userNotificationMessage;
+    if (type === 'link' && contentData.url) {
+      userNotificationMessage = `Ссылка "${contentData.url}" → "${site.site_url}". Списано $${finalPrice.toFixed(2)}.`;
+    } else if (type === 'article' && contentData.title) {
+      userNotificationMessage = `Статья "${contentData.title}" → "${site.site_url}". Списано $${finalPrice.toFixed(2)}.`;
+    } else {
+      userNotificationMessage = `Куплена ${typeLabel} на сайте "${site.site_name}" для проекта "${project.name}". Списано $${finalPrice.toFixed(2)}.`;
+    }
 
     // 17. NOTIFICATION: Create notification for user about purchase
     await client.query(
@@ -544,18 +555,27 @@ const purchasePlacement = async ({
       [
         userId,
         'Размещение куплено',
-        `Куплена ${typeLabel} на сайте "${site.site_name}" для проекта "${project.name}". Списано $${finalPrice.toFixed(2)}.`,
+        userNotificationMessage,
         JSON.stringify({
           placementId: placement.id,
           type,
           siteId,
           siteName: site.site_name,
+          siteUrl: site.site_url,
           projectId,
           projectName: project.name,
+          contentUrl: contentData.url || null,
+          contentTitle: contentData.title || null,
           price: finalPrice
         })
       ]
     );
+
+    // Build admin notification message
+    const adminNotificationMessage =
+      type === 'link' && contentData.url
+        ? `"${user.username}": "${contentData.url}" → "${site.site_url}" ($${finalPrice.toFixed(2)})`
+        : `"${user.username}": "${contentData.title || 'N/A'}" → "${site.site_url}" ($${finalPrice.toFixed(2)})`;
 
     // 18. NOTIFICATION: Create notification for other admins about purchase (exclude buyer to avoid duplicates)
     await client.query(
@@ -566,7 +586,7 @@ const purchasePlacement = async ({
     `,
       [
         'Новая покупка',
-        `Пользователь "${user.username}" купил ${typeLabel === 'ссылка' ? 'ссылку' : 'статью'} на "${site.site_name}" за $${finalPrice.toFixed(2)}.`,
+        adminNotificationMessage,
         JSON.stringify({
           placementId: placement.id,
           userId,
@@ -574,8 +594,11 @@ const purchasePlacement = async ({
           type,
           siteId,
           siteName: site.site_name,
+          siteUrl: site.site_url,
           projectId,
           projectName: project.name,
+          contentUrl: contentData.url || null,
+          contentTitle: contentData.title || null,
           price: finalPrice
         }),
         userId
