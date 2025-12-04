@@ -96,6 +96,12 @@ const getAdminStats = async (period = 'day') => {
  */
 const getRevenueBreakdown = async (startDate, endDate, groupBy = 'day') => {
   try {
+    // SECURITY: Whitelist allowed groupBy values to prevent SQL injection
+    const allowedGroupBy = ['hour', 'day', 'week', 'month'];
+    if (!allowedGroupBy.includes(groupBy)) {
+      throw new Error('Invalid groupBy parameter');
+    }
+
     let dateFormat = '';
     switch (groupBy) {
       case 'hour':
