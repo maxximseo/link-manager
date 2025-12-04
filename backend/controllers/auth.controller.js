@@ -5,7 +5,40 @@
 
 const authService = require('../services/auth.service');
 const logger = require('../config/logger');
-const { trackFailedLogin } = require('../services/security-alerts.service');
+const { trackFailedLogin, notifyAdmins } = require('../services/security-alerts.service');
+
+// SECURITY: Admin IP whitelist from environment
+const getAdminWhitelist = () => {
+  const whitelist = process.env.ADMIN_IP_WHITELIST || '';
+  return whitelist
+    .split(',')
+    .map(ip => ip.trim())
+    .filter(ip => ip.length > 0);
+};
+
+// Extract real client IP (handles proxies)
+const getClientIP = req => {
+  // X-Forwarded-For can contain multiple IPs: client, proxy1, proxy2...
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) {
+    const ips = forwarded.split(',').map(ip => ip.trim());
+    return ips[0]; // First IP is the original client
+  }
+  return req.ip || req.connection?.remoteAddress || 'unknown';
+};
+
+// Check if IP is in whitelist
+const isIPWhitelisted = (ip, whitelist) => {
+  if (whitelist.length === 0) return true; // No whitelist = allow all
+
+  // Normalize IPv6 localhost
+  const normalizedIP = ip === '::ffff:127.0.0.1' ? '127.0.0.1' : ip;
+
+  return whitelist.some(allowedIP => {
+    // Support CIDR notation in future if needed
+    return normalizedIP === allowedIP || ip === allowedIP;
+  });
+};
 
 // Login controller
 const login = async (req, res) => {
@@ -20,12 +53,39 @@ const login = async (req, res) => {
 
     if (!result.success) {
       // SECURITY: Track failed login attempt (async, don't block response)
-      const clientIP = req.ip || req.connection?.remoteAddress || 'unknown';
+      const clientIP = getClientIP(req);
       trackFailedLogin(clientIP, username).catch(err =>
         logger.error('Failed to track failed login', { err: err.message })
       );
 
       return res.status(401).json({ error: result.error });
+    }
+
+    // SECURITY: Admin IP whitelist check
+    if (result.user.role === 'admin') {
+      const clientIP = getClientIP(req);
+      const whitelist = getAdminWhitelist();
+
+      if (!isIPWhitelisted(clientIP, whitelist)) {
+        logger.warn('Admin login blocked - IP not in whitelist', {
+          username: result.user.username,
+          ip: clientIP,
+          whitelist
+        });
+
+        // Notify other admins about blocked attempt
+        notifyAdmins(
+          'security_alert',
+          'Попытка входа админа с неразрешённого IP',
+          `Пользователь "${result.user.username}" попытался войти с IP ${clientIP}. IP не в белом списке.`,
+          { username: result.user.username, ip: clientIP, timestamp: new Date().toISOString() }
+        ).catch(err => logger.error('Failed to notify about blocked admin login', { err: err.message }));
+
+        return res.status(403).json({
+          error: 'Access denied: Your IP is not authorized for admin access',
+          code: 'IP_NOT_WHITELISTED'
+        });
+      }
     }
 
     logger.info('User logged in:', username);
