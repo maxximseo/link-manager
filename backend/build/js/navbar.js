@@ -372,6 +372,27 @@ Navbar.escapeHtml = function(text) {
 };
 
 /**
+ * Format notification message with clickable URLs
+ * Finds URLs in quotes and makes them clickable links
+ */
+Navbar.formatNotificationMessage = function(message) {
+    if (!message) return '';
+
+    // Escape HTML first for security
+    let escaped = Navbar.escapeHtml(message);
+
+    // Find URLs in quotes like "https://example.com" and make them clickable
+    // After escapeHtml, quotes become &quot;
+    const urlPattern = /&quot;(https?:\/\/[^&]+)&quot;/g;
+
+    escaped = escaped.replace(urlPattern, function(match, url) {
+        return `"<a href="${url}" target="_blank" rel="noopener" class="text-primary" style="text-decoration: underline;">${url}</a>"`;
+    });
+
+    return escaped;
+};
+
+/**
  * Mark single notification as read
  */
 Navbar.markNotificationRead = async function(event, notificationId) {
