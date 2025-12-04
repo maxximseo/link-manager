@@ -15,11 +15,15 @@ const apiLimiter = createLimiter(RATE_LIMITS.API);
 const createOperationLimiter = createLimiter(RATE_LIMITS.CREATE);
 const placementLimiter = createLimiter(RATE_LIMITS.PLACEMENT);
 const wordpressLimiter = createLimiter(RATE_LIMITS.WORDPRESS);
+const financialLimiter = createLimiter(RATE_LIMITS.FINANCIAL);
+const depositLimiter = createLimiter(RATE_LIMITS.DEPOSIT);
 
 module.exports = {
   loginLimiter,
   apiLimiter,
   createOperationLimiter,
   placementLimiter,
-  wordpressLimiter
+  wordpressLimiter,
+  financialLimiter,
+  depositLimiter
 };
