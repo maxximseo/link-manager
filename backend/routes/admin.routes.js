@@ -7,6 +7,7 @@ const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const authMiddleware = require('../middleware/auth');
+const { financialLimiter, apiLimiter } = require('../middleware/rateLimiter');
 const adminService = require('../services/admin.service');
 const siteService = require('../services/site.service');
 const logger = require('../config/logger');
