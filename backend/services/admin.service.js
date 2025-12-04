@@ -491,17 +491,29 @@ const refundPlacement = async (placementId, reason, adminId, deleteWordPressPost
       throw new Error('Placement has no refundable amount (free placement)');
     }
 
-    // 2. Delete WordPress post if requested and possible
+    // 2. Delete WordPress post if requested and possible (with timeout)
     let wordpressPostDeleted = false;
     if (deleteWordPressPost && placement.type === 'article' && placement.wordpress_post_id) {
       if (placement.site_type === 'wordpress' && placement.api_key) {
         const wordpressService = require('./wordpress.service');
+        const WORDPRESS_TIMEOUT = 15000; // 15 seconds timeout for WordPress API
+
         try {
-          const result = await wordpressService.deleteArticle(
-            placement.site_url,
-            placement.api_key,
-            placement.wordpress_post_id
+          // Create timeout promise to prevent hanging on slow WordPress sites
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('WordPress API timeout after 15 seconds')), WORDPRESS_TIMEOUT)
           );
+
+          // Race between actual request and timeout
+          const result = await Promise.race([
+            wordpressService.deleteArticle(
+              placement.site_url,
+              placement.api_key,
+              placement.wordpress_post_id
+            ),
+            timeoutPromise
+          ]);
+
           wordpressPostDeleted = result.success;
 
           if (wordpressPostDeleted) {
@@ -517,7 +529,7 @@ const refundPlacement = async (placementId, reason, adminId, deleteWordPressPost
             placementId,
             error: error.message
           });
-          // Continue with refund even if WP deletion fails
+          // Continue with refund even if WP deletion fails or times out
         }
       }
     }
