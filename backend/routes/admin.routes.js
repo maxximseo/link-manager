@@ -20,8 +20,8 @@ const requireAdmin = (req, res, next) => {
   next();
 };
 
-// Apply auth and admin check to all routes
-router.use(authMiddleware, requireAdmin);
+// Apply auth, admin check, and default rate limiting to all routes
+router.use(authMiddleware, requireAdmin, apiLimiter);
 
 // Validation middleware
 const validateRequest = (req, res, next) => {
