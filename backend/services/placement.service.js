@@ -13,6 +13,12 @@ const getUserPlacements = async (userId, page = 0, limit = 0, filters = {}) => {
   try {
     const { project_id, status } = filters;
 
+    // SECURITY: Validate project_id is a positive integer to prevent cache key injection
+    const safeProjectId =
+      project_id && Number.isInteger(Number(project_id)) && Number(project_id) > 0
+        ? parseInt(project_id, 10)
+        : null;
+
     // Validate pagination params to prevent resource exhaustion
     const safeLimit = limit > 0 ? Math.min(Math.max(1, parseInt(limit, 10) || 5000), 5000) : 0;
     const safePage = page > 0 ? Math.max(1, parseInt(page, 10) || 1) : 0;
