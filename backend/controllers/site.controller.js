@@ -242,8 +242,9 @@ const deleteSite = async (req, res) => {
       refundDetails: result.refundDetails
     });
   } catch (error) {
-    logger.error('Delete site error:', error);
-    res.status(500).json({ error: 'Failed to delete site: ' + error.message });
+    // SECURITY: Log detailed error server-side, return generic message to client
+    logger.error('Delete site error:', { error: error.message, stack: error.stack });
+    res.status(500).json({ error: 'Failed to delete site' });
   }
 };
 
