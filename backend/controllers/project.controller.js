@@ -417,8 +417,12 @@ const addProjectArticle = async (req, res) => {
 
 const updateProjectArticle = async (req, res) => {
   try {
-    const projectId = req.params.id; // Route uses /:id not /:projectId
-    const articleId = req.params.articleId;
+    // SECURITY: Validate projectId and articleId as integers
+    const projectId = parseInt(req.params.id, 10);
+    const articleId = parseInt(req.params.articleId, 10);
+    if (isNaN(projectId) || projectId <= 0 || isNaN(articleId) || articleId <= 0) {
+      return res.status(400).json({ error: 'Invalid project or article ID' });
+    }
     const userId = req.user.id;
     const {
       title,
