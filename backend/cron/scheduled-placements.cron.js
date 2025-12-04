@@ -124,20 +124,31 @@ async function processScheduledPlacements() {
           });
         }
 
+        // Build notification message with content URL for links
+        let notificationMessage;
+        if (placement.type === 'link' && content.url) {
+          notificationMessage = `Ссылка "${content.url}" размещена на "${placement.site_url}"`;
+        } else if (placement.type === 'article' && content.title) {
+          notificationMessage = `Статья "${content.title}" опубликована на "${placement.site_url}"`;
+        } else {
+          notificationMessage = `Запланированное размещение #${placement.id} на сайте "${placement.site_name}" успешно опубликовано.`;
+        }
+
         // Send notification to user
         await placementClient.query(
           `
           INSERT INTO notifications (user_id, type, title, message)
           VALUES ($1, 'placement_published', $2, $3)
         `,
-          [
-            placement.user_id,
-            'Размещение опубликовано',
-            `Запланированное размещение #${placement.id} на сайте "${placement.site_name}" успешно опубликовано.`
-          ]
+          [placement.user_id, 'Размещение опубликовано', notificationMessage]
         );
 
         // Send notification to other admins (exclude placement owner to avoid duplicates)
+        const adminNotificationMessage =
+          placement.type === 'link' && content.url
+            ? `Ссылка "${content.url}" → "${placement.site_url}" (user: ${placement.user_id})`
+            : `Статья "${content.title || 'N/A'}" → "${placement.site_url}" (user: ${placement.user_id})`;
+
         await placementClient.query(
           `
           INSERT INTO notifications (user_id, type, title, message, metadata)
@@ -146,12 +157,15 @@ async function processScheduledPlacements() {
         `,
           [
             'Размещение опубликовано',
-            `Запланированное размещение #${placement.id} на сайте "${placement.site_name}" успешно опубликовано (${placement.type}).`,
+            adminNotificationMessage,
             JSON.stringify({
               placementId: placement.id,
               type: placement.type,
               siteId: placement.site_id,
               siteName: placement.site_name,
+              siteUrl: placement.site_url,
+              contentUrl: content.url || null,
+              contentTitle: content.title || null,
               userId: placement.user_id
             }),
             placement.user_id
