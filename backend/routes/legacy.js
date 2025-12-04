@@ -28,6 +28,15 @@ const loginLimiter = rateLimit({
   legacyHeaders: false
 });
 
+// General API rate limiting (100 req/min)
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 100, // 100 requests per minute
+  message: 'Too many requests, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
 // Auth middleware
 const authMiddleware = (req, res, next) => {
   try {
