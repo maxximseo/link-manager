@@ -397,8 +397,8 @@ router.get('/sites', async (req, res) => {
     const { page = 1, limit = 50, search, is_public } = req.query;
 
     const sites = await adminService.getAllSites({
-      page: parseInt(page),
-      limit: parseInt(limit),
+      page: parseInt(page, 10),
+      limit: parseInt(limit, 10),
       search,
       isPublic: is_public === 'true' ? true : is_public === 'false' ? false : null
     });
