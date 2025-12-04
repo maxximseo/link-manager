@@ -188,7 +188,7 @@ const registerUser = async (username, email, password) => {
     }
 
     // Hash password
-    const bcryptRounds = parseInt(process.env.BCRYPT_ROUNDS) || 10;
+    const bcryptRounds = parseInt(process.env.BCRYPT_ROUNDS, 10) || 10;
     const hashedPassword = await bcrypt.hash(password, bcryptRounds);
 
     // Generate email verification token
