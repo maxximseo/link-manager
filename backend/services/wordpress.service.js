@@ -54,11 +54,12 @@ async function axiosWithRetry(requestFn, context = 'WordPress API') {
         continue;
       }
 
-      // Log final failure
+      // Log final failure (SECURITY: mask full URL to prevent info disclosure)
+      const maskedUrl = error.config?.url ? new URL(error.config.url).hostname : 'unknown';
       logger.error(`${context} request failed after ${attempt + 1} attempts`, {
         error: error.message,
         statusCode,
-        url: error.config?.url
+        host: maskedUrl
       });
       throw error;
     }
