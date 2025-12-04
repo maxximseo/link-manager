@@ -90,10 +90,10 @@ const getUserPlacements = async (userId, page = 0, limit = 0, filters = {}) => {
     const queryParams = [userId];
     let paramIndex = 2;
 
-    // Add project_id filter
-    if (project_id) {
+    // Add project_id filter (using validated safeProjectId)
+    if (safeProjectId) {
       placementsQuery += ` AND p.project_id = $${paramIndex}`;
-      queryParams.push(project_id);
+      queryParams.push(safeProjectId);
       paramIndex++;
     }
 
