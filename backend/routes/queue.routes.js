@@ -135,6 +135,7 @@ router.get(
 // Get all active jobs
 router.get(
   '/jobs',
+  readLimiter,
   asyncHandler(async (req, res) => {
     if (!queueService) {
       return res.status(503).json({
