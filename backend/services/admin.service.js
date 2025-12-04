@@ -783,6 +783,7 @@ const approvePlacement = async (placementId, adminId) => {
 
 /**
  * Reject a placement and refund the user
+ * Uses shared billingService.refundPlacementInTransaction() for DRY principle
  */
 const rejectPlacement = async (placementId, adminId, reason = 'Rejected by admin') => {
   const client = await pool.connect();
@@ -815,62 +816,10 @@ const rejectPlacement = async (placementId, adminId, reason = 'Rejected by admin
 
     const finalPrice = parseFloat(placement.final_price || 0);
 
-    // 1. Refund user balance
+    // 1. Process refund using shared billing service function (DRY)
+    // This handles: balance update, total_spent decrement, tier recalculation, transaction creation
     if (finalPrice > 0) {
-      // Get current user data for tier recalculation
-      // CRITICAL FIX: Include balance for proper transaction record
-      const userResult = await client.query(
-        'SELECT balance, total_spent, current_discount FROM users WHERE id = $1 FOR UPDATE',
-        [placement.user_id]
-      );
-      const user = userResult.rows[0];
-      const balanceBefore = parseFloat(user?.balance || 0);
-      const balanceAfter = balanceBefore + finalPrice;
-      const totalSpentBefore = parseFloat(user?.total_spent || 0);
-      const totalSpentAfter = Math.max(0, totalSpentBefore - finalPrice);
-
-      await client.query(
-        `
-        UPDATE users
-        SET balance = $1, total_spent = $2
-        WHERE id = $3
-      `,
-        [balanceAfter, totalSpentAfter, placement.user_id]
-      );
-
-      // CRITICAL FIX (BUG #11): Recalculate discount tier after refund
-      const newTier = await billingService.calculateDiscountTier(totalSpentAfter);
-      if (newTier.discount !== parseFloat(user.current_discount)) {
-        await client.query('UPDATE users SET current_discount = $1 WHERE id = $2', [
-          newTier.discount,
-          placement.user_id
-        ]);
-
-        logger.info('Discount tier changed after rejection refund', {
-          userId: placement.user_id,
-          oldDiscount: parseFloat(user.current_discount),
-          newDiscount: newTier.discount,
-          newTier: newTier.tier,
-          totalSpentAfter
-        });
-      }
-
-      // Create refund transaction
-      // CRITICAL FIX: Include balance_before and balance_after for complete audit trail
-      await client.query(
-        `
-        INSERT INTO transactions (user_id, type, amount, balance_before, balance_after, description, metadata)
-        VALUES ($1, 'refund', $2, $3, $4, $5, $6)
-      `,
-        [
-          placement.user_id,
-          finalPrice,
-          balanceBefore,
-          balanceAfter,
-          `Refund: Placement #${placementId} rejected`,
-          JSON.stringify({ placementId, reason, adminId })
-        ]
-      );
+      await billingService.refundPlacementInTransaction(client, placement);
     }
 
     // 2. Update rejection reason
@@ -917,7 +866,7 @@ const rejectPlacement = async (placementId, adminId, reason = 'Rejected by admin
       ]
     );
 
-    // 6. Notify user
+    // 6. Notify user about rejection
     await client.query(
       `
       INSERT INTO notifications (user_id, type, title, message)
