@@ -1014,6 +1014,94 @@ git push
 
 **IMPORTANT**: Auto-commit is for development convenience. For production/feature releases, use manual commits with descriptive messages.
 
+## Security Alerts System (December 2025)
+
+### Overview
+Admin notification system for security-related events. Automatically notifies all admin users via database notifications.
+
+### Service Location
+**File**: `backend/services/security-alerts.service.js`
+
+### Alert Types
+
+#### 1. Anomalous Transactions
+**Threshold**: Transactions > $1000
+**Trigger**: After successful deposit or purchase
+**Integration**: `backend/services/billing.service.js`
+
+```javascript
+// Called automatically after COMMIT in addBalance() and purchasePlacement()
+checkAnomalousTransaction(userId, amount, 'deposit');
+checkAnomalousTransaction(userId, finalPrice, 'purchase');
+```
+
+#### 2. Failed Login Attempts
+**Threshold**: 5+ failed attempts from same IP within 15 minutes
+**Trigger**: On authentication failure
+**Integration**: `backend/controllers/auth.controller.js`
+
+```javascript
+// Called on login failure
+const clientIP = req.ip || req.connection?.remoteAddress || 'unknown';
+trackFailedLogin(clientIP, username);
+```
+
+**Note**: Rate limiter (5/15min) also applies - user gets blocked on 6th attempt.
+
+#### 3. Server 500 Errors
+**Threshold**: Any 500+ status code
+**Debounce**: 1 minute (same error won't spam admins)
+**Integration**: `backend/middleware/errorHandler.js`
+
+```javascript
+// Called automatically when statusCode >= 500
+notify500Error(err, req);
+```
+
+### Configuration Thresholds
+Located in `security-alerts.service.js`:
+
+```javascript
+const THRESHOLDS = {
+  ANOMALOUS_TRANSACTION_MIN: 1000,     // $1000+
+  FAILED_LOGINS_MAX: 5,                 // 5 attempts
+  FAILED_LOGINS_WINDOW: 15 * 60 * 1000, // 15 minutes
+  ERROR_500_DEBOUNCE: 60 * 1000         // 1 minute debounce
+};
+```
+
+### Database Storage
+Notifications stored in `notifications` table:
+- `type`: 'security_alert' or 'error_alert'
+- `title`: Alert title
+- `message`: Detailed message
+- `metadata`: JSONB with context (IP, userId, timestamp, etc.)
+
+### Memory Management
+- In-memory tracking for failed logins (Map)
+- Automatic cleanup of old entries (1% chance per request)
+- Error debounce map with periodic cleanup
+
+### Testing Security Alerts
+```bash
+# Test failed logins (triggers alert after 5 attempts)
+for i in 1 2 3 4 5; do
+  curl -X POST http://localhost:3003/api/auth/login \
+    -H "Content-Type: application/json" \
+    -d '{"username":"test","password":"wrong"}'
+done
+
+# Check notifications in DB
+SELECT * FROM notifications WHERE type = 'security_alert' ORDER BY created_at DESC LIMIT 5;
+```
+
+### Environment Variable
+**BACKUP_ADMIN_KEY** added to `.env` for backup endpoint authentication:
+```bash
+BACKUP_ADMIN_KEY=<64-character hex key>
+```
+Used in `backend/routes/health.routes.js` with constant-time comparison.
+
 ## Common Debugging
 
 ### Type Coercion Issues
