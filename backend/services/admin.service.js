@@ -433,8 +433,8 @@ const getAdminPlacements = async (
         limit: safeLimit,
         total,
         pages: totalPages,
-        hasNext: page < totalPages,
-        hasPrev: page > 1
+        hasNext: safePage < totalPages,
+        hasPrev: safePage > 1
       }
     };
   } catch (error) {
