@@ -893,6 +893,7 @@ const bulkUpdateSiteParams = async (parameter, updates) => {
 
 /**
  * Get sites where a specific parameter is 0 or null
+ * SECURITY: Uses hardcoded queries to prevent SQL injection (same pattern as bulkUpdateSiteParams)
  * @param {string} parameter - Parameter name ('dr', etc.)
  * @returns {Array} - Array of sites with zero/null value
  */
@@ -916,13 +917,30 @@ const getSitesWithZeroParam = async parameter => {
     );
   }
 
+  // SECURITY: Pre-built queries with hardcoded column names to prevent SQL injection
+  // Same pattern used in bulkUpdateSiteParams() for consistency
+  const getZeroParamQuery = param => {
+    const queries = {
+      dr: 'SELECT id, site_name, site_url, dr, created_at FROM sites WHERE dr IS NULL OR dr = 0 ORDER BY site_name ASC',
+      da: 'SELECT id, site_name, site_url, da, created_at FROM sites WHERE da IS NULL OR da = 0 ORDER BY site_name ASC',
+      ref_domains:
+        'SELECT id, site_name, site_url, ref_domains, created_at FROM sites WHERE ref_domains IS NULL OR ref_domains = 0 ORDER BY site_name ASC',
+      rd_main:
+        'SELECT id, site_name, site_url, rd_main, created_at FROM sites WHERE rd_main IS NULL OR rd_main = 0 ORDER BY site_name ASC',
+      norm: 'SELECT id, site_name, site_url, norm, created_at FROM sites WHERE norm IS NULL OR norm = 0 ORDER BY site_name ASC',
+      tf: 'SELECT id, site_name, site_url, tf, created_at FROM sites WHERE tf IS NULL OR tf = 0 ORDER BY site_name ASC',
+      cf: 'SELECT id, site_name, site_url, cf, created_at FROM sites WHERE cf IS NULL OR cf = 0 ORDER BY site_name ASC',
+      keywords:
+        'SELECT id, site_name, site_url, keywords, created_at FROM sites WHERE keywords IS NULL OR keywords = 0 ORDER BY site_name ASC',
+      traffic:
+        'SELECT id, site_name, site_url, traffic, created_at FROM sites WHERE traffic IS NULL OR traffic = 0 ORDER BY site_name ASC',
+      geo: "SELECT id, site_name, site_url, geo, created_at FROM sites WHERE geo IS NULL OR geo = '' ORDER BY site_name ASC"
+    };
+    return queries[param];
+  };
+
   try {
-    const result = await query(
-      `SELECT id, site_name, site_url, ${parameter}, created_at
-       FROM sites
-       WHERE ${parameter} IS NULL OR ${parameter} = 0
-       ORDER BY site_name ASC`
-    );
+    const result = await query(getZeroParamQuery(parameter));
 
     logger.info('Get sites with zero param', {
       parameter,
