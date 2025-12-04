@@ -234,8 +234,12 @@ const addProjectLink = async (req, res) => {
 
 const updateProjectLink = async (req, res) => {
   try {
-    const projectId = req.params.id;
-    const linkId = req.params.linkId;
+    // SECURITY: Validate projectId and linkId as integers
+    const projectId = parseInt(req.params.id, 10);
+    const linkId = parseInt(req.params.linkId, 10);
+    if (isNaN(projectId) || projectId <= 0 || isNaN(linkId) || linkId <= 0) {
+      return res.status(400).json({ error: 'Invalid project or link ID' });
+    }
     const userId = req.user.id;
     const { url, anchor_text, usage_limit } = req.body;
 
