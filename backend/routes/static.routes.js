@@ -18,6 +18,42 @@ const publicApiLimiter = rateLimit({
   message: { error: 'Too many requests from this IP, please try again later' }
 });
 
+// SECURITY: RFC 1123 compliant domain validation with additional checks
+function isValidDomain(domain) {
+  // Max domain length per RFC 1035
+  if (!domain || domain.length > 253) {
+    return false;
+  }
+
+  // RFC 1123 compliant regex (allows digits in first position, unlike RFC 952)
+  // Each label: 1-63 chars, alphanumeric or hyphen, must start/end with alphanumeric
+  const domainRegex =
+    /^(?!-)(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
+
+  if (!domainRegex.test(domain)) {
+    return false;
+  }
+
+  // SECURITY: Block localhost and test domains
+  const blockedDomains = [
+    'localhost',
+    'localhost.localdomain',
+    'example.com',
+    'example.org',
+    'example.net',
+    'test',
+    'local',
+    'internal'
+  ];
+
+  const normalizedDomain = domain.toLowerCase();
+  if (blockedDomains.some(blocked => normalizedDomain === blocked || normalizedDomain.endsWith('.' + blocked))) {
+    return false;
+  }
+
+  return true;
+}
+
 // GET /api/static/get-content-by-domain?domain=example.com
 // Public endpoint - no authentication required
 // NOTE: This is a legacy endpoint for backward compatibility
@@ -30,8 +66,8 @@ router.get('/get-content-by-domain', publicApiLimiter, async (req, res) => {
       return res.status(400).json({ error: 'Domain parameter is required' });
     }
 
-    // Validate domain format (basic check)
-    if (!/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(domain)) {
+    // SECURITY: Use RFC 1123 compliant validation
+    if (!isValidDomain(domain)) {
       return res.status(400).json({ error: 'Invalid domain format' });
     }
 
