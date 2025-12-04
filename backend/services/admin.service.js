@@ -64,20 +64,20 @@ const getAdminStats = async (period = 'day') => {
       period,
       revenue: {
         total: parseFloat(revenueResult.rows[0].total_revenue || 0),
-        purchases: parseInt(revenueResult.rows[0].purchases_count),
-        renewals: parseInt(revenueResult.rows[0].renewals_count),
+        purchases: parseInt(revenueResult.rows[0].purchases_count, 10),
+        renewals: parseInt(revenueResult.rows[0].renewals_count, 10),
         avgTransaction: parseFloat(revenueResult.rows[0].avg_transaction || 0)
       },
       placements: {
-        total: parseInt(placementResult.rows[0].total_placements),
-        links: parseInt(placementResult.rows[0].link_placements),
-        articles: parseInt(placementResult.rows[0].article_placements),
-        scheduled: parseInt(placementResult.rows[0].scheduled_placements),
-        active: parseInt(placementResult.rows[0].active_placements),
-        autoRenewal: parseInt(placementResult.rows[0].auto_renewal_count)
+        total: parseInt(placementResult.rows[0].total_placements, 10),
+        links: parseInt(placementResult.rows[0].link_placements, 10),
+        articles: parseInt(placementResult.rows[0].article_placements, 10),
+        scheduled: parseInt(placementResult.rows[0].scheduled_placements, 10),
+        active: parseInt(placementResult.rows[0].active_placements, 10),
+        autoRenewal: parseInt(placementResult.rows[0].auto_renewal_count, 10)
       },
       users: {
-        newUsers: parseInt(userResult.rows[0].new_users),
+        newUsers: parseInt(userResult.rows[0].new_users, 10),
         totalBalance: parseFloat(userResult.rows[0].total_user_balance || 0),
         totalSpending: parseFloat(userResult.rows[0].total_user_spending || 0)
       }
