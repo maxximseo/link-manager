@@ -195,7 +195,7 @@ router.get('/recent-purchases', async (req, res) => {
   try {
     const { limit = 20 } = req.query;
 
-    const purchases = await adminService.getRecentPurchases(parseInt(limit));
+    const purchases = await adminService.getRecentPurchases(parseInt(limit, 10));
 
     res.json({
       success: true,
