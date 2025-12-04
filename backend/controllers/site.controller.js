@@ -75,39 +75,11 @@ const createSite = async (req, res) => {
       return res.status(400).json({ error: 'Site URL is required' });
     }
 
-    // Validate URL format
-    const urlPattern = /^https?:\/\/.+/;
-    if (!urlPattern.test(site_url)) {
-      return res.status(400).json({ error: 'Site URL must be a valid HTTP/HTTPS URL' });
-    }
-
-    // SSRF protection: block internal/private IPs
+    // SSRF protection: validate URL with full checks (DNS rebinding, cloud metadata, private IPs)
     try {
-      const urlObj = new URL(site_url);
-      const hostname = urlObj.hostname.toLowerCase();
-
-      // Block localhost variants
-      if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
-        return res.status(400).json({ error: 'Internal URLs are not allowed' });
-      }
-
-      // Block private IP ranges
-      const ipPattern = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
-      const ipMatch = hostname.match(ipPattern);
-      if (ipMatch) {
-        const [, a, b] = ipMatch.map(Number);
-        // 10.x.x.x, 172.16-31.x.x, 192.168.x.x, 169.254.x.x (AWS metadata)
-        if (
-          a === 10 ||
-          (a === 172 && b >= 16 && b <= 31) ||
-          (a === 192 && b === 168) ||
-          (a === 169 && b === 254)
-        ) {
-          return res.status(400).json({ error: 'Private IP addresses are not allowed' });
-        }
-      }
-    } catch (_e) {
-      return res.status(400).json({ error: 'Invalid URL format' });
+      await validateExternalUrl(site_url);
+    } catch (error) {
+      return res.status(400).json({ error: error.message });
     }
 
     // Validate site_type
