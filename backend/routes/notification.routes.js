@@ -210,7 +210,7 @@ router.delete('/all', authMiddleware, apiLimiter, async (req, res) => {
  * DELETE /api/notifications/:id
  * Delete a notification
  */
-router.delete('/:id', authMiddleware, async (req, res) => {
+router.delete('/:id', authMiddleware, apiLimiter, async (req, res) => {
   try {
     const notificationId = parseInt(req.params.id, 10);
 
