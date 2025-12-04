@@ -127,7 +127,7 @@ const getRevenueBreakdown = async (startDate, endDate, groupBy = 'day') => {
       GROUP BY period, type
       ORDER BY period DESC, type
     `,
-      [startDate || '2020-01-01', endDate || new Date()]
+      [startDate || ANALYTICS_MIN_DATE, endDate || new Date()]
     );
 
     return result.rows;
