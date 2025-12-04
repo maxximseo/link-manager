@@ -229,7 +229,11 @@ const updateSite = async (req, res) => {
 // Delete site with automatic refunds
 const deleteSite = async (req, res) => {
   try {
-    const siteId = req.params.id;
+    // SECURITY: Validate siteId as integer
+    const siteId = parseInt(req.params.id, 10);
+    if (isNaN(siteId) || siteId <= 0) {
+      return res.status(400).json({ error: 'Invalid site ID' });
+    }
     const userId = req.user.id;
 
     const result = await siteService.deleteSite(siteId, userId);
