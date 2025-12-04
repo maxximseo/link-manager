@@ -22,15 +22,15 @@ const getUserPlacements = async (userId, page = 0, limit = 0, filters = {}) => {
     const safeStatus = status && allowedStatuses.includes(status) ? status : null;
 
     // Check cache first (2 minutes TTL for placements list)
-    const cacheKey = `placements:user:${userId}:p${page}:l${limit}:proj${project_id || 'all'}:st${status || 'all'}`;
+    const cacheKey = `placements:user:${userId}:p${safePage}:l${safeLimit}:proj${project_id || 'all'}:st${safeStatus || 'all'}`;
     const cached = await cache.get(cacheKey);
 
     if (cached) {
-      logger.debug('Placements served from cache', { userId, page, limit, filters });
+      logger.debug('Placements served from cache', { userId, page: safePage, limit: safeLimit, filters });
       return cached;
     }
 
-    const usePagination = page > 0 && limit > 0;
+    const usePagination = safePage > 0 && safeLimit > 0;
 
     // Query to get placements with content details
     let placementsQuery = `
