@@ -309,7 +309,7 @@ router.post(
  */
 router.post('/renew/:placementId', authMiddleware, financialLimiter, async (req, res) => {
   try {
-    const placementId = parseInt(req.params.placementId);
+    const placementId = parseInt(req.params.placementId, 10);
 
     if (isNaN(placementId)) {
       return res.status(400).json({ error: 'Invalid placement ID' });
