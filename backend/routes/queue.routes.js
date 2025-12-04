@@ -1,18 +1,29 @@
 /**
  * Queue management routes for Redis/Valkey integration
- * SECURITY: All routes require admin authentication
+ * SECURITY: All routes require admin authentication + rate limiting
  */
 
 const express = require('express');
 const router = express.Router();
+const rateLimit = require('express-rate-limit');
 const { asyncHandler } = require('../middleware/errorHandler');
 const logger = require('../config/logger');
 const authMiddleware = require('../middleware/auth');
 const adminMiddleware = require('../middleware/admin');
 
-// SECURITY: All queue routes require admin authentication
+// Rate limiting for admin queue operations (100 req/min)
+const adminLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 100, // 100 requests per minute
+  message: { error: 'Too many queue requests, please slow down' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// SECURITY: All queue routes require admin authentication + rate limiting
 router.use(authMiddleware);
 router.use(adminMiddleware);
+router.use(adminLimiter);
 
 // Import queue service and workers
 let queueService;
