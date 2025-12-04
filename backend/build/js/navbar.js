@@ -378,18 +378,30 @@ Navbar.escapeHtml = function(text) {
 Navbar.formatNotificationMessage = function(message) {
     if (!message) return '';
 
-    // Escape HTML first for security
-    let escaped = Navbar.escapeHtml(message);
+    // Find URLs in quotes BEFORE escaping, then escape and wrap
+    // Pattern matches "https://example.com" or "http://example.com"
+    const urlPattern = /"(https?:\/\/[^"]+)"/g;
 
-    // Find URLs in quotes like "https://example.com" and make them clickable
-    // After escapeHtml, quotes become &quot;
-    const urlPattern = /&quot;(https?:\/\/[^&]+)&quot;/g;
-
-    escaped = escaped.replace(urlPattern, function(match, url) {
-        return `"<a href="${url}" target="_blank" rel="noopener" class="text-primary" style="text-decoration: underline;">${url}</a>"`;
+    // Replace URLs with placeholders, escape everything, then restore links
+    const urls = [];
+    let processed = message.replace(urlPattern, function(match, url) {
+        urls.push(url);
+        return `__URL_PLACEHOLDER_${urls.length - 1}__`;
     });
 
-    return escaped;
+    // Escape the message (placeholders are safe)
+    processed = Navbar.escapeHtml(processed);
+
+    // Restore URLs as clickable links
+    urls.forEach((url, index) => {
+        const safeUrl = Navbar.escapeHtml(url);
+        processed = processed.replace(
+            `__URL_PLACEHOLDER_${index}__`,
+            `"<a href="${url}" target="_blank" rel="noopener" class="text-primary" style="text-decoration: underline;">${safeUrl}</a>"`
+        );
+    });
+
+    return processed;
 };
 
 /**
