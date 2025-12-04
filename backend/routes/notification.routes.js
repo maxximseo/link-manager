@@ -103,7 +103,7 @@ router.get('/unread-count', authMiddleware, apiLimiter, async (req, res) => {
  * PATCH /api/notifications/:id/read
  * Mark notification as read
  */
-router.patch('/:id/read', authMiddleware, async (req, res) => {
+router.patch('/:id/read', authMiddleware, apiLimiter, async (req, res) => {
   try {
     const notificationId = parseInt(req.params.id, 10);
 
