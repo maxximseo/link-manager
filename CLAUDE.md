@@ -1095,12 +1095,60 @@ done
 SELECT * FROM notifications WHERE type = 'security_alert' ORDER BY created_at DESC LIMIT 5;
 ```
 
-### Environment Variable
-**BACKUP_ADMIN_KEY** added to `.env` for backup endpoint authentication:
+### Environment Variables
+
+**BACKUP_ADMIN_KEY** - Backup endpoint authentication:
 ```bash
 BACKUP_ADMIN_KEY=<64-character hex key>
 ```
 Used in `backend/routes/health.routes.js` with constant-time comparison.
+
+**ADMIN_IP_WHITELIST** - Admin login IP restriction:
+```bash
+ADMIN_IP_WHITELIST=91.84.98.55,127.0.0.1,::1
+```
+Comma-separated list of allowed IPs. Only these IPs can login as admin.
+
+### Admin IP Whitelist (December 2025)
+
+**Location**: `backend/controllers/auth.controller.js`
+
+**Behavior**:
+1. After successful password verification, checks if user is admin
+2. If admin, extracts client IP (supports X-Forwarded-For for proxies)
+3. Checks IP against whitelist from `ADMIN_IP_WHITELIST` env var
+4. If IP not in whitelist:
+   - Logs warning with username, IP, and whitelist
+   - Sends notification to other admins about blocked attempt
+   - **Returns generic "Invalid credentials" error** (security: doesn't reveal IP restriction exists)
+
+**Helper Functions**:
+```javascript
+getAdminWhitelist()     // Parses ADMIN_IP_WHITELIST from env
+getClientIP(req)        // Extracts real IP (handles X-Forwarded-For)
+isIPWhitelisted(ip, whitelist)  // Checks if IP is allowed
+```
+
+**Security Features**:
+- IPv6 localhost normalization (`::ffff:127.0.0.1` → `127.0.0.1`)
+- Generic error response hides IP restriction from attackers
+- Admin notification on blocked attempts
+- Empty whitelist = allow all (backward compatible)
+
+**Testing**:
+```bash
+# Login from allowed IP (should succeed)
+curl -X POST http://localhost:3003/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"maximator","password":"your_password"}'
+
+# Login with spoofed IP (will be blocked)
+curl -X POST http://localhost:3003/api/auth/login \
+  -H "Content-Type: application/json" \
+  -H "X-Forwarded-For: 1.2.3.4" \
+  -d '{"username":"maximator","password":"your_password"}'
+# Returns: {"error":"Invalid credentials"}
+```
 
 ## Common Debugging
 
