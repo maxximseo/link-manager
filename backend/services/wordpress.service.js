@@ -521,5 +521,7 @@ module.exports = {
   getSiteByApiKey,
   getSiteById,
   getArticleById,
-  updatePlacementWithPostId
+  updatePlacementWithPostId,
+  // Exported for reuse in site.controller.js SSRF protection
+  validateExternalUrl
 };
