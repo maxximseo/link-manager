@@ -40,8 +40,8 @@ const publishArticle = async (req, res) => {
       });
     }
 
-    // Get site details
-    const site = await wordpressService.getSiteById(site_id, userId);
+    // Get site details (use siteService for DRY - single source of truth)
+    const site = await siteService.getSiteById(site_id, userId);
     if (!site) {
       return res.status(404).json({ error: 'Site not found' });
     }
