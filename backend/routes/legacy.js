@@ -134,7 +134,7 @@ router.get('/projects', authMiddleware, apiLimiter, async (req, res) => {
 });
 
 // Basic sites route
-router.get('/sites', authMiddleware, async (req, res) => {
+router.get('/sites', authMiddleware, apiLimiter, async (req, res) => {
   try {
     const result = await query('SELECT * FROM sites WHERE user_id = $1 ORDER BY created_at DESC', [
       req.user.userId
