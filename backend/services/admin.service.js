@@ -9,41 +9,31 @@ const billingService = require('./billing.service');
 
 /**
  * Get dashboard statistics for admin
+ * Uses parameterized queries with make_interval() for security
  */
 const getAdminStats = async (period = 'day') => {
   try {
-    // Calculate date range based on period
-    let dateFilter = '';
-    switch (period) {
-      case 'day':
-        dateFilter = "created_at >= NOW() - INTERVAL '1 day'";
-        break;
-      case 'week':
-        dateFilter = "created_at >= NOW() - INTERVAL '7 days'";
-        break;
-      case 'month':
-        dateFilter = "created_at >= NOW() - INTERVAL '30 days'";
-        break;
-      case 'year':
-        dateFilter = "created_at >= NOW() - INTERVAL '365 days'";
-        break;
-      default:
-        dateFilter = "created_at >= NOW() - INTERVAL '7 days'";
-    }
+    // Map period to days - SAFE: only predefined values used
+    const periodDays = { day: 1, week: 7, month: 30, year: 365 };
+    const days = periodDays[period] || 7; // Default to week if invalid period
 
-    // Get revenue stats
-    const revenueResult = await query(`
+    // Get revenue stats - parameterized query
+    const revenueResult = await query(
+      `
       SELECT
         SUM(CASE WHEN type IN ('purchase', 'renewal', 'auto_renewal') THEN ABS(amount) ELSE 0 END) as total_revenue,
         COUNT(CASE WHEN type = 'purchase' THEN 1 END) as purchases_count,
         COUNT(CASE WHEN type = 'renewal' OR type = 'auto_renewal' THEN 1 END) as renewals_count,
         AVG(CASE WHEN type IN ('purchase', 'renewal', 'auto_renewal') THEN ABS(amount) END) as avg_transaction
       FROM transactions
-      WHERE ${dateFilter}
-    `);
+      WHERE created_at >= NOW() - make_interval(days => $1)
+    `,
+      [days]
+    );
 
-    // Get placement stats
-    const placementResult = await query(`
+    // Get placement stats - parameterized query
+    const placementResult = await query(
+      `
       SELECT
         COUNT(*) as total_placements,
         COUNT(CASE WHEN type = 'link' THEN 1 END) as link_placements,
@@ -52,18 +42,23 @@ const getAdminStats = async (period = 'day') => {
         COUNT(CASE WHEN status = 'placed' THEN 1 END) as active_placements,
         COUNT(CASE WHEN auto_renewal = true THEN 1 END) as auto_renewal_count
       FROM placements
-      WHERE ${dateFilter.replace('created_at', 'purchased_at')}
-    `);
+      WHERE purchased_at >= NOW() - make_interval(days => $1)
+    `,
+      [days]
+    );
 
-    // Get user stats
-    const userResult = await query(`
+    // Get user stats - parameterized query
+    const userResult = await query(
+      `
       SELECT
         COUNT(*) as new_users,
         SUM(balance) as total_user_balance,
         SUM(total_spent) as total_user_spending
       FROM users
-      WHERE ${dateFilter}
-    `);
+      WHERE created_at >= NOW() - make_interval(days => $1)
+    `,
+      [days]
+    );
 
     return {
       period,
