@@ -196,7 +196,8 @@
         async function loadPendingApprovalsSilent() {
             try {
                 const token = getToken();
-                const response = await fetch('/api/admin/moderation', {
+                // Use high limit to get all pending approvals (max 500 per page)
+                const response = await fetch('/api/admin/moderation?limit=500', {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -209,6 +210,8 @@
 
                 const result = await response.json();
                 const placements = result.data || [];
+                // Use pagination.total for accurate count (not just current page length)
+                const totalCount = result.pagination?.total || placements.length;
 
                 const pendingCount = document.getElementById('pendingCount');
                 const emptyState = document.getElementById('emptyState');
@@ -218,25 +221,25 @@
                 // Get current count to detect changes
                 const currentCount = parseInt(pendingCount.textContent) || 0;
 
-                // Update count
-                pendingCount.textContent = placements.length;
+                // Update count using total from pagination
+                pendingCount.textContent = totalCount;
 
                 // Hide loading if visible (first load)
                 loadingState.style.display = 'none';
 
-                if (placements.length === 0) {
+                if (totalCount === 0) {
                     emptyState.style.display = 'block';
                     placementsList.innerHTML = '';
                 } else {
                     emptyState.style.display = 'none';
 
                     // Only re-render if count changed (new items appeared)
-                    if (placements.length !== currentCount) {
+                    if (totalCount !== currentCount) {
                         placementsList.innerHTML = placements.map(p => renderPlacementCard(p)).join('');
 
                         // Show notification for new items
-                        if (placements.length > currentCount && currentCount > 0) {
-                            const newCount = placements.length - currentCount;
+                        if (totalCount > currentCount && currentCount > 0) {
+                            const newCount = totalCount - currentCount;
                             showNotification(`Новых размещений: ${newCount}`, 'info');
                         }
                     }
@@ -258,7 +261,8 @@
 
             try {
                 const token = getToken();
-                const response = await fetch('/api/admin/moderation', {
+                // Use high limit to get all pending approvals (max 500 per page)
+                const response = await fetch('/api/admin/moderation?limit=500', {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -270,11 +274,13 @@
 
                 const result = await response.json();
                 const placements = result.data || [];
+                // Use pagination.total for accurate count
+                const totalCount = result.pagination?.total || placements.length;
 
                 loadingState.style.display = 'none';
-                pendingCount.textContent = placements.length;
+                pendingCount.textContent = totalCount;
 
-                if (placements.length === 0) {
+                if (totalCount === 0) {
                     emptyState.style.display = 'block';
                     return;
                 }

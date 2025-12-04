@@ -137,9 +137,12 @@ describe('Admin Service', () => {
       const result = await adminService.getAdminStats('week');
 
       expect(result.period).toBe('week');
-      // Verify date filter in query
+      // Verify parameterized query with make_interval
       const revenueQuery = mockQuery.mock.calls[0][0];
-      expect(revenueQuery).toContain('7 days');
+      expect(revenueQuery).toContain('make_interval(days => $1)');
+      // Verify 7 days passed as parameter
+      const revenueParams = mockQuery.mock.calls[0][1];
+      expect(revenueParams).toContain(7);
     });
 
     it('should return stats for month period', async () => {
@@ -152,7 +155,9 @@ describe('Admin Service', () => {
 
       expect(result.period).toBe('month');
       const revenueQuery = mockQuery.mock.calls[0][0];
-      expect(revenueQuery).toContain('30 days');
+      expect(revenueQuery).toContain('make_interval(days => $1)');
+      const revenueParams = mockQuery.mock.calls[0][1];
+      expect(revenueParams).toContain(30);
     });
 
     it('should return stats for year period', async () => {
@@ -165,7 +170,9 @@ describe('Admin Service', () => {
 
       expect(result.period).toBe('year');
       const revenueQuery = mockQuery.mock.calls[0][0];
-      expect(revenueQuery).toContain('365 days');
+      expect(revenueQuery).toContain('make_interval(days => $1)');
+      const revenueParams = mockQuery.mock.calls[0][1];
+      expect(revenueParams).toContain(365);
     });
 
     it('should default to week for invalid period', async () => {
@@ -177,7 +184,10 @@ describe('Admin Service', () => {
       const result = await adminService.getAdminStats('invalid');
 
       const revenueQuery = mockQuery.mock.calls[0][0];
-      expect(revenueQuery).toContain('7 days');
+      expect(revenueQuery).toContain('make_interval(days => $1)');
+      // Invalid period defaults to week (7 days)
+      const revenueParams = mockQuery.mock.calls[0][1];
+      expect(revenueParams).toContain(7);
     });
 
     it('should handle null values', async () => {
@@ -339,10 +349,12 @@ describe('Admin Service', () => {
 
   describe('adjustUserBalance', () => {
     const mockUser = { id: 1, username: 'testuser', balance: '100.00' };
+    const mockAdmin = { role: 'admin' };
 
     it('should add balance successfully', async () => {
       mockClient.query
         .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [mockAdmin] }) // Admin check
         .mockResolvedValueOnce({ rows: [mockUser] }) // SELECT user FOR UPDATE
         .mockResolvedValueOnce({}) // UPDATE balance
         .mockResolvedValueOnce({}) // INSERT transaction
@@ -359,6 +371,7 @@ describe('Admin Service', () => {
     it('should subtract balance successfully', async () => {
       mockClient.query
         .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [mockAdmin] }) // Admin check
         .mockResolvedValueOnce({ rows: [mockUser] }) // SELECT user
         .mockResolvedValueOnce({}) // UPDATE
         .mockResolvedValueOnce({}) // INSERT transaction
@@ -375,6 +388,7 @@ describe('Admin Service', () => {
     it('should throw error for non-existent user', async () => {
       mockClient.query
         .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [mockAdmin] }) // Admin check
         .mockResolvedValueOnce({ rows: [] }); // User not found
 
       await expect(adminService.adjustUserBalance(999, 50, 'Test', 1)).rejects.toThrow(
@@ -385,6 +399,7 @@ describe('Admin Service', () => {
     it('should throw error for insufficient balance', async () => {
       mockClient.query
         .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [mockAdmin] }) // Admin check
         .mockResolvedValueOnce({ rows: [mockUser] }); // User with $100
 
       await expect(adminService.adjustUserBalance(1, -150, 'Overdraft', 999)).rejects.toThrow(
@@ -395,6 +410,7 @@ describe('Admin Service', () => {
     it('should rollback on error', async () => {
       mockClient.query
         .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [mockAdmin] }) // Admin check
         .mockRejectedValueOnce(new Error('DB error'));
 
       await expect(adminService.adjustUserBalance(1, 50, 'Test', 999)).rejects.toThrow('DB error');
@@ -405,6 +421,7 @@ describe('Admin Service', () => {
     it('should create audit log entry', async () => {
       mockClient.query
         .mockResolvedValueOnce({})
+        .mockResolvedValueOnce({ rows: [mockAdmin] }) // Admin check
         .mockResolvedValueOnce({ rows: [mockUser] })
         .mockResolvedValueOnce({})
         .mockResolvedValueOnce({})
@@ -489,31 +506,75 @@ describe('Admin Service', () => {
   });
 
   describe('getPendingApprovals', () => {
-    it('should return pending approval placements', async () => {
-      mockQuery.mockResolvedValueOnce({
-        rows: [
-          {
-            id: 1,
-            status: 'pending_approval',
-            buyer_username: 'user1',
-            site_owner_username: 'admin'
-          }
-        ]
-      });
+    it('should return pending approval placements with pagination', async () => {
+      mockQuery
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 1,
+              status: 'pending_approval',
+              buyer_username: 'user1',
+              site_owner_username: 'admin'
+            }
+          ]
+        })
+        .mockResolvedValueOnce({ rows: [{ count: '25' }] });
 
-      const result = await adminService.getPendingApprovals();
+      const result = await adminService.getPendingApprovals({ page: 1, limit: 50 });
 
-      expect(result).toHaveLength(1);
-      expect(result[0]).toHaveProperty('buyer_username');
-      expect(result[0]).toHaveProperty('site_owner_username');
+      expect(result).toHaveProperty('data');
+      expect(result).toHaveProperty('pagination');
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0]).toHaveProperty('buyer_username');
+      expect(result.data[0]).toHaveProperty('site_owner_username');
+      expect(result.pagination.total).toBe(25);
     });
 
-    it('should return empty array when no pending approvals', async () => {
-      mockQuery.mockResolvedValueOnce({ rows: [] });
+    it('should return empty data array when no pending approvals', async () => {
+      mockQuery
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [{ count: '0' }] });
 
       const result = await adminService.getPendingApprovals();
 
-      expect(result).toEqual([]);
+      expect(result.data).toEqual([]);
+      expect(result.pagination.total).toBe(0);
+    });
+
+    it('should enforce maximum limit of 500', async () => {
+      mockQuery
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [{ count: '0' }] });
+
+      const result = await adminService.getPendingApprovals({ limit: 1000 });
+
+      expect(result.pagination.limit).toBe(500);
+      // Verify the query used the capped limit
+      const queryCall = mockQuery.mock.calls[0];
+      expect(queryCall[1][0]).toBe(500); // First param is limit
+    });
+
+    it('should use default pagination values', async () => {
+      mockQuery
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [{ count: '0' }] });
+
+      const result = await adminService.getPendingApprovals();
+
+      expect(result.pagination.page).toBe(1);
+      expect(result.pagination.limit).toBe(50);
+    });
+
+    it('should calculate pagination flags correctly', async () => {
+      mockQuery
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [{ count: '150' }] });
+
+      const result = await adminService.getPendingApprovals({ page: 2, limit: 50 });
+
+      expect(result.pagination.hasNext).toBe(true);
+      expect(result.pagination.hasPrev).toBe(true);
+      expect(result.pagination.pages).toBe(3);
     });
   });
 
@@ -600,12 +661,14 @@ describe('Admin Service', () => {
     };
 
     const mockUser = { balance: '100.00', total_spent: '500.00', current_discount: 15 };
+    const mockAdmin = { role: 'admin' };
 
     it('should reject placement and refund user', async () => {
       billingService.calculateDiscountTier.mockResolvedValueOnce({ discount: 15, tier: 'Silver' });
 
       mockClient.query
         .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [mockAdmin] }) // Admin check
         .mockResolvedValueOnce({ rows: [mockPlacement] }) // SELECT placement
         .mockResolvedValueOnce({ rows: [mockUser] }) // SELECT user for refund
         .mockResolvedValueOnce({}) // UPDATE user balance
@@ -626,7 +689,8 @@ describe('Admin Service', () => {
 
     it('should throw error if not pending_approval', async () => {
       mockClient.query
-        .mockResolvedValueOnce({})
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [mockAdmin] }) // Admin check
         .mockResolvedValueOnce({ rows: [{ ...mockPlacement, status: 'placed' }] });
 
       await expect(adminService.rejectPlacement(1, 999, 'Test')).rejects.toThrow(
@@ -638,7 +702,8 @@ describe('Admin Service', () => {
       const freePlacement = { ...mockPlacement, final_price: '0.00' };
 
       mockClient.query
-        .mockResolvedValueOnce({})
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [mockAdmin] }) // Admin check
         .mockResolvedValueOnce({ rows: [freePlacement] })
         .mockResolvedValueOnce({}) // UPDATE status (no refund needed)
         .mockResolvedValueOnce({}) // Restore usage
@@ -654,8 +719,11 @@ describe('Admin Service', () => {
   });
 
   describe('setSitePublicStatus', () => {
+    const mockAdmin = { role: 'admin' };
+
     it('should set site to public', async () => {
       mockQuery
+        .mockResolvedValueOnce({ rows: [mockAdmin] }) // Admin check
         .mockResolvedValueOnce({
           rows: [{ id: 1, site_name: 'Test Site', is_public: true }]
         })
@@ -668,6 +736,7 @@ describe('Admin Service', () => {
 
     it('should set site to private', async () => {
       mockQuery
+        .mockResolvedValueOnce({ rows: [mockAdmin] }) // Admin check
         .mockResolvedValueOnce({
           rows: [{ id: 1, site_name: 'Test Site', is_public: false }]
         })
@@ -679,7 +748,9 @@ describe('Admin Service', () => {
     });
 
     it('should throw error for non-existent site', async () => {
-      mockQuery.mockResolvedValueOnce({ rows: [] });
+      mockQuery
+        .mockResolvedValueOnce({ rows: [mockAdmin] }) // Admin check
+        .mockResolvedValueOnce({ rows: [] }); // Site not found
 
       await expect(adminService.setSitePublicStatus(999, true, 1)).rejects.toThrow(
         'Site not found'
@@ -688,12 +759,13 @@ describe('Admin Service', () => {
 
     it('should create audit log', async () => {
       mockQuery
+        .mockResolvedValueOnce({ rows: [mockAdmin] }) // Admin check
         .mockResolvedValueOnce({ rows: [{ id: 1, site_name: 'Test' }] })
         .mockResolvedValueOnce({});
 
       await adminService.setSitePublicStatus(1, true, 999);
 
-      const auditCall = mockQuery.mock.calls[1][0];
+      const auditCall = mockQuery.mock.calls[2][0];
       expect(auditCall).toContain('audit_log');
     });
   });
@@ -755,6 +827,7 @@ describe('Admin Service', () => {
       site_type: 'wordpress',
       project_name: 'Test Project'
     };
+    const mockAdmin = { role: 'admin' };
 
     it('should refund placement successfully', async () => {
       billingService.refundPlacementInTransaction.mockResolvedValueOnce({
@@ -766,6 +839,7 @@ describe('Admin Service', () => {
 
       mockClient.query
         .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [mockAdmin] }) // Admin check
         .mockResolvedValueOnce({ rows: [mockPlacement] }) // SELECT placement
         .mockResolvedValueOnce({}) // Audit log
         .mockResolvedValueOnce({}) // DELETE placement
@@ -778,7 +852,10 @@ describe('Admin Service', () => {
     });
 
     it('should throw error for non-existent placement', async () => {
-      mockClient.query.mockResolvedValueOnce({}).mockResolvedValueOnce({ rows: [] });
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [mockAdmin] }) // Admin check
+        .mockResolvedValueOnce({ rows: [] }); // Placement not found
 
       await expect(adminService.refundPlacement(999, 'Test', 1, false)).rejects.toThrow(
         'Placement not found'
@@ -787,7 +864,8 @@ describe('Admin Service', () => {
 
     it('should throw error for free placement', async () => {
       mockClient.query
-        .mockResolvedValueOnce({})
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [mockAdmin] }) // Admin check
         .mockResolvedValueOnce({ rows: [{ ...mockPlacement, final_price: '0.00' }] });
 
       await expect(adminService.refundPlacement(1, 'Test', 999, false)).rejects.toThrow(
@@ -806,7 +884,8 @@ describe('Admin Service', () => {
       });
 
       mockClient.query
-        .mockResolvedValueOnce({})
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [mockAdmin] }) // Admin check
         .mockResolvedValueOnce({ rows: [mockPlacement] })
         .mockResolvedValueOnce({})
         .mockResolvedValueOnce({})
@@ -821,6 +900,8 @@ describe('Admin Service', () => {
 });
 
 describe('Admin Audit Trail', () => {
+  const mockAdmin = { role: 'admin' };
+
   beforeEach(() => {
     mockQuery.mockReset();
     mockClient.query.mockReset();
@@ -829,7 +910,8 @@ describe('Admin Audit Trail', () => {
 
   it('should log balance adjustments', async () => {
     mockClient.query
-      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({}) // BEGIN
+      .mockResolvedValueOnce({ rows: [mockAdmin] }) // Admin check
       .mockResolvedValueOnce({ rows: [{ id: 1, balance: '100.00' }] })
       .mockResolvedValueOnce({})
       .mockResolvedValueOnce({})
@@ -847,6 +929,7 @@ describe('Admin Audit Trail', () => {
 
   it('should log site status changes', async () => {
     mockQuery
+      .mockResolvedValueOnce({ rows: [mockAdmin] }) // Admin check
       .mockResolvedValueOnce({ rows: [{ id: 1, site_name: 'Test' }] })
       .mockResolvedValueOnce({});
 
@@ -860,6 +943,8 @@ describe('Admin Audit Trail', () => {
 });
 
 describe('Error Handling', () => {
+  const mockAdmin = { role: 'admin' };
+
   beforeEach(() => {
     mockQuery.mockReset();
     mockClient.query.mockReset();
@@ -879,7 +964,10 @@ describe('Error Handling', () => {
   });
 
   it('should release client on error in adjustUserBalance', async () => {
-    mockClient.query.mockResolvedValueOnce({}).mockRejectedValueOnce(new Error('DB error'));
+    mockClient.query
+      .mockResolvedValueOnce({}) // BEGIN
+      .mockResolvedValueOnce({ rows: [mockAdmin] }) // Admin check
+      .mockRejectedValueOnce(new Error('DB error'));
 
     try {
       await adminService.adjustUserBalance(1, 50, 'Test', 999);
@@ -888,5 +976,134 @@ describe('Error Handling', () => {
     }
 
     expect(mockClient.release).toHaveBeenCalled();
+  });
+});
+
+describe('Defense-in-Depth: Admin Role Verification', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+    mockClient.query.mockReset();
+    mockPool.connect.mockResolvedValue(mockClient);
+  });
+
+  describe('adjustUserBalance', () => {
+    it('should reject non-admin users', async () => {
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [{ role: 'user' }] }); // Admin check returns non-admin
+
+      await expect(adminService.adjustUserBalance(1, 50, 'Test', 999)).rejects.toThrow(
+        'Unauthorized: admin role required'
+      );
+
+      expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
+    });
+
+    it('should reject when adminId not found', async () => {
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [] }); // Admin check returns empty
+
+      await expect(adminService.adjustUserBalance(1, 50, 'Test', 999)).rejects.toThrow(
+        'Unauthorized: admin role required'
+      );
+    });
+
+    it('should allow admin users', async () => {
+      const mockUser = { id: 1, username: 'testuser', balance: '100.00' };
+
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [{ role: 'admin' }] }) // Admin check passes
+        .mockResolvedValueOnce({ rows: [mockUser] }) // SELECT user FOR UPDATE
+        .mockResolvedValueOnce({}) // UPDATE balance
+        .mockResolvedValueOnce({}) // INSERT transaction
+        .mockResolvedValueOnce({}) // INSERT audit_log
+        .mockResolvedValueOnce({}) // INSERT notification
+        .mockResolvedValueOnce({}); // COMMIT
+
+      const result = await adminService.adjustUserBalance(1, 50, 'Test adjustment', 999);
+
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe('refundPlacement', () => {
+    it('should reject non-admin users', async () => {
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [{ role: 'user' }] }); // Admin check returns non-admin
+
+      await expect(adminService.refundPlacement(1, 'Test', 999, false)).rejects.toThrow(
+        'Unauthorized: admin role required'
+      );
+
+      expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
+    });
+
+    it('should reject when adminId not found', async () => {
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [] }); // Admin check returns empty
+
+      await expect(adminService.refundPlacement(1, 'Test', 999, false)).rejects.toThrow(
+        'Unauthorized: admin role required'
+      );
+    });
+  });
+
+  describe('rejectPlacement', () => {
+    it('should reject non-admin users', async () => {
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [{ role: 'user' }] }); // Admin check returns non-admin
+
+      await expect(adminService.rejectPlacement(1, 999, 'Test reason')).rejects.toThrow(
+        'Unauthorized: admin role required'
+      );
+
+      expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
+    });
+
+    it('should reject when adminId not found', async () => {
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [] }); // Admin check returns empty
+
+      await expect(adminService.rejectPlacement(1, 999, 'Test reason')).rejects.toThrow(
+        'Unauthorized: admin role required'
+      );
+    });
+  });
+
+  describe('setSitePublicStatus', () => {
+    it('should reject non-admin users', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [{ role: 'user' }] }); // Admin check returns non-admin
+
+      await expect(adminService.setSitePublicStatus(1, true, 999)).rejects.toThrow(
+        'Unauthorized: admin role required'
+      );
+    });
+
+    it('should reject when adminId not found', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [] }); // Admin check returns empty
+
+      await expect(adminService.setSitePublicStatus(1, true, 999)).rejects.toThrow(
+        'Unauthorized: admin role required'
+      );
+    });
+
+    it('should allow admin users', async () => {
+      mockQuery
+        .mockResolvedValueOnce({ rows: [{ role: 'admin' }] }) // Admin check passes
+        .mockResolvedValueOnce({
+          rows: [{ id: 1, site_name: 'Test Site', is_public: true }]
+        })
+        .mockResolvedValueOnce({}); // Audit log
+
+      const result = await adminService.setSitePublicStatus(1, true, 999);
+
+      expect(result.is_public).toBe(true);
+    });
   });
 });

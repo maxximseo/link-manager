@@ -744,11 +744,13 @@ const deleteToken = async (tokenId, userId) => {
 
 /**
  * Bulk update site parameters (DR, etc.)
+ * Uses CASE statement instead of dynamic column names to prevent SQL injection
  * @param {string} parameter - Parameter name ('dr', etc.)
  * @param {Array} updates - Array of {domain, value} objects
  * @returns {Object} - Results with success/failure counts
  */
 const bulkUpdateSiteParams = async (parameter, updates) => {
+  // SECURITY: Strict whitelist - these are the ONLY columns that can be updated
   const allowedParams = [
     'dr',
     'da',
@@ -760,13 +762,52 @@ const bulkUpdateSiteParams = async (parameter, updates) => {
     'keywords',
     'traffic',
     'geo'
-  ]; // Whitelist of allowed parameters
+  ];
 
+  // SECURITY: Validate parameter against whitelist BEFORE any SQL
   if (!allowedParams.includes(parameter)) {
     throw new Error(
       `Parameter '${parameter}' is not allowed. Allowed: ${allowedParams.join(', ')}`
     );
   }
+
+  // SECURITY: Build column-specific UPDATE queries to avoid dynamic column names in SQL
+  // Each case uses a fixed, parameterized query - no string interpolation in SQL
+  const getUpdateQuery = (param) => {
+    const queries = {
+      dr: 'UPDATE sites SET dr = $1 WHERE id = $2',
+      da: 'UPDATE sites SET da = $1 WHERE id = $2',
+      ref_domains: 'UPDATE sites SET ref_domains = $1 WHERE id = $2',
+      rd_main: 'UPDATE sites SET rd_main = $1 WHERE id = $2',
+      norm: 'UPDATE sites SET norm = $1 WHERE id = $2',
+      tf: 'UPDATE sites SET tf = $1 WHERE id = $2',
+      cf: 'UPDATE sites SET cf = $1 WHERE id = $2',
+      keywords: 'UPDATE sites SET keywords = $1 WHERE id = $2',
+      traffic: 'UPDATE sites SET traffic = $1 WHERE id = $2',
+      geo: 'UPDATE sites SET geo = $1 WHERE id = $2'
+    };
+    return queries[param];
+  };
+
+  // SECURITY: Build column-specific SELECT queries
+  const getSelectQuery = (param) => {
+    const queries = {
+      dr: `SELECT id, site_url, dr as old_value FROM sites WHERE LOWER(REGEXP_REPLACE(REGEXP_REPLACE(REGEXP_REPLACE(site_url, '^https?://', ''), '^www\\.', ''), '/.*$', '')) = $1 LIMIT 1`,
+      da: `SELECT id, site_url, da as old_value FROM sites WHERE LOWER(REGEXP_REPLACE(REGEXP_REPLACE(REGEXP_REPLACE(site_url, '^https?://', ''), '^www\\.', ''), '/.*$', '')) = $1 LIMIT 1`,
+      ref_domains: `SELECT id, site_url, ref_domains as old_value FROM sites WHERE LOWER(REGEXP_REPLACE(REGEXP_REPLACE(REGEXP_REPLACE(site_url, '^https?://', ''), '^www\\.', ''), '/.*$', '')) = $1 LIMIT 1`,
+      rd_main: `SELECT id, site_url, rd_main as old_value FROM sites WHERE LOWER(REGEXP_REPLACE(REGEXP_REPLACE(REGEXP_REPLACE(site_url, '^https?://', ''), '^www\\.', ''), '/.*$', '')) = $1 LIMIT 1`,
+      norm: `SELECT id, site_url, norm as old_value FROM sites WHERE LOWER(REGEXP_REPLACE(REGEXP_REPLACE(REGEXP_REPLACE(site_url, '^https?://', ''), '^www\\.', ''), '/.*$', '')) = $1 LIMIT 1`,
+      tf: `SELECT id, site_url, tf as old_value FROM sites WHERE LOWER(REGEXP_REPLACE(REGEXP_REPLACE(REGEXP_REPLACE(site_url, '^https?://', ''), '^www\\.', ''), '/.*$', '')) = $1 LIMIT 1`,
+      cf: `SELECT id, site_url, cf as old_value FROM sites WHERE LOWER(REGEXP_REPLACE(REGEXP_REPLACE(REGEXP_REPLACE(site_url, '^https?://', ''), '^www\\.', ''), '/.*$', '')) = $1 LIMIT 1`,
+      keywords: `SELECT id, site_url, keywords as old_value FROM sites WHERE LOWER(REGEXP_REPLACE(REGEXP_REPLACE(REGEXP_REPLACE(site_url, '^https?://', ''), '^www\\.', ''), '/.*$', '')) = $1 LIMIT 1`,
+      traffic: `SELECT id, site_url, traffic as old_value FROM sites WHERE LOWER(REGEXP_REPLACE(REGEXP_REPLACE(REGEXP_REPLACE(site_url, '^https?://', ''), '^www\\.', ''), '/.*$', '')) = $1 LIMIT 1`,
+      geo: `SELECT id, site_url, geo as old_value FROM sites WHERE LOWER(REGEXP_REPLACE(REGEXP_REPLACE(REGEXP_REPLACE(site_url, '^https?://', ''), '^www\\.', ''), '/.*$', '')) = $1 LIMIT 1`
+    };
+    return queries[param];
+  };
+
+  const updateQuery = getUpdateQuery(parameter);
+  const selectQuery = getSelectQuery(parameter);
 
   const results = {
     total: updates.length,
@@ -798,22 +839,8 @@ const bulkUpdateSiteParams = async (parameter, updates) => {
     }
 
     try {
-      // Find site by normalized URL
-      const findResult = await query(
-        `SELECT id, site_url, ${parameter} as old_value
-         FROM sites
-         WHERE LOWER(
-           REGEXP_REPLACE(
-             REGEXP_REPLACE(
-               REGEXP_REPLACE(site_url, '^https?://', ''),
-               '^www\\.', ''
-             ),
-             '/.*$', ''
-           )
-         ) = $1
-         LIMIT 1`,
-        [normalizedDomain]
-      );
+      // Find site by normalized URL using pre-built parameterized query
+      const findResult = await query(selectQuery, [normalizedDomain]);
 
       if (findResult.rows.length === 0) {
         results.notFound++;
@@ -828,8 +855,8 @@ const bulkUpdateSiteParams = async (parameter, updates) => {
       const site = findResult.rows[0];
       const oldValue = site.old_value;
 
-      // Update the parameter
-      await query(`UPDATE sites SET ${parameter} = $1 WHERE id = $2`, [value, site.id]);
+      // Update the parameter using pre-built parameterized query
+      await query(updateQuery, [value, site.id]);
 
       results.updated++;
       results.details.push({
