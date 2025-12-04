@@ -103,7 +103,7 @@ router.get('/unread-count', authMiddleware, async (req, res) => {
  */
 router.patch('/:id/read', authMiddleware, async (req, res) => {
   try {
-    const notificationId = parseInt(req.params.id);
+    const notificationId = parseInt(req.params.id, 10);
 
     if (isNaN(notificationId)) {
       return res.status(400).json({ error: 'Invalid notification ID' });
