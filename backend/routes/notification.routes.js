@@ -160,7 +160,7 @@ router.patch('/mark-all-read', authMiddleware, async (req, res) => {
     res.json({
       success: true,
       data: {
-        markedCount: parseInt(result.rowCount || 0)
+        markedCount: parseInt(result.rowCount || 0, 10)
       }
     });
   } catch (error) {
