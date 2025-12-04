@@ -17,7 +17,7 @@ class Placement {
 
   static async count(userId) {
     const result = await pool.query('SELECT COUNT(*) FROM placements WHERE user_id = $1', [userId]);
-    return parseInt(result.rows[0].count);
+    return parseInt(result.rows[0].count, 10);
   }
 
   static async findById(id, userId) {
