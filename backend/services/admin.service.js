@@ -1047,7 +1047,7 @@ const getAllSites = async ({ page = 1, limit = 50, search = null, isPublic = nul
       params
     );
 
-    const total = parseInt(countResult.rows[0].count);
+    const total = parseInt(countResult.rows[0].count, 10);
     const totalPages = Math.ceil(total / limit);
 
     return {
