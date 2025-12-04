@@ -458,21 +458,6 @@ const getSiteByApiKey = async apiKey => {
   }
 };
 
-// Get site by ID
-const getSiteById = async (siteId, userId) => {
-  try {
-    const result = await query(
-      'SELECT id, site_url, site_name, api_key FROM sites WHERE id = $1 AND user_id = $2',
-      [siteId, userId]
-    );
-
-    return result.rows.length > 0 ? result.rows[0] : null;
-  } catch (error) {
-    logger.error('Get site by ID error:', error);
-    throw error;
-  }
-};
-
 // Get article by ID
 const getArticleById = async (articleId, userId) => {
   try {
