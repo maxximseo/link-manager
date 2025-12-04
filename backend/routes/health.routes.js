@@ -1,18 +1,38 @@
 /**
  * Health check routes
  * Monitors system components status
+ * SECURITY: Rate limited to prevent abuse
  */
 
 const express = require('express');
 const router = express.Router();
+const rateLimit = require('express-rate-limit');
 const { query } = require('../config/database');
 const cache = require('../services/cache.service');
 const queueService = require('../config/queue');
 const Sentry = require('@sentry/node');
 const { runManualBackup } = require('../cron/database-backup.cron');
 
+// Rate limiting for health check (60 req/min - allow monitoring systems)
+const healthLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 60, // 60 requests per minute (1 per second for monitoring)
+  message: { error: 'Too many health check requests' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Rate limiting for backup endpoint (5 req/min - very restrictive)
+const backupLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 5, // 5 requests per minute
+  message: { error: 'Too many backup requests' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
 // Health check endpoint - checks all system components
-router.get('/', async (req, res) => {
+router.get('/', healthLimiter, async (req, res) => {
   const health = {
     status: 'healthy',
     timestamp: new Date().toISOString(),
