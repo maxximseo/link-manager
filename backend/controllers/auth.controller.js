@@ -5,6 +5,7 @@
 
 const authService = require('../services/auth.service');
 const logger = require('../config/logger');
+const { trackFailedLogin } = require('../services/security-alerts.service');
 
 // Login controller
 const login = async (req, res) => {
@@ -18,6 +19,12 @@ const login = async (req, res) => {
     const result = await authService.authenticateUser(username, password);
 
     if (!result.success) {
+      // SECURITY: Track failed login attempt (async, don't block response)
+      const clientIP = req.ip || req.connection?.remoteAddress || 'unknown';
+      trackFailedLogin(clientIP, username).catch(err =>
+        logger.error('Failed to track failed login', { err: err.message })
+      );
+
       return res.status(401).json({ error: result.error });
     }
 
