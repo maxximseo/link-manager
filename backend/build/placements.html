@@ -87,11 +87,25 @@
             padding: 0.4rem 0.5rem;
         }
 
-        /* "Контент" column (16th) - show full text */
-        .table th:nth-child(16),
-        .table td:nth-child(16) {
+        /* "Контент" column (3rd) - show full text */
+        .table th:nth-child(3),
+        .table td:nth-child(3) {
             white-space: normal;
             min-width: 150px;
+        }
+
+        /* Content dropdown - show full text without truncation */
+        .content-dropdown {
+            min-width: 250px !important;
+            max-width: 400px !important;
+            width: auto !important;
+        }
+
+        .content-dropdown option {
+            white-space: normal !important;
+            overflow: visible !important;
+            text-overflow: clip !important;
+            padding: 8px 12px;
         }
     </style>
 </head>
@@ -231,6 +245,7 @@
                                         <input type="checkbox" id="selectAllSites" onclick="toggleAllSites()">
                                     </th>
                                     <th>Сайт</th>
+                                    <th>Контент</th>
                                     <th>DR</th>
                                     <th>DA</th>
                                     <th>TF</th>
@@ -244,7 +259,6 @@
                                     <th>Тип</th>
                                     <th>Слоты</th>
                                     <th>Цена</th>
-                                    <th>Контент</th>
                                     <th>Статус</th>
                                     <th>Видимость</th>
                                 </tr>
@@ -591,23 +605,32 @@
                 projects = await ProjectsAPI.getAll();
                 populateProjectFilter();
 
-                // Auto-select first project and Links type after projects loaded
+                // Auto-select project: last selected or first project
                 if (projects.length > 0) {
                     setTimeout(async () => {
                         const projectSelect = document.getElementById('projectSelect');
                         const typeLinks = document.getElementById('typeLinks');
 
-                        projectSelect.value = projects[0].id;
+                        // Проверить сохранённый проект в localStorage
+                        const lastProjectId = localStorage.getItem('lastSelectedProjectId');
+                        let selectedProjectId = projects[0].id; // По умолчанию первый проект
+
+                        // Если сохранённый проект существует в списке, используем его
+                        if (lastProjectId && projects.find(p => p.id === parseInt(lastProjectId))) {
+                            selectedProjectId = parseInt(lastProjectId);
+                        }
+
+                        projectSelect.value = selectedProjectId;
                         typeLinks.checked = true;
                         selectedContentType = 'links';
 
                         // Load project data first
-                        const projectData = await ProjectsAPI.get(projects[0].id);
+                        const projectData = await ProjectsAPI.get(selectedProjectId);
                         projectLinks = projectData.links || [];
                         projectArticles = projectData.articles || [];
 
                         // Then load sites table
-                        await loadSitesForPlacement(projects[0].id, 'links');
+                        await loadSitesForPlacement(selectedProjectId, 'links');
                     }, 100);
                 }
             } catch (error) {
@@ -638,6 +661,9 @@
                 document.getElementById('sitesTableDiv').style.display = 'none';
                 return;
             }
+
+            // Сохранить выбранный проект в localStorage
+            localStorage.setItem('lastSelectedProjectId', projectId);
 
             try {
                 // Load project data
@@ -877,7 +903,7 @@
             tbody.innerHTML = pageSites.map(site => {
                 const dropdownHtml = site.isDisabled
                     ? '-'
-                    : `<select class="form-select form-select-sm" id="content_${site.id}" style="display: none;">
+                    : `<select class="form-select form-select-sm content-dropdown" id="content_${site.id}" style="display: none;">
                            <option value="">Select ${contentType === 'links' ? 'link' : 'article'}...</option>
                            ${contentOptions}
                        </select>`;
@@ -935,9 +961,9 @@
                 const isOwnSite = site.user_id === currentUser?.id;
                 const price = isOwnSite
                     ? 0.10
-                    : (contentType === 'links'
-                        ? (userPricing?.link?.finalPrice || 25.00)
-                        : (userPricing?.article?.finalPrice || 15.00));
+                    : parseFloat(contentType === 'links'
+                        ? (userPricing?.link?.finalPrice || 25)
+                        : (userPricing?.article?.finalPrice || 15));
 
                 // Slot availability display (dynamic based on content type)
                 let slotsDisplay = '';
@@ -977,6 +1003,7 @@
                         <td>
                             ${escapeHtml(cleanUrl)}
                         </td>
+                        <td id="assigned_${site.id}">${dropdownHtml}</td>
                         <td class="${drClass} text-center">${drValue}</td>
                         <td class="${daClass} text-center">${daValue}</td>
                         <td class="${tfClass} text-center">${tfValue}</td>
@@ -989,8 +1016,7 @@
                         <td class="text-muted text-center">${geoValue}</td>
                         <td class="text-center">${siteTypeBadge}</td>
                         <td class="${slotsClass} text-nowrap text-center"><small>${slotsDisplay}</small></td>
-                        <td class="text-success fw-bold text-center">$${price.toFixed(2)}</td>
-                        <td id="assigned_${site.id}">${dropdownHtml}</td>
+                        <td class="text-success fw-bold text-center">$${typeof price === 'number' ? price.toFixed(2) : price}</td>
                         <td class="text-center">${site.statusBadge}</td>
                         <td class="text-center">${visibilityBadge}</td>
                     </tr>
@@ -1207,9 +1233,9 @@
 
                 // Calculate total price - check each site's ownership for pricing
                 const currentUser = getCurrentUser();
-                const standardPrice = selectedContentType === 'links'
-                    ? (userPricing?.link?.finalPrice || 25.00)
-                    : (userPricing?.article?.finalPrice || 15.00);
+                const standardPrice = parseFloat(selectedContentType === 'links'
+                    ? (userPricing?.link?.finalPrice || 25)
+                    : (userPricing?.article?.finalPrice || 15));
 
                 let totalPrice = 0;
                 Object.keys(siteAssignments).forEach(siteIdStr => {
@@ -1228,7 +1254,7 @@
                 blacklistBadge.textContent = selectedCount;
                 bottomPurchaseBadge.textContent = selectedCount;
 
-                // Update total price badges
+                // Update total price badges - с 2 десятичными знаками
                 purchaseTotalBadge.textContent = `$${totalPrice.toFixed(2)}`;
                 bottomPurchaseTotalBadge.textContent = `$${totalPrice.toFixed(2)}`;
 

@@ -141,15 +141,34 @@
         </div>
 
         <div class="row mb-3">
-            <div class="col-md-6">
+            <div class="col-md-3">
                 <input type="text" class="form-control" id="searchInput" placeholder="Search sites...">
             </div>
             <div class="col-md-3">
-                <select class="form-select" id="statusFilter">
-                    <option value="">All Statuses</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
+                <select class="form-select" id="allowArticlesFilter">
+                    <option value="">Все (гест-посты)</option>
+                    <option value="true">Разрешены</option>
+                    <option value="false">Запрещены</option>
                 </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" id="isPublicFilter">
+                    <option value="">Все (видимость)</option>
+                    <option value="true">Публичные</option>
+                    <option value="false">Скрытые</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" id="availableForPurchaseFilter">
+                    <option value="">Все (покупка)</option>
+                    <option value="true">Доступны</option>
+                    <option value="false">Недоступны</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary w-100" onclick="resetFilters()">
+                    <i class="bi bi-x-circle"></i> Сбросить
+                </button>
             </div>
         </div>
 
@@ -219,19 +238,45 @@
                                 <th class="text-center" style="width: 40px;">
                                     <input type="checkbox" class="form-check-input" id="selectAllSites" onchange="toggleSelectAll()">
                                 </th>
-                                <th style="max-width: 200px;">Site Name</th>
-                                <th class="text-center" style="width: 60px;">Main</th>
-                                <th class="text-center" style="width: 60px;">GP</th>
-                                <th class="text-center" style="width: 40px;">DR</th>
-                                <th class="text-center" style="width: 40px;">DA</th>
-                                <th class="text-center" style="width: 40px;">TF</th>
-                                <th class="text-center" style="width: 40px;">CF</th>
-                                <th class="text-center" style="width: 50px;">RD</th>
-                                <th class="text-center" style="width: 50px;">RDm</th>
-                                <th class="text-center" style="width: 50px;">Norm</th>
-                                <th class="text-center" style="width: 60px;">KW</th>
-                                <th class="text-center" style="width: 60px;">Traf</th>
-                                <th class="text-center" style="width: 50px;">GEO</th>
+                                <th style="max-width: 200px; cursor: pointer;" onclick="sortTable('site_name')">
+                                    Site Name <span id="sort-site_name"></span>
+                                </th>
+                                <th class="text-center" style="width: 60px; cursor: pointer;" onclick="sortTable('price_link')">
+                                    Main <span id="sort-price_link"></span>
+                                </th>
+                                <th class="text-center" style="width: 60px; cursor: pointer;" onclick="sortTable('price_article')">
+                                    GP <span id="sort-price_article"></span>
+                                </th>
+                                <th class="text-center" style="width: 40px; cursor: pointer;" onclick="sortTable('dr')">
+                                    DR <span id="sort-dr"></span>
+                                </th>
+                                <th class="text-center" style="width: 40px; cursor: pointer;" onclick="sortTable('da')">
+                                    DA <span id="sort-da"></span>
+                                </th>
+                                <th class="text-center" style="width: 40px; cursor: pointer;" onclick="sortTable('tf')">
+                                    TF <span id="sort-tf"></span>
+                                </th>
+                                <th class="text-center" style="width: 40px; cursor: pointer;" onclick="sortTable('cf')">
+                                    CF <span id="sort-cf"></span>
+                                </th>
+                                <th class="text-center" style="width: 50px; cursor: pointer;" onclick="sortTable('ref_domains')">
+                                    RD <span id="sort-ref_domains"></span>
+                                </th>
+                                <th class="text-center" style="width: 50px; cursor: pointer;" onclick="sortTable('rd_main')">
+                                    RDm <span id="sort-rd_main"></span>
+                                </th>
+                                <th class="text-center" style="width: 50px; cursor: pointer;" onclick="sortTable('norm')">
+                                    Norm <span id="sort-norm"></span>
+                                </th>
+                                <th class="text-center" style="width: 60px; cursor: pointer;" onclick="sortTable('keywords')">
+                                    KW <span id="sort-keywords"></span>
+                                </th>
+                                <th class="text-center" style="width: 60px; cursor: pointer;" onclick="sortTable('traffic')">
+                                    Traf <span id="sort-traffic"></span>
+                                </th>
+                                <th class="text-center" style="width: 50px; cursor: pointer;" onclick="sortTable('geo')">
+                                    GEO <span id="sort-geo"></span>
+                                </th>
                                 <th class="text-center" style="width: 80px;">Тип</th>
                                 <th class="text-center" style="width: 60px;" title="Открыть сайт">
                                     <i class="bi bi-box-arrow-up-right"></i>
@@ -559,7 +604,21 @@
 
             // Get current value from sites array
             const site = window.sites.find(s => s.id === siteId);
-            const currentValue = site ? site[field] : null;
+            if (!site) return;
+
+            // Only allow editing public sites
+            if (!site.is_public) {
+                showNotification('Цены можно менять только для публичных сайтов', 'warning');
+                return;
+            }
+
+            const currentValue = site[field];
+
+            // Если цена не задана (null/undefined), используем дефолтное значение
+            const defaultValue = field === 'price_link' ? '25.00' : '15.00';
+            const displayValue = currentValue !== null && currentValue !== undefined
+                ? parseFloat(currentValue).toFixed(2)
+                : defaultValue;
 
             cell.classList.add('editing');
 
@@ -569,19 +628,25 @@
 
             // Create input element
             const input = document.createElement('input');
-            input.type = 'number';
+            input.type = 'text';  // Используем text вместо number для работы select()
+            input.inputMode = 'decimal';  // Мобильная клавиатура с точкой для десятичных чисел
             input.className = 'form-control form-control-sm price-input';
-            input.min = '0';
-            input.step = '0.01';
-            input.value = currentValue || '';
+            input.value = displayValue;  // Десятичное число с 2 знаками
             input.placeholder = cell.dataset.default;
 
             // Event handlers
             input.onblur = () => savePriceEdit(cell, siteId, field);
             input.onkeydown = (e) => handlePriceKeydown(e, cell, siteId, field);
 
-            // Insert and focus
+            // Select all text when clicking on input
+            input.onclick = function() {
+                this.select();
+            };
+
+            // Insert into DOM first
             cell.appendChild(input);
+
+            // Focus and select text
             input.focus();
             input.select();
         }
@@ -593,9 +658,9 @@
             const value = input.value.trim();
             const numericValue = value === '' ? null : parseFloat(value);
 
-            // Validation
-            if (numericValue !== null && (isNaN(numericValue) || numericValue < 0)) {
-                showNotification('Цена должна быть положительным числом', 'error');
+            // Validation - минимальная цена $5.00, шаг $0.10
+            if (numericValue !== null && (isNaN(numericValue) || numericValue < 5)) {
+                showNotification('Минимальная цена: $5.00, шаг $0.10', 'error');
                 input.focus();
                 return;
             }
@@ -613,8 +678,8 @@
                 const site = window.sites.find(s => s.id === siteId);
                 if (site) site[field] = numericValue;
 
-                // Re-render cell
-                const defaultValue = field === 'price_link' ? 25 : 15;
+                // Re-render cell - с 2 десятичными знаками
+                const defaultValue = field === 'price_link' ? '25.00' : '15.00';
                 const display = cell.querySelector('.price-display');
                 if (numericValue !== null) {
                     display.innerHTML = `<span class="text-success">$${numericValue.toFixed(2)}</span>`;
@@ -634,15 +699,23 @@
         }
 
         function handlePriceKeydown(event, cell, siteId, field) {
+            const input = cell.querySelector('.price-input');
+
             if (event.key === 'Enter') {
                 event.preventDefault();
                 savePriceEdit(cell, siteId, field);
             } else if (event.key === 'Escape') {
                 // Cancel edit
-                const input = cell.querySelector('.price-input');
                 if (input) input.remove();
                 cell.querySelector('.price-display').classList.remove('d-none');
                 cell.classList.remove('editing');
+            } else if (event.key === 'Delete' && event.ctrlKey) {
+                // Ctrl+Delete: полностью очистить поле (сброс к дефолтной цене)
+                event.preventDefault();
+                if (input) {
+                    input.value = '';
+                    input.select();
+                }
             }
         }
 
@@ -670,9 +743,9 @@
             const value = document.getElementById('bulkPriceValue').value.trim();
             const numericValue = value === '' ? null : parseFloat(value);
 
-            // Validation
-            if (numericValue !== null && (isNaN(numericValue) || numericValue < 0)) {
-                showNotification('Цена должна быть положительным числом', 'error');
+            // Validation - минимальная цена $5.00, шаг $0.10
+            if (numericValue !== null && (isNaN(numericValue) || numericValue < 5)) {
+                showNotification('Минимальная цена: $5.00, шаг $0.10', 'error');
                 return;
             }
 
@@ -758,9 +831,12 @@
             document.getElementById('searchInput').addEventListener('input', debounce(() => {
                 loadSites(1, currentLimit);
             }, 500));
-            document.getElementById('statusFilter').addEventListener('change', () => {
-                loadSites(1, currentLimit);
-            });
+
+            // Add filter event listeners
+            document.getElementById('allowArticlesFilter').addEventListener('change', applyClientFilters);
+            document.getElementById('isPublicFilter').addEventListener('change', applyClientFilters);
+            document.getElementById('availableForPurchaseFilter').addEventListener('change', applyClientFilters);
+
             document.getElementById('limitSelect').addEventListener('change', (e) => {
                 const newLimit = parseInt(e.target.value);
                 localStorage.setItem('sitesPageLimit', newLimit);
@@ -791,10 +867,13 @@
 
                 const response = await SitesAPI.getAll(page, limit);
                 window.sites = response.data || [];  // CRITICAL: Must assign to window.sites for global access
+                window.allSites = [...window.sites];  // Store original backup for filtering
                 totalSites = response.pagination?.total || 0;
                 totalPages = response.pagination?.pages || 0;
 
-                displaySites();
+                // Apply filters if any are active
+                applyClientFilters();
+
                 updatePaginationControls();
                 updateSitesCount();
             } catch (error) {
@@ -812,6 +891,164 @@
                 clearTimeout(timeout);
                 timeout = setTimeout(later, wait);
             };
+        }
+
+        function applyClientFilters() {
+            const allowArticles = document.getElementById('allowArticlesFilter').value;
+            const isPublic = document.getElementById('isPublicFilter').value;
+            const availableForPurchase = document.getElementById('availableForPurchaseFilter').value;
+
+            // Store original sites if not already stored
+            if (!window.allSites) {
+                window.allSites = [...window.sites];
+            }
+
+            // Filter the sites array
+            const filteredSites = window.allSites.filter(site => {
+                // Allow articles filter
+                if (allowArticles !== '') {
+                    const allowArticlesMatch = site.allow_articles === (allowArticles === 'true');
+                    if (!allowArticlesMatch) return false;
+                }
+
+                // Is public filter
+                if (isPublic !== '') {
+                    const isPublicMatch = site.is_public === (isPublic === 'true');
+                    if (!isPublicMatch) return false;
+                }
+
+                // Available for purchase filter
+                if (availableForPurchase !== '') {
+                    const availableMatch = site.available_for_purchase === (availableForPurchase === 'true');
+                    if (!availableMatch) return false;
+                }
+
+                return true;
+            });
+
+            // Update window.sites with filtered results
+            window.sites = filteredSites;
+
+            // Re-render table
+            displaySites();
+
+            // Update total count display - use totalSites (from API) not allSites.length (current page only)
+            updateFilteredCount(filteredSites.length, totalSites);
+        }
+
+        function updateFilteredCount(filtered, total) {
+            // Use existing sitesCount/sitesTotal elements instead of separate filterInfo
+            const sitesCount = document.getElementById('sitesCount');
+            const sitesTotal = document.getElementById('sitesTotal');
+
+            if (sitesCount && sitesTotal) {
+                sitesCount.textContent = filtered;
+                sitesTotal.textContent = total;
+            }
+        }
+
+        function resetFilters() {
+            document.getElementById('allowArticlesFilter').value = '';
+            document.getElementById('isPublicFilter').value = '';
+            document.getElementById('availableForPurchaseFilter').value = '';
+
+            // Restore original sites
+            if (window.allSites) {
+                window.sites = [...window.allSites];
+            }
+
+            displaySites();
+            // Update counter to show all sites - use totalSites from API pagination
+            updateFilteredCount(window.sites.length, totalSites);
+        }
+
+        // Sorting state
+        let currentSortField = null;
+        let currentSortDirection = 'asc';
+
+        function sortTable(field) {
+            // Toggle direction if clicking same column
+            if (currentSortField === field) {
+                currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSortField = field;
+                currentSortDirection = 'asc';
+            }
+
+            // Sort the sites array
+            window.sites.sort((a, b) => {
+                let aVal = a[field];
+                let bVal = b[field];
+
+                // Special handling for price fields (price_link and price_article)
+                if (field === 'price_link' || field === 'price_article') {
+                    // For non-public sites, use 0 for sorting (they show "—")
+                    if (!a.is_public) {
+                        aVal = 0;
+                    } else {
+                        // For public sites, use actual value or default
+                        const defaultPrice = field === 'price_link' ? 25 : 15;
+                        aVal = (a[field] !== null && a[field] !== undefined) ? parseFloat(a[field]) : defaultPrice;
+                    }
+
+                    if (!b.is_public) {
+                        bVal = 0;
+                    } else {
+                        const defaultPrice = field === 'price_link' ? 25 : 15;
+                        bVal = (b[field] !== null && b[field] !== undefined) ? parseFloat(b[field]) : defaultPrice;
+                    }
+                }
+                // Special handling for site_name - clean it before comparing
+                else if (field === 'site_name') {
+                    aVal = (aVal || '').replace(/^https?:\/\//, '').replace(/\/$/, '').toLowerCase();
+                    bVal = (bVal || '').replace(/^https?:\/\//, '').replace(/\/$/, '').toLowerCase();
+                }
+                // Numeric fields
+                else if (['dr', 'da', 'tf', 'cf', 'ref_domains', 'rd_main', 'norm', 'keywords', 'traffic'].includes(field)) {
+                    aVal = parseFloat(aVal) || 0;
+                    bVal = parseFloat(bVal) || 0;
+                }
+                // String comparison for GEO
+                else if (field === 'geo') {
+                    aVal = String(aVal || '').toLowerCase();
+                    bVal = String(bVal || '').toLowerCase();
+                }
+                else {
+                    // Handle null/undefined values for other fields
+                    if (aVal === null || aVal === undefined) aVal = '';
+                    if (bVal === null || bVal === undefined) bVal = '';
+                }
+
+                // Compare
+                let comparison = 0;
+                if (aVal > bVal) comparison = 1;
+                if (aVal < bVal) comparison = -1;
+
+                return currentSortDirection === 'asc' ? comparison : -comparison;
+            });
+
+            // Update sort indicators
+            updateSortIndicators(field);
+
+            // Re-render table
+            displaySites();
+        }
+
+        function updateSortIndicators(field) {
+            // Clear all indicators
+            const allFields = ['site_name', 'price_link', 'price_article', 'dr', 'da', 'tf', 'cf', 'ref_domains', 'rd_main', 'norm', 'keywords', 'traffic', 'geo'];
+            allFields.forEach(f => {
+                const indicator = document.getElementById(`sort-${f}`);
+                if (indicator) indicator.innerHTML = '';
+            });
+
+            // Set current indicator
+            const indicator = document.getElementById(`sort-${field}`);
+            if (indicator) {
+                indicator.innerHTML = currentSortDirection === 'asc'
+                    ? '<i class="bi bi-arrow-up"></i>'
+                    : '<i class="bi bi-arrow-down"></i>';
+            }
         }
 
         function displaySites() {
@@ -878,26 +1115,36 @@
                     <td style="max-width: 200px;">
                         <div class="fw-semibold text-truncate" title="${escapeHtml(s.site_name)}">${escapeHtml(cleanSiteName)}</div>
                     </td>
-                    <td class="text-center price-cell"
-                        data-site-id="${s.id}"
-                        data-field="price_link"
-                        data-default="25"
-                        onclick="enablePriceEdit(this, ${s.id}, 'price_link')">
+                    <td class="text-center ${s.is_public ? 'price-cell' : ''}"
+                        ${s.is_public ? `
+                            data-site-id="${s.id}"
+                            data-field="price_link"
+                            data-default="25.00"
+                            onclick="enablePriceEdit(this, ${s.id}, 'price_link')"
+                        ` : ''}
+                        style="${!s.is_public ? 'cursor: default;' : ''}">
                         <span class="price-display">
-                            ${s.price_link !== null && s.price_link !== undefined
-                                ? `<span class="text-success">$${parseFloat(s.price_link).toFixed(2)}</span>`
-                                : '<span class="text-muted">$25</span>'}
+                            ${!s.is_public
+                                ? '<span class="text-muted">—</span>'
+                                : s.price_link !== null && s.price_link !== undefined
+                                    ? `<span class="text-success">$${parseFloat(s.price_link).toFixed(2)}</span>`
+                                    : '<span class="text-muted">$25.00</span>'}
                         </span>
                     </td>
-                    <td class="text-center price-cell"
-                        data-site-id="${s.id}"
-                        data-field="price_article"
-                        data-default="15"
-                        onclick="enablePriceEdit(this, ${s.id}, 'price_article')">
+                    <td class="text-center ${s.is_public ? 'price-cell' : ''}"
+                        ${s.is_public ? `
+                            data-site-id="${s.id}"
+                            data-field="price_article"
+                            data-default="15.00"
+                            onclick="enablePriceEdit(this, ${s.id}, 'price_article')"
+                        ` : ''}
+                        style="${!s.is_public ? 'cursor: default;' : ''}">
                         <span class="price-display">
-                            ${s.price_article !== null && s.price_article !== undefined
-                                ? `<span class="text-success">$${parseFloat(s.price_article).toFixed(2)}</span>`
-                                : '<span class="text-muted">$15</span>'}
+                            ${!s.is_public
+                                ? '<span class="text-muted">—</span>'
+                                : s.price_article !== null && s.price_article !== undefined
+                                    ? `<span class="text-success">$${parseFloat(s.price_article).toFixed(2)}</span>`
+                                    : '<span class="text-muted">$15.00</span>'}
                         </span>
                     </td>
                     <td class="text-center ${drClass}">${drValue}</td>
@@ -1812,9 +2059,9 @@ ${'='.repeat(50)}`;
                         <input type="number"
                                class="form-control"
                                id="bulkPriceValue"
-                               min="0"
-                               step="0.01"
-                               placeholder="Введите цену или оставьте пустым для сброса">
+                               min="5"
+                               step="0.10"
+                               placeholder="Минимум $5.00, шаг $0.10">
                         <small class="text-muted">Пустое значение = использовать дефолтную цену</small>
                     </div>
 
