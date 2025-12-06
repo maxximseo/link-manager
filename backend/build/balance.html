@@ -19,81 +19,49 @@
 
         <!-- Balance Widget -->
         <div class="row mb-4">
-            <div class="col-md-4">
-                <div class="card border-success">
-                    <div class="card-body text-center">
+            <div class="col-md-3">
+                <div class="card border-success h-100">
+                    <div class="card-body text-center d-flex flex-column">
                         <h6 class="card-subtitle mb-2 text-muted">Текущий баланс</h6>
-                        <h2 class="text-success mb-0">$<span id="currentBalance">0.00</span></h2>
-                        <button class="btn btn-primary btn-sm mt-3" data-bs-toggle="modal" data-bs-target="#depositModal">
-                            <i class="bi bi-plus-circle"></i> Пополнить
-                        </button>
+                        <h2 class="text-success mb-3">$<span id="currentBalance">0.00</span></h2>
+                        <div class="mt-auto">
+                            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#depositModal">
+                                <i class="bi bi-plus-circle"></i> Пополнить
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card border-primary">
-                    <div class="card-body text-center">
+            <div class="col-md-3">
+                <div class="card border-primary h-100">
+                    <div class="card-body text-center d-flex flex-column">
                         <h6 class="card-subtitle mb-2 text-muted">Потрачено всего</h6>
-                        <h2 class="text-primary mb-0">$<span id="totalSpent">0.00</span></h2>
-                        <small class="text-muted">За все время</small>
+                        <h2 class="text-primary mb-3">$<span id="totalSpent">0.00</span></h2>
+                        <div class="mt-auto">
+                            <small class="text-muted">За все время</small>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card border-warning">
-                    <div class="card-body text-center">
+            <div class="col-md-3">
+                <div class="card border-warning h-100">
+                    <div class="card-body text-center d-flex flex-column">
                         <h6 class="card-subtitle mb-2 text-muted">Ваша скидка</h6>
-                        <h2 class="text-warning mb-0"><span id="currentDiscount">0</span>%</h2>
-                        <small class="text-muted" id="discountTier">Стандарт</small>
+                        <h2 class="text-warning mb-3"><span id="currentDiscount">0</span>%</h2>
+                        <div class="mt-auto">
+                            <small class="text-muted" id="discountTier">Стандарт</small>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Pricing Info -->
-        <div class="row mb-4">
-            <div class="col-md-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">Актуальные цены</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="p-3 border rounded">
-                                    <h6 class="text-primary">Главная страница</h6>
-                                    <p class="mb-1">
-                                        <span class="text-muted text-decoration-line-through" id="linkBasePrice">$25.00</span>
-                                        <span class="fs-4 fw-bold text-success ms-2">$<span id="linkFinalPrice">25.00</span></span>
-                                    </p>
-                                    <small class="text-muted">Размещение на 1 год</small>
-                                    <br>
-                                    <small class="text-success">Продление: $<span id="linkRenewalPrice">17.50</span></small>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="p-3 border rounded">
-                                    <h6 class="text-info">Гест-пост</h6>
-                                    <p class="mb-1">
-                                        <span class="text-muted text-decoration-line-through" id="articleBasePrice">$15.00</span>
-                                        <span class="fs-4 fw-bold text-success ms-2">$<span id="articleFinalPrice">15.00</span></span>
-                                    </p>
-                                    <small class="text-muted">Бессрочное размещение</small>
-                                    <br>
-                                    <small class="text-muted">Продление недоступно</small>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="p-3 border rounded bg-light">
-                                    <h6 class="text-warning">Скидка на продление</h6>
-                                    <p class="mb-1">
-                                        <span class="fs-4 fw-bold text-warning"><span id="renewalTotalDiscount">30</span>%</span>
-                                    </p>
-                                    <small class="text-muted">30% базовая + <span id="renewalPersonalDiscount">0</span>% персональная</small>
-                                    <br>
-                                    <small class="text-success">Максимум 60% скидки</small>
-                                </div>
-                            </div>
+            <div class="col-md-3">
+                <div class="card border-info h-100">
+                    <div class="card-body text-center d-flex flex-column">
+                        <h6 class="card-subtitle mb-2 text-muted">Скидка на продление</h6>
+                        <h2 class="text-info mb-3"><span id="renewalTotalDiscount">40</span>%</h2>
+                        <div class="mt-auto">
+                            <small class="text-muted d-block">30% базовая + <span id="renewalPersonalDiscount">10</span>%</small>
+                            <small class="text-muted"><i class="bi bi-info-circle"></i> Макс 60%</small>
                         </div>
                     </div>
                 </div>
