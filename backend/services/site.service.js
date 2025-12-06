@@ -109,7 +109,9 @@ const createSite = async data => {
       site_type,
       allow_articles,
       is_public,
-      available_for_purchase
+      available_for_purchase,
+      price_link,
+      price_article
     } = data;
 
     // SECURITY: Validate URL format
