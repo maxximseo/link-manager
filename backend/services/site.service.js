@@ -256,8 +256,10 @@ const updateSite = async (siteId, userId, data) => {
            site_type = COALESCE($6, site_type),
            allow_articles = COALESCE($7, allow_articles),
            is_public = COALESCE($8, is_public),
-           available_for_purchase = COALESCE($9, available_for_purchase)
-       WHERE id = $10 AND user_id = $11
+           available_for_purchase = COALESCE($9, available_for_purchase),
+           price_link = COALESCE($10, price_link),
+           price_article = COALESCE($11, price_article)
+       WHERE id = $12 AND user_id = $13
        RETURNING *`,
       [
         site_url,
@@ -269,6 +271,8 @@ const updateSite = async (siteId, userId, data) => {
         finalAllowArticles,
         is_public,
         available_for_purchase,
+        price_link,
+        price_article,
         siteId,
         userId
       ]
