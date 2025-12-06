@@ -65,7 +65,9 @@ const createSite = async (req, res) => {
       max_articles,
       site_type,
       allow_articles,
-      available_for_purchase
+      available_for_purchase,
+      price_link,
+      price_article
     } = req.body;
     let { is_public } = req.body;
 
