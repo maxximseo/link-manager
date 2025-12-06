@@ -169,7 +169,7 @@ const createSite = async data => {
       available_for_purchase !== undefined ? available_for_purchase : true; // Default to available
 
     const result = await query(
-      'INSERT INTO sites (site_url, site_name, api_key, site_type, user_id, max_links, max_articles, used_links, used_articles, allow_articles, is_public, available_for_purchase) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *',
+      'INSERT INTO sites (site_url, site_name, api_key, site_type, user_id, max_links, max_articles, used_links, used_articles, allow_articles, is_public, available_for_purchase, price_link, price_article) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *',
       [
         site_url,
         site_name,
@@ -182,7 +182,9 @@ const createSite = async data => {
         0,
         finalAllowArticles,
         finalIsPublic,
-        finalAvailableForPurchase
+        finalAvailableForPurchase,
+        price_link !== undefined ? price_link : null,
+        price_article !== undefined ? price_article : null
       ]
     );
 
