@@ -1003,7 +1003,12 @@ const renewPlacement = async (placementId, userId, isAutoRenewal = false) => {
       });
     } else {
       // Standard renewal pricing
-      basePrice = PRICING.LINK_HOMEPAGE;
+      // Use site-specific price if available, otherwise use default
+      basePrice =
+        placement.price_link !== null && placement.price_link !== undefined
+          ? parseFloat(placement.price_link)
+          : PRICING.LINK_HOMEPAGE;
+
       baseRenewalDiscount = PRICING.BASE_RENEWAL_DISCOUNT;
       personalDiscount = userCurrentDiscount;
 
