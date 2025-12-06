@@ -122,6 +122,21 @@ const createSite = async (req, res) => {
       return res.status(400).json({ error: 'available_for_purchase must be a boolean value' });
     }
 
+    // Validate price fields (optional, but must be positive if provided)
+    if (price_link !== undefined && price_link !== null && price_link !== '') {
+      const linkPrice = parseFloat(price_link);
+      if (isNaN(linkPrice) || linkPrice < 0) {
+        return res.status(400).json({ error: 'price_link must be a positive number' });
+      }
+    }
+
+    if (price_article !== undefined && price_article !== null && price_article !== '') {
+      const articlePrice = parseFloat(price_article);
+      if (isNaN(articlePrice) || articlePrice < 0) {
+        return res.status(400).json({ error: 'price_article must be a positive number' });
+      }
+    }
+
     const site = await siteService.createSite({
       site_url: site_url.trim(),
       api_key,
@@ -131,6 +146,14 @@ const createSite = async (req, res) => {
       allow_articles,
       is_public,
       available_for_purchase,
+      price_link:
+        price_link !== undefined && price_link !== null && price_link !== ''
+          ? parseFloat(price_link)
+          : null,
+      price_article:
+        price_article !== undefined && price_article !== null && price_article !== ''
+          ? parseFloat(price_article)
+          : null,
       userId: req.user.id
     });
 
