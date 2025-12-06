@@ -350,7 +350,19 @@ const purchasePlacement = async ({
       });
     } else {
       // Standard pricing with user's discount tier
-      basePrice = type === 'link' ? PRICING.LINK_HOMEPAGE : PRICING.ARTICLE_GUEST_POST;
+      // Use site-specific price if available, otherwise use default PRICING constants
+      if (type === 'link') {
+        basePrice =
+          site.price_link !== null && site.price_link !== undefined
+            ? parseFloat(site.price_link)
+            : PRICING.LINK_HOMEPAGE;
+      } else {
+        basePrice =
+          site.price_article !== null && site.price_article !== undefined
+            ? parseFloat(site.price_article)
+            : PRICING.ARTICLE_GUEST_POST;
+      }
+
       discount = parseFloat(user.current_discount) || 0;
       finalPrice = basePrice * (1 - discount / 100);
     }
