@@ -48,7 +48,7 @@ const getSite = async (req, res) => {
       return res.status(404).json({ error: 'Site not found' });
     }
 
-    res.json(site);
+    res.json({ data: site });
   } catch (error) {
     logger.error('Get site error:', error);
     res.status(500).json({ error: 'Failed to fetch site' });
