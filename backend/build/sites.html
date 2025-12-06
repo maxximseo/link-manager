@@ -767,25 +767,8 @@
                 loadSites(1, newLimit);
             });
 
-            // Event delegation for price cell double-click
-            const tbody = document.getElementById('sitesTableBody');
-            if (tbody) {
-                tbody.addEventListener('dblclick', (e) => {
-                    console.log('🖱️ DBLCLICK event fired on tbody');
-                    const cell = e.target.closest('.price-cell');
-                    console.log('Found cell:', cell);
-                    if (!cell) return;
-
-                    const siteId = parseInt(cell.dataset.siteId);
-                    const field = cell.dataset.field;
-                    console.log('Calling enablePriceEdit with:', { siteId, field });
-
-                    enablePriceEdit(cell, siteId, field);
-                });
-                console.log('✅ Price edit event listener attached');
-            } else {
-                console.error('❌ sitesTableBody not found!');
-            }
+            // Event delegation is now handled via onclick in HTML template
+            // No need for addEventListener since onclick is directly on <td> elements
 
             // Event listeners for bulk price buttons
             document.querySelectorAll('.bulk-price-btn').forEach(btn => {
@@ -899,7 +882,7 @@
                         data-site-id="${s.id}"
                         data-field="price_link"
                         data-default="25"
-                        ondblclick="enablePriceEdit(this, ${s.id}, 'price_link')">
+                        onclick="enablePriceEdit(this, ${s.id}, 'price_link')">
                         <span class="price-display">
                             ${s.price_link !== null && s.price_link !== undefined
                                 ? `<span class="text-success">$${parseFloat(s.price_link).toFixed(2)}</span>`
@@ -910,7 +893,7 @@
                         data-site-id="${s.id}"
                         data-field="price_article"
                         data-default="15"
-                        ondblclick="enablePriceEdit(this, ${s.id}, 'price_article')">
+                        onclick="enablePriceEdit(this, ${s.id}, 'price_article')">
                         <span class="price-display">
                             ${s.price_article !== null && s.price_article !== undefined
                                 ? `<span class="text-success">$${parseFloat(s.price_article).toFixed(2)}</span>`
