@@ -257,10 +257,10 @@ const createPlacement = async data => {
       throw new Error(`Site has reached its article limit (${site.max_articles})`);
     }
 
-    // Check if placement already exists
+    // Check if placement already exists (by project + site only, regardless of type)
     const existingResult = await client.query(
-      'SELECT id, project_id, site_id, type, status, wordpress_post_id, placed_at FROM placements WHERE project_id = $1 AND site_id = $2 AND type = $3',
-      [project_id, site_id, 'manual']
+      'SELECT id, project_id, site_id, type, status, wordpress_post_id, placed_at FROM placements WHERE project_id = $1 AND site_id = $2',
+      [project_id, site_id]
     );
 
     let placement;
@@ -269,11 +269,12 @@ const createPlacement = async data => {
       placement = existingResult.rows[0];
       logger.info('Using existing placement', { placementId: placement.id, project_id, site_id });
     } else {
-      // Create new placement
+      // Create new placement (type determined by content: links vs articles)
       // CRITICAL FIX: Include user_id in placement creation for proper billing/refund tracking
+      const placementType = article_ids && article_ids.length > 0 ? 'article' : 'link';
       const placementResult = await client.query(
         'INSERT INTO placements (user_id, project_id, site_id, type, placed_at) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP) RETURNING *',
-        [userId, project_id, site_id, 'manual']
+        [userId, project_id, site_id, placementType]
       );
       placement = placementResult.rows[0];
     }
