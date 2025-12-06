@@ -1274,42 +1274,49 @@ async function bulkRenewPlacements() {
     const errors = [];
     let totalCost = 0;
 
-    // Process one by one to show progress
-    for (let i = 0; i < placementIds.length; i++) {
+    // Batch processing - 5 at a time for progress visibility
+    const batchSize = 5;
+    for (let i = 0; i < placementIds.length; i += batchSize) {
         // Check if aborted
         if (bulkRenewAborted) {
             console.log('⚠️ Bulk renewal aborted by user');
             break;
         }
 
-        const id = placementIds[i];
-        const progress = Math.round(((i + 1) / placementIds.length) * 100);
+        const batch = placementIds.slice(i, i + batchSize);
 
-        try {
-            const response = await fetch(`/api/billing/renew/${id}`, {
+        // Process batch in parallel
+        const results = await Promise.allSettled(
+            batch.map(id => fetch(`/api/billing/renew/${id}`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${getToken()}`,
                     'Content-Type': 'application/json'
                 }
-            });
+            }).then(r => r.json()))
+        );
 
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Failed to renew');
+        // Process results
+        for (let j = 0; j < results.length; j++) {
+            const result = results[j];
+            const id = batch[j];
+
+            if (result.status === 'fulfilled' && result.value.data) {
+                successful++;
+                totalCost += result.value.data.pricePaid || 0;
+            } else {
+                failed++;
+                const errorMsg = result.status === 'rejected'
+                    ? result.reason.message
+                    : result.value.error || 'Failed to renew';
+                errors.push(`Размещение #${id}: ${errorMsg}`);
+                console.error(`Failed to renew placement ${id}:`, errorMsg);
             }
-
-            const result = await response.json();
-            successful++;
-            totalCost += result.data.pricePaid || 0;
-
-        } catch (error) {
-            console.error(`Failed to renew placement ${id}:`, error);
-            failed++;
-            errors.push(`Размещение #${id}: ${error.message}`);
         }
 
         // Update progress
+        const processedCount = Math.min(i + batchSize, placementIds.length);
+        const progress = Math.round((processedCount / placementIds.length) * 100);
         updateBulkRenewProgress(progress, successful, failed, totalCost);
     }
 
