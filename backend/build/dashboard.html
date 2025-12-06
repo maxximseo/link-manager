@@ -247,14 +247,6 @@
                     PlacementsAPI.getStatistics()
                 ]);
 
-                // DEBUG: Log placements statistics response
-                console.log('=== Placements Statistics Response ===');
-                console.log('Full response:', placements);
-                console.log('Response keys:', Object.keys(placements));
-                console.log('total_placements:', placements.total_placements);
-                console.log('total_scheduled:', placements.total_scheduled);
-                console.log('JSON.stringify:', JSON.stringify(placements, null, 2));
-
                 // Handle both array and object response formats
                 const sitesArray = Array.isArray(sites) ? sites : (sites.data || []);
                 const actualSitesTotal = sites.pagination?.total || sitesArray.length;

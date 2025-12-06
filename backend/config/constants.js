@@ -1,7 +1,7 @@
 module.exports = {
   PLACEMENT_TYPES: {
-    MANUAL: 'manual',
-    WORDPRESS: 'wordpress'
+    LINK: 'link',
+    ARTICLE: 'article'
   },
 
   RATE_LIMITS: {
