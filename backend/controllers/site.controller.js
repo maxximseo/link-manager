@@ -269,7 +269,7 @@ const updateSite = async (req, res) => {
       return res.status(404).json({ error: 'Site not found' });
     }
 
-    res.json(site);
+    res.json({ data: site });
   } catch (error) {
     logger.error('Update site error:', error);
     res.status(500).json({ error: 'Failed to update site' });
