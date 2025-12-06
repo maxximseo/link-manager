@@ -1246,6 +1246,221 @@ async function bulkSetAutoRenewal(enabled) {
 }
 
 /**
+ * Bulk renew selected placements
+ */
+let bulkRenewAborted = false;
+
+async function bulkRenewPlacements() {
+    const checked = document.querySelectorAll('.active-checkbox:checked');
+    const placementIds = Array.from(checked).map(cb => parseInt(cb.dataset.id));
+
+    if (placementIds.length === 0) {
+        showAlert('Выберите хотя бы одно размещение для продления', 'warning');
+        return;
+    }
+
+    if (!confirm(`Продлить ${placementIds.length} размещений? Средства будут списаны с вашего баланса.`)) {
+        return;
+    }
+
+    // Reset abort flag
+    bulkRenewAborted = false;
+
+    // Show progress modal
+    showBulkRenewProgress(placementIds.length);
+
+    let successful = 0;
+    let failed = 0;
+    const errors = [];
+    let totalCost = 0;
+
+    // Process one by one to show progress
+    for (let i = 0; i < placementIds.length; i++) {
+        // Check if aborted
+        if (bulkRenewAborted) {
+            console.log('⚠️ Bulk renewal aborted by user');
+            break;
+        }
+
+        const id = placementIds[i];
+        const progress = Math.round(((i + 1) / placementIds.length) * 100);
+
+        try {
+            const response = await fetch(`/api/billing/renew/${id}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${getToken()}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to renew');
+            }
+
+            const result = await response.json();
+            successful++;
+            totalCost += result.data.pricePaid || 0;
+
+        } catch (error) {
+            console.error(`Failed to renew placement ${id}:`, error);
+            failed++;
+            errors.push(`Размещение #${id}: ${error.message}`);
+        }
+
+        // Update progress
+        updateBulkRenewProgress(progress, successful, failed, totalCost);
+    }
+
+    // Complete
+    completeBulkRenewProgress(successful, failed, totalCost, errors);
+
+    // Reload data
+    await loadBalance();
+    await loadAllPlacements();
+}
+
+/**
+ * Show bulk renew progress modal
+ */
+function showBulkRenewProgress(total) {
+    // Create modal if doesn't exist
+    let modal = document.getElementById('bulkRenewModal');
+    if (!modal) {
+        const modalHtml = `
+        <div class="modal fade" id="bulkRenewModal" tabindex="-1" data-bs-backdrop="static">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title"><i class="bi bi-clock-history me-2"></i>Массовое продление</h5>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span id="bulkRenewStatus">Продление...</span>
+                                <span id="bulkRenewPercent">0%</span>
+                            </div>
+                            <div class="progress" style="height: 25px;">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" id="bulkRenewProgressBar"
+                                     role="progressbar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="row text-center mb-3">
+                            <div class="col-3">
+                                <div class="fs-4 fw-bold" id="bulkRenewTotal">0</div>
+                                <small class="text-muted">Всего</small>
+                            </div>
+                            <div class="col-3">
+                                <div class="fs-4 fw-bold text-success" id="bulkRenewSuccessful">0</div>
+                                <small class="text-muted">Успешно</small>
+                            </div>
+                            <div class="col-3">
+                                <div class="fs-4 fw-bold text-danger" id="bulkRenewFailed">0</div>
+                                <small class="text-muted">Ошибки</small>
+                            </div>
+                            <div class="col-3">
+                                <div class="fs-4 fw-bold text-info" id="bulkRenewCost">$0</div>
+                                <small class="text-muted">Стоимость</small>
+                            </div>
+                        </div>
+                        <div id="bulkRenewErrors" class="d-none">
+                            <div class="alert alert-danger" style="max-height: 150px; overflow-y: auto;">
+                                <strong>Ошибки:</strong>
+                                <ul class="mb-0" id="bulkRenewErrorList"></ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="bulkRenewAbortBtn" onclick="abortBulkRenew()">
+                            <i class="bi bi-x-circle me-1"></i>Прервать
+                        </button>
+                        <button type="button" class="btn btn-primary d-none" id="bulkRenewCloseBtn" data-bs-dismiss="modal">
+                            <i class="bi bi-check-circle me-1"></i>Закрыть
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        modal = document.getElementById('bulkRenewModal');
+    }
+
+    // Reset state
+    document.getElementById('bulkRenewStatus').textContent = 'Продление размещений...';
+    document.getElementById('bulkRenewPercent').textContent = '0%';
+    document.getElementById('bulkRenewProgressBar').style.width = '0%';
+    document.getElementById('bulkRenewProgressBar').className = 'progress-bar progress-bar-striped progress-bar-animated bg-primary';
+    document.getElementById('bulkRenewTotal').textContent = total;
+    document.getElementById('bulkRenewSuccessful').textContent = '0';
+    document.getElementById('bulkRenewFailed').textContent = '0';
+    document.getElementById('bulkRenewCost').textContent = '$0.00';
+    document.getElementById('bulkRenewErrors').classList.add('d-none');
+    document.getElementById('bulkRenewErrorList').innerHTML = '';
+    document.getElementById('bulkRenewAbortBtn').classList.remove('d-none');
+    document.getElementById('bulkRenewCloseBtn').classList.add('d-none');
+
+    // Show modal
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+}
+
+/**
+ * Update bulk renew progress
+ */
+function updateBulkRenewProgress(percent, successful, failed, totalCost) {
+    document.getElementById('bulkRenewPercent').textContent = `${percent}%`;
+    document.getElementById('bulkRenewProgressBar').style.width = `${percent}%`;
+    document.getElementById('bulkRenewSuccessful').textContent = successful;
+    document.getElementById('bulkRenewFailed').textContent = failed;
+    document.getElementById('bulkRenewCost').textContent = `$${totalCost.toFixed(2)}`;
+}
+
+/**
+ * Complete bulk renew progress
+ */
+function completeBulkRenewProgress(successful, failed, totalCost, errors) {
+    const total = successful + failed;
+    document.getElementById('bulkRenewStatus').textContent = 'Завершено';
+    document.getElementById('bulkRenewProgressBar').classList.remove('progress-bar-animated');
+
+    if (failed === 0) {
+        document.getElementById('bulkRenewProgressBar').classList.remove('bg-primary');
+        document.getElementById('bulkRenewProgressBar').classList.add('bg-success');
+        document.getElementById('bulkRenewStatus').innerHTML = '<i class="bi bi-check-circle me-1"></i>Все размещения продлены!';
+    } else {
+        document.getElementById('bulkRenewProgressBar').classList.remove('bg-primary');
+        document.getElementById('bulkRenewProgressBar').classList.add('bg-warning');
+        document.getElementById('bulkRenewStatus').innerHTML = `<i class="bi bi-exclamation-triangle me-1"></i>Завершено с ошибками`;
+
+        // Show errors
+        if (errors.length > 0) {
+            const errorList = document.getElementById('bulkRenewErrorList');
+            errorList.innerHTML = errors.map(e => `<li>${e}</li>`).join('');
+            document.getElementById('bulkRenewErrors').classList.remove('d-none');
+        }
+    }
+
+    // Swap buttons
+    document.getElementById('bulkRenewAbortBtn').classList.add('d-none');
+    document.getElementById('bulkRenewCloseBtn').classList.remove('d-none');
+}
+
+/**
+ * Abort bulk renewal
+ */
+function abortBulkRenew() {
+    if (confirm('Прервать массовое продление?')) {
+        bulkRenewAborted = true;
+        document.getElementById('bulkRenewStatus').innerHTML = '<i class="bi bi-x-circle me-1"></i>Прервано пользователем';
+        document.getElementById('bulkRenewProgressBar').classList.remove('progress-bar-animated', 'bg-primary');
+        document.getElementById('bulkRenewProgressBar').classList.add('bg-secondary');
+        document.getElementById('bulkRenewAbortBtn').classList.add('d-none');
+        document.getElementById('bulkRenewCloseBtn').classList.remove('d-none');
+    }
+}
+
+/**
  * Show bulk auto-renewal progress modal
  */
 function showBulkAutoRenewalProgress(total, enabled) {
