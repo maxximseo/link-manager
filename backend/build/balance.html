@@ -19,12 +19,12 @@
 
         <!-- Balance Widget -->
         <div class="row mb-4">
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <div class="card border-success h-100">
-                    <div class="card-body text-center d-flex flex-column">
+                    <div class="card-body text-center d-flex flex-column justify-content-center">
                         <h6 class="card-subtitle mb-2 text-muted">Текущий баланс</h6>
                         <h2 class="text-success mb-3">$<span id="currentBalance">0.00</span></h2>
-                        <div class="mt-auto">
+                        <div>
                             <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#depositModal">
                                 <i class="bi bi-plus-circle"></i> Пополнить
                             </button>
@@ -32,37 +32,22 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <div class="card border-primary h-100">
-                    <div class="card-body text-center d-flex flex-column">
+                    <div class="card-body text-center d-flex flex-column justify-content-center">
                         <h6 class="card-subtitle mb-2 text-muted">Потрачено всего</h6>
                         <h2 class="text-primary mb-3">$<span id="totalSpent">0.00</span></h2>
-                        <div class="mt-auto">
-                            <small class="text-muted">За все время</small>
-                        </div>
+                        <small class="text-muted">За все время</small>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card border-warning h-100">
-                    <div class="card-body text-center d-flex flex-column">
-                        <h6 class="card-subtitle mb-2 text-muted">Ваша скидка</h6>
-                        <h2 class="text-warning mb-3"><span id="currentDiscount">0</span>%</h2>
-                        <div class="mt-auto">
-                            <small class="text-muted" id="discountTier">Стандарт</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <div class="card border-info h-100">
-                    <div class="card-body text-center d-flex flex-column">
+                    <div class="card-body text-center d-flex flex-column justify-content-center">
                         <h6 class="card-subtitle mb-2 text-muted">Скидка на продление</h6>
                         <h2 class="text-info mb-3"><span id="renewalTotalDiscount">40</span>%</h2>
-                        <div class="mt-auto">
-                            <small class="text-muted d-block">30% базовая + <span id="renewalPersonalDiscount">10</span>%</small>
-                            <small class="text-muted"><i class="bi bi-info-circle"></i> Макс 60%</small>
-                        </div>
+                        <small class="text-muted d-block">30% базовая + <span id="renewalPersonalDiscount">10</span>%</small>
+                        <small class="text-muted"><i class="bi bi-info-circle"></i> Макс 60%</small>
                     </div>
                 </div>
             </div>
@@ -73,7 +58,11 @@
             <div class="col-md-12">
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="mb-0">Прогресс до следующего уровня скидки</h5>
+                        <h5 class="mb-0">
+                            Ваша скидка: <span class="text-warning"><span id="currentDiscount">0</span>% <span id="discountTier">Стандарт</span></span>
+                            <span class="text-muted ms-2">•</span>
+                            <span class="text-muted">Прогресс до следующего уровня</span>
+                        </h5>
                     </div>
                     <div class="card-body">
                         <div class="progress mb-2" style="height: 30px;">
