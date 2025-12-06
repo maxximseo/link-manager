@@ -1141,7 +1141,7 @@ function updateActiveBulkActions() {
 
     document.getElementById('activeSelectedCount').textContent = count;
     document.getElementById('activeLinksInfo').textContent = linkCount < count
-        ? `(${linkCount} ссылок, ${count - linkCount} статей)`
+        ? `(${linkCount} ссылок, ${count - linkCount} гест-постов)`
         : '';
 
     const bulkPanel = document.getElementById('activeBulkActions');
@@ -1181,7 +1181,7 @@ async function bulkSetAutoRenewal(enabled) {
         .map(cb => parseInt(cb.dataset.id));
 
     if (linkIds.length === 0) {
-        showAlert('Выберите хотя бы одну ссылку (статьи не поддерживают автопродление)', 'warning');
+        showAlert('Выберите хотя бы одну ссылку (гест-посты не поддерживают автопродление)', 'warning');
         return;
     }
 

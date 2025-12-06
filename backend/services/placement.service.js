@@ -595,8 +595,11 @@ const getStatistics = async userId => {
       `
       SELECT
         COUNT(DISTINCT p.id) as total_placements,
-        COUNT(DISTINCT CASE WHEN p.type = 'link' THEN p.id END) as total_links_placed,
-        COUNT(DISTINCT CASE WHEN p.type = 'article' THEN p.id END) as total_articles_placed
+        COUNT(DISTINCT CASE
+          WHEN p.status = 'scheduled'
+            AND p.scheduled_publish_date > NOW()
+          THEN p.id
+        END) as total_scheduled
       FROM placements p
       WHERE p.user_id = $1
     `,
@@ -607,8 +610,7 @@ const getStatistics = async userId => {
     const row = result.rows[0];
     return {
       total_placements: parseInt(row.total_placements, 10) || 0,
-      total_links_placed: parseInt(row.total_links_placed, 10) || 0,
-      total_articles_placed: parseInt(row.total_articles_placed, 10) || 0
+      total_scheduled: parseInt(row.total_scheduled, 10) || 0
     };
   } catch (error) {
     logger.error('Get placement statistics error:', error);

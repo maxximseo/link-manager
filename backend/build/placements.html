@@ -714,7 +714,7 @@
                 // Show warning if no content, but don't block site loading
                 hasAvailableContent = availableContent.length > 0;
                 if (!hasAvailableContent) {
-                    showNotification(`Сначала добавьте ${contentType === 'links' ? 'ссылки' : 'статьи'} в проект`, 'warning');
+                    showNotification(`Сначала добавьте ${contentType === 'links' ? 'ссылки' : 'гест-посты'} в проект`, 'warning');
                 }
 
                 // Apply whitelist/blacklist filtering ONLY if activated
@@ -785,7 +785,7 @@
                         statusClass = 'table-secondary';
                         statusBadge = '<span class="badge bg-secondary">Статьи отключены</span>';
                         isDisabled = true;
-                        disableReason = 'Владелец сайта отключил размещение статей';
+                        disableReason = 'Владелец сайта отключил размещение гест-постов';
                     } else {
                         // Site available for purchase
                         statusClass = '';
@@ -1303,7 +1303,7 @@
             // Check if project has content
             const availableContent = selectedContentType === 'links' ? projectLinks : projectArticles;
             if (availableContent.length === 0) {
-                showNotification(`У проекта нет ${selectedContentType === 'links' ? 'ссылок' : 'статей'}. Добавьте контент в проекте сначала.`, 'error');
+                showNotification(`У проекта нет ${selectedContentType === 'links' ? 'ссылок' : 'гест-постов'}. Добавьте контент в проекте сначала.`, 'error');
                 return;
             }
 

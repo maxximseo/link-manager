@@ -185,7 +185,7 @@
                                 <th style="width: 120px;">Links</th>
                                 <th style="width: 120px;">Articles</th>
                                 <th class="text-center" style="width: 60px;">
-                                    <i class="bi bi-file-text" data-bs-toggle="tooltip" data-bs-placement="top" title="Разрешить размещение статей"></i>
+                                    <i class="bi bi-file-text" data-bs-toggle="tooltip" data-bs-placement="top" title="Разрешить размещение гест-постов"></i>
                                 </th>
                                 <th class="text-center" style="width: 60px;">
                                     <i class="bi bi-globe" data-bs-toggle="tooltip" data-bs-placement="top" title="Публичный сайт"></i>
@@ -328,11 +328,11 @@
                             <div class="form-check">
                                 <input type="checkbox" class="form-check-input" id="allowArticles" checked>
                                 <label class="form-check-label" for="allowArticles">
-                                    <i class="bi bi-file-text"></i> Разрешить размещение статей
+                                    <i class="bi bi-file-text"></i> Разрешить размещение гест-постов
                                 </label>
                             </div>
                             <small class="text-muted">
-                                Снимите галочку, чтобы запретить покупку статей на этом сайте (ссылки будут доступны)
+                                Снимите галочку, чтобы запретить покупку гест-постов на этом сайте (ссылки будут доступны)
                             </small>
                         </div>
 
@@ -389,7 +389,7 @@
                                 3. Добавьте <code>&lt;?php include 'static.php'; ?&gt;</code> где нужно отобразить ссылки
                             </small>
                             <div class="alert alert-warning mt-2 mb-0">
-                                <small><i class="bi bi-exclamation-triangle"></i> <strong>Важно:</strong> Статичные сайты поддерживают только ссылки, статьи недоступны.</small>
+                                <small><i class="bi bi-exclamation-triangle"></i> <strong>Важно:</strong> Статичные сайты поддерживают только ссылки, гест-посты недоступны.</small>
                             </div>
                         </div>
                     </form>
@@ -908,7 +908,7 @@
                         message += `💵 Общая стоимость: $${summary.totalRefund.toFixed(2)}\n\n`;
                         message += `✅ Все размещения будут удалены\n`;
                         message += `✅ Деньги ($${summary.totalRefund.toFixed(2)}) будут возвращены на ваш баланс\n`;
-                        message += `✅ Использование ссылок/статей будет восстановлено\n\n`;
+                        message += `✅ Использование ссылок/гест-постов будет восстановлено\n\n`;
                     } else {
                         message += `Все размещения (бесплатные) будут удалены.\n\n`;
                     }
@@ -1422,7 +1422,7 @@ ${'='.repeat(50)}`;
             if (selectedSiteIds.size === 0) return;
 
             const fieldNames = {
-                'allow_articles': 'Разрешить статьи',
+                'allow_articles': 'Разрешить гест-посты',
                 'is_public': 'Публичный',
                 'available_for_purchase': 'Доступен для покупки'
             };
