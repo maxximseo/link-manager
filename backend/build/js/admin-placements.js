@@ -75,7 +75,11 @@ function updateStatistics() {
     const total = placements.length;
     const active = placements.filter(p => p.status === 'placed' && (!p.expires_at || new Date(p.expires_at) > new Date())).length;
     const autoRenewal = placements.filter(p => p.auto_renewal === true).length;
-    const scheduled = placements.filter(p => p.status === 'scheduled' || (p.scheduled_publish_date && new Date(p.scheduled_publish_date) > new Date())).length;
+    const scheduled = placements.filter(p => {
+        if (p.status !== 'scheduled') return false;
+        if (!p.scheduled_publish_date) return false;
+        return new Date(p.scheduled_publish_date) > new Date();
+    }).length;
 
     document.getElementById('totalPlacements').textContent = total;
     document.getElementById('activePlacements').textContent = active;

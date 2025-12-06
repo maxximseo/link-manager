@@ -177,7 +177,7 @@ async function loadContentForPurchase(projectId) {
         select.disabled = false;
 
         if (content.length === 0) {
-            select.innerHTML = `<option value="">Нет доступных ${type === 'link' ? 'ссылок' : 'статей'}</option>`;
+            select.innerHTML = `<option value="">Нет доступных ${type === 'link' ? 'ссылок' : 'гест-постов'}</option>`;
             select.disabled = true;
             return;
         }

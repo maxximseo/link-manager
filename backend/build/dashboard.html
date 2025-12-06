@@ -118,9 +118,9 @@
             </div>
             <div class="col-md-3">
                 <div class="stat-card info">
-                    <i class="bi bi-link-45deg"></i>
-                    <h3 id="totalLinks"><span class="skeleton" style="width: 60px; height: 36px; display: inline-block;"></span></h3>
-                    <p>Размещено ссылок</p>
+                    <i class="bi bi-calendar-event"></i>
+                    <h3 id="totalScheduled"><span class="skeleton" style="width: 60px; height: 36px; display: inline-block;"></span></h3>
+                    <p>Запланировано</p>
                 </div>
             </div>
         </div>
@@ -137,7 +137,7 @@
                                 <th>URL</th>
                                 <th>Дата создания</th>
                                 <th>Тексты ссылок</th>
-                                <th>Тексты статей</th>
+                                <th>Тексты гест-постов</th>
                                 <th>Потрачено ($)</th>
                                 <th>Размещено</th>
                                 <th>Запланировано</th>
@@ -247,10 +247,22 @@
                     PlacementsAPI.getStatistics()
                 ]);
 
+                // DEBUG: Log placements statistics response
+                console.log('=== Placements Statistics Response ===');
+                console.log('Full response:', placements);
+                console.log('Response keys:', Object.keys(placements));
+                console.log('total_placements:', placements.total_placements);
+                console.log('total_scheduled:', placements.total_scheduled);
+                console.log('JSON.stringify:', JSON.stringify(placements, null, 2));
+
+                // Handle both array and object response formats
+                const sitesArray = Array.isArray(sites) ? sites : (sites.data || []);
+                const actualSitesTotal = sites.pagination?.total || sitesArray.length;
+
                 document.getElementById('totalProjects').textContent = projectsData.length || 0;
-                document.getElementById('totalSites').textContent = sites.length || 0;
+                document.getElementById('totalSites').textContent = actualSitesTotal;
                 document.getElementById('totalPlacements').textContent = placements.total_placements || 0;
-                document.getElementById('totalLinks').textContent = placements.total_links_placed || 0;
+                document.getElementById('totalScheduled').textContent = placements.total_scheduled || 0;
 
                 // Load projects table with detailed stats
                 projects = projectsData;
@@ -315,8 +327,13 @@
                     // Calculate placement statistics for this project
                     const projectPlacements = placementsArray.filter(pl => pl.project_id === p.id);
                     const totalSpent = projectPlacements.reduce((sum, pl) => sum + parseFloat(pl.final_price || 0), 0);
-                    const activePlacements = projectPlacements.filter(pl => pl.status === 'placed' && !pl.scheduled_publish_date).length;
-                    const scheduledPlacements = projectPlacements.filter(pl => pl.scheduled_publish_date).length;
+                    const activePlacements = projectPlacements.filter(pl => pl.status === 'placed').length;
+                    const scheduledPlacements = projectPlacements.filter(pl => {
+                        if (pl.status !== 'scheduled') return false;
+                        if (!pl.scheduled_publish_date) return false;
+                        const schedDate = new Date(pl.scheduled_publish_date);
+                        return schedDate > new Date();
+                    }).length;
 
                     return `
                         <tr>
@@ -436,7 +453,7 @@
         }
 
         async function deleteProject(id) {
-            if (!confirm('Вы уверены, что хотите удалить этот проект? Все ссылки и статьи также будут удалены.')) {
+            if (!confirm('Вы уверены, что хотите удалить этот проект? Все ссылки и гест-посты также будут удалены.')) {
                 return;
             }
 

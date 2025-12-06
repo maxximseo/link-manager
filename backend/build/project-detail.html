@@ -128,7 +128,7 @@
                 </li>
                 <li class="nav-item">
                     <button class="nav-link" data-bs-toggle="tab" data-bs-target="#articlesTab">
-                        <i class="bi bi-file-text"></i> Статьи <span id="articlesCount">0</span>
+                        <i class="bi bi-file-text"></i> Гест-посты <span id="articlesCount">0</span>
                     </button>
                 </li>
             </ul>
@@ -235,13 +235,13 @@
                     <form id="articleForm">
                         <input type="hidden" id="articleId">
                         <div class="mb-3">
-                            <label for="articleTitle" class="form-label">Заголовок статьи *</label>
+                            <label for="articleTitle" class="form-label">Заголовок гест-поста *</label>
                             <input type="text" class="form-control" id="articleTitle" required placeholder="Введите заголовок">
                         </div>
                         <div class="mb-3">
-                            <label for="articleContent" class="form-label">Содержание статьи *</label>
-                            <textarea class="form-control" id="articleContent" rows="10" required placeholder="Введите текст статьи..."></textarea>
-                            <small class="text-muted">Каждая статья может быть использована только 1 раз</small>
+                            <label for="articleContent" class="form-label">Содержание гест-поста *</label>
+                            <textarea class="form-control" id="articleContent" rows="10" required placeholder="Введите текст гест-поста..."></textarea>
+                            <small class="text-muted">Каждый гест-пост может быть использован только 1 раз</small>
                         </div>
                     </form>
                 </div>
@@ -258,7 +258,7 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="viewArticleTitle">Просмотр статьи</h5>
+                    <h5 class="modal-title" id="viewArticleTitle">Просмотр гест-поста</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -540,7 +540,7 @@ If you want to explore reliable platforms, check out <a href="https://example.co
             } catch (error) {
                 console.error('Error loading articles:', error);
                 document.getElementById('articlesList').innerHTML =
-                    '<div class="alert alert-danger">Ошибка загрузки статей</div>';
+                    '<div class="alert alert-danger">Ошибка загрузки гест-постов</div>';
             }
         }
 
@@ -557,7 +557,7 @@ If you want to explore reliable platforms, check out <a href="https://example.co
             if (articles.length === 0) {
                 list.innerHTML = `
                     <div class="alert alert-info">
-                        <i class="bi bi-info-circle"></i> Нет статей. Добавьте первую статью!
+                        <i class="bi bi-info-circle"></i> Нет гест-постов. Добавьте первый гест-пост!
                     </div>
                 `;
                 return;
@@ -657,7 +657,7 @@ If you want to explore reliable platforms, check out <a href="https://example.co
         async function deleteSelectedArticles() {
             if (selectedArticles.size === 0) return;
 
-            if (!confirm(`Удалить ${selectedArticles.size} выбранных статей?`)) return;
+            if (!confirm(`Удалить ${selectedArticles.size} выбранных гест-постов?`)) return;
 
             try {
                 const deletePromises = Array.from(selectedArticles).map(articleId =>
@@ -665,12 +665,12 @@ If you want to explore reliable platforms, check out <a href="https://example.co
                 );
 
                 await Promise.all(deletePromises);
-                showNotification(`Успешно удалено ${selectedArticles.size} статей`, 'success');
+                showNotification(`Успешно удалено ${selectedArticles.size} гест-постов`, 'success');
                 selectedArticles.clear();
                 await loadArticles();
             } catch (error) {
                 console.error('Error deleting articles:', error);
-                showNotification('Ошибка при удалении статей', 'error');
+                showNotification('Ошибка при удалении гест-постов', 'error');
             }
         }
 
@@ -799,17 +799,17 @@ If you want to explore reliable platforms, check out <a href="https://example.co
 
                 if (id) {
                     await ProjectsAPI.updateArticle(projectId, id, data);
-                    showNotification('Статья обновлена', 'success');
+                    showNotification('Гест-пост обновлен', 'success');
                 } else {
                     await ProjectsAPI.addArticle(projectId, data);
-                    showNotification('Статья добавлена', 'success');
+                    showNotification('Гест-пост добавлен', 'success');
                 }
 
                 bootstrap.Modal.getInstance(document.getElementById('articleModal')).hide();
                 loadArticles();
             } catch (error) {
                 console.error('Error saving article:', error);
-                showNotification('Ошибка сохранения статьи', 'error');
+                showNotification('Ошибка сохранения гест-поста', 'error');
             }
         }
 
@@ -823,11 +823,11 @@ If you want to explore reliable platforms, check out <a href="https://example.co
                     content: article.content
                 };
                 await ProjectsAPI.addArticle(projectId, data);
-                showNotification('Статья продублирована', 'success');
+                showNotification('Гест-пост продублирован', 'success');
                 loadArticles();
             } catch (error) {
                 console.error('Error duplicating article:', error);
-                showNotification('Ошибка дублирования статьи', 'error');
+                showNotification('Ошибка дублирования гест-поста', 'error');
             }
         }
 
@@ -835,26 +835,26 @@ If you want to explore reliable platforms, check out <a href="https://example.co
             const article = articles.find(a => a.id === id);
             if (!article) return;
 
-            // Проверка: если статья использована, запретить удаление
+            // Проверка: если гест-пост использован, запретить удаление
             if (article.usage_count >= 1) {
-                alert('❌ Нельзя удалить использованную статью!\n\n' +
-                      'Эта статья уже размещена на сайте и используется в размещениях.\n\n' +
+                alert('❌ Нельзя удалить использованный гест-пост!\n\n' +
+                      'Этот гест-пост уже размещен на сайте и используется в размещениях.\n\n' +
                       'Что можно сделать:\n' +
-                      '• Создать копию статьи через кнопку "Дублировать"\n' +
-                      '• Удалить сначала размещение, где используется статья\n\n' +
+                      '• Создать копию гест-поста через кнопку "Дублировать"\n' +
+                      '• Удалить сначала размещение, где используется гест-пост\n\n' +
                       'Это защита от случайного удаления контента.');
                 return;
             }
 
-            if (!confirm('Удалить эту статью?\n\nВнимание: это действие необратимо!')) return;
+            if (!confirm('Удалить этот гест-пост?\n\nВнимание: это действие необратимо!')) return;
 
             try {
                 await ProjectsAPI.deleteArticle(projectId, id);
-                showNotification('Статья удалена', 'success');
+                showNotification('Гест-пост удален', 'success');
                 loadArticles();
             } catch (error) {
                 console.error('Error deleting article:', error);
-                showNotification('Ошибка удаления статьи', 'error');
+                showNotification('Ошибка удаления гест-поста', 'error');
             }
         }
 
