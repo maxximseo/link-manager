@@ -124,7 +124,10 @@ function renderDiscountTiers() {
     const tbody = document.getElementById('discountTiersTable');
     tbody.innerHTML = '';
 
-    discountTiers.forEach(tier => {
+    // Filter out "Стандарт" tier (min_spent = 0, discount = 0%)
+    const visibleTiers = discountTiers.filter(tier => parseFloat(tier.min_spent) > 0);
+
+    visibleTiers.forEach(tier => {
         const isActive = currentDiscount === tier.discount_percentage;
         const row = document.createElement('tr');
         row.className = isActive ? 'table-success' : '';
