@@ -956,7 +956,7 @@ const renewPlacement = async (placementId, userId, isAutoRenewal = false) => {
     // 1. Get placement, user, and site with lock
     const placementResult = await client.query(
       `
-      SELECT p.*, u.balance, u.current_discount, u.total_spent, s.user_id as site_owner_id
+      SELECT p.*, u.balance, u.current_discount, u.total_spent, s.user_id as site_owner_id, s.price_link, s.price_article
       FROM placements p
       JOIN users u ON p.user_id = u.id
       JOIN sites s ON p.site_id = s.id
