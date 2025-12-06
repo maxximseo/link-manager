@@ -77,6 +77,50 @@
                 display: none;
             }
         }
+
+        /* Inline editable price cells */
+        .price-cell {
+            cursor: pointer;
+            position: relative;
+            min-width: 80px;
+            transition: background-color 0.2s;
+        }
+
+        .price-cell:hover:not(.editing):not(.saving) {
+            background-color: #f8f9fa;
+        }
+
+        .price-cell:hover:not(.editing):not(.saving)::after {
+            content: "✎";
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+            color: #6c757d;
+        }
+
+        .price-cell.editing {
+            background-color: #fff3cd;
+        }
+
+        .price-cell.saving {
+            opacity: 0.6;
+            pointer-events: none;
+            cursor: wait;
+        }
+
+        .price-input {
+            width: 70px;
+            display: inline-block;
+            text-align: center;
+            font-size: 0.875rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .price-display {
+            display: inline-block;
+        }
     </style>
 </head>
 <body>
@@ -137,6 +181,14 @@
                         <i class="bi bi-cart-x-fill"></i> ВЫКЛ
                     </button>
                 </div>
+                <div class="btn-group btn-group-sm" role="group">
+                    <button class="btn btn-outline-success py-1 px-2 bulk-price-btn" data-field="price_link">
+                        <i class="bi bi-cash-stack"></i> Цена Main
+                    </button>
+                    <button class="btn btn-outline-info py-1 px-2 bulk-price-btn" data-field="price_article">
+                        <i class="bi bi-file-text"></i> Цена GP
+                    </button>
+                </div>
                 <button class="btn btn-sm btn-secondary py-1 px-2" onclick="clearBulkSelection()">
                     <i class="bi bi-x-lg"></i> Отмена
                 </button>
@@ -168,6 +220,8 @@
                                     <input type="checkbox" class="form-check-input" id="selectAllSites" onchange="toggleSelectAll()">
                                 </th>
                                 <th style="max-width: 200px;">Site Name</th>
+                                <th class="text-center" style="width: 60px;">Main</th>
+                                <th class="text-center" style="width: 60px;">GP</th>
                                 <th class="text-center" style="width: 40px;">DR</th>
                                 <th class="text-center" style="width: 40px;">DA</th>
                                 <th class="text-center" style="width: 40px;">TF</th>
@@ -528,6 +582,30 @@
                 localStorage.setItem('sitesPageLimit', newLimit);
                 loadSites(1, newLimit);
             });
+
+            // Event delegation for price cell double-click
+            document.getElementById('sitesTableBody').addEventListener('dblclick', (e) => {
+                const cell = e.target.closest('.price-cell');
+                if (!cell) return;
+
+                const siteId = parseInt(cell.dataset.siteId);
+                const field = cell.dataset.field;
+
+                enablePriceEdit(cell, siteId, field);
+            });
+
+            // Event listeners for bulk price buttons
+            document.querySelectorAll('.bulk-price-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    showBulkPriceModal(btn.dataset.field);
+                });
+            });
+
+            // Event listener for apply bulk price button
+            const applyBtn = document.getElementById('applyBulkPriceBtn');
+            if (applyBtn) {
+                applyBtn.addEventListener('click', applyBulkPrice);
+            }
         });
 
         async function loadSites(page = 1, limit = currentLimit) {
@@ -623,6 +701,26 @@
                     </td>
                     <td style="max-width: 200px;">
                         <div class="fw-semibold text-truncate" title="${escapeHtml(s.site_name)}">${escapeHtml(cleanSiteName)}</div>
+                    </td>
+                    <td class="text-center price-cell"
+                        data-site-id="${s.id}"
+                        data-field="price_link"
+                        data-default="25">
+                        <span class="price-display">
+                            ${s.price_link !== null && s.price_link !== undefined
+                                ? `<span class="text-success">$${parseFloat(s.price_link).toFixed(2)}</span>`
+                                : '<span class="text-muted">$25</span>'}
+                        </span>
+                    </td>
+                    <td class="text-center price-cell"
+                        data-site-id="${s.id}"
+                        data-field="price_article"
+                        data-default="15">
+                        <span class="price-display">
+                            ${s.price_article !== null && s.price_article !== undefined
+                                ? `<span class="text-success">$${parseFloat(s.price_article).toFixed(2)}</span>`
+                                : '<span class="text-muted">$15</span>'}
+                        </span>
                     </td>
                     <td class="text-center ${drClass}">${drValue}</td>
                     <td class="text-center ${daClass}">${daValue}</td>
@@ -1518,6 +1616,224 @@ ${'='.repeat(50)}`;
             document.getElementById('selectAllSites').indeterminate = false;
             updateBulkActionsBar();
         }
+
+        // ===== INLINE PRICE EDITING =====
+
+        function enablePriceEdit(cell, siteId, field) {
+            // Prevent multiple edits
+            if (cell.classList.contains('editing')) {
+                return;
+            }
+
+            // Get current value from sites array
+            const site = sites.find(s => s.id === siteId);
+            const currentValue = site ? site[field] : null;
+
+            cell.classList.add('editing');
+
+            // Hide display, create input
+            const display = cell.querySelector('.price-display');
+            display.classList.add('d-none');
+
+            // Create input element
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.className = 'form-control form-control-sm price-input';
+            input.min = '0';
+            input.step = '0.01';
+            input.value = currentValue || '';
+            input.placeholder = cell.dataset.default;
+
+            // Event handlers
+            input.onblur = () => savePriceEdit(cell, siteId, field);
+            input.onkeydown = (e) => handlePriceKeydown(e, cell, siteId, field);
+
+            // Insert and focus
+            cell.appendChild(input);
+            input.focus();
+            input.select();
+        }
+
+        async function savePriceEdit(cell, siteId, field) {
+            const input = cell.querySelector('.price-input');
+            if (!input) return;
+
+            const value = input.value.trim();
+            const numericValue = value === '' ? null : parseFloat(value);
+
+            // Validation
+            if (numericValue !== null && (isNaN(numericValue) || numericValue < 0)) {
+                showNotification('Цена должна быть положительным числом', 'error');
+                input.focus();
+                return;
+            }
+
+            // Show saving state
+            cell.classList.add('saving');
+
+            try {
+                // API call
+                const data = {};
+                data[field] = numericValue;
+                await SitesAPI.update(siteId, data);
+
+                // Update local data
+                const site = sites.find(s => s.id === siteId);
+                if (site) site[field] = numericValue;
+
+                // Re-render cell
+                const defaultValue = field === 'price_link' ? 25 : 15;
+                const display = cell.querySelector('.price-display');
+                if (numericValue !== null) {
+                    display.innerHTML = `<span class="text-success">${numericValue.toFixed(2)}</span>`;
+                } else {
+                    display.innerHTML = `<span class="text-muted">$${defaultValue}</span>`;
+                }
+
+                showNotification('Цена обновлена', 'success');
+            } catch (error) {
+                showNotification('Ошибка: ' + error.message, 'error');
+            } finally {
+                // Cleanup
+                input.remove();
+                cell.querySelector('.price-display').classList.remove('d-none');
+                cell.classList.remove('editing', 'saving');
+            }
+        }
+
+        function handlePriceKeydown(event, cell, siteId, field) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                savePriceEdit(cell, siteId, field);
+            } else if (event.key === 'Escape') {
+                // Cancel edit
+                const input = cell.querySelector('.price-input');
+                if (input) input.remove();
+                cell.querySelector('.price-display').classList.remove('d-none');
+                cell.classList.remove('editing');
+            }
+        }
+
+        // ===== BULK PRICE UPDATES =====
+
+        let currentBulkField = null;
+
+        function showBulkPriceModal(field) {
+            currentBulkField = field;
+
+            const count = selectedSiteIds.size;
+            if (count === 0) {
+                showNotification('Выберите сайты для изменения', 'warning');
+                return;
+            }
+
+            // Set modal content
+            const fieldName = field === 'price_link' ? 'цену за ссылку (Main)' : 'цену за гест-пост (GP)';
+            document.getElementById('bulkPriceFieldName').textContent = fieldName;
+            document.getElementById('bulkPriceCount').textContent = count;
+            document.getElementById('bulkPriceValue').value = '';
+
+            // Open modal
+            const modal = new bootstrap.Modal(document.getElementById('bulkPriceModal'));
+            modal.show();
+        }
+
+        async function applyBulkPrice() {
+            const value = document.getElementById('bulkPriceValue').value.trim();
+            const numericValue = value === '' ? null : parseFloat(value);
+
+            // Validation
+            if (numericValue !== null && (isNaN(numericValue) || numericValue < 0)) {
+                showNotification('Цена должна быть положительным числом', 'error');
+                return;
+            }
+
+            const count = selectedSiteIds.size;
+            const fieldName = currentBulkField === 'price_link' ? 'ссылку' : 'гест-пост';
+            const priceText = numericValue !== null ? `$${numericValue.toFixed(2)}` : 'дефолтную';
+
+            // Confirmation
+            if (!confirm(`Изменить цену за ${fieldName} для ${count} сайтов на ${priceText}?`)) {
+                return;
+            }
+
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('bulkPriceModal')).hide();
+
+            // Process in chunks of 10
+            const siteIds = Array.from(selectedSiteIds);
+            const CHUNK_SIZE = 10;
+            let successful = 0;
+            let failed = 0;
+
+            for (let i = 0; i < siteIds.length; i += CHUNK_SIZE) {
+                const chunk = siteIds.slice(i, i + CHUNK_SIZE);
+                const data = {};
+                data[currentBulkField] = numericValue;
+
+                const results = await Promise.allSettled(
+                    chunk.map(siteId => SitesAPI.update(siteId, data))
+                );
+
+                results.forEach((result, idx) => {
+                    if (result.status === 'fulfilled') {
+                        successful++;
+                        const site = sites.find(s => s.id === chunk[idx]);
+                        if (site) site[currentBulkField] = numericValue;
+                    } else {
+                        failed++;
+                    }
+                });
+
+                // Show progress
+                showNotification(`Обновлено ${successful} из ${siteIds.length}...`, 'info');
+            }
+
+            // Final notification
+            if (failed === 0) {
+                showNotification(`✅ Цены обновлены для всех ${successful} сайтов`, 'success');
+            } else {
+                showNotification(`⚠️ Обновлено: ${successful}, ошибок: ${failed}`, 'warning');
+            }
+
+            // Reload and clear
+            await loadSites();
+            clearBulkSelection();
+        }
     </script>
+
+    <!-- Bulk Price Update Modal -->
+    <div class="modal fade" id="bulkPriceModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Массовое изменение цены</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Изменить <strong id="bulkPriceFieldName"></strong> для <strong id="bulkPriceCount"></strong> выбранных сайтов</p>
+
+                    <div class="mb-3">
+                        <label for="bulkPriceValue" class="form-label">Новая цена (USD)</label>
+                        <input type="number"
+                               class="form-control"
+                               id="bulkPriceValue"
+                               min="0"
+                               step="0.01"
+                               placeholder="Введите цену или оставьте пустым для сброса">
+                        <small class="text-muted">Пустое значение = использовать дефолтную цену</small>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> Изменение будет применено ко всем выбранным сайтам
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-primary" id="applyBulkPriceBtn">Применить</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
