@@ -539,13 +539,197 @@
             window.location.href = '/index.html';
         }
 
-        let sites = [];
+        window.sites = [];  // Make sites globally accessible
         let modal;
         let exportModal;
         let currentPage = 1;
         let currentLimit = 100;
         let totalSites = 0;
         let totalPages = 0;
+
+        // ===== PRICE EDITING FUNCTIONS (must be before addEventListener) =====
+
+        let currentBulkField = null;
+
+        function enablePriceEdit(cell, siteId, field) {
+            // Prevent multiple edits
+            if (cell.classList.contains('editing')) {
+                return;
+            }
+
+            // Get current value from sites array
+            const site = window.sites.find(s => s.id === siteId);
+            const currentValue = site ? site[field] : null;
+
+            cell.classList.add('editing');
+
+            // Hide display, create input
+            const display = cell.querySelector('.price-display');
+            display.classList.add('d-none');
+
+            // Create input element
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.className = 'form-control form-control-sm price-input';
+            input.min = '0';
+            input.step = '0.01';
+            input.value = currentValue || '';
+            input.placeholder = cell.dataset.default;
+
+            // Event handlers
+            input.onblur = () => savePriceEdit(cell, siteId, field);
+            input.onkeydown = (e) => handlePriceKeydown(e, cell, siteId, field);
+
+            // Insert and focus
+            cell.appendChild(input);
+            input.focus();
+            input.select();
+        }
+
+        async function savePriceEdit(cell, siteId, field) {
+            const input = cell.querySelector('.price-input');
+            if (!input) return;
+
+            const value = input.value.trim();
+            const numericValue = value === '' ? null : parseFloat(value);
+
+            // Validation
+            if (numericValue !== null && (isNaN(numericValue) || numericValue < 0)) {
+                showNotification('Цена должна быть положительным числом', 'error');
+                input.focus();
+                return;
+            }
+
+            // Show saving state
+            cell.classList.add('saving');
+
+            try {
+                // API call
+                const data = {};
+                data[field] = numericValue;
+                await SitesAPI.update(siteId, data);
+
+                // Update local data
+                const site = window.sites.find(s => s.id === siteId);
+                if (site) site[field] = numericValue;
+
+                // Re-render cell
+                const defaultValue = field === 'price_link' ? 25 : 15;
+                const display = cell.querySelector('.price-display');
+                if (numericValue !== null) {
+                    display.innerHTML = `<span class="text-success">$${numericValue.toFixed(2)}</span>`;
+                } else {
+                    display.innerHTML = `<span class="text-muted">$${defaultValue}</span>`;
+                }
+
+                showNotification('Цена обновлена', 'success');
+            } catch (error) {
+                showNotification('Ошибка: ' + error.message, 'error');
+            } finally {
+                // Cleanup
+                input.remove();
+                cell.querySelector('.price-display').classList.remove('d-none');
+                cell.classList.remove('editing', 'saving');
+            }
+        }
+
+        function handlePriceKeydown(event, cell, siteId, field) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                savePriceEdit(cell, siteId, field);
+            } else if (event.key === 'Escape') {
+                // Cancel edit
+                const input = cell.querySelector('.price-input');
+                if (input) input.remove();
+                cell.querySelector('.price-display').classList.remove('d-none');
+                cell.classList.remove('editing');
+            }
+        }
+
+        function showBulkPriceModal(field) {
+            currentBulkField = field;
+
+            const count = selectedSiteIds.size;
+            if (count === 0) {
+                showNotification('Выберите сайты для изменения', 'warning');
+                return;
+            }
+
+            // Set modal content
+            const fieldName = field === 'price_link' ? 'цену за ссылку (Main)' : 'цену за гест-пост (GP)';
+            document.getElementById('bulkPriceFieldName').textContent = fieldName;
+            document.getElementById('bulkPriceCount').textContent = count;
+            document.getElementById('bulkPriceValue').value = '';
+
+            // Open modal
+            const modal = new bootstrap.Modal(document.getElementById('bulkPriceModal'));
+            modal.show();
+        }
+
+        async function applyBulkPrice() {
+            const value = document.getElementById('bulkPriceValue').value.trim();
+            const numericValue = value === '' ? null : parseFloat(value);
+
+            // Validation
+            if (numericValue !== null && (isNaN(numericValue) || numericValue < 0)) {
+                showNotification('Цена должна быть положительным числом', 'error');
+                return;
+            }
+
+            const count = selectedSiteIds.size;
+            const fieldName = currentBulkField === 'price_link' ? 'ссылку' : 'гест-пост';
+            const priceText = numericValue !== null ? `$${numericValue.toFixed(2)}` : 'дефолтную';
+
+            // Confirmation
+            if (!confirm(`Изменить цену за ${fieldName} для ${count} сайтов на ${priceText}?`)) {
+                return;
+            }
+
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('bulkPriceModal')).hide();
+
+            // Process in chunks of 10
+            const siteIds = Array.from(selectedSiteIds);
+            const CHUNK_SIZE = 10;
+            let successful = 0;
+            let failed = 0;
+
+            for (let i = 0; i < siteIds.length; i += CHUNK_SIZE) {
+                const chunk = siteIds.slice(i, i + CHUNK_SIZE);
+                const data = {};
+                data[currentBulkField] = numericValue;
+
+                const results = await Promise.allSettled(
+                    chunk.map(siteId => SitesAPI.update(siteId, data))
+                );
+
+                results.forEach((result, idx) => {
+                    if (result.status === 'fulfilled') {
+                        successful++;
+                        const site = window.sites.find(s => s.id === chunk[idx]);
+                        if (site) site[currentBulkField] = numericValue;
+                    } else {
+                        failed++;
+                    }
+                });
+
+                // Show progress
+                showNotification(`Обновлено ${successful} из ${siteIds.length}...`, 'info');
+            }
+
+            // Final notification
+            if (failed === 0) {
+                showNotification(`✅ Цены обновлены для всех ${successful} сайтов`, 'success');
+            } else {
+                showNotification(`⚠️ Обновлено: ${successful}, ошибок: ${failed}`, 'warning');
+            }
+
+            // Reload and clear
+            await loadSites();
+            clearBulkSelection();
+        }
+
+        // ===== END PRICE EDITING FUNCTIONS =====
 
         document.addEventListener('DOMContentLoaded', async () => {
             modal = new bootstrap.Modal(document.getElementById('siteModal'));
@@ -584,15 +768,24 @@
             });
 
             // Event delegation for price cell double-click
-            document.getElementById('sitesTableBody').addEventListener('dblclick', (e) => {
-                const cell = e.target.closest('.price-cell');
-                if (!cell) return;
+            const tbody = document.getElementById('sitesTableBody');
+            if (tbody) {
+                tbody.addEventListener('dblclick', (e) => {
+                    console.log('🖱️ DBLCLICK event fired on tbody');
+                    const cell = e.target.closest('.price-cell');
+                    console.log('Found cell:', cell);
+                    if (!cell) return;
 
-                const siteId = parseInt(cell.dataset.siteId);
-                const field = cell.dataset.field;
+                    const siteId = parseInt(cell.dataset.siteId);
+                    const field = cell.dataset.field;
+                    console.log('Calling enablePriceEdit with:', { siteId, field });
 
-                enablePriceEdit(cell, siteId, field);
-            });
+                    enablePriceEdit(cell, siteId, field);
+                });
+                console.log('✅ Price edit event listener attached');
+            } else {
+                console.error('❌ sitesTableBody not found!');
+            }
 
             // Event listeners for bulk price buttons
             document.querySelectorAll('.bulk-price-btn').forEach(btn => {
@@ -614,7 +807,7 @@
                 currentLimit = limit;
 
                 const response = await SitesAPI.getAll(page, limit);
-                sites = response.data || [];
+                window.sites = response.data || [];  // CRITICAL: Must assign to window.sites for global access
                 totalSites = response.pagination?.total || 0;
                 totalPages = response.pagination?.pages || 0;
 
@@ -640,7 +833,7 @@
 
         function displaySites() {
             const tbody = document.getElementById('sitesTableBody');
-            tbody.innerHTML = sites.map(s => {
+            tbody.innerHTML = window.sites.map(s => {
                 const siteType = s.site_type || 'wordpress';
                 const typeBadge = siteType === 'wordpress'
                     ? '<span class="badge bg-primary" style="font-size: 0.7rem;"><i class="bi bi-wordpress"></i> WP</span>'
@@ -705,7 +898,8 @@
                     <td class="text-center price-cell"
                         data-site-id="${s.id}"
                         data-field="price_link"
-                        data-default="25">
+                        data-default="25"
+                        ondblclick="enablePriceEdit(this, ${s.id}, 'price_link')">
                         <span class="price-display">
                             ${s.price_link !== null && s.price_link !== undefined
                                 ? `<span class="text-success">$${parseFloat(s.price_link).toFixed(2)}</span>`
@@ -715,7 +909,8 @@
                     <td class="text-center price-cell"
                         data-site-id="${s.id}"
                         data-field="price_article"
-                        data-default="15">
+                        data-default="15"
+                        ondblclick="enablePriceEdit(this, ${s.id}, 'price_article')">
                         <span class="price-display">
                             ${s.price_article !== null && s.price_article !== undefined
                                 ? `<span class="text-success">$${parseFloat(s.price_article).toFixed(2)}</span>`
@@ -869,7 +1064,7 @@
         }
 
         function updateSitesCount() {
-            document.getElementById('sitesCount').textContent = sites.length;
+            document.getElementById('sitesCount').textContent = window.sites.length;
             document.getElementById('sitesTotal').textContent = totalSites;
         }
 
@@ -935,7 +1130,7 @@
         }
 
         function editSite(id) {
-            const site = sites.find(s => s.id === id);
+            const site = window.sites.find(s => s.id === id);
             if (!site) return;
 
             document.getElementById('modalTitle').textContent = 'Edit Site';
@@ -1322,12 +1517,12 @@
             }
 
             preview.value = content;
-            count.textContent = sites.length;
+            count.textContent = window.sites.length;
         }
 
         function generateCSV() {
             const headers = ['Site Name', 'Site URL', 'DR', 'DA', 'TF', 'CF', 'RD', 'RDm', 'Norm', 'KW', 'Traffic', 'GEO', 'Type', 'API Key', 'Links', 'Articles', 'Allow Articles', 'Public', 'Available'];
-            const rows = sites.map(s => [
+            const rows = window.sites.map(s => [
                 `"${(s.site_name || '').replace(/"/g, '""')}"`,
                 `"${(s.site_url || '').replace(/"/g, '""')}"`,
                 s.dr || 0,
@@ -1354,7 +1549,7 @@
 
         function generateTSV() {
             const headers = ['Site Name', 'Site URL', 'DR', 'DA', 'TF', 'CF', 'RD', 'RDm', 'Norm', 'KW', 'Traffic', 'GEO', 'Type', 'API Key', 'Links', 'Articles', 'Allow Articles', 'Public', 'Available'];
-            const rows = sites.map(s => [
+            const rows = window.sites.map(s => [
                 s.site_name || '',
                 s.site_url || '',
                 s.dr || 0,
@@ -1380,7 +1575,7 @@
         }
 
         function generatePlainText() {
-            return sites.map((s, index) => {
+            return window.sites.map((s, index) => {
                 return `Site #${index + 1}
 Name: ${s.site_name || 'N/A'}
 URL: ${s.site_url || 'N/A'}
@@ -1407,7 +1602,7 @@ ${'='.repeat(50)}`;
 
         function generateJSON() {
             // Export only essential fields for readability
-            const exportData = sites.map(s => ({
+            const exportData = window.sites.map(s => ({
                 site_name: s.site_name,
                 site_url: s.site_url,
                 dr: s.dr || 0,
@@ -1475,7 +1670,7 @@ ${'='.repeat(50)}`;
                 await SitesAPI.update(siteId, data);
 
                 // Обновляем локальные данные
-                const site = sites.find(s => s.id === siteId);
+                const site = window.sites.find(s => s.id === siteId);
                 if (site) site[field] = value;
 
                 // Обновляем цвет строки
@@ -1499,7 +1694,7 @@ ${'='.repeat(50)}`;
 
         // Обновить стиль строки на основе данных
         function updateRowStyle(siteId) {
-            const site = sites.find(s => s.id === siteId);
+            const site = window.sites.find(s => s.id === siteId);
             if (!site) return;
 
             const row = document.querySelector(`tr[data-site-id="${siteId}"]`);
@@ -1585,7 +1780,7 @@ ${'='.repeat(50)}`;
                         await SitesAPI.update(siteId, data);
 
                         // Обновляем локальные данные
-                        const site = sites.find(s => s.id === siteId);
+                        const site = window.sites.find(s => s.id === siteId);
                         if (site) site[field] = value;
 
                         successCount++;
@@ -1615,190 +1810,6 @@ ${'='.repeat(50)}`;
             document.getElementById('selectAllSites').checked = false;
             document.getElementById('selectAllSites').indeterminate = false;
             updateBulkActionsBar();
-        }
-
-        // ===== INLINE PRICE EDITING =====
-
-        function enablePriceEdit(cell, siteId, field) {
-            // Prevent multiple edits
-            if (cell.classList.contains('editing')) {
-                return;
-            }
-
-            // Get current value from sites array
-            const site = sites.find(s => s.id === siteId);
-            const currentValue = site ? site[field] : null;
-
-            cell.classList.add('editing');
-
-            // Hide display, create input
-            const display = cell.querySelector('.price-display');
-            display.classList.add('d-none');
-
-            // Create input element
-            const input = document.createElement('input');
-            input.type = 'number';
-            input.className = 'form-control form-control-sm price-input';
-            input.min = '0';
-            input.step = '0.01';
-            input.value = currentValue || '';
-            input.placeholder = cell.dataset.default;
-
-            // Event handlers
-            input.onblur = () => savePriceEdit(cell, siteId, field);
-            input.onkeydown = (e) => handlePriceKeydown(e, cell, siteId, field);
-
-            // Insert and focus
-            cell.appendChild(input);
-            input.focus();
-            input.select();
-        }
-
-        async function savePriceEdit(cell, siteId, field) {
-            const input = cell.querySelector('.price-input');
-            if (!input) return;
-
-            const value = input.value.trim();
-            const numericValue = value === '' ? null : parseFloat(value);
-
-            // Validation
-            if (numericValue !== null && (isNaN(numericValue) || numericValue < 0)) {
-                showNotification('Цена должна быть положительным числом', 'error');
-                input.focus();
-                return;
-            }
-
-            // Show saving state
-            cell.classList.add('saving');
-
-            try {
-                // API call
-                const data = {};
-                data[field] = numericValue;
-                await SitesAPI.update(siteId, data);
-
-                // Update local data
-                const site = sites.find(s => s.id === siteId);
-                if (site) site[field] = numericValue;
-
-                // Re-render cell
-                const defaultValue = field === 'price_link' ? 25 : 15;
-                const display = cell.querySelector('.price-display');
-                if (numericValue !== null) {
-                    display.innerHTML = `<span class="text-success">${numericValue.toFixed(2)}</span>`;
-                } else {
-                    display.innerHTML = `<span class="text-muted">$${defaultValue}</span>`;
-                }
-
-                showNotification('Цена обновлена', 'success');
-            } catch (error) {
-                showNotification('Ошибка: ' + error.message, 'error');
-            } finally {
-                // Cleanup
-                input.remove();
-                cell.querySelector('.price-display').classList.remove('d-none');
-                cell.classList.remove('editing', 'saving');
-            }
-        }
-
-        function handlePriceKeydown(event, cell, siteId, field) {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                savePriceEdit(cell, siteId, field);
-            } else if (event.key === 'Escape') {
-                // Cancel edit
-                const input = cell.querySelector('.price-input');
-                if (input) input.remove();
-                cell.querySelector('.price-display').classList.remove('d-none');
-                cell.classList.remove('editing');
-            }
-        }
-
-        // ===== BULK PRICE UPDATES =====
-
-        let currentBulkField = null;
-
-        function showBulkPriceModal(field) {
-            currentBulkField = field;
-
-            const count = selectedSiteIds.size;
-            if (count === 0) {
-                showNotification('Выберите сайты для изменения', 'warning');
-                return;
-            }
-
-            // Set modal content
-            const fieldName = field === 'price_link' ? 'цену за ссылку (Main)' : 'цену за гест-пост (GP)';
-            document.getElementById('bulkPriceFieldName').textContent = fieldName;
-            document.getElementById('bulkPriceCount').textContent = count;
-            document.getElementById('bulkPriceValue').value = '';
-
-            // Open modal
-            const modal = new bootstrap.Modal(document.getElementById('bulkPriceModal'));
-            modal.show();
-        }
-
-        async function applyBulkPrice() {
-            const value = document.getElementById('bulkPriceValue').value.trim();
-            const numericValue = value === '' ? null : parseFloat(value);
-
-            // Validation
-            if (numericValue !== null && (isNaN(numericValue) || numericValue < 0)) {
-                showNotification('Цена должна быть положительным числом', 'error');
-                return;
-            }
-
-            const count = selectedSiteIds.size;
-            const fieldName = currentBulkField === 'price_link' ? 'ссылку' : 'гест-пост';
-            const priceText = numericValue !== null ? `$${numericValue.toFixed(2)}` : 'дефолтную';
-
-            // Confirmation
-            if (!confirm(`Изменить цену за ${fieldName} для ${count} сайтов на ${priceText}?`)) {
-                return;
-            }
-
-            // Close modal
-            bootstrap.Modal.getInstance(document.getElementById('bulkPriceModal')).hide();
-
-            // Process in chunks of 10
-            const siteIds = Array.from(selectedSiteIds);
-            const CHUNK_SIZE = 10;
-            let successful = 0;
-            let failed = 0;
-
-            for (let i = 0; i < siteIds.length; i += CHUNK_SIZE) {
-                const chunk = siteIds.slice(i, i + CHUNK_SIZE);
-                const data = {};
-                data[currentBulkField] = numericValue;
-
-                const results = await Promise.allSettled(
-                    chunk.map(siteId => SitesAPI.update(siteId, data))
-                );
-
-                results.forEach((result, idx) => {
-                    if (result.status === 'fulfilled') {
-                        successful++;
-                        const site = sites.find(s => s.id === chunk[idx]);
-                        if (site) site[currentBulkField] = numericValue;
-                    } else {
-                        failed++;
-                    }
-                });
-
-                // Show progress
-                showNotification(`Обновлено ${successful} из ${siteIds.length}...`, 'info');
-            }
-
-            // Final notification
-            if (failed === 0) {
-                showNotification(`✅ Цены обновлены для всех ${successful} сайтов`, 'success');
-            } else {
-                showNotification(`⚠️ Обновлено: ${successful}, ошибок: ${failed}`, 'warning');
-            }
-
-            // Reload and clear
-            await loadSites();
-            clearBulkSelection();
         }
     </script>
 
