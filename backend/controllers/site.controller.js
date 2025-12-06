@@ -157,7 +157,7 @@ const createSite = async (req, res) => {
       userId: req.user.id
     });
 
-    res.json(site);
+    res.json({ data: site });
   } catch (error) {
     logger.error('Create site error:', error);
     res.status(500).json({ error: 'Failed to create site' });
