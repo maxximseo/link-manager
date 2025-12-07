@@ -34,9 +34,9 @@ async function loadBalanceData() {
         const result = await response.json();
         const data = result.data;
 
-        currentBalance = parseFloat(data.balance);
-        totalSpent = parseFloat(data.totalSpent);
-        currentDiscount = parseInt(data.currentDiscount);
+        currentBalance = parseFloat(data.balance) || 0;
+        totalSpent = parseFloat(data.totalSpent) || 0;
+        currentDiscount = parseInt(data.currentDiscount) || 0;
 
         // Update UI
         document.getElementById('currentBalance').textContent = currentBalance.toFixed(2);
