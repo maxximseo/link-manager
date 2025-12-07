@@ -13,6 +13,19 @@ const cache = require('../services/cache.service');
 const queueService = require('../config/queue');
 const Sentry = require('@sentry/node');
 const { runManualBackup } = require('../cron/database-backup.cron');
+const emailService = require('../services/email.service');
+
+// Anomaly thresholds
+const THRESHOLDS = {
+  AVG_RESPONSE_TIME_MS: 500, // Alert if avg response > 500ms
+  ERROR_RATE_PERCENT: 5, // Alert if error rate > 5%
+  MEMORY_USAGE_PERCENT: 85, // Alert if memory usage > 85%
+  DB_WAITING_CONNECTIONS: 5 // Alert if waiting connections > 5
+};
+
+// Debounce email alerts (1 per 30 minutes per type)
+const lastAlertSent = {};
+const ALERT_DEBOUNCE_MS = 30 * 60 * 1000; // 30 minutes
 
 // Track server start time and request metrics
 const serverStartTime = Date.now();
