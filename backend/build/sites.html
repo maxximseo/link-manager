@@ -173,42 +173,42 @@
         </div>
 
         <!-- Bulk Actions Bar (скрыта по умолчанию) -->
-        <div id="bulkActionsBar" class="alert alert-primary py-1 d-none mb-2" style="font-size: 10px;">
+        <div id="bulkActionsBar" class="alert alert-primary py-1 d-none mb-2" style="font-size: 12px;">
             <div class="d-flex align-items-center flex-wrap gap-2">
                 <strong class="me-2">Выбрано: <span id="selectedCount">0</span></strong>
                 <div class="btn-group btn-group-sm" role="group">
-                    <button class="btn btn-success py-1 px-2" onclick="bulkSetField('allow_articles', true)">
+                    <button class="btn btn-light border py-1 px-2" style="background: white !important; color: #333 !important; font-size: 12px;" onclick="bulkSetField('allow_articles', true)">
                         <i class="bi bi-file-text-fill"></i> Статьи ВКЛ
                     </button>
-                    <button class="btn btn-outline-secondary py-1 px-2" onclick="bulkSetField('allow_articles', false)">
+                    <button class="btn btn-light border py-1 px-2" style="background: white !important; color: #333 !important; font-size: 12px;" onclick="bulkSetField('allow_articles', false)">
                         <i class="bi bi-file-text"></i> ВЫКЛ
                     </button>
                 </div>
                 <div class="btn-group btn-group-sm admin-only-field" role="group" id="bulkPublicButtons" style="display: none;">
-                    <button class="btn btn-primary py-1 px-2" onclick="bulkSetField('is_public', true)">
+                    <button class="btn btn-light border py-1 px-2" style="background: white !important; color: #333 !important; font-size: 12px;" onclick="bulkSetField('is_public', true)">
                         <i class="bi bi-globe"></i> Публичные
                     </button>
-                    <button class="btn btn-outline-secondary py-1 px-2" onclick="bulkSetField('is_public', false)">
+                    <button class="btn btn-light border py-1 px-2" style="background: white !important; color: #333 !important; font-size: 12px;" onclick="bulkSetField('is_public', false)">
                         <i class="bi bi-lock-fill"></i> Личные
                     </button>
                 </div>
                 <div class="btn-group btn-group-sm" role="group">
-                    <button class="btn btn-success py-1 px-2" onclick="bulkSetField('available_for_purchase', true)">
+                    <button class="btn btn-light border py-1 px-2" style="background: white !important; color: #333 !important; font-size: 12px;" onclick="bulkSetField('available_for_purchase', true)">
                         <i class="bi bi-cart-check-fill"></i> Покупка ВКЛ
                     </button>
-                    <button class="btn btn-outline-danger py-1 px-2" onclick="bulkSetField('available_for_purchase', false)">
+                    <button class="btn btn-light border py-1 px-2" style="background: white !important; color: #333 !important; font-size: 12px;" onclick="bulkSetField('available_for_purchase', false)">
                         <i class="bi bi-cart-x-fill"></i> ВЫКЛ
                     </button>
                 </div>
                 <div class="btn-group btn-group-sm" role="group">
-                    <button class="btn btn-outline-success py-1 px-2 bulk-price-btn" data-field="price_link">
+                    <button class="btn btn-light border py-1 px-2 bulk-price-btn" style="background: white !important; color: #333 !important; font-size: 12px;" data-field="price_link">
                         <i class="bi bi-cash-stack"></i> Цена Main
                     </button>
-                    <button class="btn btn-outline-info py-1 px-2 bulk-price-btn" data-field="price_article">
+                    <button class="btn btn-light border py-1 px-2 bulk-price-btn" style="background: white !important; color: #333 !important; font-size: 12px;" data-field="price_article">
                         <i class="bi bi-file-text"></i> Цена GP
                     </button>
                 </div>
-                <button class="btn btn-sm btn-secondary py-1 px-2" onclick="clearBulkSelection()">
+                <button class="btn btn-sm btn-light border py-1 px-2" style="background: white !important; color: #333 !important; font-size: 12px;" onclick="clearBulkSelection()">
                     <i class="bi bi-x-lg"></i> Отмена
                 </button>
             </div>
@@ -1108,8 +1108,8 @@
                 const cleanSiteName = (s.site_name || '').replace(/^https?:\/\//, '').replace(/\/$/, '');
 
                 return `
-                <tr class="${rowClass}" data-site-id="${s.id}">
-                    <td class="text-center">
+                <tr class="${rowClass}" data-site-id="${s.id}" onclick="toggleRowSelection(event, ${s.id})" style="cursor: pointer;">
+                    <td class="text-center" onclick="event.stopPropagation();">
                         <input type="checkbox" class="form-check-input site-checkbox" data-site-id="${s.id}" onchange="updateBulkSelection()">
                     </td>
                     <td style="max-width: 200px;">
@@ -1952,6 +1952,20 @@ ${'='.repeat(50)}`;
             });
 
             updateBulkActionsBar();
+        }
+
+        // Переключить выбор строки при клике
+        function toggleRowSelection(event, siteId) {
+            // Не переключать если клик был на price-cell (редактирование цены)
+            if (event.target.closest('.price-cell')) {
+                return;
+            }
+
+            const checkbox = document.querySelector(`.site-checkbox[data-site-id="${siteId}"]`);
+            if (checkbox) {
+                checkbox.checked = !checkbox.checked;
+                updateBulkSelection();
+            }
         }
 
         // Обновить состояние выбора
