@@ -315,5 +315,93 @@ router.post('/backup', backupLimiter, async (req, res) => {
   }
 });
 
+/**
+ * Check for system anomalies and send email alerts
+ * Called by cron job every 5 minutes
+ */
+async function checkAnomaliesAndAlert() {
+  const { pool } = require('../config/database');
+  const anomalies = [];
+
+  // Calculate average response time
+  const avgResponseTime =
+    requestMetrics.responseTimes.length > 0
+      ? requestMetrics.responseTimes.reduce((a, b) => a + b, 0) / requestMetrics.responseTimes.length
+      : 0;
+
+  // Check response time
+  if (avgResponseTime > THRESHOLDS.AVG_RESPONSE_TIME_MS) {
+    anomalies.push(`Высокое время ответа: ${Math.round(avgResponseTime)}ms (порог: ${THRESHOLDS.AVG_RESPONSE_TIME_MS}ms)`);
+  }
+
+  // Check error rate
+  if (requestMetrics.total > 100) {
+    const errorRate = (requestMetrics.errors.count / requestMetrics.total) * 100;
+    if (errorRate > THRESHOLDS.ERROR_RATE_PERCENT) {
+      anomalies.push(`Высокий процент ошибок: ${errorRate.toFixed(1)}% (порог: ${THRESHOLDS.ERROR_RATE_PERCENT}%)`);
+    }
+  }
+
+  // Check memory usage
+  const memUsage = process.memoryUsage();
+  const heapUsedPercent = (memUsage.heapUsed / memUsage.heapTotal) * 100;
+  if (heapUsedPercent > THRESHOLDS.MEMORY_USAGE_PERCENT) {
+    anomalies.push(`Высокое использование памяти: ${heapUsedPercent.toFixed(1)}% (порог: ${THRESHOLDS.MEMORY_USAGE_PERCENT}%)`);
+  }
+
+  // Check database pool
+  if (pool.waitingCount > THRESHOLDS.DB_WAITING_CONNECTIONS) {
+    anomalies.push(`Много ожидающих DB соединений: ${pool.waitingCount} (порог: ${THRESHOLDS.DB_WAITING_CONNECTIONS})`);
+  }
+
+  // Check Redis
+  let redisStatus = 'connected';
+  try {
+    await cache.set('anomaly:check', '1', 5);
+    const val = await cache.get('anomaly:check');
+    if (val !== '1') redisStatus = 'degraded';
+  } catch (_e) {
+    redisStatus = 'disconnected';
+    anomalies.push('Redis недоступен');
+  }
+
+  // If anomalies found, send alert (with debounce)
+  if (anomalies.length > 0) {
+    const alertKey = anomalies.sort().join('|');
+    const now = Date.now();
+
+    if (!lastAlertSent[alertKey] || now - lastAlertSent[alertKey] > ALERT_DEBOUNCE_MS) {
+      lastAlertSent[alertKey] = now;
+
+      const uptimeMs = Date.now() - serverStartTime;
+      const metrics = {
+        uptime: `${Math.floor(uptimeMs / (1000 * 60 * 60 * 24))}d ${Math.floor((uptimeMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))}h`,
+        memory: {
+          heapUsedMB: Math.round(memUsage.heapUsed / 1024 / 1024),
+          heapTotalMB: Math.round(memUsage.heapTotal / 1024 / 1024)
+        },
+        database: {
+          total: pool.totalCount,
+          idle: pool.idleCount,
+          waiting: pool.waitingCount
+        },
+        redis: { status: redisStatus },
+        requests: {
+          total: requestMetrics.total,
+          avgResponseTimeMs: Math.round(avgResponseTime),
+          errors: requestMetrics.errors
+        }
+      };
+
+      await emailService.sendHealthAlert(metrics, anomalies);
+      return { alerted: true, anomalies };
+    }
+  }
+
+  return { alerted: false, anomalies };
+}
+
 module.exports = router;
 module.exports.trackRequest = trackRequest;
+module.exports.checkAnomaliesAndAlert = checkAnomaliesAndAlert;
+module.exports.requestMetrics = requestMetrics;
