@@ -102,8 +102,8 @@ async function loadBalance() {
         if (!response.ok) throw new Error('Failed to load balance');
 
         const result = await response.json();
-        userBalance = parseFloat(result.data.balance);
-        userDiscount = parseInt(result.data.currentDiscount);
+        userBalance = parseFloat(result.data.balance) || 0;
+        userDiscount = parseInt(result.data.currentDiscount) || 0;
 
         // Update navbar
         const navBalance = document.getElementById('navBalance');
