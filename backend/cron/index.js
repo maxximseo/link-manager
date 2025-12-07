@@ -8,6 +8,7 @@ const { initAutoRenewalCron } = require('./auto-renewal.cron');
 const { initScheduledPlacementsCron } = require('./scheduled-placements.cron');
 const { scheduleLogCleanup } = require('./cleanup-logs.cron');
 const { initDatabaseBackupCron } = require('./database-backup.cron');
+const { initHealthMonitor } = require('./health-monitor.cron');
 
 /**
  * Initialize all cron jobs
@@ -27,6 +28,9 @@ function initCronJobs() {
 
     // Initialize database backup cron (every 12 hours at 00:00 and 12:00 UTC)
     initDatabaseBackupCron();
+
+    // Initialize health monitor cron (every 5 minutes)
+    initHealthMonitor();
 
     logger.info('All cron jobs initialized successfully');
   } catch (error) {
