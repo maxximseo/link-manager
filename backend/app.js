@@ -94,6 +94,9 @@ app.use('/api', routes);
 const healthRoutes = require('./routes/health.routes');
 app.use('/health', healthRoutes);
 
+// Track request metrics for /health/metrics endpoint
+app.use('/api', healthRoutes.trackRequest);
+
 // Sentry test endpoint (development only)
 app.get('/debug-sentry', (req, res) => {
   if (process.env.NODE_ENV === 'production') {
