@@ -87,15 +87,15 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Static files
 app.use(express.static(path.join(__dirname, 'build')));
 
-// API routes
-app.use('/api', routes);
-
 // Comprehensive health check endpoint (monitoring)
 const healthRoutes = require('./routes/health.routes');
 app.use('/health', healthRoutes);
 
-// Track request metrics for /health/metrics endpoint
+// Track request metrics for /health/metrics endpoint (BEFORE routes)
 app.use('/api', healthRoutes.trackRequest);
+
+// API routes
+app.use('/api', routes);
 
 // Sentry test endpoint (development only)
 app.get('/debug-sentry', (req, res) => {
