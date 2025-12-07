@@ -139,6 +139,110 @@ router.get('/', healthLimiter, async (req, res) => {
   res.status(statusCode).json(health);
 });
 
+// Detailed metrics endpoint for monitoring
+router.get('/metrics', healthLimiter, async (_req, res) => {
+  const { pool } = require('../config/database');
+
+  // Calculate uptime
+  const uptimeMs = Date.now() - serverStartTime;
+  const uptimeDays = Math.floor(uptimeMs / (1000 * 60 * 60 * 24));
+  const uptimeHours = Math.floor((uptimeMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const uptimeMinutes = Math.floor((uptimeMs % (1000 * 60 * 60)) / (1000 * 60));
+
+  // Calculate average response time
+  const avgResponseTime =
+    requestMetrics.responseTimes.length > 0
+      ? Math.round(
+          requestMetrics.responseTimes.reduce((a, b) => a + b, 0) /
+            requestMetrics.responseTimes.length
+        )
+      : 0;
+
+  // Get database pool stats
+  const dbStats = {
+    total: pool.totalCount,
+    idle: pool.idleCount,
+    waiting: pool.waitingCount
+  };
+
+  // Get Redis status
+  let redisStatus = 'disconnected';
+  try {
+    await cache.set('metrics:ping', '1', 5);
+    const val = await cache.get('metrics:ping');
+    redisStatus = val === '1' ? 'connected' : 'degraded';
+  } catch (_e) {
+    redisStatus = 'disconnected';
+  }
+
+  // Get queue stats
+  let queueStats = null;
+  try {
+    const placementQueue = queueService.getQueue('placement');
+    if (placementQueue) {
+      const counts = await placementQueue.getJobCounts();
+      queueStats = {
+        waiting: counts.waiting,
+        active: counts.active,
+        completed: counts.completed,
+        failed: counts.failed
+      };
+    }
+  } catch (_e) {
+    queueStats = null;
+  }
+
+  // Get database stats
+  let dbRecordCounts = {};
+  try {
+    const [users, projects, sites, placements] = await Promise.all([
+      query('SELECT COUNT(*) as count FROM users'),
+      query('SELECT COUNT(*) as count FROM projects'),
+      query('SELECT COUNT(*) as count FROM sites'),
+      query('SELECT COUNT(*) as count FROM placements')
+    ]);
+    dbRecordCounts = {
+      users: parseInt(users.rows[0].count) || 0,
+      projects: parseInt(projects.rows[0].count) || 0,
+      sites: parseInt(sites.rows[0].count) || 0,
+      placements: parseInt(placements.rows[0].count) || 0
+    };
+  } catch (_e) {
+    dbRecordCounts = { error: 'Failed to fetch counts' };
+  }
+
+  // Top 5 endpoints by traffic
+  const topEndpoints = Object.entries(requestMetrics.byEndpoint)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([endpoint, count]) => ({ endpoint, count }));
+
+  res.json({
+    uptime: `${uptimeDays}d ${uptimeHours}h ${uptimeMinutes}m`,
+    uptimeSeconds: Math.floor(uptimeMs / 1000),
+    requests: {
+      total: requestMetrics.total,
+      avgResponseTimeMs: avgResponseTime,
+      errors: requestMetrics.errors
+    },
+    topEndpoints,
+    database: {
+      pool: dbStats,
+      records: dbRecordCounts
+    },
+    redis: {
+      status: redisStatus
+    },
+    queue: queueStats,
+    memory: {
+      heapUsedMB: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+      heapTotalMB: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
+      rssMB: Math.round(process.memoryUsage().rss / 1024 / 1024)
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Sentry test endpoint (development only)
 router.get('/sentry-test', healthLimiter, (req, res) => {
   if (process.env.NODE_ENV === 'production') {
