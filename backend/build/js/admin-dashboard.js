@@ -190,8 +190,8 @@ async function loadDashboardStats(period = 'week') {
 
         // Update user stats
         document.getElementById('newUsers').textContent = stats.users.newUsers;
-        document.getElementById('totalUserBalance').textContent = parseFloat(stats.users.totalBalance).toFixed(2);
-        document.getElementById('totalUserSpending').textContent = parseFloat(stats.users.totalSpending).toFixed(2);
+        document.getElementById('totalUserBalance').textContent = parseFloat(stats.users.totalBalance || 0).toFixed(2);
+        document.getElementById('totalUserSpending').textContent = parseFloat(stats.users.totalSpending || 0).toFixed(2);
 
         // Update charts
         await updateRevenueByTypeChart(stats.revenue);
