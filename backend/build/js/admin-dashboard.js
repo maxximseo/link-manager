@@ -21,6 +21,7 @@ let revenueTimelineChart = null;
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', async () => {
+    await loadSystemHealth();
     await loadMultiPeriodRevenue();
     await loadDashboardStats('week');
     await loadRecentPurchases();
@@ -31,7 +32,109 @@ document.addEventListener('DOMContentLoaded', async () => {
             await loadDashboardStats(e.target.value);
         });
     });
+
+    // Auto-refresh system health every 30 seconds
+    setInterval(loadSystemHealth, 30000);
 });
+
+/**
+ * Load system health metrics
+ */
+async function loadSystemHealth() {
+    try {
+        const response = await fetch('/health/metrics');
+        if (!response.ok) throw new Error('Failed to load health metrics');
+
+        const data = await response.json();
+
+        // Update uptime
+        document.getElementById('healthUptime').textContent = data.uptime;
+
+        // Update requests
+        document.getElementById('healthRequests').textContent = data.requests.total.toLocaleString();
+
+        // Update avg response time with color coding
+        const avgResponse = data.requests.avgResponseTimeMs;
+        const avgResponseEl = document.getElementById('healthAvgResponse');
+        avgResponseEl.textContent = `${avgResponse}ms`;
+        avgResponseEl.className = 'mb-0';
+        if (avgResponse > 500) {
+            avgResponseEl.classList.add('text-danger');
+        } else if (avgResponse > 200) {
+            avgResponseEl.classList.add('text-warning');
+        } else {
+            avgResponseEl.classList.add('text-success');
+        }
+
+        // Update errors with color coding
+        const errors = data.requests.errors.count;
+        const errorsEl = document.getElementById('healthErrors');
+        errorsEl.textContent = errors.toLocaleString();
+        errorsEl.className = 'mb-0';
+        if (errors > 10) {
+            errorsEl.classList.add('text-danger');
+        } else if (errors > 0) {
+            errorsEl.classList.add('text-warning');
+        } else {
+            errorsEl.classList.add('text-success');
+        }
+
+        // Update memory
+        const memoryEl = document.getElementById('healthMemory');
+        memoryEl.textContent = `${data.memory.heapUsedMB}/${data.memory.heapTotalMB} MB`;
+        const memoryPercent = (data.memory.heapUsedMB / data.memory.heapTotalMB) * 100;
+        memoryEl.className = 'mb-0';
+        if (memoryPercent > 85) {
+            memoryEl.classList.add('text-danger');
+        } else if (memoryPercent > 70) {
+            memoryEl.classList.add('text-warning');
+        }
+
+        // Update DB pool
+        const dbPool = data.database.pool;
+        const dbPoolEl = document.getElementById('healthDbPool');
+        dbPoolEl.textContent = `${dbPool.idle}/${dbPool.total}`;
+        dbPoolEl.className = 'mb-0';
+        if (dbPool.waiting > 0) {
+            dbPoolEl.classList.add('text-warning');
+            dbPoolEl.textContent += ` (${dbPool.waiting} wait)`;
+        }
+
+        // Update Redis status
+        const redisEl = document.getElementById('healthRedisStatus');
+        redisEl.textContent = data.redis.status;
+        redisEl.className = 'badge me-2';
+        if (data.redis.status === 'connected') {
+            redisEl.classList.add('bg-success');
+        } else if (data.redis.status === 'degraded') {
+            redisEl.classList.add('bg-warning');
+        } else {
+            redisEl.classList.add('bg-danger');
+        }
+
+        // Update Queue status
+        const queueEl = document.getElementById('healthQueueStatus');
+        if (data.queue) {
+            queueEl.textContent = `Active: ${data.queue.active}, Failed: ${data.queue.failed}`;
+            queueEl.className = 'badge me-2';
+            if (data.queue.failed > 0) {
+                queueEl.classList.add('bg-warning');
+            } else {
+                queueEl.classList.add('bg-success');
+            }
+        } else {
+            queueEl.textContent = 'N/A';
+            queueEl.className = 'badge me-2 bg-secondary';
+        }
+
+        // Update timestamp
+        const timestamp = new Date(data.timestamp);
+        document.getElementById('healthTimestamp').textContent = timestamp.toLocaleTimeString('ru-RU');
+
+    } catch (error) {
+        console.error('Failed to load system health:', error);
+    }
+}
 
 /**
  * Load multi-period revenue (all periods at once)

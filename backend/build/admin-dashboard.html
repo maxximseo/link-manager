@@ -14,6 +14,78 @@
     <div id="navbar-container"></div>
 
     <div class="container mt-4">
+        <!-- System Health Widget -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-dark">
+                    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">🖥️ Состояние системы</h5>
+                        <button class="btn btn-sm btn-outline-light" onclick="loadSystemHealth()">
+                            <i class="bi bi-arrow-clockwise"></i> Обновить
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-2">
+                                <div class="text-center">
+                                    <small class="text-muted">Uptime</small>
+                                    <h5 id="healthUptime" class="mb-0">—</h5>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="text-center">
+                                    <small class="text-muted">Запросов</small>
+                                    <h5 id="healthRequests" class="mb-0">0</h5>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="text-center">
+                                    <small class="text-muted">Avg Response</small>
+                                    <h5 id="healthAvgResponse" class="mb-0">0ms</h5>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="text-center">
+                                    <small class="text-muted">Ошибок</small>
+                                    <h5 id="healthErrors" class="mb-0 text-success">0</h5>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="text-center">
+                                    <small class="text-muted">Memory</small>
+                                    <h5 id="healthMemory" class="mb-0">0 MB</h5>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="text-center">
+                                    <small class="text-muted">DB Pool</small>
+                                    <h5 id="healthDbPool" class="mb-0">0/0</h5>
+                                </div>
+                            </div>
+                        </div>
+                        <hr class="my-3">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-center">
+                                    <span class="badge me-2" id="healthRedisStatus">—</span>
+                                    <small>Redis</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-center">
+                                    <span class="badge me-2" id="healthQueueStatus">—</span>
+                                    <small>Queue</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <small class="text-muted">Обновлено: <span id="healthTimestamp">—</span></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>📊 Админ Dashboard</h1>
             <div class="btn-group" role="group">
