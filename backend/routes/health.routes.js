@@ -14,6 +14,40 @@ const queueService = require('../config/queue');
 const Sentry = require('@sentry/node');
 const { runManualBackup } = require('../cron/database-backup.cron');
 
+// Track server start time and request metrics
+const serverStartTime = Date.now();
+const requestMetrics = {
+  total: 0,
+  byEndpoint: {},
+  responseTimes: [],
+  errors: { count: 0, last: null }
+};
+
+// Middleware to track requests (call this from app.js)
+function trackRequest(req, res, next) {
+  const start = Date.now();
+  requestMetrics.total++;
+
+  const endpoint = `${req.method} ${req.path}`;
+  requestMetrics.byEndpoint[endpoint] = (requestMetrics.byEndpoint[endpoint] || 0) + 1;
+
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    // Keep last 100 response times for averaging
+    requestMetrics.responseTimes.push(duration);
+    if (requestMetrics.responseTimes.length > 100) {
+      requestMetrics.responseTimes.shift();
+    }
+
+    if (res.statusCode >= 500) {
+      requestMetrics.errors.count++;
+      requestMetrics.errors.last = new Date().toISOString();
+    }
+  });
+
+  next();
+}
+
 // SECURITY: Constant-time comparison to prevent timing attacks
 function secureCompare(a, b) {
   if (!a || !b) return false;
