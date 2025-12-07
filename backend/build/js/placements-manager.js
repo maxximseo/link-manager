@@ -177,7 +177,7 @@ function renderActivePlacements(placements) {
 
         // Actions - using btn-xs for 3x smaller buttons
         const renewBtn = p.type === 'link' && p.renewal_price
-            ? `<button class="btn btn-xs btn-success me-1" onclick="renewPlacement(${p.id})" title="Продлить за $${parseFloat(p.renewal_price).toFixed(2)}">
+            ? `<button class="btn btn-xs btn-success me-1" onclick="renewPlacement(${p.id})" title="Продлить за $${parseFloat(p.renewal_price || 0).toFixed(2)}">
                  <i class="bi bi-arrow-repeat"></i> Продлить
                </button>`
             : '';
