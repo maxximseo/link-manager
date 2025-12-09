@@ -33,6 +33,9 @@ function initCronJobs() {
     // Initialize health monitor cron (every 5 minutes)
     initHealthMonitor();
 
+    // Initialize expired placements cleanup cron (daily at 01:00 UTC)
+    initExpiredPlacementsCleanupCron();
+
     logger.info('All cron jobs initialized successfully');
   } catch (error) {
     logger.error('Failed to initialize cron jobs', {
