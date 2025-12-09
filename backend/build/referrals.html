@@ -83,11 +83,35 @@
             </div>
         </div>
 
+        <!-- USDT Wallet Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-wallet2"></i> Кошелёк USDT TRC20</h5>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-currency-bitcoin"></i></span>
+                            <input type="text" class="form-control" id="usdtWallet" placeholder="TRC20 адрес (начинается с T)" maxlength="34">
+                            <button class="btn btn-primary" type="button" onclick="saveWallet()">
+                                <i class="bi bi-save"></i> Сохранить
+                            </button>
+                        </div>
+                        <small class="text-muted">Только сеть TRC20 (Tron). Адрес начинается с T и содержит 34 символа.</small>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <span id="walletStatus" class="badge bg-secondary">Не указан</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Withdraw Button -->
         <div class="card mb-4">
             <div class="card-body d-flex justify-content-between align-items-center">
                 <div>
-                    <h5 class="mb-1">Вывод на основной баланс</h5>
+                    <h5 class="mb-1">Вывод средств</h5>
                     <small class="text-muted">Минимальная сумма вывода: $200. Комиссия: 0%</small>
                 </div>
                 <button class="btn btn-success btn-lg" id="withdrawBtn" onclick="showWithdrawModal()" disabled>
@@ -208,20 +232,47 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Вывод на основной баланс</h5>
+                    <h5 class="modal-title">Вывод средств</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="alert alert-success">
                         <strong>Доступно для вывода:</strong> $<span id="withdrawAvailable">0.00</span>
                     </div>
-                    <p>Вся доступная сумма будет переведена на ваш основной баланс для покупки размещений.</p>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Куда выводить:</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="withdrawType" id="withdrawToBalance" value="balance" checked>
+                            <label class="form-check-label" for="withdrawToBalance">
+                                <i class="bi bi-wallet"></i> На основной баланс <span class="text-muted">(мгновенно)</span>
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="withdrawType" id="withdrawToWallet" value="wallet">
+                            <label class="form-check-label" for="withdrawToWallet">
+                                <i class="bi bi-currency-bitcoin"></i> На USDT кошелёк <span class="text-muted">(до 24ч)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="walletWithdrawInfo" class="alert alert-info d-none">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Кошелёк:</strong> <span id="withdrawWalletAddress">-</span>
+                        <br><small>Выплата в USDT TRC20 в течение 24 часов после проверки.</small>
+                    </div>
+
+                    <div id="noWalletWarning" class="alert alert-warning d-none">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Кошелёк не указан. Сначала сохраните адрес USDT TRC20 кошелька.
+                    </div>
+
                     <p class="text-muted mb-0"><small>Минимальная сумма вывода: $200. Комиссия: 0%</small></p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="button" class="btn btn-success" onclick="withdrawBalance()">
-                        <i class="bi bi-cash-stack"></i> Вывести всё
+                    <button type="button" class="btn btn-success" id="confirmWithdrawBtn" onclick="confirmWithdraw()">
+                        <i class="bi bi-cash-stack"></i> Вывести
                     </button>
                 </div>
             </div>
