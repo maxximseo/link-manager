@@ -332,8 +332,9 @@ const validateReferralCode = async (code) => {
       return { valid: false, error: 'Referral code is required' };
     }
 
+    // Case-insensitive search for referral code
     const result = await query(
-      'SELECT id, username FROM users WHERE referral_code = $1',
+      'SELECT id, username FROM users WHERE LOWER(referral_code) = LOWER($1)',
       [code]
     );
 
