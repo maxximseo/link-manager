@@ -42,6 +42,14 @@
                            placeholder="Re-enter password">
                 </div>
 
+                <div class="form-group">
+                    <label for="referralCode">Referral Code (optional)</label>
+                    <input type="text" id="referralCode" name="referralCode" autocomplete="off"
+                           pattern="[a-zA-Z0-9_-]+" maxlength="50"
+                           placeholder="Enter referral code if you have one">
+                    <small style="color: #64748b; font-size: 0.85rem;">If someone invited you, enter their code</small>
+                </div>
+
                 <button type="submit" class="btn" id="registerBtn">
                     <span id="registerText">Create Account</span>
                     <span id="registerSpinner" class="loading hidden"></span>
