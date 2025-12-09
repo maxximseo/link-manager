@@ -288,7 +288,8 @@ async function withdrawBalance() {
 
     // Close modal and refresh stats
     bootstrap.Modal.getInstance(document.getElementById('withdrawModal')).hide();
-    showAlert(`Успешно выведено $${data.amount.toFixed(2)} на основной баланс!`, 'success');
+    const withdrawnAmount = data.data?.withdrawnAmount || data.withdrawnAmount || 0;
+    showAlert(`Успешно выведено $${withdrawnAmount.toFixed(2)} на основной баланс!`, 'success');
 
     // Reload stats to update balances
     await loadReferralStats();
