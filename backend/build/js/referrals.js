@@ -262,23 +262,150 @@ async function saveReferralCode() {
 }
 
 /**
+ * Load wallet address
+ */
+async function loadWallet() {
+  try {
+    const response = await fetch('/api/referrals/wallet', {
+      headers: {
+        'Authorization': `Bearer ${getToken()}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to load wallet');
+    }
+
+    const result = await response.json();
+    currentWallet = result.data?.wallet || null;
+
+    // Update wallet input and status
+    const walletInput = document.getElementById('usdtWallet');
+    const walletStatus = document.getElementById('walletStatus');
+
+    if (currentWallet) {
+      walletInput.value = currentWallet;
+      walletStatus.textContent = 'Сохранён';
+      walletStatus.className = 'badge bg-success';
+    } else {
+      walletInput.value = '';
+      walletStatus.textContent = 'Не указан';
+      walletStatus.className = 'badge bg-secondary';
+    }
+
+  } catch (error) {
+    console.error('Error loading wallet:', error);
+  }
+}
+
+/**
+ * Save wallet address
+ */
+async function saveWallet() {
+  const walletInput = document.getElementById('usdtWallet');
+  const wallet = walletInput.value.trim();
+
+  // Validate TRC20 format
+  if (!wallet || !/^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(wallet)) {
+    showAlert('Неверный формат TRC20 адреса. Должен начинаться с T и содержать 34 символа.', 'danger');
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/referrals/wallet', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${getToken()}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ wallet })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to save wallet');
+    }
+
+    currentWallet = wallet;
+    const walletStatus = document.getElementById('walletStatus');
+    walletStatus.textContent = 'Сохранён';
+    walletStatus.className = 'badge bg-success';
+
+    showAlert('Кошелёк успешно сохранён!', 'success');
+
+  } catch (error) {
+    console.error('Error saving wallet:', error);
+    showAlert(error.message || 'Ошибка сохранения кошелька', 'danger');
+  }
+}
+
+/**
  * Show withdraw modal
  */
 function showWithdrawModal() {
   document.getElementById('withdrawAvailable').textContent = currentBalance.toFixed(2);
+
+  // Reset to balance option
+  document.getElementById('withdrawToBalance').checked = true;
+
+  // Update wallet info
+  updateWithdrawModalState();
+
   const modal = new bootstrap.Modal(document.getElementById('withdrawModal'));
   modal.show();
 }
 
 /**
- * Withdraw balance to main account
+ * Update withdraw modal state based on selected type
  */
-async function withdrawBalance() {
+function updateWithdrawModalState() {
+  const withdrawType = document.querySelector('input[name="withdrawType"]:checked').value;
+  const walletInfo = document.getElementById('walletWithdrawInfo');
+  const noWalletWarning = document.getElementById('noWalletWarning');
+  const confirmBtn = document.getElementById('confirmWithdrawBtn');
+  const walletAddressSpan = document.getElementById('withdrawWalletAddress');
+
+  if (withdrawType === 'wallet') {
+    if (currentWallet) {
+      walletInfo.classList.remove('d-none');
+      noWalletWarning.classList.add('d-none');
+      walletAddressSpan.textContent = currentWallet.slice(0, 10) + '...' + currentWallet.slice(-6);
+      confirmBtn.disabled = false;
+    } else {
+      walletInfo.classList.add('d-none');
+      noWalletWarning.classList.remove('d-none');
+      confirmBtn.disabled = true;
+    }
+  } else {
+    walletInfo.classList.add('d-none');
+    noWalletWarning.classList.add('d-none');
+    confirmBtn.disabled = false;
+  }
+}
+
+/**
+ * Confirm withdrawal (either to balance or wallet)
+ */
+async function confirmWithdraw() {
   if (currentBalance < MINIMUM_WITHDRAWAL) {
     showAlert(`Минимальная сумма вывода: $${MINIMUM_WITHDRAWAL}`, 'warning');
     return;
   }
 
+  const withdrawType = document.querySelector('input[name="withdrawType"]:checked').value;
+
+  if (withdrawType === 'wallet') {
+    await withdrawToWallet();
+  } else {
+    await withdrawToBalance();
+  }
+}
+
+/**
+ * Withdraw balance to main account
+ */
+async function withdrawToBalance() {
   try {
     const response = await fetch('/api/referrals/withdraw', {
       method: 'POST',
@@ -304,9 +431,53 @@ async function withdrawBalance() {
     await loadTransactions();
 
   } catch (error) {
-    console.error('Error withdrawing balance:', error);
+    console.error('Error withdrawing to balance:', error);
     showAlert(error.message || 'Ошибка вывода средств', 'danger');
   }
+}
+
+/**
+ * Withdraw balance to USDT wallet
+ */
+async function withdrawToWallet() {
+  if (!currentWallet) {
+    showAlert('Сначала сохраните адрес USDT TRC20 кошелька', 'warning');
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/referrals/withdraw-to-wallet', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${getToken()}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to withdraw');
+    }
+
+    // Close modal and refresh stats
+    bootstrap.Modal.getInstance(document.getElementById('withdrawModal')).hide();
+    const amount = data.data?.amount || 0;
+    showAlert(`Заявка на вывод $${amount.toFixed(2)} на USDT кошелёк создана! Обработка до 24 часов.`, 'success');
+
+    // Reload stats to update balances
+    await loadReferralStats();
+    await loadTransactions();
+
+  } catch (error) {
+    console.error('Error withdrawing to wallet:', error);
+    showAlert(error.message || 'Ошибка создания заявки на вывод', 'danger');
+  }
+}
+
+// Keep old function name for backward compatibility
+async function withdrawBalance() {
+  await withdrawToBalance();
 }
 
 /**
