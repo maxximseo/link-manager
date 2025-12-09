@@ -86,12 +86,17 @@ function validateUsername(username) {
 }
 
 // Register function
-async function register(username, email, password, confirmPassword) {
+async function register(username, email, password, confirmPassword, referralCode) {
     try {
+        const body = { username, email, password, confirmPassword };
+        if (referralCode) {
+            body.referralCode = referralCode;
+        }
+
         const response = await fetch(`${API_BASE}/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, email, password, confirmPassword })
+            body: JSON.stringify(body)
         });
 
         const data = await response.json();
