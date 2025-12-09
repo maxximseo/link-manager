@@ -326,12 +326,180 @@ function renderTransactionsPagination(pagination) {
     container.appendChild(nav);
 }
 
+// Payment configuration
+let paymentConfig = {
+    enabled: false,
+    minAmount: 10,
+    maxAmount: 10000
+};
+
 /**
- * Process deposit
+ * Load payment configuration
+ */
+async function loadPaymentConfig() {
+    try {
+        const response = await fetch('/api/payments/config', {
+            headers: {
+                'Authorization': `Bearer ${getToken()}`
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            paymentConfig = data;
+
+            // Update UI limits
+            const minEl = document.getElementById('minDepositAmount');
+            const maxEl = document.getElementById('maxDepositAmount');
+            if (minEl) minEl.textContent = paymentConfig.minAmount;
+            if (maxEl) maxEl.textContent = paymentConfig.maxAmount.toLocaleString();
+
+            // Update input limits
+            const amountInput = document.getElementById('depositAmount');
+            if (amountInput) {
+                amountInput.min = paymentConfig.minAmount;
+                amountInput.max = paymentConfig.maxAmount;
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load payment config:', error);
+    }
+}
+
+/**
+ * Create payment invoice via CryptoCloud
+ */
+async function createPaymentInvoice() {
+    const amount = parseFloat(document.getElementById('depositAmount').value);
+
+    if (isNaN(amount) || amount < paymentConfig.minAmount || amount > paymentConfig.maxAmount) {
+        showAlert(`Сумма должна быть от $${paymentConfig.minAmount} до $${paymentConfig.maxAmount.toLocaleString()}`, 'danger');
+        return;
+    }
+
+    const btn = document.getElementById('createInvoiceBtn');
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Создание счёта...';
+
+    try {
+        const response = await fetch('/api/payments/create-invoice', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${getToken()}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ amount })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || 'Ошибка создания счёта');
+        }
+
+        // Show step 2 (invoice created)
+        document.getElementById('depositStep1').style.display = 'none';
+        document.getElementById('depositStep2').style.display = 'block';
+
+        // Update invoice info
+        document.getElementById('invoiceAmount').textContent = result.invoice.amount.toFixed(2);
+
+        if (result.invoice.expiresAt) {
+            const expiryDate = new Date(result.invoice.expiresAt);
+            document.getElementById('invoiceExpiry').textContent = expiryDate.toLocaleString('ru-RU');
+        } else {
+            document.getElementById('invoiceExpiry').textContent = '24 часа';
+        }
+
+        // Set payment link
+        document.getElementById('paymentLink').href = result.invoice.paymentLink;
+
+        showAlert('Счёт создан! Нажмите "Перейти к оплате" для оплаты криптовалютой.', 'success');
+
+    } catch (error) {
+        console.error('Failed to create invoice:', error);
+        showAlert(error.message || 'Ошибка создания счёта', 'danger');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+}
+
+/**
+ * Load pending invoices
+ */
+async function loadPendingInvoices() {
+    try {
+        const response = await fetch('/api/payments/pending', {
+            headers: {
+                'Authorization': `Bearer ${getToken()}`
+            }
+        });
+
+        if (!response.ok) return;
+
+        const result = await response.json();
+        const invoices = result.invoices || [];
+
+        if (invoices.length === 0) {
+            document.getElementById('pendingInvoicesSection').style.display = 'none';
+            return;
+        }
+
+        document.getElementById('pendingInvoicesSection').style.display = 'block';
+        const listEl = document.getElementById('pendingInvoicesList');
+        listEl.innerHTML = '';
+
+        invoices.forEach(inv => {
+            const item = document.createElement('div');
+            item.className = 'alert alert-info py-2 mb-2';
+            item.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>$${inv.amount.toFixed(2)}</strong>
+                        <small class="text-muted ms-2">${new Date(inv.createdAt).toLocaleString('ru-RU')}</small>
+                    </div>
+                    <a href="${inv.paymentLink}" target="_blank" class="btn btn-sm btn-primary">
+                        <i class="bi bi-box-arrow-up-right"></i> Оплатить
+                    </a>
+                </div>
+            `;
+            listEl.appendChild(item);
+        });
+
+    } catch (error) {
+        console.error('Failed to load pending invoices:', error);
+    }
+}
+
+/**
+ * Reset deposit modal to step 1
+ */
+function resetDepositModal() {
+    document.getElementById('depositStep1').style.display = 'block';
+    document.getElementById('depositStep2').style.display = 'none';
+    document.getElementById('depositAmount').value = '100';
+}
+
+// Reset modal when closed
+document.addEventListener('DOMContentLoaded', () => {
+    const depositModal = document.getElementById('depositModal');
+    if (depositModal) {
+        depositModal.addEventListener('hidden.bs.modal', resetDepositModal);
+        depositModal.addEventListener('show.bs.modal', () => {
+            loadPaymentConfig();
+            loadPendingInvoices();
+        });
+    }
+});
+
+/**
+ * Process deposit (legacy - kept for admin manual deposits)
  */
 async function processDeposit() {
     const amount = parseFloat(document.getElementById('depositAmount').value);
-    const description = document.getElementById('depositDescription').value || 'Пополнение баланса';
+    const description = document.getElementById('depositDescription')?.value || 'Пополнение баланса';
 
     if (isNaN(amount) || amount < 1 || amount > 10000) {
         showAlert('Сумма должна быть от $1 до $10,000', 'danger');
@@ -368,7 +536,6 @@ async function processDeposit() {
 
         // Reset form
         document.getElementById('depositAmount').value = '100';
-        document.getElementById('depositDescription').value = '';
 
     } catch (error) {
         console.error('Failed to deposit:', error);
