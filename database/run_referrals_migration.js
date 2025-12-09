@@ -15,10 +15,14 @@ async function runMigration() {
   // Parse DATABASE_URL or use individual env vars
   let poolConfig;
 
+  // Check if database host is remote (requires SSL)
+  const isRemoteDB = process.env.DB_HOST && !['localhost', '127.0.0.1'].includes(process.env.DB_HOST);
+  const sslConfig = isRemoteDB || process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false;
+
   if (process.env.DATABASE_URL) {
     poolConfig = {
       connectionString: process.env.DATABASE_URL,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+      ssl: { rejectUnauthorized: false }
     };
   } else {
     poolConfig = {
@@ -27,7 +31,7 @@ async function runMigration() {
       database: process.env.DB_NAME || 'linkmanager',
       user: process.env.DB_USER || 'postgres',
       password: process.env.DB_PASSWORD || 'postgres',
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+      ssl: sslConfig
     };
   }
 
