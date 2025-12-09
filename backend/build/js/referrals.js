@@ -21,7 +21,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   await Promise.all([
     loadReferralStats(),
     loadReferredUsers(),
-    loadTransactions()
+    loadTransactions(),
+    loadWallet()
   ]);
 
   // Setup preview for code editing
@@ -34,6 +35,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
   }
+
+  // Setup withdraw type radio change handler
+  const withdrawTypeRadios = document.querySelectorAll('input[name="withdrawType"]');
+  withdrawTypeRadios.forEach(radio => {
+    radio.addEventListener('change', updateWithdrawModalState);
+  });
 });
 
 /**
