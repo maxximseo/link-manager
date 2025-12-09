@@ -16,7 +16,8 @@ const PRICING = {
   OWNER_RATE: 0.1, // Special rate for placing content on own sites
   BASE_RENEWAL_DISCOUNT: 30, // Base discount for link renewals (30%)
   RENEWAL_PERIOD_DAYS: 365, // Renewal period (1 year)
-  MAX_TOTAL_DISCOUNT: 60 // Maximum combined discount (base + personal tier)
+  MAX_TOTAL_DISCOUNT: 60, // Maximum combined discount (base + personal tier)
+  REFERRAL_COMMISSION_RATE: 20 // Referral commission rate (20% of final_price)
 };
 
 /**
