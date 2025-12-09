@@ -47,7 +47,7 @@ body.modern-ui {
 }
 
 .modern-table thead th {
-    padding: 14px 16px;
+    padding: 10px 12px;
     font-size: 12px;
     font-weight: 600;
     color: #64748b;
@@ -71,7 +71,7 @@ body.modern-ui {
 }
 
 .modern-table tbody td {
-    padding: 16px;
+    padding: 10px 12px;
     font-size: 14px;
     color: #334155;
     vertical-align: middle;
