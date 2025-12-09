@@ -5,6 +5,10 @@
 ALTER TABLE users
 ADD COLUMN IF NOT EXISTS usdt_wallet VARCHAR(100);
 
+-- Add column to track when wallet was last updated (for 1 month cooldown)
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS usdt_wallet_updated_at TIMESTAMP;
+
 -- Add new columns to referral_withdrawals table for wallet withdrawals
 ALTER TABLE referral_withdrawals
 ADD COLUMN IF NOT EXISTS withdrawal_type VARCHAR(20) DEFAULT 'balance',
