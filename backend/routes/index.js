@@ -17,6 +17,8 @@ const billingRoutes = require('./billing.routes');
 const adminRoutes = require('./admin.routes');
 const notificationRoutes = require('./notification.routes');
 const referralRoutes = require('./referral.routes');
+const paymentRoutes = require('./payment.routes');
+const webhookRoutes = require('./webhook.routes');
 
 // Import legacy server for fallback (for routes not yet modularized)
 const legacyRoutes = require('./legacy');
