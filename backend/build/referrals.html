@@ -26,15 +26,15 @@
                 <div class="row align-items-center">
                     <div class="col-md-8">
                         <div class="input-group">
-                            <span class="input-group-text">https://serparium.com/ref/</span>
+                            <span class="input-group-text">https://serparium.com/go/</span>
                             <input type="text" class="form-control" id="referralCode" readonly>
-                            <button class="btn btn-primary" type="button" onclick="copyReferralLink()">
-                                <i class="bi bi-clipboard"></i> Копировать
-                            </button>
                         </div>
                         <small class="text-muted">Поделитесь этой ссылкой с друзьями и получайте 20% от их покупок</small>
                     </div>
                     <div class="col-md-4 text-end">
+                        <button class="btn btn-primary me-2" type="button" onclick="copyReferralLink()">
+                            <i class="bi bi-clipboard"></i> Копировать
+                        </button>
                         <button class="btn btn-secondary" onclick="showEditCodeModal()">
                             <i class="bi bi-pencil"></i> Изменить код
                         </button>
@@ -216,7 +216,7 @@
                         <div class="form-text">3-30 символов: буквы, цифры, подчёркивание, дефис</div>
                     </div>
                     <div class="alert alert-info mb-0">
-                        <i class="bi bi-info-circle"></i> Ваша ссылка будет: <strong>serparium.com/ref/<span id="previewCode">...</span></strong>
+                        <i class="bi bi-info-circle"></i> Ваша ссылка будет: <strong>serparium.com/go/<span id="previewCode">...</span></strong>
                     </div>
                 </div>
                 <div class="modal-footer">

@@ -197,7 +197,7 @@ async function loadTransactions() {
  */
 async function copyReferralLink() {
   const code = document.getElementById('referralCode').value;
-  const link = `https://serparium.com/ref/${code}`;
+  const link = `https://serparium.com/go/${code}`;
 
   try {
     await navigator.clipboard.writeText(link);
