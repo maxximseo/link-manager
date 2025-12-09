@@ -406,6 +406,7 @@ const getWallet = async (userId) => {
 
 /**
  * Save or update user's USDT TRC20 wallet address
+ * Has a 1 month cooldown after first save
  */
 const saveWallet = async (userId, walletAddress) => {
   try {
@@ -414,7 +415,36 @@ const saveWallet = async (userId, walletAddress) => {
       throw new Error('Invalid TRC20 wallet address format. Must start with T and be 34 characters long.');
     }
 
-    await query('UPDATE users SET usdt_wallet = $1 WHERE id = $2', [walletAddress, userId]);
+    // Check if wallet was recently updated (1 month cooldown)
+    const userResult = await query(
+      'SELECT usdt_wallet, usdt_wallet_updated_at FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      throw new Error('User not found');
+    }
+
+    const { usdt_wallet, usdt_wallet_updated_at } = userResult.rows[0];
+
+    // If wallet exists and was updated, check cooldown
+    if (usdt_wallet && usdt_wallet_updated_at) {
+      const oneMonthFromUpdate = new Date(usdt_wallet_updated_at);
+      oneMonthFromUpdate.setMonth(oneMonthFromUpdate.getMonth() + 1);
+
+      if (new Date() < oneMonthFromUpdate) {
+        const daysLeft = Math.ceil((oneMonthFromUpdate - new Date()) / (1000 * 60 * 60 * 24));
+        throw new Error(
+          `Кошелёк можно изменить только через ${daysLeft} дней. Следующее изменение доступно: ${oneMonthFromUpdate.toLocaleDateString('ru-RU')}`
+        );
+      }
+    }
+
+    // Update wallet and timestamp
+    await query(
+      'UPDATE users SET usdt_wallet = $1, usdt_wallet_updated_at = NOW() WHERE id = $2',
+      [walletAddress, userId]
+    );
 
     logger.info('Wallet address saved', { userId, wallet: walletAddress });
 
