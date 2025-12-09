@@ -188,11 +188,11 @@ const registerUser = async (username, email, password, referralCode = null) => {
       }
     }
 
-    // Check if referral code is valid and get referrer
+    // Check if referral code is valid and get referrer (case-insensitive)
     let referredByUserId = null;
     if (referralCode) {
       const referrerResult = await query(
-        'SELECT id FROM users WHERE referral_code = $1',
+        'SELECT id FROM users WHERE LOWER(referral_code) = LOWER($1)',
         [referralCode]
       );
       if (referrerResult.rows.length > 0) {
