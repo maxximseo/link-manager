@@ -163,7 +163,8 @@ const authenticateUser = async (username, password) => {
 };
 
 // Register new user
-const registerUser = async (username, email, password) => {
+// referralCode - optional referral code from the inviting user
+const registerUser = async (username, email, password, referralCode = null) => {
   try {
     // Check if username already exists
     const usernameCheck = await query('SELECT id FROM users WHERE username = $1', [username]);
@@ -187,6 +188,21 @@ const registerUser = async (username, email, password) => {
       }
     }
 
+    // Check if referral code is valid and get referrer
+    let referredByUserId = null;
+    if (referralCode) {
+      const referrerResult = await query(
+        'SELECT id FROM users WHERE referral_code = $1',
+        [referralCode]
+      );
+      if (referrerResult.rows.length > 0) {
+        referredByUserId = referrerResult.rows[0].id;
+        logger.info(`User ${username} registered via referral code: ${referralCode}`);
+      } else {
+        logger.warn(`Invalid referral code used during registration: ${referralCode}`);
+      }
+    }
+
     // Hash password
     const bcryptRounds = parseInt(process.env.BCRYPT_ROUNDS, 10) || 10;
     const hashedPassword = await bcrypt.hash(password, bcryptRounds);
@@ -194,17 +210,17 @@ const registerUser = async (username, email, password) => {
     // Generate email verification token
     const verificationToken = crypto.randomBytes(32).toString('hex');
 
-    // Insert new user
+    // Insert new user with referral_code = username and optional referred_by_user_id
     const result = await query(
-      `INSERT INTO users (username, email, password, role, email_verified, verification_token, balance, total_spent, current_discount)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-       RETURNING id, username, email, role`,
-      [username, email, hashedPassword, 'user', false, verificationToken, 0.0, 0.0, 0]
+      `INSERT INTO users (username, email, password, role, email_verified, verification_token, balance, total_spent, current_discount, referral_code, referred_by_user_id, referral_balance, total_referral_earnings)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+       RETURNING id, username, email, role, referral_code`,
+      [username, email, hashedPassword, 'user', false, verificationToken, 0.0, 0.0, 0, username, referredByUserId, 0.0, 0.0]
     );
 
     const newUser = result.rows[0];
 
-    logger.info(`New user registered: ${username}`);
+    logger.info(`New user registered: ${username}${referredByUserId ? ` (referred by user ID ${referredByUserId})` : ''}`);
 
     // In production, you would send verification email here
     // For now, we return the token for manual verification
@@ -215,7 +231,8 @@ const registerUser = async (username, email, password) => {
         id: newUser.id,
         username: newUser.username,
         email: newUser.email,
-        role: newUser.role
+        role: newUser.role,
+        referralCode: newUser.referral_code
       },
       verificationToken: verificationToken, // Remove this in production, send via email instead
       message: 'User registered successfully. Please verify your email.'
