@@ -65,6 +65,8 @@ router.use('/billing', billingRoutes);
 router.use('/admin', adminRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/referrals', referralRoutes);
+router.use('/payments', paymentRoutes);
+router.use('/webhooks', webhookRoutes); // Public webhook endpoints (no auth)
 
 // Queue routes (if available)
 if (queueRoutes) {
