@@ -52,4 +52,30 @@ router.post('/update-code', referralController.updateCode);
  */
 router.post('/withdraw', referralController.withdraw);
 
+/**
+ * GET /api/referrals/wallet
+ * Get user's saved USDT TRC20 wallet address
+ */
+router.get('/wallet', referralController.getWallet);
+
+/**
+ * POST /api/referrals/wallet
+ * Save or update user's USDT TRC20 wallet address
+ * Body: { wallet: string }
+ */
+router.post('/wallet', referralController.saveWallet);
+
+/**
+ * POST /api/referrals/withdraw-to-wallet
+ * Create withdrawal request to external USDT TRC20 wallet
+ * Requires saved wallet address and minimum $200 balance
+ */
+router.post('/withdraw-to-wallet', referralController.withdrawToWallet);
+
+/**
+ * GET /api/referrals/withdrawals
+ * Get user's withdrawal history (both balance and wallet)
+ */
+router.get('/withdrawals', referralController.getWithdrawalHistory);
+
 module.exports = router;
