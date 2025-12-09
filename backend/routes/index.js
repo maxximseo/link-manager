@@ -62,6 +62,7 @@ router.use('/static', staticRoutes); // Public API for static PHP widgets
 router.use('/billing', billingRoutes);
 router.use('/admin', adminRoutes);
 router.use('/notifications', notificationRoutes);
+router.use('/referrals', referralRoutes);
 
 // Queue routes (if available)
 if (queueRoutes) {
