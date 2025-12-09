@@ -5,7 +5,7 @@ module.exports = {
   },
 
   RATE_LIMITS: {
-    LOGIN: { windowMs: 15 * 60 * 1000, max: 5 },
+    LOGIN: { windowMs: 10 * 60 * 1000, max: 10 },
     API: { windowMs: 60 * 1000, max: 100 },
     CREATE: { windowMs: 60 * 1000, max: 10 },
     PLACEMENT: { windowMs: 60 * 1000, max: 20 },
