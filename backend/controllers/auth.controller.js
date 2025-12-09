@@ -102,7 +102,7 @@ const login = async (req, res) => {
 // Register controller
 const register = async (req, res) => {
   try {
-    const { username, email, password, confirmPassword } = req.body;
+    const { username, email, password, confirmPassword, referralCode } = req.body;
 
     // Validation
     if (!username || !password) {
@@ -136,13 +136,18 @@ const register = async (req, res) => {
       }
     }
 
-    const result = await authService.registerUser(username, email, password);
+    // Referral code validation (if provided)
+    if (referralCode && !/^[a-zA-Z0-9_-]+$/.test(referralCode)) {
+      return res.status(400).json({ error: 'Invalid referral code format' });
+    }
+
+    const result = await authService.registerUser(username, email, password, referralCode || null);
 
     if (!result.success) {
       return res.status(400).json({ error: result.error });
     }
 
-    logger.info('User registered:', username);
+    logger.info('User registered:', username, referralCode ? `(referral: ${referralCode})` : '');
     res.status(201).json({
       message: result.message,
       user: result.user
