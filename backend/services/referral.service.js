@@ -10,6 +10,15 @@ const logger = require('../config/logger');
 const MINIMUM_WITHDRAWAL_AMOUNT = 200; // $200 minimum withdrawal
 
 /**
+ * Validate TRC20 wallet address format
+ * TRC20 addresses start with 'T' and are 34 characters long (Base58)
+ */
+const isValidTRC20Address = (address) => {
+  if (!address || typeof address !== 'string') return false;
+  return /^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(address);
+};
+
+/**
  * Get referral statistics for a user
  */
 const getReferralStats = async (userId) => {
