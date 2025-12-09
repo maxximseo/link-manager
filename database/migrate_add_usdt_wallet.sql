@@ -28,6 +28,7 @@ CREATE INDEX IF NOT EXISTS idx_referral_withdrawals_withdrawal_type ON referral_
 
 -- Comments
 COMMENT ON COLUMN users.usdt_wallet IS 'USDT TRC20 wallet address for referral withdrawals';
+COMMENT ON COLUMN users.usdt_wallet_updated_at IS 'When wallet was last updated (1 month cooldown enforced)';
 COMMENT ON COLUMN referral_withdrawals.withdrawal_type IS 'Type: balance (instant) or wallet (requires admin approval)';
 COMMENT ON COLUMN referral_withdrawals.wallet_address IS 'USDT TRC20 wallet address at time of withdrawal';
 COMMENT ON COLUMN referral_withdrawals.admin_comment IS 'Admin comment (used for rejection reason)';
