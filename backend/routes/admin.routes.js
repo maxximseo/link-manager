@@ -10,6 +10,7 @@ const authMiddleware = require('../middleware/auth');
 const { financialLimiter, apiLimiter } = require('../middleware/rateLimiter');
 const adminService = require('../services/admin.service');
 const siteService = require('../services/site.service');
+const referralController = require('../controllers/referral.controller');
 const logger = require('../config/logger');
 
 // Admin authorization middleware
