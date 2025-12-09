@@ -644,6 +644,14 @@ const purchasePlacement = async ({
       logger.error('Failed to check anomalous transaction', { err: err.message })
     );
 
+    // REFERRAL: Create referral commission for the referrer (async, don't block response)
+    // Only if user was referred by someone and this is a real purchase (not own site)
+    if (!isOwnSite && finalPrice > 0) {
+      createReferralCommission(userId, transactionId, placement.id, finalPrice).catch(err =>
+        logger.error('Failed to create referral commission', { userId, err: err.message })
+      );
+    }
+
     // OPTIMIZATION: Async cache invalidation (don't await - save 60-150ms)
     // Cache staleness is acceptable (2 min TTL)
     cache
