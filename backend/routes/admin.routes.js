@@ -569,4 +569,37 @@ router.post(
   }
 );
 
+// ==================== REFERRAL WITHDRAWAL MANAGEMENT ====================
+
+/**
+ * GET /api/admin/referral-withdrawals
+ * Get all wallet withdrawal requests with pagination
+ * Query params: page, limit, status (pending/completed/rejected)
+ */
+router.get('/referral-withdrawals', referralController.getAdminWithdrawals);
+
+/**
+ * POST /api/admin/referral-withdrawals/:id/approve
+ * Approve a wallet withdrawal request
+ * Admin must have manually sent USDT before approving
+ */
+router.post(
+  '/referral-withdrawals/:id/approve',
+  financialLimiter,
+  referralController.approveWithdrawal
+);
+
+/**
+ * POST /api/admin/referral-withdrawals/:id/reject
+ * Reject a wallet withdrawal request and return balance to user
+ * Body: { comment: string } - reason for rejection
+ */
+router.post(
+  '/referral-withdrawals/:id/reject',
+  financialLimiter,
+  [body('comment').optional().isString().trim().withMessage('Comment must be a string')],
+  validateRequest,
+  referralController.rejectWithdrawal
+);
+
 module.exports = router;
