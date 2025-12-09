@@ -94,10 +94,11 @@ async function loadReferredUsers() {
       throw new Error('Failed to load referred users');
     }
 
-    const data = await response.json();
+    const result = await response.json();
+    const users = result.data || [];
     const tbody = document.getElementById('referredUsersTable');
 
-    if (!data.users || data.users.length === 0) {
+    if (!users || users.length === 0) {
       tbody.innerHTML = `
         <tr>
           <td colspan="4" class="text-center text-muted">
@@ -108,14 +109,14 @@ async function loadReferredUsers() {
       return;
     }
 
-    tbody.innerHTML = data.users.map(user => `
+    tbody.innerHTML = users.map(user => `
       <tr>
         <td>
           <i class="bi bi-person"></i> ${escapeHtml(user.username)}
         </td>
-        <td>${formatDate(user.created_at)}</td>
-        <td>$${parseFloat(user.total_spent || 0).toFixed(2)}</td>
-        <td class="text-success fw-bold">$${parseFloat(user.commission_earned || 0).toFixed(2)}</td>
+        <td>${formatDate(user.registeredAt)}</td>
+        <td>$${parseFloat(user.totalSpent || 0).toFixed(2)}</td>
+        <td class="text-success fw-bold">$${parseFloat(user.commissionEarned || 0).toFixed(2)}</td>
       </tr>
     `).join('');
 
