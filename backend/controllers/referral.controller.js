@@ -148,6 +148,146 @@ const validateCode = async (req, res) => {
   }
 };
 
+/**
+ * GET /api/referrals/wallet
+ * Get user's saved USDT TRC20 wallet address
+ */
+const getWallet = async (req, res) => {
+  try {
+    const result = await referralService.getWallet(req.user.id);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    logger.error('Failed to get wallet', { userId: req.user.id, error: error.message });
+    res.status(500).json({ error: 'Failed to get wallet address' });
+  }
+};
+
+/**
+ * POST /api/referrals/wallet
+ * Save or update user's USDT TRC20 wallet address
+ */
+const saveWallet = async (req, res) => {
+  try {
+    const { wallet } = req.body;
+
+    if (!wallet) {
+      return res.status(400).json({ error: 'Wallet address is required' });
+    }
+
+    const result = await referralService.saveWallet(req.user.id, wallet);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    logger.error('Failed to save wallet', { userId: req.user.id, error: error.message });
+
+    if (error.message.includes('Invalid TRC20')) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.status(500).json({ error: 'Failed to save wallet address' });
+  }
+};
+
+/**
+ * POST /api/referrals/withdraw-to-wallet
+ * Create withdrawal request to external USDT TRC20 wallet
+ */
+const withdrawToWallet = async (req, res) => {
+  try {
+    const result = await referralService.withdrawToWallet(req.user.id);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    logger.error('Failed to withdraw to wallet', { userId: req.user.id, error: error.message });
+
+    if (
+      error.message.includes('Minimum') ||
+      error.message.includes('No wallet') ||
+      error.message.includes('already have a pending')
+    ) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.status(500).json({ error: 'Failed to create withdrawal request' });
+  }
+};
+
+/**
+ * GET /api/referrals/withdrawals
+ * Get user's withdrawal history
+ */
+const getWithdrawalHistory = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = Math.min(parseInt(req.query.limit, 10) || 50, 100);
+
+    const result = await referralService.getWithdrawalHistory(req.user.id, { page, limit });
+    res.json({ success: true, ...result });
+  } catch (error) {
+    logger.error('Failed to get withdrawal history', { userId: req.user.id, error: error.message });
+    res.status(500).json({ error: 'Failed to get withdrawal history' });
+  }
+};
+
+/**
+ * GET /api/admin/referral-withdrawals
+ * Get all wallet withdrawal requests (admin only)
+ */
+const getAdminWithdrawals = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = Math.min(parseInt(req.query.limit, 10) || 50, 100);
+    const status = req.query.status || null;
+
+    const result = await referralService.getPendingWithdrawals({ page, limit, status });
+    res.json({ success: true, ...result });
+  } catch (error) {
+    logger.error('Failed to get admin withdrawals', { error: error.message });
+    res.status(500).json({ error: 'Failed to get withdrawal requests' });
+  }
+};
+
+/**
+ * POST /api/admin/referral-withdrawals/:id/approve
+ * Approve a wallet withdrawal request (admin only)
+ */
+const approveWithdrawal = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await referralService.approveWithdrawal(parseInt(id, 10), req.user.id);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    logger.error('Failed to approve withdrawal', { withdrawalId: req.params.id, error: error.message });
+
+    if (error.message.includes('not found') || error.message.includes('Cannot approve')) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.status(500).json({ error: 'Failed to approve withdrawal' });
+  }
+};
+
+/**
+ * POST /api/admin/referral-withdrawals/:id/reject
+ * Reject a wallet withdrawal request (admin only)
+ */
+const rejectWithdrawal = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { comment } = req.body;
+
+    const result = await referralService.rejectWithdrawal(parseInt(id, 10), req.user.id, comment);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    logger.error('Failed to reject withdrawal', { withdrawalId: req.params.id, error: error.message });
+
+    if (error.message.includes('not found') || error.message.includes('Cannot reject')) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.status(500).json({ error: 'Failed to reject withdrawal' });
+  }
+};
+
 module.exports = {
   getStats,
   getLink,
@@ -155,5 +295,12 @@ module.exports = {
   getTransactions,
   updateCode,
   withdraw,
-  validateCode
+  validateCode,
+  getWallet,
+  saveWallet,
+  withdrawToWallet,
+  getWithdrawalHistory,
+  getAdminWithdrawals,
+  approveWithdrawal,
+  rejectWithdrawal
 };
