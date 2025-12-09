@@ -264,6 +264,10 @@ async function saveReferralCode() {
   }
 }
 
+// Global wallet cooldown state
+let canChangeWallet = true;
+let walletChangeAvailableAt = null;
+
 /**
  * Load wallet address
  */
@@ -281,19 +285,52 @@ async function loadWallet() {
 
     const result = await response.json();
     currentWallet = result.data?.wallet || null;
+    canChangeWallet = result.data?.canChangeWallet !== false;
+    walletChangeAvailableAt = result.data?.walletChangeAvailableAt || null;
 
     // Update wallet input and status
     const walletInput = document.getElementById('usdtWallet');
     const walletStatus = document.getElementById('walletStatus');
+    const saveBtn = walletInput.nextElementSibling;
+    const cooldownInfo = document.getElementById('walletCooldownInfo');
 
     if (currentWallet) {
       walletInput.value = currentWallet;
       walletStatus.textContent = 'Сохранён';
       walletStatus.className = 'badge bg-success';
+
+      // Show cooldown info if wallet cannot be changed
+      if (!canChangeWallet && walletChangeAvailableAt) {
+        walletInput.disabled = true;
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="bi bi-lock"></i> Заблокировано';
+
+        // Calculate days left
+        const availableDate = new Date(walletChangeAvailableAt);
+        const daysLeft = Math.ceil((availableDate - new Date()) / (1000 * 60 * 60 * 24));
+
+        if (cooldownInfo) {
+          cooldownInfo.classList.remove('d-none');
+          cooldownInfo.innerHTML = `<i class="bi bi-clock"></i> Изменение доступно через ${daysLeft} дней (${availableDate.toLocaleDateString('ru-RU')})`;
+        }
+      } else {
+        walletInput.disabled = false;
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="bi bi-save"></i> Сохранить';
+        if (cooldownInfo) {
+          cooldownInfo.classList.add('d-none');
+        }
+      }
     } else {
       walletInput.value = '';
+      walletInput.disabled = false;
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = '<i class="bi bi-save"></i> Сохранить';
       walletStatus.textContent = 'Не указан';
       walletStatus.className = 'badge bg-secondary';
+      if (cooldownInfo) {
+        cooldownInfo.classList.add('d-none');
+      }
     }
 
   } catch (error) {
