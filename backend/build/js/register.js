@@ -120,6 +120,8 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
+    const referralCodeInput = document.getElementById('referralCode');
+    const referralCode = referralCodeInput ? referralCodeInput.value.trim() : '';
 
     const registerBtn = document.getElementById('registerBtn');
     const registerText = document.getElementById('registerText');
