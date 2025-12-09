@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Статистика - Link Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <!-- Navbar Container (injected by navbar.js) -->
+    <div id="navbar-container"></div>
+
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>📊 Статистика</h1>
+            <div class="btn-group" role="group">
+                <input type="radio" class="btn-check" name="period" id="periodDay" value="day">
+                <label class="btn btn-primary" for="periodDay">День</label>
+
+                <input type="radio" class="btn-check" name="period" id="periodWeek" value="week" checked>
+                <label class="btn btn-primary" for="periodWeek">Неделя</label>
+
+                <input type="radio" class="btn-check" name="period" id="periodMonth" value="month">
+                <label class="btn btn-primary" for="periodMonth">Месяц</label>
+
+                <input type="radio" class="btn-check" name="period" id="periodYear" value="year">
+                <label class="btn btn-primary" for="periodYear">Год</label>
+            </div>
+        </div>
+
+        <!-- Spending Stats -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card border-success">
+                    <div class="card-body text-center">
+                        <h6 class="card-subtitle mb-2 text-muted">Расходы за день</h6>
+                        <h2 class="text-success mb-0">$<span id="spendingDay">0.00</span></h2>
+                        <small class="text-muted">Транзакций: <span id="transactionsDay">0</span></small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-primary">
+                    <div class="card-body text-center">
+                        <h6 class="card-subtitle mb-2 text-muted">Расходы за неделю</h6>
+                        <h2 class="text-primary mb-0">$<span id="spendingWeek">0.00</span></h2>
+                        <small class="text-muted">Транзакций: <span id="transactionsWeek">0</span></small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-warning">
+                    <div class="card-body text-center">
+                        <h6 class="card-subtitle mb-2 text-muted">Расходы за месяц</h6>
+                        <h2 class="text-warning mb-0">$<span id="spendingMonth">0.00</span></h2>
+                        <small class="text-muted">Транзакций: <span id="transactionsMonth">0</span></small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-info">
+                    <div class="card-body text-center">
+                        <h6 class="card-subtitle mb-2 text-muted">Расходы за год</h6>
+                        <h2 class="text-info mb-0">$<span id="spendingYear">0.00</span></h2>
+                        <small class="text-muted">Транзакций: <span id="transactionsYear">0</span></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Расходы по типам</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="spendingByTypeChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Динамика расходов (7 дней)</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="spendingTimelineChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Placements Stats -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Статистика размещений</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="stat-card">
+                                    <h3 id="totalPlacements">0</h3>
+                                    <p>Всего размещений</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card primary">
+                                    <h3 id="linkPlacements">0</h3>
+                                    <p>Ссылок на главной</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card success">
+                                    <h3 id="articlePlacements">0</h3>
+                                    <p>Гест-постов</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card warning">
+                                    <h3 id="scheduledPlacements">0</h3>
+                                    <p>Запланированных</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Purchases -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Мои последние покупки</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Дата</th>
+                                        <th>Проект</th>
+                                        <th>Тип</th>
+                                        <th>Сайт</th>
+                                        <th>Цена</th>
+                                        <th>Скидка</th>
+                                        <th>Статус</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentPurchasesTable">
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted">Загрузка...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Balance Summary -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Сводка по балансу</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="stat-card info">
+                                    <h3>$<span id="currentBalance">0.00</span></h3>
+                                    <p>Текущий баланс</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="stat-card success">
+                                    <h3>$<span id="totalSpent">0.00</span></h3>
+                                    <p>Всего потрачено</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="stat-card warning">
+                                    <h3><span id="discountTier">—</span></h3>
+                                    <p>Текущий уровень скидки</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/security.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/badge-utils.js"></script>
+    <script src="/js/navbar-config.js"></script>
+    <script src="/js/navbar.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/statistics.js"></script>
+</body>
+</html>
