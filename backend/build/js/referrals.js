@@ -145,10 +145,11 @@ async function loadTransactions() {
       throw new Error('Failed to load transactions');
     }
 
-    const data = await response.json();
+    const result = await response.json();
+    const transactions = result.data || [];
     const tbody = document.getElementById('transactionsTable');
 
-    if (!data.transactions || data.transactions.length === 0) {
+    if (!transactions || transactions.length === 0) {
       tbody.innerHTML = `
         <tr>
           <td colspan="6" class="text-center text-muted">
@@ -159,13 +160,13 @@ async function loadTransactions() {
       return;
     }
 
-    tbody.innerHTML = data.transactions.map(tx => `
+    tbody.innerHTML = transactions.map(tx => `
       <tr>
-        <td>${formatDateTime(tx.created_at)}</td>
-        <td>${escapeHtml(tx.referee_username)}</td>
-        <td>$${parseFloat(tx.transaction_amount || 0).toFixed(2)}</td>
-        <td>${tx.commission_rate}%</td>
-        <td class="text-success fw-bold">$${parseFloat(tx.commission_amount || 0).toFixed(2)}</td>
+        <td>${formatDateTime(tx.createdAt)}</td>
+        <td>${escapeHtml(tx.refereeUsername)}</td>
+        <td>$${parseFloat(tx.transactionAmount || 0).toFixed(2)}</td>
+        <td>${tx.commissionRate}%</td>
+        <td class="text-success fw-bold">$${parseFloat(tx.commissionAmount || 0).toFixed(2)}</td>
         <td>${getTransactionStatusBadge(tx.status)}</td>
       </tr>
     `).join('');
