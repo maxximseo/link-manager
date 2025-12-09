@@ -14,7 +14,8 @@ const NavbarConfig = {
             { text: 'Сайты', href: '/sites.html', page: 'sites' },
             { text: 'Покупка', href: '/placements.html', page: 'placements' },
             { text: 'Баланс', href: '/balance.html', page: 'balance' },
-            { text: 'Статистика', href: '/statistics.html', page: 'statistics' }
+            { text: 'Статистика', href: '/statistics.html', page: 'statistics' },
+            { text: 'Партнёрка', href: '/referrals.html', page: 'referrals' }
         ],
         rightSection: 'balance' // Shows balance display
     },
