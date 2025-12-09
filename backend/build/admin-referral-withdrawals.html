@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Заявки на вывод - Link Manager Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <!-- Navbar Container (injected by navbar.js) -->
+    <div id="navbar-container"></div>
+
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-cash-coin"></i> Заявки на вывод USDT</h1>
+            <div>
+                <span class="badge bg-warning text-dark" id="pendingCount">0 ожидают</span>
+            </div>
+        </div>
+
+        <!-- Status Filter Tabs -->
+        <ul class="nav nav-tabs mb-4" id="statusTabs">
+            <li class="nav-item">
+                <a class="nav-link active" href="#" data-status="" onclick="filterByStatus(event, '')">
+                    Все <span class="badge bg-secondary" id="allCount">0</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" data-status="pending" onclick="filterByStatus(event, 'pending')">
+                    Ожидают <span class="badge bg-warning text-dark" id="pendingTabCount">0</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" data-status="completed" onclick="filterByStatus(event, 'completed')">
+                    Выполнены <span class="badge bg-success" id="completedCount">0</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" data-status="rejected" onclick="filterByStatus(event, 'rejected')">
+                    Отклонены <span class="badge bg-danger" id="rejectedCount">0</span>
+                </a>
+            </li>
+        </ul>
+
+        <!-- Withdrawals Table -->
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Пользователь</th>
+                                <th>Сумма</th>
+                                <th>Кошелёк</th>
+                                <th>Дата заявки</th>
+                                <th>Статус</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="withdrawalsTable">
+                            <tr>
+                                <td colspan="7" class="text-center text-muted">Загрузка...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Approve Modal -->
+    <div class="modal fade" id="approveModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="bi bi-check-circle"></i> Подтверждение выплаты</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Важно!</strong> Подтверждайте только после отправки USDT на кошелёк.
+                    </div>
+                    <p><strong>Пользователь:</strong> <span id="approveUsername">-</span></p>
+                    <p><strong>Сумма:</strong> $<span id="approveAmount">0.00</span></p>
+                    <p><strong>Кошелёк:</strong></p>
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control font-monospace" id="approveWallet" readonly>
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyWallet()">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-success" onclick="confirmApprove()">
+                        <i class="bi bi-check-lg"></i> USDT отправлен, подтвердить
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reject Modal -->
+    <div class="modal fade" id="rejectModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="bi bi-x-circle"></i> Отклонение заявки</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        Средства будут возвращены на реферальный баланс пользователя.
+                    </div>
+                    <p><strong>Пользователь:</strong> <span id="rejectUsername">-</span></p>
+                    <p><strong>Сумма:</strong> $<span id="rejectAmount">0.00</span></p>
+                    <div class="mb-3">
+                        <label for="rejectComment" class="form-label">Причина отклонения</label>
+                        <textarea class="form-control" id="rejectComment" rows="3" placeholder="Укажите причину отклонения..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmReject()">
+                        <i class="bi bi-x-lg"></i> Отклонить и вернуть средства
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/security.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/badge-utils.js"></script>
+    <script src="/js/navbar-config.js"></script>
+    <script src="/js/navbar.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/admin-referral-withdrawals.js"></script>
+</body>
+</html>
