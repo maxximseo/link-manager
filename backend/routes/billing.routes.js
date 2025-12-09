@@ -428,6 +428,252 @@ router.get('/export/placements', authMiddleware, async (req, res) => {
 });
 
 /**
+ * GET /api/billing/statistics/spending
+ * Get user spending statistics for all periods (day/week/month/year)
+ */
+router.get('/statistics/spending', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { query: dbQuery } = require('../config/database');
+
+    // Get spending for all periods in parallel
+    const [dayResult, weekResult, monthResult, yearResult] = await Promise.all([
+      // Day
+      dbQuery(
+        `SELECT
+          COALESCE(SUM(ABS(amount)), 0) as total,
+          COUNT(*) as count
+        FROM transactions
+        WHERE user_id = $1
+          AND type IN ('purchase', 'renewal', 'auto_renewal')
+          AND created_at >= NOW() - INTERVAL '1 day'`,
+        [userId]
+      ),
+      // Week
+      dbQuery(
+        `SELECT
+          COALESCE(SUM(ABS(amount)), 0) as total,
+          COUNT(*) as count
+        FROM transactions
+        WHERE user_id = $1
+          AND type IN ('purchase', 'renewal', 'auto_renewal')
+          AND created_at >= NOW() - INTERVAL '7 days'`,
+        [userId]
+      ),
+      // Month
+      dbQuery(
+        `SELECT
+          COALESCE(SUM(ABS(amount)), 0) as total,
+          COUNT(*) as count
+        FROM transactions
+        WHERE user_id = $1
+          AND type IN ('purchase', 'renewal', 'auto_renewal')
+          AND created_at >= NOW() - INTERVAL '1 month'`,
+        [userId]
+      ),
+      // Year
+      dbQuery(
+        `SELECT
+          COALESCE(SUM(ABS(amount)), 0) as total,
+          COUNT(*) as count
+        FROM transactions
+        WHERE user_id = $1
+          AND type IN ('purchase', 'renewal', 'auto_renewal')
+          AND created_at >= NOW() - INTERVAL '1 year'`,
+        [userId]
+      )
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        day: { total: dayResult.rows[0].total, count: parseInt(dayResult.rows[0].count, 10) },
+        week: { total: weekResult.rows[0].total, count: parseInt(weekResult.rows[0].count, 10) },
+        month: { total: monthResult.rows[0].total, count: parseInt(monthResult.rows[0].count, 10) },
+        year: { total: yearResult.rows[0].total, count: parseInt(yearResult.rows[0].count, 10) }
+      }
+    });
+  } catch (error) {
+    logger.error('Failed to get spending statistics', { userId: req.user.id, error: error.message });
+    res.status(500).json({ error: 'Failed to get spending statistics' });
+  }
+});
+
+/**
+ * GET /api/billing/statistics/placements
+ * Get user placement statistics for selected period
+ */
+router.get('/statistics/placements', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const period = req.query.period || 'week';
+    const { query: dbQuery } = require('../config/database');
+
+    // Calculate date range
+    let interval;
+    switch (period) {
+      case 'day':
+        interval = '1 day';
+        break;
+      case 'week':
+        interval = '7 days';
+        break;
+      case 'month':
+        interval = '1 month';
+        break;
+      case 'year':
+        interval = '1 year';
+        break;
+      default:
+        interval = '7 days';
+    }
+
+    // Get placements stats
+    const placementsResult = await dbQuery(
+      `SELECT
+        COUNT(*) as total,
+        COUNT(*) FILTER (WHERE type = 'link') as links,
+        COUNT(*) FILTER (WHERE type = 'article') as articles,
+        COUNT(*) FILTER (WHERE status = 'scheduled') as scheduled
+      FROM placements
+      WHERE user_id = $1
+        AND placed_at >= NOW() - INTERVAL '${interval}'`,
+      [userId]
+    );
+
+    // Get spending by type
+    const spendingResult = await dbQuery(
+      `SELECT
+        COALESCE(SUM(ABS(amount)) FILTER (WHERE type = 'purchase'), 0) as purchases,
+        COALESCE(SUM(ABS(amount)) FILTER (WHERE type IN ('renewal', 'auto_renewal')), 0) as renewals
+      FROM transactions
+      WHERE user_id = $1
+        AND type IN ('purchase', 'renewal', 'auto_renewal')
+        AND created_at >= NOW() - INTERVAL '${interval}'`,
+      [userId]
+    );
+
+    const stats = placementsResult.rows[0];
+    const spending = spendingResult.rows[0];
+
+    res.json({
+      success: true,
+      data: {
+        placements: {
+          total: parseInt(stats.total, 10),
+          links: parseInt(stats.links, 10),
+          articles: parseInt(stats.articles, 10),
+          scheduled: parseInt(stats.scheduled, 10)
+        },
+        spending: {
+          purchases: parseFloat(spending.purchases || 0),
+          renewals: parseFloat(spending.renewals || 0)
+        }
+      }
+    });
+  } catch (error) {
+    logger.error('Failed to get placement statistics', { userId: req.user.id, error: error.message });
+    res.status(500).json({ error: 'Failed to get placement statistics' });
+  }
+});
+
+/**
+ * GET /api/billing/statistics/timeline
+ * Get user spending timeline for chart
+ */
+router.get('/statistics/timeline', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const period = req.query.period || 'week';
+    const { query: dbQuery } = require('../config/database');
+
+    // Calculate date range
+    let startDate = new Date();
+    let groupBy = 'day';
+
+    switch (period) {
+      case 'day':
+        startDate.setDate(startDate.getDate() - 1);
+        break;
+      case 'week':
+        startDate.setDate(startDate.getDate() - 7);
+        break;
+      case 'month':
+        startDate.setMonth(startDate.getMonth() - 1);
+        break;
+      case 'year':
+        startDate.setFullYear(startDate.getFullYear() - 1);
+        groupBy = 'month';
+        break;
+      default:
+        startDate.setDate(startDate.getDate() - 7);
+    }
+
+    const result = await dbQuery(
+      `SELECT
+        DATE_TRUNC($1, created_at) as period,
+        type,
+        SUM(ABS(amount)) as total_amount
+      FROM transactions
+      WHERE user_id = $2
+        AND type IN ('purchase', 'renewal', 'auto_renewal')
+        AND created_at >= $3
+      GROUP BY DATE_TRUNC($1, created_at), type
+      ORDER BY period`,
+      [groupBy, userId, startDate.toISOString()]
+    );
+
+    res.json({
+      success: true,
+      data: result.rows
+    });
+  } catch (error) {
+    logger.error('Failed to get spending timeline', { userId: req.user.id, error: error.message });
+    res.status(500).json({ error: 'Failed to get spending timeline' });
+  }
+});
+
+/**
+ * GET /api/billing/statistics/recent-purchases
+ * Get user's recent purchases
+ */
+router.get('/statistics/recent-purchases', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const limit = Math.min(parseInt(req.query.limit, 10) || 20, 100);
+    const { query: dbQuery } = require('../config/database');
+
+    const result = await dbQuery(
+      `SELECT
+        p.id,
+        p.type,
+        p.status,
+        p.placed_at as purchased_at,
+        p.final_price,
+        p.discount_applied,
+        s.site_name,
+        s.site_url,
+        proj.name as project_name
+      FROM placements p
+      JOIN sites s ON p.site_id = s.id
+      JOIN projects proj ON p.project_id = proj.id
+      WHERE p.user_id = $1
+      ORDER BY p.placed_at DESC
+      LIMIT $2`,
+      [userId, limit]
+    );
+
+    res.json({
+      success: true,
+      data: result.rows
+    });
+  } catch (error) {
+    logger.error('Failed to get recent purchases', { userId: req.user.id, error: error.message });
+    res.status(500).json({ error: 'Failed to get recent purchases' });
+  }
+});
+
+/**
  * GET /api/billing/export/transactions
  * Export user transactions to CSV or JSON
  */
