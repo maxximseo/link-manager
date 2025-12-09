@@ -234,6 +234,7 @@ node database/run_site_types_migration.js
 node database/run_nullable_migration.js
 node database/run_remove_anchor_unique.js
 node database/run_extended_fields_migration.js
+node database/run_limits_cooldown_migration.js
 
 # 3. Site parameters migrations
 node database/run_da_migration.js
@@ -364,6 +365,46 @@ example.com PL
 another-site.de DE
 russian-site.ru RU
 ```
+
+---
+
+### Add Limits Cooldown Column to Sites (v2.6.5+)
+
+**Purpose**: Track when max_links/max_articles were last changed. Non-admin users can only change these once every 6 months.
+
+```bash
+# Run migration
+node database/run_limits_cooldown_migration.js
+```
+
+**Expected output**:
+```
+Starting limits_changed_at migration...
+✅ Migration completed successfully!
+
+The limits_changed_at column has been added to the sites table.
+This column tracks when max_links/max_articles were last changed.
+Non-admin users can only change these values once every 6 months.
+```
+
+**Verification**:
+```bash
+# Check column exists
+psql -c "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'sites' AND column_name = 'limits_changed_at';"
+
+# Check initial values (all NULL for existing sites)
+psql -c "SELECT id, site_url, limits_changed_at FROM sites LIMIT 5;"
+```
+
+**Business Logic**:
+- When non-admin user changes max_links or max_articles, `limits_changed_at` is set to NOW()
+- Before allowing next change, system checks if 6 months have passed
+- Admin users bypass this check entirely
+- Frontend shows warning with remaining cooldown time
+
+**Troubleshooting**:
+- If migration fails with SSL error, check DATABASE_URL parsing in migration file
+- If cooldown not enforced, verify `userRole` is passed to `updateSite()` service
 
 ---
 

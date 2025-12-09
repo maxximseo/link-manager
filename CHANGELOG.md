@@ -7,6 +7,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.6.5] - 2025-12-09
+
+### 🔒 Security: URL Masking for Premium Sites
+
+Added URL masking feature to hide high-value site domains from regular users until they achieve Gold tier status.
+
+#### URL Masking Feature
+- **ADDED** `maskUrl()` function in `placements.html` (lines 507-541)
+- **Threshold**: DR >= 20 OR DA >= 30 triggers masking
+- **Exceptions**:
+  - Admin users see all URLs immediately
+  - Gold+ tier users (20%+ discount, $3000+ spent) see all URLs
+- **Masking format examples**:
+  - `elearning-reviews.org` → `elear***ws.org`
+  - `litlong.org` → `lit***ng.org`
+  - Short names (3 chars or less): Show first char + `***` + last char
+  - Medium names (4-6 chars): Show first 2 + `***` + last 2
+  - Long names (7+ chars): Show first 4 + `***` + last 2
+
+#### Gold Tier Benefit Display
+- **ADDED** "(Будут видны все адреса площадок)" text for locked Gold tier in `balance.js`
+- **LOCATION** Discount tiers table, shows as info text below "Заблокирован" status
+
+### 🔧 Site Limits 6-Month Cooldown System
+
+Non-admin users can only change max_links/max_articles once every 6 months.
+
+#### Backend Implementation
+- **ADDED** `limits_changed_at TIMESTAMP` column to `sites` table
+- **ADDED** 6-month cooldown check in `site.service.js:updateSite()`
+- **ADDED** `userRole` parameter (4th argument) to `updateSite()` function
+- **UPDATED** `site.controller.js` - passes `req.user.role` to service
+- **ERROR MESSAGE**: "Вы можете изменять лимиты Links/Articles раз в 6 месяцев..."
+
+#### Frontend Implementation
+- **ADDED** `#limitsCooldownWarning` alert div in `sites.html`
+- **ADDED** Cooldown detection in `editSite()` function
+- **ADDED** Readonly state for max_links/max_articles fields during cooldown
+- **ADDED** Info about remaining cooldown time
+
+#### Migration
+- **ADDED** `database/migrate_limits_cooldown.sql` - SQL migration file
+- **ADDED** `database/run_limits_cooldown_migration.js` - Migration runner
+
+```bash
+# Run migration
+node database/run_limits_cooldown_migration.js
+```
+
+### 🎨 UI Changes
+- **REMOVED** Green highlighting for public sites in `sites.html` (CSS definition remains unused)
+
+### 📦 Files Changed
+| File | Change |
+|------|--------|
+| `backend/build/placements.html` | ADDED maskUrl() function |
+| `backend/build/js/balance.js` | ADDED Gold tier benefit text |
+| `backend/build/sites.html` | ADDED cooldown UI, removed green highlighting |
+| `backend/services/site.service.js` | ADDED cooldown logic, userRole parameter |
+| `backend/controllers/site.controller.js` | ADDED role passing, cooldown error handling |
+| `database/migrate_limits_cooldown.sql` | NEW migration file |
+| `database/run_limits_cooldown_migration.js` | NEW migration runner |
+
+---
+
 ## [2.6.4] - 2025-12-04
 
 ### 🧹 Code Quality: DRY Principle - Remove Duplicate Functions

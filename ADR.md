@@ -1733,6 +1733,144 @@ Total: 2158 problems (1 error, 2157 warnings)
 | 020 | Admin-Only Public Site Control | High | ✅ Active |
 | 021 | Frontend Shared Utilities | High | ✅ Active |
 | 022 | ESLint + Prettier Code Quality | Medium | ✅ Active |
+| 023 | URL Masking for Premium Sites | High | ✅ Active |
+| 024 | 6-Month Cooldown for Site Limits | Medium | ✅ Active |
+
+---
+
+## ADR-023: URL Masking for Premium Sites
+
+**Status**: ✅ ACTIVE
+**Date**: December 2025
+**Decision Makers**: Development Team
+
+### Context
+High-value sites with strong SEO metrics (DR/DA) need protection from casual users copying URLs without commitment. Need incentive for users to reach Gold tier.
+
+### Decision
+Implement **URL masking** for premium sites:
+- **Threshold**: DR >= 20 OR DA >= 30
+- **Exceptions**: Admin users and Gold+ tier (20% discount, $3000+ spent) see all URLs
+
+### Masking Algorithm
+```javascript
+function maskUrl(url, dr, da, userDiscount, isAdmin) {
+    // Exceptions - see full URL
+    if (isAdmin || userDiscount >= 20) return url;
+
+    // Only mask premium sites
+    if (dr < 20 && da < 30) return url;
+
+    // Remove protocol and www
+    let cleanUrl = url.replace(/^https?:\/\//, '').replace(/^www\./, '');
+    cleanUrl = cleanUrl.split('/')[0];
+
+    const parts = cleanUrl.split('.');
+    const domain = parts.pop();
+    const name = parts.join('.');
+
+    // Masking based on name length
+    if (name.length <= 3) {
+        return name.slice(0, 1) + '***' + name.slice(-1) + '.' + domain;
+    } else if (name.length <= 6) {
+        return name.slice(0, 2) + '***' + name.slice(-2) + '.' + domain;
+    }
+    return name.slice(0, 4) + '***' + name.slice(-2) + '.' + domain;
+}
+```
+
+### Examples
+| Original | DR/DA | Masked |
+|----------|-------|--------|
+| `elearning-reviews.org` | DR=50 | `elear***ws.org` |
+| `litlong.org` | DA=35 | `lit***ng.org` |
+| `abc.com` | DR=25 | `a***c.com` |
+| `example.com` | DR=5 | `example.com` (no masking) |
+
+### Implementation
+- **Location**: `backend/build/placements.html` lines 507-541
+- **Data source**: User discount loaded from `/api/billing/balance`
+- **Admin check**: Via `isAdmin()` function from auth.js
+
+### Consequences
+- ✅ **Incentivizes Gold tier**: Users must spend $3000+ to see all URLs
+- ✅ **Protects premium sites**: Casual browsing won't reveal valuable domains
+- ✅ **Admin exception**: Operations team can always see full URLs
+- ⚠️ **UX friction**: New users see masked URLs (by design)
+
+### Related ADRs
+- ADR-012: Billing System Architecture (discount tiers)
+- ADR-020: Admin-Only Public Site Control
+
+---
+
+## ADR-024: 6-Month Cooldown for Site Limits
+
+**Status**: ✅ ACTIVE
+**Date**: December 2025
+**Decision Makers**: Development Team
+
+### Context
+Site owners could manipulate `max_links` / `max_articles` frequently to game the system or avoid commitments after links expire. Need to prevent limit abuse.
+
+### Decision
+Implement **6-month cooldown** for non-admin users changing site limits:
+- Track when limits were last changed via `limits_changed_at` column
+- Only enforce cooldown for non-admin users
+- Show remaining cooldown time in UI
+
+### Implementation
+
+**Database Migration**:
+```sql
+ALTER TABLE sites ADD COLUMN limits_changed_at TIMESTAMP DEFAULT NULL;
+```
+
+**Backend Logic** (site.service.js):
+```javascript
+// In updateSite() function:
+if (userRole !== 'admin') {
+    if (site.limits_changed_at) {
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+        if (new Date(site.limits_changed_at) > sixMonthsAgo) {
+            throw new Error('Вы можете изменять лимиты Links/Articles раз в 6 месяцев...');
+        }
+    }
+
+    // Track change
+    if (actuallyChanged) {
+        updateFields.push('limits_changed_at = CURRENT_TIMESTAMP');
+    }
+}
+```
+
+**Frontend UI** (sites.html):
+- Yellow warning alert when cooldown is active
+- Readonly input fields for max_links/max_articles during cooldown
+- Shows remaining cooldown time (e.g., "Осталось: 5 месяцев и 23 дня")
+
+### Exceptions
+| User Role | Cooldown Enforced |
+|-----------|-------------------|
+| Admin | ❌ No - can change anytime |
+| Regular User | ✅ Yes - once per 6 months |
+
+### Files Modified
+- `database/migrate_limits_cooldown.sql` - Schema migration
+- `backend/services/site.service.js` - Cooldown check logic
+- `backend/controllers/site.controller.js` - Pass user role to service
+- `backend/build/sites.html` - UI warning and readonly state
+
+### Consequences
+- ✅ **Prevents abuse**: Users can't constantly adjust limits
+- ✅ **Admin flexibility**: Admins can adjust when needed
+- ✅ **Transparent**: UI shows remaining cooldown time
+- ⚠️ **User friction**: Legitimate limit changes blocked for 6 months
+
+### Related ADRs
+- ADR-020: Admin-Only Public Site Control (admin exceptions pattern)
 
 ---
 
@@ -1744,5 +1882,5 @@ ADRs should be reviewed when:
 - 🔄 Security vulnerabilities discovered
 - 🔄 Technology landscape changes (e.g., new PostgreSQL features)
 
-**Last Review**: November 2025
-**Next Review**: April 2026
+**Last Review**: December 2025
+**Next Review**: June 2026
