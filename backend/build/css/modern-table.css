@@ -1,0 +1,380 @@
+/**
+ * Modern Table Styles
+ * Reusable CSS for modern card and table design
+ * Created: December 2025
+ */
+
+/* Page Background */
+body.modern-ui {
+    background-color: #f8fafc;
+}
+
+/* Modern Card Style */
+.modern-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+}
+
+.modern-card-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.modern-card-header h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+}
+
+.modern-card-header p {
+    font-size: 14px;
+    color: #64748b;
+    margin: 4px 0 0 0;
+}
+
+/* Modern Table */
+.modern-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.modern-table thead {
+    background: #f8fafc;
+}
+
+.modern-table thead th {
+    padding: 14px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #e5e7eb;
+    white-space: nowrap;
+}
+
+.modern-table tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+    transition: background-color 0.15s ease;
+}
+
+.modern-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.modern-table tbody tr:hover {
+    background-color: #f8fafc;
+}
+
+.modern-table tbody td {
+    padding: 16px;
+    font-size: 14px;
+    color: #334155;
+    vertical-align: middle;
+}
+
+/* Project Name Cell */
+.project-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.project-name {
+    font-weight: 600;
+    color: #1e293b;
+    text-decoration: none;
+}
+
+.project-name:hover {
+    color: #3b82f6;
+}
+
+.project-url {
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+/* Status Badges */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-badge i {
+    font-size: 10px;
+}
+
+.status-live {
+    background-color: #dcfce7;
+    color: #16a34a;
+}
+
+.status-pending {
+    background-color: #fef3c7;
+    color: #d97706;
+}
+
+.status-scheduled {
+    background-color: #e0e7ff;
+    color: #4f46e5;
+}
+
+.status-failed {
+    background-color: #fee2e2;
+    color: #dc2626;
+}
+
+/* DA/DR Score */
+.score-badge {
+    font-weight: 600;
+    color: #059669;
+}
+
+/* Date */
+.date-text {
+    color: #64748b;
+    font-size: 13px;
+}
+
+/* External Link Icon */
+.external-link {
+    color: #94a3b8;
+    text-decoration: none;
+    transition: color 0.15s;
+}
+
+.external-link:hover {
+    color: #3b82f6;
+}
+
+/* Filter Dropdown */
+.filter-dropdown {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.filter-dropdown:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+}
+
+/* Export Button */
+.btn-export {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: white;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.btn-export:hover {
+    background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+/* Stats Cards */
+.stats-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.stats-card .icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    margin-bottom: 12px;
+}
+
+.stats-card .icon.primary { background: #eff6ff; color: #3b82f6; }
+.stats-card .icon.success { background: #dcfce7; color: #16a34a; }
+.stats-card .icon.warning { background: #fef3c7; color: #d97706; }
+.stats-card .icon.info { background: #e0e7ff; color: #6366f1; }
+
+.stats-card h3 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 4px 0;
+}
+
+.stats-card p {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0;
+}
+
+/* Action Buttons */
+.action-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+    background: white;
+    color: #64748b;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.action-btn:hover {
+    background: #f8fafc;
+    color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.action-btn.delete:hover {
+    color: #dc2626;
+    border-color: #dc2626;
+}
+
+/* Create Button */
+.btn-create {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.btn-create:hover {
+    background: #f8fafc;
+    border-color: #3b82f6;
+    color: #3b82f6;
+}
+
+/* Skeleton loader */
+.skeleton {
+    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+}
+
+@keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.skeleton-text {
+    height: 16px;
+    width: 80%;
+}
+
+/* Modal styles */
+.modal.show {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.5);
+}
+
+/* Page Header */
+.page-header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.page-header p {
+    font-size: 14px;
+    color: #64748b;
+    margin: 4px 0 0 0;
+}
+
+/* Usage progress bars */
+.usage-progress {
+    height: 6px;
+    border-radius: 3px;
+    background: #e5e7eb;
+    overflow: hidden;
+}
+
+.usage-progress-bar {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.usage-progress-bar.success { background: #22c55e; }
+.usage-progress-bar.warning { background: #eab308; }
+.usage-progress-bar.danger { background: #ef4444; }
+
+/* Monospace text for IDs */
+.mono-text {
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+    font-size: 13px;
+    color: #64748b;
+}
+
+/* Link text styling */
+.link-url {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+    color: #64748b;
+}
+
+/* Badge variants */
+.badge-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.badge-count.primary { background: #eff6ff; color: #3b82f6; }
+.badge-count.success { background: #dcfce7; color: #16a34a; }
+.badge-count.warning { background: #fef3c7; color: #d97706; }
+.badge-count.danger { background: #fee2e2; color: #dc2626; }
+.badge-count.muted { background: #f1f5f9; color: #64748b; }
