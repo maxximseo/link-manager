@@ -8,75 +8,310 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="/css/styles.css">
     <style>
-        /* Table styling - smaller font only */
-        .table {
-            font-size: 0.875rem;
+        body {
+            background-color: #f8fafc;
         }
 
-        .table thead {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        /* Modern Card Style */
+        .modern-card {
             background: white;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
         }
 
-        .table tbody tr {
-            transition: all 0.2s ease;
+        .modern-card-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #f1f5f9;
         }
 
-        .table tbody tr:hover {
-            transform: scale(1.01);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        .modern-card-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
+            margin: 0;
         }
 
-        /* Card border styling */
-        .card {
-            border: 1px solid #dee2e6;
-            border-radius: 0.375rem;
+        .modern-card-header p {
+            font-size: 14px;
+            color: #64748b;
+            margin: 4px 0 0 0;
         }
 
-        /* Extra small buttons for management column */
-        .btn-xs {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.8rem;
-            line-height: 1.2;
+        /* Modern Table */
+        .modern-table {
+            width: 100%;
+            border-collapse: collapse;
         }
 
-        /* Purple theme buttons */
-        .btn-purple {
-            background-color: #6f42c1;
-            border-color: #6f42c1;
-            color: white;
+        .modern-table thead {
+            background: #f8fafc;
         }
 
-        .btn-purple:hover {
-            background-color: #5a32a3;
-            border-color: #5a32a3;
-            color: white;
+        .modern-table thead th {
+            padding: 14px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
         }
 
-        .btn-purple-outline {
-            background-color: transparent;
-            border-color: #6f42c1;
-            color: #6f42c1;
+        .modern-table tbody tr {
+            border-bottom: 1px solid #f1f5f9;
+            transition: background-color 0.15s ease;
         }
 
-        .btn-purple-outline:hover {
-            background-color: #6f42c1;
-            border-color: #6f42c1;
-            color: white;
+        .modern-table tbody tr:last-child {
+            border-bottom: none;
         }
 
-        /* Clickable badge hover effects */
-        a .badge {
+        .modern-table tbody tr:hover {
+            background-color: #f8fafc;
+        }
+
+        .modern-table tbody td {
+            padding: 16px;
+            font-size: 14px;
+            color: #334155;
+            vertical-align: middle;
+        }
+
+        /* Project Name Cell */
+        .project-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .project-name {
+            font-weight: 600;
+            color: #1e293b;
+            text-decoration: none;
+        }
+
+        .project-name:hover {
+            color: #3b82f6;
+        }
+
+        .project-url {
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-badge i {
+            font-size: 10px;
+        }
+
+        .status-live {
+            background-color: #dcfce7;
+            color: #16a34a;
+        }
+
+        .status-pending {
+            background-color: #fef3c7;
+            color: #d97706;
+        }
+
+        .status-scheduled {
+            background-color: #e0e7ff;
+            color: #4f46e5;
+        }
+
+        .status-failed {
+            background-color: #fee2e2;
+            color: #dc2626;
+        }
+
+        /* DA/DR Score */
+        .score-badge {
+            font-weight: 600;
+            color: #059669;
+        }
+
+        /* Date */
+        .date-text {
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        /* External Link Icon */
+        .external-link {
+            color: #94a3b8;
+            text-decoration: none;
+            transition: color 0.15s;
+        }
+
+        .external-link:hover {
+            color: #3b82f6;
+        }
+
+        /* Filter Dropdown */
+        .filter-dropdown {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #64748b;
             cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            transition: all 0.15s;
         }
 
-        a:hover .badge {
-            transform: scale(1.15);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        .filter-dropdown:hover {
+            border-color: #cbd5e1;
+            background: #f8fafc;
+        }
+
+        /* Export Button */
+        .btn-export {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 20px;
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: white;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-export:hover {
+            background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+        }
+
+        /* Stats Cards */
+        .stats-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .stats-card .icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-bottom: 12px;
+        }
+
+        .stats-card .icon.primary { background: #eff6ff; color: #3b82f6; }
+        .stats-card .icon.success { background: #dcfce7; color: #16a34a; }
+        .stats-card .icon.warning { background: #fef3c7; color: #d97706; }
+        .stats-card .icon.info { background: #e0e7ff; color: #6366f1; }
+
+        .stats-card h3 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 0 0 4px 0;
+        }
+
+        .stats-card p {
+            font-size: 13px;
+            color: #64748b;
+            margin: 0;
+        }
+
+        /* Action Buttons */
+        .action-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+            background: white;
+            color: #64748b;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .action-btn:hover {
+            background: #f8fafc;
+            color: #3b82f6;
+            border-color: #3b82f6;
+        }
+
+        .action-btn.delete:hover {
+            color: #dc2626;
+            border-color: #dc2626;
+        }
+
+        /* Create Button */
+        .btn-create {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-create:hover {
+            background: #f8fafc;
+            border-color: #3b82f6;
+            color: #3b82f6;
+        }
+
+        /* Skeleton loader */
+        .skeleton {
+            background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 4px;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .skeleton-text {
+            height: 16px;
+            width: 80%;
+        }
+
+        /* Modal styles */
+        .modal.show {
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.5);
         }
     </style>
 </head>
@@ -87,104 +322,123 @@
     <div class="container mt-4">
         <!-- Page Header with Create Button -->
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>Мои Проекты</h1>
-            <button class="btn btn-light border" style="background: white !important; color: #333 !important;" onclick="showCreateModal()">
+            <div>
+                <h1 style="font-size: 24px; font-weight: 700; color: #1e293b; margin: 0;">Мои Проекты</h1>
+                <p style="font-size: 14px; color: #64748b; margin: 4px 0 0 0;">Управление вашими проектами и размещениями</p>
+            </div>
+            <button class="btn-create" onclick="showCreateModal()">
                 <i class="bi bi-plus-circle"></i> Создать проект
             </button>
         </div>
 
         <!-- Statistics Cards -->
-        <div class="row mb-4" id="statsCards">
-            <div class="col-md-3">
-                <div class="stat-card primary">
-                    <i class="bi bi-folder-fill"></i>
-                    <h3 id="totalProjects"><span class="skeleton" style="width: 60px; height: 36px; display: inline-block;"></span></h3>
+        <div class="row mb-4 g-3">
+            <div class="col-md-3 col-sm-6">
+                <div class="stats-card">
+                    <div class="icon primary">
+                        <i class="bi bi-folder-fill"></i>
+                    </div>
+                    <h3 id="totalProjects"><span class="skeleton" style="width: 50px; height: 28px; display: inline-block;"></span></h3>
                     <p>Всего проектов</p>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="stat-card success">
-                    <i class="bi bi-globe2"></i>
-                    <h3 id="totalSites"><span class="skeleton" style="width: 60px; height: 36px; display: inline-block;"></span></h3>
+            <div class="col-md-3 col-sm-6">
+                <div class="stats-card">
+                    <div class="icon success">
+                        <i class="bi bi-globe2"></i>
+                    </div>
+                    <h3 id="totalSites"><span class="skeleton" style="width: 50px; height: 28px; display: inline-block;"></span></h3>
                     <p>Всего сайтов</p>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="stat-card warning">
-                    <i class="bi bi-bookmark-star-fill"></i>
-                    <h3 id="totalPlacements"><span class="skeleton" style="width: 60px; height: 36px; display: inline-block;"></span></h3>
+            <div class="col-md-3 col-sm-6">
+                <div class="stats-card">
+                    <div class="icon warning">
+                        <i class="bi bi-bookmark-star-fill"></i>
+                    </div>
+                    <h3 id="totalPlacements"><span class="skeleton" style="width: 50px; height: 28px; display: inline-block;"></span></h3>
                     <p>Всего размещений</p>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="stat-card info">
-                    <i class="bi bi-calendar-event"></i>
-                    <h3 id="totalScheduled"><span class="skeleton" style="width: 60px; height: 36px; display: inline-block;"></span></h3>
+            <div class="col-md-3 col-sm-6">
+                <div class="stats-card">
+                    <div class="icon info">
+                        <i class="bi bi-calendar-event"></i>
+                    </div>
+                    <h3 id="totalScheduled"><span class="skeleton" style="width: 50px; height: 28px; display: inline-block;"></span></h3>
                     <p>Запланировано</p>
                 </div>
             </div>
         </div>
 
-        <!-- Projects Table -->
-        <div class="card">
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Название проекта</th>
-                                <th>URL</th>
-                                <th>Дата создания</th>
-                                <th>Тексты ссылок</th>
-                                <th>Тексты гест-постов</th>
-                                <th>Потрачено ($)</th>
-                                <th>Размещено</th>
-                                <th>Запланировано</th>
-                                <th>Управление</th>
-                            </tr>
-                        </thead>
-                        <tbody id="projectsTableBody">
-                            <!-- Loading skeleton -->
-                            <tr>
-                                <td><div class="skeleton skeleton-text"></div></td>
-                                <td><div class="skeleton skeleton-text"></div></td>
-                                <td><div class="skeleton skeleton-text"></div></td>
-                                <td><div class="skeleton skeleton-text"></div></td>
-                                <td><div class="skeleton skeleton-text"></div></td>
-                                <td><div class="skeleton skeleton-text"></div></td>
-                                <td><div class="skeleton skeleton-text"></div></td>
-                                <td><div class="skeleton skeleton-text"></div></td>
-                                <td><div class="skeleton skeleton-text"></div></td>
-                                <td><div class="skeleton skeleton-text"></div></td>
-                            </tr>
-                            <tr>
-                                <td><div class="skeleton skeleton-text"></div></td>
-                                <td><div class="skeleton skeleton-text"></div></td>
-                                <td><div class="skeleton skeleton-text"></div></td>
-                                <td><div class="skeleton skeleton-text"></div></td>
-                                <td><div class="skeleton skeleton-text"></div></td>
-                                <td><div class="skeleton skeleton-text"></div></td>
-                                <td><div class="skeleton skeleton-text"></div></td>
-                                <td><div class="skeleton skeleton-text"></div></td>
-                                <td><div class="skeleton skeleton-text"></div></td>
-                                <td><div class="skeleton skeleton-text"></div></td>
-                            </tr>
-                            <tr>
-                                <td><div class="skeleton skeleton-text"></div></td>
-                                <td><div class="skeleton skeleton-text"></div></td>
-                                <td><div class="skeleton skeleton-text"></div></td>
-                                <td><div class="skeleton skeleton-text"></div></td>
-                                <td><div class="skeleton skeleton-text"></div></td>
-                                <td><div class="skeleton skeleton-text"></div></td>
-                                <td><div class="skeleton skeleton-text"></div></td>
-                                <td><div class="skeleton skeleton-text"></div></td>
-                                <td><div class="skeleton skeleton-text"></div></td>
-                                <td><div class="skeleton skeleton-text"></div></td>
-                            </tr>
-                        </tbody>
-                    </table>
+        <!-- Projects Table Card -->
+        <div class="modern-card">
+            <div class="modern-card-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h2>Список проектов</h2>
+                    <p>Мониторинг ваших размещений и ссылок</p>
                 </div>
+                <div class="d-flex gap-2">
+                    <div class="dropdown">
+                        <button class="filter-dropdown dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-funnel"></i> Все статусы
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="filterByStatus('all')">Все статусы</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="filterByStatus('active')">Активные</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="filterByStatus('pending')">В ожидании</a></li>
+                        </ul>
+                    </div>
+                    <button class="btn-export" onclick="exportProjects()">
+                        <i class="bi bi-download"></i> Export
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th>Название проекта</th>
+                            <th>Ссылок</th>
+                            <th>Статус</th>
+                            <th>Размещений</th>
+                            <th>Потрачено</th>
+                            <th>Дата</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="projectsTableBody">
+                        <!-- Loading skeleton -->
+                        <tr>
+                            <td><div class="skeleton skeleton-text" style="width: 180px;"></div></td>
+                            <td><div class="skeleton skeleton-text" style="width: 40px;"></div></td>
+                            <td><div class="skeleton skeleton-text" style="width: 70px;"></div></td>
+                            <td><div class="skeleton skeleton-text" style="width: 40px;"></div></td>
+                            <td><div class="skeleton skeleton-text" style="width: 60px;"></div></td>
+                            <td><div class="skeleton skeleton-text" style="width: 80px;"></div></td>
+                            <td><div class="skeleton skeleton-text" style="width: 60px;"></div></td>
+                        </tr>
+                        <tr>
+                            <td><div class="skeleton skeleton-text" style="width: 160px;"></div></td>
+                            <td><div class="skeleton skeleton-text" style="width: 40px;"></div></td>
+                            <td><div class="skeleton skeleton-text" style="width: 70px;"></div></td>
+                            <td><div class="skeleton skeleton-text" style="width: 40px;"></div></td>
+                            <td><div class="skeleton skeleton-text" style="width: 60px;"></div></td>
+                            <td><div class="skeleton skeleton-text" style="width: 80px;"></div></td>
+                            <td><div class="skeleton skeleton-text" style="width: 60px;"></div></td>
+                        </tr>
+                        <tr>
+                            <td><div class="skeleton skeleton-text" style="width: 200px;"></div></td>
+                            <td><div class="skeleton skeleton-text" style="width: 40px;"></div></td>
+                            <td><div class="skeleton skeleton-text" style="width: 70px;"></div></td>
+                            <td><div class="skeleton skeleton-text" style="width: 40px;"></div></td>
+                            <td><div class="skeleton skeleton-text" style="width: 60px;"></div></td>
+                            <td><div class="skeleton skeleton-text" style="width: 80px;"></div></td>
+                            <td><div class="skeleton skeleton-text" style="width: 60px;"></div></td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -192,28 +446,28 @@
     <!-- Project Modal -->
     <div class="modal" id="projectModal" tabindex="-1">
         <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalTitle">Создать проект</h5>
+            <div class="modal-content" style="border-radius: 16px; border: none;">
+                <div class="modal-header" style="border-bottom: 1px solid #f1f5f9; padding: 20px 24px;">
+                    <h5 class="modal-title" id="modalTitle" style="font-weight: 600; color: #1e293b;">Создать проект</h5>
                     <button type="button" class="btn-close" onclick="closeModal()"></button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body" style="padding: 24px;">
                     <form id="projectForm">
                         <input type="hidden" id="projectId">
                         <div class="mb-3">
-                            <label for="projectName" class="form-label">Название проекта</label>
-                            <input type="text" class="form-control" id="projectName" required placeholder="Введите название">
+                            <label for="projectName" class="form-label" style="font-weight: 500; color: #374151;">Название проекта</label>
+                            <input type="text" class="form-control" id="projectName" required placeholder="Введите название" style="border-radius: 8px; padding: 10px 14px;">
                         </div>
                         <div class="mb-3">
-                            <label for="projectUrl" class="form-label">URL главного сайта</label>
-                            <input type="url" class="form-control" id="projectUrl" placeholder="https://example.com">
+                            <label for="projectUrl" class="form-label" style="font-weight: 500; color: #374151;">URL главного сайта</label>
+                            <input type="url" class="form-control" id="projectUrl" placeholder="https://example.com" style="border-radius: 8px; padding: 10px 14px;">
                             <small class="text-muted">Опционально</small>
                         </div>
                     </form>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Отмена</button>
-                    <button type="button" class="btn btn-primary" onclick="saveProject()">
+                <div class="modal-footer" style="border-top: 1px solid #f1f5f9; padding: 16px 24px;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()" style="border-radius: 8px;">Отмена</button>
+                    <button type="button" class="btn btn-primary" onclick="saveProject()" style="border-radius: 8px; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border: none;">
                         <span id="saveBtn">Сохранить</span>
                         <span id="saveSpinner" class="spinner-border spinner-border-sm d-none"></span>
                     </button>
@@ -237,6 +491,7 @@
         }
 
         let projects = [];
+        let allPlacements = [];
 
         // Load statistics for cards
         async function loadStatistics() {
@@ -274,7 +529,7 @@
             } catch (error) {
                 console.error('Error loading projects:', error);
                 const tbody = document.getElementById('projectsTableBody');
-                tbody.innerHTML = '<tr><td colspan="10" class="text-center text-danger py-4">Ошибка загрузки проектов</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger py-4">Ошибка загрузки проектов</td></tr>';
             }
         }
 
@@ -284,16 +539,17 @@
             if (!projects || projects.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="10" class="text-center text-muted py-4">
-                            <i class="bi bi-info-circle"></i>
-                            Проектов пока нет. Создайте первый проект!
+                        <td colspan="7" class="text-center py-5" style="color: #94a3b8;">
+                            <i class="bi bi-folder-x" style="font-size: 48px; display: block; margin-bottom: 16px;"></i>
+                            <p style="font-size: 16px; margin: 0;">Проектов пока нет</p>
+                            <p style="font-size: 14px; margin: 8px 0 0 0;">Создайте первый проект для начала работы</p>
                         </td>
                     </tr>
                 `;
                 return;
             }
 
-            tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">Загрузка статистики...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4" style="color: #94a3b8;">Загрузка статистики...</td></tr>';
 
             try {
                 // Fetch all placements with high limit
@@ -306,15 +562,11 @@
                 } else if (response && Array.isArray(response.data)) {
                     placementsArray = response.data;
                 }
+                allPlacements = placementsArray;
 
                 // Calculate statistics per project
                 tbody.innerHTML = projects.map(p => {
                     const createdDate = new Date(p.created_at).toLocaleDateString('ru-RU');
-                    const mainUrl = p.main_site_url ?
-                        `<a href="${escapeHtml(p.main_site_url)}" target="_blank" title="${escapeHtml(p.main_site_url)}" class="text-decoration-none">
-                            <i class="bi bi-link-45deg fs-5"></i>
-                        </a>`
-                        : '<span class="text-muted">—</span>';
 
                     // Calculate placement statistics for this project
                     const projectPlacements = placementsArray.filter(pl => pl.project_id === p.id);
@@ -326,48 +578,64 @@
                         const schedDate = new Date(pl.scheduled_publish_date);
                         return schedDate > new Date();
                     }).length;
+                    const failedPlacements = projectPlacements.filter(pl => pl.status === 'failed').length;
+
+                    // Determine overall status
+                    let statusBadge = '';
+                    if (failedPlacements > 0) {
+                        statusBadge = `<span class="status-badge status-failed"><i class="bi bi-x-circle-fill"></i> ${failedPlacements} broken</span>`;
+                    } else if (scheduledPlacements > 0) {
+                        statusBadge = `<span class="status-badge status-pending"><i class="bi bi-clock-fill"></i> pending</span>`;
+                    } else if (activePlacements > 0) {
+                        statusBadge = `<span class="status-badge status-live"><i class="bi bi-check-circle-fill"></i> live</span>`;
+                    } else {
+                        statusBadge = `<span class="status-badge status-scheduled"><i class="bi bi-hourglass-split"></i> new</span>`;
+                    }
+
+                    const projectUrl = p.main_site_url || '';
+                    const displayUrl = projectUrl ? new URL(projectUrl).hostname : 'Не указан';
 
                     return `
                         <tr>
-                            <td>#${p.id}</td>
                             <td>
-                                <a href="/placements-manager.html?projectId=${p.id}&tab=active" class="text-decoration-none fw-bold">
-                                    ${escapeHtml(p.name)}
-                                </a>
-                            </td>
-                            <td>${mainUrl}</td>
-                            <td>${createdDate}</td>
-                            <td>${p.links_count || 0}</td>
-                            <td>${p.articles_count || 0}</td>
-                            <td>$${totalSpent.toFixed(2)}</td>
-                            <td>
-                                <a href="/placements-manager.html?projectId=${p.id}&tab=active"
-                                   class="text-decoration-none"
-                                   title="Просмотреть размещения для проекта ${escapeHtml(p.name)}">
-                                    <span class="badge bg-success">${activePlacements}</span>
-                                </a>
+                                <div class="project-cell">
+                                    <a href="/project-detail.html?id=${p.id}" class="project-name">${escapeHtml(p.name)}</a>
+                                    <span class="project-url">${escapeHtml(displayUrl)}</span>
+                                </div>
                             </td>
                             <td>
-                                <a href="/placements-manager.html?projectId=${p.id}&tab=scheduled"
-                                   class="text-decoration-none"
-                                   title="Просмотреть запланированные размещения для проекта ${escapeHtml(p.name)}">
-                                    <span class="badge bg-warning text-dark">${scheduledPlacements}</span>
+                                <span style="font-weight: 600; color: #1e293b;">${p.links_count || 0}</span>
+                                <span style="color: #94a3b8;"> / ${p.articles_count || 0}</span>
+                            </td>
+                            <td>${statusBadge}</td>
+                            <td>
+                                <a href="/placements-manager.html?projectId=${p.id}&tab=active" class="text-decoration-none">
+                                    <span class="score-badge">${activePlacements}</span>
                                 </a>
                             </td>
+                            <td style="font-weight: 500; color: ${totalSpent > 0 ? '#1e293b' : '#94a3b8'};">$${totalSpent.toFixed(2)}</td>
+                            <td class="date-text">${createdDate}</td>
                             <td>
-                                <button class="btn btn-xs btn-light border" style="background: white !important; color: #333 !important;" onclick="editProject(${p.id})" title="Редактировать">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
-                                <button class="btn btn-xs btn-light border" style="background: white !important; color: #333 !important;" onclick="deleteProject(${p.id})" title="Удалить">
-                                    <i class="bi bi-trash"></i>
-                                </button>
+                                <div class="d-flex gap-1">
+                                    <button class="action-btn" onclick="editProject(${p.id})" title="Редактировать">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="action-btn delete" onclick="deleteProject(${p.id})" title="Удалить">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                    ${projectUrl ? `
+                                    <a href="${escapeHtml(projectUrl)}" target="_blank" class="action-btn" title="Открыть сайт">
+                                        <i class="bi bi-box-arrow-up-right"></i>
+                                    </a>
+                                    ` : ''}
+                                </div>
                             </td>
                         </tr>
                     `;
                 }).join('');
             } catch (error) {
                 console.error('Error loading project stats:', error);
-                tbody.innerHTML = '<tr><td colspan="10" class="text-center text-danger">Ошибка загрузки статистики</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger py-4">Ошибка загрузки статистики</td></tr>';
             }
         }
 
@@ -376,6 +644,48 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        function filterByStatus(status) {
+            // Update button text
+            const filterBtn = document.querySelector('.filter-dropdown');
+            if (status === 'all') {
+                filterBtn.innerHTML = '<i class="bi bi-funnel"></i> Все статусы';
+            } else if (status === 'active') {
+                filterBtn.innerHTML = '<i class="bi bi-funnel-fill"></i> Активные';
+            } else if (status === 'pending') {
+                filterBtn.innerHTML = '<i class="bi bi-funnel-fill"></i> В ожидании';
+            }
+            // Re-render table with filter
+            loadProjectsTable();
+        }
+
+        function exportProjects() {
+            if (!projects || projects.length === 0) {
+                showNotification('Нет данных для экспорта', 'warning');
+                return;
+            }
+
+            const csvContent = [
+                ['ID', 'Название', 'URL', 'Ссылок', 'Статей', 'Дата создания'].join(','),
+                ...projects.map(p => [
+                    p.id,
+                    `"${(p.name || '').replace(/"/g, '""')}"`,
+                    `"${(p.main_site_url || '').replace(/"/g, '""')}"`,
+                    p.links_count || 0,
+                    p.articles_count || 0,
+                    new Date(p.created_at).toLocaleDateString('ru-RU')
+                ].join(','))
+            ].join('\n');
+
+            const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `projects_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+            URL.revokeObjectURL(link.href);
+
+            showNotification('Проекты экспортированы в CSV', 'success');
         }
 
         function showCreateModal() {
