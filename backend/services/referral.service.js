@@ -367,14 +367,36 @@ const validateReferralCode = async (code) => {
  */
 const getWallet = async (userId) => {
   try {
-    const result = await query('SELECT usdt_wallet FROM users WHERE id = $1', [userId]);
+    const result = await query(
+      'SELECT usdt_wallet, usdt_wallet_updated_at FROM users WHERE id = $1',
+      [userId]
+    );
 
     if (result.rows.length === 0) {
       throw new Error('User not found');
     }
 
+    const { usdt_wallet, usdt_wallet_updated_at } = result.rows[0];
+
+    // Calculate if wallet can be changed (1 month cooldown)
+    let canChangeWallet = true;
+    let walletChangeAvailableAt = null;
+
+    if (usdt_wallet && usdt_wallet_updated_at) {
+      const oneMonthFromUpdate = new Date(usdt_wallet_updated_at);
+      oneMonthFromUpdate.setMonth(oneMonthFromUpdate.getMonth() + 1);
+
+      if (new Date() < oneMonthFromUpdate) {
+        canChangeWallet = false;
+        walletChangeAvailableAt = oneMonthFromUpdate.toISOString();
+      }
+    }
+
     return {
-      wallet: result.rows[0].usdt_wallet || null
+      wallet: usdt_wallet || null,
+      walletUpdatedAt: usdt_wallet_updated_at ? usdt_wallet_updated_at.toISOString() : null,
+      canChangeWallet,
+      walletChangeAvailableAt
     };
   } catch (error) {
     logger.error('Failed to get wallet', { userId, error: error.message });
