@@ -2266,6 +2266,117 @@ const batchDeletePlacements = async (userId, userRole, placementIds) => {
   };
 };
 
+/**
+ * Create referral commission for the referrer when a referred user makes a purchase
+ * Called asynchronously after purchase commits - doesn't block purchase flow
+ *
+ * @param {number} userId - ID of user who made the purchase (referee)
+ * @param {number} transactionId - ID of the purchase transaction
+ * @param {number} placementId - ID of the created placement
+ * @param {number} purchaseAmount - Final price paid (after discounts)
+ */
+const createReferralCommission = async (userId, transactionId, placementId, purchaseAmount) => {
+  try {
+    // Get user's referrer (if any)
+    const userResult = await query(
+      'SELECT referred_by_user_id FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (userResult.rows.length === 0 || !userResult.rows[0].referred_by_user_id) {
+      // User has no referrer, skip
+      return null;
+    }
+
+    const referrerId = userResult.rows[0].referred_by_user_id;
+    const commissionRate = PRICING.REFERRAL_COMMISSION_RATE;
+    const commissionAmount = parseFloat(purchaseAmount) * (commissionRate / 100);
+
+    // Minimum commission threshold ($0.01)
+    if (commissionAmount < 0.01) {
+      logger.info('Referral commission too small, skipping', {
+        userId,
+        referrerId,
+        purchaseAmount,
+        commissionAmount
+      });
+      return null;
+    }
+
+    const client = await pool.connect();
+
+    try {
+      await client.query('BEGIN');
+
+      // Create referral transaction record
+      await client.query(
+        `INSERT INTO referral_transactions (
+          referrer_id, referee_id, original_transaction_id, placement_id,
+          transaction_amount, commission_rate, commission_amount, status
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'credited')`,
+        [referrerId, userId, transactionId, placementId, purchaseAmount, commissionRate, commissionAmount]
+      );
+
+      // Update referrer's balances
+      await client.query(
+        `UPDATE users
+         SET referral_balance = referral_balance + $1,
+             total_referral_earnings = total_referral_earnings + $1
+         WHERE id = $2`,
+        [commissionAmount, referrerId]
+      );
+
+      // Create notification for referrer
+      await client.query(
+        `INSERT INTO notifications (user_id, type, title, message, metadata)
+         VALUES ($1, 'referral_commission', $2, $3, $4)`,
+        [
+          referrerId,
+          'Реферальная комиссия',
+          `Вы получили $${commissionAmount.toFixed(2)} комиссии от покупки привлечённого пользователя.`,
+          JSON.stringify({
+            refereeId: userId,
+            purchaseAmount,
+            commissionRate,
+            commissionAmount,
+            placementId
+          })
+        ]
+      );
+
+      await client.query('COMMIT');
+
+      logger.info('Referral commission created', {
+        referrerId,
+        refereeId: userId,
+        purchaseAmount,
+        commissionAmount,
+        placementId
+      });
+
+      return {
+        referrerId,
+        commissionAmount
+      };
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    logger.error('Failed to create referral commission', {
+      userId,
+      transactionId,
+      placementId,
+      purchaseAmount,
+      error: error.message
+    });
+    // Don't re-throw - referral commission failure should not affect purchase
+    return null;
+  }
+};
+
 module.exports = {
   PRICING,
   getUserBalance,
@@ -2284,5 +2395,6 @@ module.exports = {
   refundPlacementInTransaction,
   restoreUsageCountsInTransaction,
   publishScheduledPlacement,
-  publishPlacementAsync
+  publishPlacementAsync,
+  createReferralCommission
 };
