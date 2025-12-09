@@ -286,6 +286,22 @@ const updateSite = async (siteId, userId, data, userRole = null) => {
       finalAllowArticles = false;
     }
 
+    // Check if we need to update limits_changed_at (only for non-admin users changing limits)
+    let shouldUpdateLimitsTimestamp = false;
+    if (!isAdmin && (max_links !== undefined || max_articles !== undefined)) {
+      // Re-check if values are actually changing
+      const checkResult = await query(
+        'SELECT max_links, max_articles FROM sites WHERE id = $1 AND user_id = $2',
+        [siteId, userId]
+      );
+      if (checkResult.rows.length > 0) {
+        const current = checkResult.rows[0];
+        const isChangingLinks = max_links !== undefined && max_links !== current.max_links;
+        const isChangingArticles = finalMaxArticles !== undefined && finalMaxArticles !== current.max_articles;
+        shouldUpdateLimitsTimestamp = isChangingLinks || isChangingArticles;
+      }
+    }
+
     const result = await query(
       `UPDATE sites
        SET site_url = COALESCE($1, site_url),
@@ -298,7 +314,8 @@ const updateSite = async (siteId, userId, data, userRole = null) => {
            is_public = COALESCE($8, is_public),
            available_for_purchase = COALESCE($9, available_for_purchase),
            price_link = COALESCE($10, price_link),
-           price_article = COALESCE($11, price_article)
+           price_article = COALESCE($11, price_article),
+           limits_changed_at = CASE WHEN $14 THEN CURRENT_TIMESTAMP ELSE limits_changed_at END
        WHERE id = $12 AND user_id = $13
        RETURNING *`,
       [
@@ -314,7 +331,8 @@ const updateSite = async (siteId, userId, data, userRole = null) => {
         price_link,
         price_article,
         siteId,
-        userId
+        userId,
+        shouldUpdateLimitsTimestamp
       ]
     );
 
