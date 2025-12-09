@@ -6,6 +6,7 @@
 // Global state
 let currentReferralCode = '';
 let currentBalance = 0;
+let currentWallet = null;
 const MINIMUM_WITHDRAWAL = 200;
 
 /**
