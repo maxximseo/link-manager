@@ -263,7 +263,7 @@ const updateSite = async (req, res) => {
         price_article !== undefined && price_article !== null && price_article !== ''
           ? parseFloat(price_article)
           : undefined
-    });
+    }, req.user.role); // Pass user role for 6-month cooldown check
 
     if (!site) {
       return res.status(404).json({ error: 'Site not found' });
@@ -272,6 +272,12 @@ const updateSite = async (req, res) => {
     res.json({ data: site });
   } catch (error) {
     logger.error('Update site error:', error);
+
+    // Return cooldown error message to user
+    if (error.message && error.message.includes('лимиты Links/Articles')) {
+      return res.status(400).json({ error: error.message });
+    }
+
     res.status(500).json({ error: 'Failed to update site' });
   }
 };
