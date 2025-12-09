@@ -159,7 +159,7 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
     registerSuccess.classList.add('hidden');
 
     try {
-        const result = await register(username, email, password, confirmPassword);
+        const result = await register(username, email, password, confirmPassword, referralCode);
 
         // Show success message
         registerSuccess.innerHTML = `
