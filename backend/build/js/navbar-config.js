@@ -42,7 +42,8 @@ const NavbarConfig = {
         { icon: 'bi-shield-check', text: 'Модерация', href: '/admin-moderation.html', hasBadge: true, badgeId: 'moderation-dropdown-badge' },
         { icon: 'bi-people', text: 'Пользователи', href: '/admin-users.html' },
         { icon: 'bi-bookmark-star', text: 'Размещения', href: '/admin-placements.html' },
-        { icon: 'bi-sliders', text: 'Параметры сайтов', href: '/admin-site-params.html' }
+        { icon: 'bi-sliders', text: 'Параметры сайтов', href: '/admin-site-params.html' },
+        { icon: 'bi-wallet2', text: 'Выводы рефералов', href: '/admin-referral-withdrawals.html' }
     ],
 
     // Special pages configuration (for pages with unique navbar needs)
