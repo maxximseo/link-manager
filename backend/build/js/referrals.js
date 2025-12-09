@@ -232,7 +232,7 @@ async function saveReferralCode() {
         'Authorization': `Bearer ${getToken()}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ newCode })
+      body: JSON.stringify({ code: newCode })
     });
 
     const data = await response.json();
