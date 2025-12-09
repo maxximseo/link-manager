@@ -421,6 +421,11 @@
                                 <input type="number" class="form-control" id="maxArticles" required min="0" value="10">
                             </div>
                         </div>
+                        <!-- Cooldown warning for limits (non-admin users) -->
+                        <div id="limitsCooldownWarning" class="alert alert-warning mb-3" style="display: none;">
+                            <i class="bi bi-clock-history"></i>
+                            <strong>Ограничение:</strong> <span id="limitsCooldownText"></span>
+                        </div>
 
                         <!-- Price Fields -->
                         <div class="row">
@@ -1353,6 +1358,11 @@
             // Enable API key input for new sites
             document.getElementById('apiKey').removeAttribute('readonly');
 
+            // Hide cooldown warning and enable limits fields for new sites
+            document.getElementById('limitsCooldownWarning').style.display = 'none';
+            document.getElementById('maxLinks').removeAttribute('readonly');
+            document.getElementById('maxArticles').removeAttribute('readonly');
+
             toggleSiteTypeFields(); // Initialize field visibility
             modal.show();
         }
@@ -1368,6 +1378,39 @@
             document.getElementById('apiKey').value = site.api_key || '';
             document.getElementById('maxLinks').value = site.max_links || 10;
             document.getElementById('maxArticles').value = site.max_articles || 10;
+
+            // Store original values for cooldown check
+            window.editingOriginalLimits = {
+                max_links: site.max_links || 10,
+                max_articles: site.max_articles || 10
+            };
+
+            // Handle 6-month cooldown for limits (non-admin only)
+            const currentUser = getCurrentUser();
+            const isAdmin = currentUser && currentUser.role === 'admin';
+            const cooldownWarning = document.getElementById('limitsCooldownWarning');
+            const cooldownText = document.getElementById('limitsCooldownText');
+            const maxLinksInput = document.getElementById('maxLinks');
+            const maxArticlesInput = document.getElementById('maxArticles');
+
+            // Reset fields to editable
+            maxLinksInput.removeAttribute('readonly');
+            maxArticlesInput.removeAttribute('readonly');
+            cooldownWarning.style.display = 'none';
+
+            if (!isAdmin && site.limits_changed_at) {
+                const cooldownEndDate = new Date(site.limits_changed_at);
+                cooldownEndDate.setMonth(cooldownEndDate.getMonth() + 6);
+
+                if (new Date() < cooldownEndDate) {
+                    // Cooldown is active
+                    const daysLeft = Math.ceil((cooldownEndDate - new Date()) / (1000 * 60 * 60 * 24));
+                    cooldownText.textContent = `Вы сможете изменить Links/Articles через ${daysLeft} дн. (${cooldownEndDate.toLocaleDateString('ru-RU')})`;
+                    cooldownWarning.style.display = 'block';
+                    maxLinksInput.setAttribute('readonly', 'readonly');
+                    maxArticlesInput.setAttribute('readonly', 'readonly');
+                }
+            }
 
             // Set allow_articles checkbox (default to true if not set)
             document.getElementById('allowArticles').checked = site.allow_articles !== false;

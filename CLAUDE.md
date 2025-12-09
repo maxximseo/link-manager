@@ -1546,15 +1546,20 @@ node database/run_remove_anchor_constraint.js
 # 9. Add extended fields to project_links (REQUIRED for v2.5.0+)
 node database/run_extended_fields_migration.js
 
-# 10. Seed data
+# 10. Add limits_changed_at for 6-month cooldown (REQUIRED for v2.6.5+)
+node database/run_limits_cooldown_migration.js
+
+# 11. Seed data
 psql -d linkmanager -f database/seed.sql
 ```
 
-**DO NOT SKIP** migrations #2, #3, #4, #8, or #9 - system will not work without them.
+**DO NOT SKIP** migrations #2, #3, #4, #8, #9, or #10 - system will not work without them.
 
 **Optional migrations**: #6 (billing), #7 (bulk registration)
 
 **New in v2.5.0**: Migrations #8 and #9 add support for duplicate anchor texts and extended JSONB fields.
+
+**New in v2.6.5**: Migration #10 adds limits_changed_at column for 6-month cooldown on max_links/max_articles changes.
 
 ## Bulk WordPress Site Registration (NEW - November 2025)
 
@@ -2050,22 +2055,41 @@ The following major architectural decisions govern this codebase:
     - Only admin can set `is_public = true` on sites
     - API validation + UI controls to prevent non-admin access
 
+21. **[ADR-021: Frontend Shared Utilities Architecture](ADR.md#adr-021-frontend-shared-utilities-architecture)**
+    - Centralized badge-utils.js with all badge/color functions
+    - Script loading order: security.js → auth.js → badge-utils.js → api.js → page.js
+
+22. **[ADR-022: ESLint + Prettier Code Quality](ADR.md#adr-022-eslint--prettier-code-quality)**
+    - Code linting and formatting tools
+    - npm run lint / npm run lint:fix
+
+23. **[ADR-023: URL Masking for Premium Sites](ADR.md#adr-023-url-masking-for-premium-sites)** ⚠️ SECURITY
+    - Premium sites (DR >= 20 OR DA >= 30) have masked URLs
+    - Exceptions: Admin users and Gold+ tier (20%+ discount)
+
+24. **[ADR-024: 6-Month Cooldown for Site Limits](ADR.md#adr-024-6-month-cooldown-for-site-limits)**
+    - Non-admin users can change max_links/max_articles once per 6 months
+    - limits_changed_at column tracks last change
+
 ### When to Consult ADR
 
 **Before making these changes, read relevant ADRs**:
 - ✅ Adding new database tables or columns → ADR-001, ADR-004, ADR-007
 - ✅ Changing authentication logic → ADR-002
 - ✅ Adding caching layer → ADR-003
-- ✅ Modifying frontend architecture → ADR-005
+- ✅ Modifying frontend architecture → ADR-005, ADR-021
 - ✅ Adding new API endpoints → ADR-006, ADR-007
-- ✅ Database schema changes → ADR-001, ADR-008, ADR-014
+- ✅ Database schema changes → ADR-001, ADR-008, ADR-014, ADR-024
 - ✅ Performance optimization → ADR-003, ADR-010, ADR-015
-- ✅ Security improvements → ADR-007, ADR-011, ADR-020
+- ✅ Security improvements → ADR-007, ADR-011, ADR-020, ADR-023
 - ✅ Site public status changes → ADR-020
+- ✅ Site limits changes → ADR-024
+- ✅ URL masking/visibility → ADR-023
+- ✅ Code quality/linting → ADR-022
 
 **ADR Review Schedule**:
-- **Last Review**: November 2025
-- **Next Review**: April 2026
+- **Last Review**: December 2025
+- **Next Review**: June 2026
 - **Trigger**: Major version bump, security issues, or performance problems
 
 ---
