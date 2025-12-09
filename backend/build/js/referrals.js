@@ -18,6 +18,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
+  // Initialize navbar
+  initNavbar('user', 'referrals');
+
   await Promise.all([
     loadReferralStats(),
     loadReferredUsers(),
