@@ -519,15 +519,24 @@
                 return url;
             }
 
-            // Masking: first4 + *** + last2 + .domain
+            // Handle subdomains: sub.domain.com -> take only main domain part
             const parts = url.split('.');
-            const domain = parts.pop(); // org, com, ru
-            const name = parts.join('.'); // elearning-reviews
+            if (parts.length < 2) return url; // Invalid format, return as is
 
-            if (name.length <= 6) {
-                return name.slice(0, 2) + '***' + name.slice(-2) + '.' + domain;
+            const domain = parts.pop(); // org, com, ru
+            const name = parts.pop(); // main domain name (e.g., 'domain' from 'sub.domain.com')
+
+            // Very short names (3 chars or less): show first + ***
+            if (name.length <= 3) {
+                return name.slice(0, 1) + '***.' + domain;
             }
 
+            // Short names (4-6 chars): show first 2 + *** + last 1
+            if (name.length <= 6) {
+                return name.slice(0, 2) + '***' + name.slice(-1) + '.' + domain;
+            }
+
+            // Normal names (7+ chars): show first 4 + *** + last 2
             return name.slice(0, 4) + '***' + name.slice(-2) + '.' + domain;
         }
 
