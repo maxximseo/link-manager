@@ -8,17 +8,10 @@ const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 
-// Check if DATABASE_URL contains DigitalOcean or other cloud providers that require SSL
-const requiresSSL = process.env.DATABASE_URL && (
-  process.env.DATABASE_URL.includes('digitalocean') ||
-  process.env.DATABASE_URL.includes('amazonaws') ||
-  process.env.DATABASE_URL.includes('azure') ||
-  process.env.NODE_ENV === 'production'
-);
-
+// Always use SSL with rejectUnauthorized: false for cloud databases
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: requiresSSL ? { rejectUnauthorized: false } : false
+  ssl: { rejectUnauthorized: false }
 });
 
 async function runMigration() {
