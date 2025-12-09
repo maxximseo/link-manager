@@ -129,8 +129,22 @@ function renderDiscountTiers() {
 
     visibleTiers.forEach(tier => {
         const isActive = currentDiscount === tier.discount_percentage;
+        const isGoldTier = tier.discount_percentage === 20;
+        const tierReached = totalSpent >= parseFloat(tier.min_spent);
         const row = document.createElement('tr');
         row.className = isActive ? 'table-success' : '';
+
+        // Status text with Gold tier bonus info
+        let statusHtml;
+        if (tierReached) {
+            statusHtml = '<span class="text-success"><i class="bi bi-check-circle-fill"></i> Достигнут</span>';
+        } else {
+            statusHtml = '<span class="text-muted"><i class="bi bi-lock-fill"></i> Заблокирован</span>';
+            // Add Gold tier benefit info for locked Gold tier
+            if (isGoldTier) {
+                statusHtml += '<br><small class="text-info"><i class="bi bi-eye-fill"></i> (Будут видны все адреса площадок)</small>';
+            }
+        }
 
         row.innerHTML = `
             <td>
@@ -139,11 +153,7 @@ function renderDiscountTiers() {
             </td>
             <td>$${parseFloat(tier.min_spent).toFixed(2)}</td>
             <td><span class="badge bg-warning">${tier.discount_percentage}%</span></td>
-            <td>
-                ${totalSpent >= parseFloat(tier.min_spent)
-                    ? '<span class="text-success"><i class="bi bi-check-circle-fill"></i> Достигнут</span>'
-                    : '<span class="text-muted"><i class="bi bi-lock-fill"></i> Заблокирован</span>'}
-            </td>
+            <td>${statusHtml}</td>
         `;
 
         tbody.appendChild(row);

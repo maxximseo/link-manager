@@ -499,6 +499,38 @@
         let hasAvailableContent = false; // Whether project has links/articles to purchase
         let userPricing = null; // Pricing data with user's discount
 
+        /**
+         * Mask URL for premium sites (DR >= 20 OR DA >= 30)
+         * Admins and Gold tier (discount >= 20%) see all URLs
+         * Format: elearning-reviews.org → elear***ws.org
+         */
+        function maskUrl(url, dr, da) {
+            const currentUser = getCurrentUser();
+            const userDiscount = userPricing?.link?.discount || 0;
+            const isAdminUser = currentUser?.role === 'admin';
+
+            // Admins and Gold+ users (discount >= 20%) see all URLs
+            if (isAdminUser || userDiscount >= 20) {
+                return url;
+            }
+
+            // Only mask premium sites (DR >= 20 OR DA >= 30)
+            if (dr < 20 && da < 30) {
+                return url;
+            }
+
+            // Masking: first4 + *** + last2 + .domain
+            const parts = url.split('.');
+            const domain = parts.pop(); // org, com, ru
+            const name = parts.join('.'); // elearning-reviews
+
+            if (name.length <= 6) {
+                return name.slice(0, 2) + '***' + name.slice(-2) + '.' + domain;
+            }
+
+            return name.slice(0, 4) + '***' + name.slice(-2) + '.' + domain;
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
             progressModal = new bootstrap.Modal(document.getElementById('progressModal'));
             importListModal = new bootstrap.Modal(document.getElementById('importListModal'));
@@ -1001,7 +1033,7 @@
                                    ${tooltipAttr}>
                         </td>
                         <td>
-                            ${escapeHtml(cleanUrl)}
+                            ${escapeHtml(maskUrl(cleanUrl, drValue, daValue))}
                         </td>
                         <td id="assigned_${site.id}">${dropdownHtml}</td>
                         <td class="${drClass} text-center">${drValue}</td>
