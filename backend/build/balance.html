@@ -151,31 +151,58 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Пополнение баланса</h5>
+                    <h5 class="modal-title"><i class="bi bi-currency-bitcoin"></i> Пополнение баланса</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="alert alert-info">
-                        <i class="bi bi-info-circle"></i> В демо-режиме пополнение производится мгновенно. В production это будет интеграция с платежными системами.
-                    </div>
-                    <div class="mb-3">
-                        <label for="depositAmount" class="form-label">Сумма пополнения</label>
-                        <div class="input-group">
-                            <span class="input-group-text">$</span>
-                            <input type="number" class="form-control" id="depositAmount" min="1" max="10000" step="0.01" value="100">
+                    <!-- Step 1: Enter Amount -->
+                    <div id="depositStep1">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> Оплата криптовалютой: USDT, BTC, ETH, LTC, TRX и другие
                         </div>
-                        <small class="text-muted">Минимум: $1, Максимум: $10,000</small>
+                        <div class="mb-3">
+                            <label for="depositAmount" class="form-label">Сумма пополнения</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="depositAmount" min="10" max="10000" step="1" value="100">
+                            </div>
+                            <small class="text-muted">Минимум: $<span id="minDepositAmount">10</span>, Максимум: $<span id="maxDepositAmount">10,000</span></small>
+                        </div>
+                        <div class="d-grid">
+                            <button type="button" class="btn btn-success btn-lg" onclick="createPaymentInvoice()" id="createInvoiceBtn">
+                                <i class="bi bi-receipt"></i> Создать счёт на оплату
+                            </button>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="depositDescription" class="form-label">Комментарий (опционально)</label>
-                        <input type="text" class="form-control" id="depositDescription" placeholder="Например: Пополнение баланса">
+
+                    <!-- Step 2: Invoice Created -->
+                    <div id="depositStep2" style="display: none;">
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle"></i> <strong>Счёт создан!</strong>
+                        </div>
+                        <div class="text-center mb-4">
+                            <h3 class="text-primary">$<span id="invoiceAmount">0</span></h3>
+                            <p class="text-muted mb-1">Действителен до: <span id="invoiceExpiry">-</span></p>
+                        </div>
+                        <div class="d-grid gap-2 mb-3">
+                            <a href="#" target="_blank" class="btn btn-primary btn-lg" id="paymentLink">
+                                <i class="bi bi-box-arrow-up-right"></i> Перейти к оплате
+                            </a>
+                        </div>
+                        <div class="alert alert-warning mb-0">
+                            <i class="bi bi-clock"></i> После оплаты баланс пополнится автоматически в течение 1-5 минут.
+                        </div>
+                    </div>
+
+                    <!-- Pending Invoices -->
+                    <div id="pendingInvoicesSection" class="mt-3" style="display: none;">
+                        <hr>
+                        <h6><i class="bi bi-hourglass-split"></i> Ожидающие оплаты</h6>
+                        <div id="pendingInvoicesList"></div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="button" class="btn btn-success" onclick="processDeposit()">
-                        <i class="bi bi-check-circle"></i> Пополнить
-                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="closeDepositModal">Закрыть</button>
                 </div>
             </div>
         </div>
