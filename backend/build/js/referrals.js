@@ -50,21 +50,22 @@ async function loadReferralStats() {
       throw new Error('Failed to load stats');
     }
 
-    const data = await response.json();
+    const result = await response.json();
+    const stats = result.data || result;
 
     // Update stats cards
-    document.getElementById('referralBalance').textContent = parseFloat(data.referral_balance || 0).toFixed(2);
-    document.getElementById('totalEarnings').textContent = parseFloat(data.total_earnings || 0).toFixed(2);
-    document.getElementById('totalReferrals').textContent = data.total_referrals || 0;
-    document.getElementById('activeReferrals').textContent = data.active_referrals || 0;
-    document.getElementById('totalWithdrawn').textContent = parseFloat(data.total_withdrawn || 0).toFixed(2);
+    document.getElementById('referralBalance').textContent = parseFloat(stats.referralBalance || 0).toFixed(2);
+    document.getElementById('totalEarnings').textContent = parseFloat(stats.totalEarnings || 0).toFixed(2);
+    document.getElementById('totalReferrals').textContent = stats.totalReferrals || 0;
+    document.getElementById('activeReferrals').textContent = stats.activeReferrals || 0;
+    document.getElementById('totalWithdrawn').textContent = parseFloat(stats.totalWithdrawn || 0).toFixed(2);
 
     // Update referral code input
-    currentReferralCode = data.referral_code || '';
+    currentReferralCode = stats.referralCode || '';
     document.getElementById('referralCode').value = currentReferralCode;
 
     // Update balance for withdrawal
-    currentBalance = parseFloat(data.referral_balance || 0);
+    currentBalance = parseFloat(stats.referralBalance || 0);
 
     // Enable/disable withdraw button based on minimum
     const withdrawBtn = document.getElementById('withdrawBtn');
