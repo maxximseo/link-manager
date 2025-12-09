@@ -196,7 +196,8 @@ const createSite = async data => {
 };
 
 // Update site
-const updateSite = async (siteId, userId, data) => {
+// userRole parameter is optional - if provided, admins bypass cooldown
+const updateSite = async (siteId, userId, data, userRole = null) => {
   try {
     const {
       site_url,
@@ -211,6 +212,45 @@ const updateSite = async (siteId, userId, data) => {
       price_link,
       price_article
     } = data;
+
+    // 6-month cooldown check for non-admin users changing max_links/max_articles
+    const isAdmin = userRole === 'admin';
+    const COOLDOWN_MONTHS = 6;
+
+    if (!isAdmin && (max_links !== undefined || max_articles !== undefined)) {
+      // Get current site data including limits_changed_at
+      const currentSiteResult = await query(
+        'SELECT max_links, max_articles, limits_changed_at FROM sites WHERE id = $1 AND user_id = $2',
+        [siteId, userId]
+      );
+
+      if (currentSiteResult.rows.length > 0) {
+        const currentSite = currentSiteResult.rows[0];
+        const currentMaxLinks = currentSite.max_links;
+        const currentMaxArticles = currentSite.max_articles;
+        const limitsChangedAt = currentSite.limits_changed_at;
+
+        // Check if user is actually changing the values (not just sending same values)
+        const isChangingLinks = max_links !== undefined && max_links !== currentMaxLinks;
+        const isChangingArticles = max_articles !== undefined && max_articles !== currentMaxArticles;
+
+        if (isChangingLinks || isChangingArticles) {
+          // Check if there's a cooldown active
+          if (limitsChangedAt) {
+            const cooldownEnd = new Date(limitsChangedAt);
+            cooldownEnd.setMonth(cooldownEnd.getMonth() + COOLDOWN_MONTHS);
+
+            if (new Date() < cooldownEnd) {
+              const daysLeft = Math.ceil((cooldownEnd - new Date()) / (1000 * 60 * 60 * 24));
+              throw new Error(
+                `Вы можете изменить лимиты Links/Articles только через ${daysLeft} дн. (раз в ${COOLDOWN_MONTHS} месяцев). ` +
+                `Дата следующего разрешённого изменения: ${cooldownEnd.toLocaleDateString('ru-RU')}`
+              );
+            }
+          }
+        }
+      }
+    }
 
     // SECURITY: Validate URL format if provided
     if (site_url) {
