@@ -26,6 +26,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
+  // Initialize admin navbar
+  initNavbar('admin', 'admin-referral-withdrawals');
+
   await loadWithdrawals();
 });
 
