@@ -1063,8 +1063,6 @@
                 let rowClass = '';
                 if (s.available_for_purchase === false) {
                     rowClass = 'table-danger';
-                } else if (s.is_public === true) {
-                    rowClass = 'table-success';
                 }
 
                 // Calculate usage percentages for progress bars
@@ -1930,11 +1928,9 @@ ${'='.repeat(50)}`;
             const row = document.querySelector(`tr[data-site-id="${siteId}"]`);
             if (!row) return;
 
-            row.classList.remove('table-danger', 'table-success');
+            row.classList.remove('table-danger');
             if (site.available_for_purchase === false) {
                 row.classList.add('table-danger');
-            } else if (site.is_public === true) {
-                row.classList.add('table-success');
             }
         }
 
