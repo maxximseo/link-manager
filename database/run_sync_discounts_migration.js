@@ -2,7 +2,7 @@
  * Migration script to sync user discount tiers with actual spent amounts from transactions
  *
  * This script:
- * 1. Calculates total_spent for each user from transactions table (purchase + renewal)
+ * 1. Calculates total_spent for each user from transactions table (purchase + renewal - refund)
  * 2. Updates users.total_spent to match calculated value
  * 3. Updates users.current_discount based on discount_tiers table
  *
