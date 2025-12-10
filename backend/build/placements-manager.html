@@ -500,6 +500,46 @@
             cursor: pointer;
         }
 
+        /* === VISUAL UPDATE: SEO Metrics & Columns === */
+
+        /* SEO Metrics columns - голубой фон как в референсе */
+        .seo-metric-th,
+        .seo-metric-td {
+            background: #eff6ff !important;
+        }
+
+        .seo-metric-th {
+            color: #1d4ed8 !important;
+            font-weight: 600 !important;
+        }
+
+        /* Expiry cell styling */
+        .expiry-cell .expiry-date {
+            font-weight: 500;
+            color: #111827;
+        }
+        .expiry-cell .expiry-days {
+            font-size: 11px;
+            margin-top: 2px;
+        }
+
+        /* Price - более жирный */
+        .price-cell {
+            font-weight: 600 !important;
+            color: #111827 !important;
+        }
+
+        /* Metric values in SEO columns */
+        .metric-value {
+            font-weight: 600;
+            color: #374151;
+        }
+
+        /* Auto-renewal toggle - синий вместо зеленого (как в референсе) */
+        .autorenewal-switch input:checked + .autorenewal-slider {
+            background-color: #2563eb;
+        }
+
         /* Responsive */
         @media (max-width: 1024px) {
             .filters-grid {
@@ -719,15 +759,15 @@
                             <th class="col-price">ЦЕНА</th>
                             <th class="col-autorenewal text-center">АВТО</th>
                             <th class="col-actions text-center">ДЕЙСТВИЯ</th>
-                            <th class="col-dr text-center">DR</th>
-                            <th class="col-da text-center">DA</th>
-                            <th class="col-tf text-center">TF</th>
-                            <th class="col-cf text-center">CF</th>
-                            <th class="col-rd text-center">RD</th>
-                            <th class="col-rdm text-center">RDm</th>
-                            <th class="col-norm text-center">Norm</th>
-                            <th class="col-kw text-center">KW</th>
-                            <th class="col-traf text-center">Traf</th>
+                            <th class="col-dr text-center seo-metric-th">DR</th>
+                            <th class="col-da text-center seo-metric-th">DA</th>
+                            <th class="col-tf text-center seo-metric-th">TF</th>
+                            <th class="col-cf text-center seo-metric-th">CF</th>
+                            <th class="col-rd text-center seo-metric-th">RD</th>
+                            <th class="col-rdm text-center seo-metric-th">RDm</th>
+                            <th class="col-norm text-center seo-metric-th">Norm</th>
+                            <th class="col-kw text-center seo-metric-th">KW</th>
+                            <th class="col-traf text-center seo-metric-th">Traf</th>
                             <th class="col-geo text-center">GEO</th>
                             <th class="col-sitetype text-center">ТИП САЙТА</th>
                             <th class="col-type text-center">ТИП</th>
@@ -1038,8 +1078,10 @@
                         </td>
                         <td class="col-published">${formatDate(p.placed_at || p.created_at)}</td>
                         <td class="col-expires">
-                            <div>${p.expires_at ? formatDate(p.expires_at) : '—'}</div>
-                            ${expiryDays !== null ? `<div class="small ${getExpiryClass(expiryDays)}">(${expiryDays} дн.)</div>` : ''}
+                            <div class="expiry-cell">
+                                <div class="expiry-date">${p.expires_at ? formatDate(p.expires_at) : '—'}</div>
+                                ${expiryDays !== null ? `<div class="expiry-days ${getExpiryClass(expiryDays)}">через ${expiryDays} дн.</div>` : ''}
+                            </div>
                         </td>
                         <td class="col-price"><span class="price-cell">$${parseFloat(p.final_price || 0).toFixed(2)}</span></td>
                         <td class="col-autorenewal text-center" onclick="event.stopPropagation()">
@@ -1053,15 +1095,15 @@
                         <td class="col-actions text-center" onclick="event.stopPropagation()">
                             ${canRenew ? `<button class="btn-renew" onclick="renewPlacement(${p.id})">Продлить</button>` : '—'}
                         </td>
-                        <td class="col-dr text-center"><span class="${getMetricClass(p.site_dr)}">${p.site_dr || 0}</span></td>
-                        <td class="col-da text-center"><span class="${getMetricClass(p.site_da)}">${p.site_da || 0}</span></td>
-                        <td class="col-tf text-center">${p.site_tf || 0}</td>
-                        <td class="col-cf text-center">${p.site_cf || 0}</td>
-                        <td class="col-rd text-center">${p.site_ref_domains || 0}</td>
-                        <td class="col-rdm text-center">${p.site_rd_main || 0}</td>
-                        <td class="col-norm text-center">${p.site_norm || 0}</td>
-                        <td class="col-kw text-center">${p.site_keywords || 0}</td>
-                        <td class="col-traf text-center">${p.site_traffic || 0}</td>
+                        <td class="col-dr text-center seo-metric-td"><span class="${getMetricClass(p.site_dr)}">${p.site_dr || 0}</span></td>
+                        <td class="col-da text-center seo-metric-td"><span class="${getMetricClass(p.site_da)}">${p.site_da || 0}</span></td>
+                        <td class="col-tf text-center seo-metric-td"><span class="metric-value">${p.site_tf || 0}</span></td>
+                        <td class="col-cf text-center seo-metric-td"><span class="metric-value">${p.site_cf || 0}</span></td>
+                        <td class="col-rd text-center seo-metric-td"><span class="metric-value">${p.site_ref_domains || 0}</span></td>
+                        <td class="col-rdm text-center seo-metric-td"><span class="metric-value">${p.site_rd_main || 0}</span></td>
+                        <td class="col-norm text-center seo-metric-td"><span class="metric-value">${p.site_norm || 0}</span></td>
+                        <td class="col-kw text-center seo-metric-td"><span class="metric-value">${p.site_keywords || 0}</span></td>
+                        <td class="col-traf text-center seo-metric-td"><span class="metric-value">${p.site_traffic || 0}</span></td>
                         <td class="col-geo text-center">${escapeHtml(p.site_geo || '—')}</td>
                         <td class="col-sitetype text-center">${getSiteTypeBadge(p.site_type)}</td>
                         <td class="col-type text-center">${getTypeBadge(p.type)}</td>
