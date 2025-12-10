@@ -313,52 +313,168 @@ Navbar.displayNotifications = function(notifications, unreadCount) {
  * Update notifications dropdown list HTML
  */
 Navbar.updateNotificationsList = function(notifications) {
-    const listContainer = document.getElementById('notificationsList');
-    if (!listContainer) return;
-
-    // Recreate header and divider (cloning doesn't work after innerHTML clear)
-    const headerHtml = `
-        <li class="dropdown-header d-flex justify-content-between align-items-center px-3 py-2">
-            <span class="fw-bold">Уведомления</span>
-            <button class="btn btn-sm" onclick="Navbar.deleteAllNotifications(event)" title="Удалить все уведомления" style="background-color: #fff; color: #333; border: 1px solid #ccc;">
-                <i class="bi bi-trash"></i> Удалить все
-            </button>
-        </li>
-        <li><hr class="dropdown-divider m-0"></li>
-    `;
+    const listContent = document.getElementById('notificationsListContent');
+    if (!listContent) return;
 
     if (!notifications || notifications.length === 0) {
-        listContainer.innerHTML = headerHtml + '<li id="notificationsEmpty"><span class="dropdown-item text-muted small">Нет уведомлений</span></li>';
+        listContent.innerHTML = `
+            <div class="notification-empty">
+                <i class="bi bi-bell-slash"></i>
+                <p>Нет уведомлений</p>
+            </div>
+        `;
         return;
     }
 
     let notificationsHtml = '';
     notifications.forEach(notification => {
         const isUnread = !notification.read;
-        const bgClass = isUnread ? 'bg-light' : '';
-        const fontClass = isUnread ? 'fw-semibold' : '';
+        const unreadClass = isUnread ? 'unread' : '';
+        const notificationType = Navbar.getNotificationType(notification);
+        const iconClass = Navbar.getNotificationIcon(notificationType);
 
-        // Format date
+        // Format date/time
         const date = new Date(notification.created_at);
-        const dateStr = date.toLocaleDateString('ru-RU', {
-            day: '2-digit',
-            month: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+
+        let timeStr;
+        if (diffMins < 1) {
+            timeStr = 'Только что';
+        } else if (diffMins < 60) {
+            timeStr = `${diffMins} мин. назад`;
+        } else if (diffHours < 24) {
+            timeStr = `${diffHours} ч. назад`;
+        } else if (diffDays < 7) {
+            timeStr = `${diffDays} дн. назад`;
+        } else {
+            timeStr = date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
+        }
+
+        // Determine action link
+        const actionLink = Navbar.getNotificationAction(notification);
 
         notificationsHtml += `
-            <li class="notification-item">
-                <div class="dropdown-item ${bgClass} py-2" style="white-space: normal;">
-                    <div class="${fontClass} small">${Navbar.escapeHtml(notification.title)}</div>
-                    <div class="text-muted small" style="max-width: 300px;">${Navbar.formatNotificationMessage(notification.message)}</div>
-                    <div class="text-muted" style="font-size: 0.7rem;">${dateStr}</div>
+            <div class="notification-card type-${notificationType} ${unreadClass}" onclick="Navbar.handleNotificationClick(event, ${notification.id})">
+                <div class="notification-icon">
+                    <i class="bi ${iconClass}"></i>
                 </div>
-            </li>
+                <div class="notification-content">
+                    <div class="notification-content-header">
+                        <h6 class="notification-title">${Navbar.escapeHtml(notification.title)}</h6>
+                        <span class="notification-time">${timeStr}</span>
+                    </div>
+                    <p class="notification-message">${Navbar.formatNotificationMessage(notification.message)}</p>
+                    ${actionLink ? `<a href="${actionLink.url}" class="notification-action" onclick="event.stopPropagation()">${actionLink.text} <i class="bi bi-arrow-right"></i></a>` : ''}
+                </div>
+            </div>
         `;
     });
 
-    listContainer.innerHTML = headerHtml + notificationsHtml;
+    listContent.innerHTML = notificationsHtml;
+};
+
+/**
+ * Determine notification type based on content
+ */
+Navbar.getNotificationType = function(notification) {
+    const title = (notification.title || '').toLowerCase();
+    const type = (notification.type || '').toLowerCase();
+
+    if (type.includes('security') || type.includes('error') || title.includes('безопасност') || title.includes('security')) {
+        return 'security';
+    }
+    if (type.includes('error') || title.includes('ошибка') || title.includes('error') || title.includes('failed')) {
+        return 'error';
+    }
+    if (type.includes('warning') || title.includes('предупреждение') || title.includes('warning')) {
+        return 'warning';
+    }
+    if (type.includes('success') || title.includes('успеш') || title.includes('success') || title.includes('оплач')) {
+        return 'success';
+    }
+    return 'info';
+};
+
+/**
+ * Get icon class based on notification type
+ */
+Navbar.getNotificationIcon = function(type) {
+    const icons = {
+        'security': 'bi-shield-exclamation',
+        'error': 'bi-exclamation-triangle',
+        'warning': 'bi-exclamation-circle',
+        'success': 'bi-check-circle',
+        'info': 'bi-info-circle'
+    };
+    return icons[type] || icons.info;
+};
+
+/**
+ * Get action link based on notification content
+ */
+Navbar.getNotificationAction = function(notification) {
+    const title = (notification.title || '').toLowerCase();
+    const message = (notification.message || '').toLowerCase();
+
+    if (title.includes('размещен') || message.includes('placement')) {
+        return { text: 'Просмотреть', url: '/placements-manager.html' };
+    }
+    if (title.includes('баланс') || title.includes('оплат') || message.includes('balance')) {
+        return { text: 'К балансу', url: '/balance.html' };
+    }
+    if (title.includes('модерац') || message.includes('moderat')) {
+        return { text: 'На модерацию', url: '/admin/moderation.html' };
+    }
+    return null;
+};
+
+/**
+ * Handle notification click
+ */
+Navbar.handleNotificationClick = async function(event, notificationId) {
+    event.preventDefault();
+
+    // Mark as read if unread
+    const token = localStorage.getItem('token');
+    if (token) {
+        try {
+            await fetch(`/api/notifications/${notificationId}/read`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            // Reload notifications
+            await Navbar.loadNotifications();
+        } catch (e) {
+            console.error('Error marking notification as read:', e);
+        }
+    }
+};
+
+/**
+ * Mark all notifications as read
+ */
+Navbar.markAllNotificationsRead = async function(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+        await fetch('/api/notifications/read-all', {
+            method: 'PATCH',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        // Reload notifications
+        localStorage.removeItem('notifications_cache');
+        await Navbar.loadNotifications();
+    } catch (e) {
+        console.error('Error marking all notifications as read:', e);
+    }
 };
 
 /**
