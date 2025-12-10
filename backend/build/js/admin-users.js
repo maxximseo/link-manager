@@ -1,8 +1,5 @@
 // Admin Users Management
 
-// Initialize navbar
-initNavbar('admin', 'users');
-
 // Check authentication
 if (!isAuthenticated()) {
     window.location.href = '/index.html';
