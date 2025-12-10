@@ -1053,16 +1053,16 @@
                         <td class="col-actions text-center" onclick="event.stopPropagation()">
                             ${canRenew ? `<button class="btn-renew" onclick="renewPlacement(${p.id})">Продлить</button>` : '—'}
                         </td>
-                        <td class="col-dr text-center"><span class="${getMetricClass(p.dr)}">${p.dr || 0}</span></td>
-                        <td class="col-da text-center"><span class="${getMetricClass(p.da)}">${p.da || 0}</span></td>
-                        <td class="col-tf text-center">${p.tf || 0}</td>
-                        <td class="col-cf text-center">${p.cf || 0}</td>
-                        <td class="col-rd text-center">${p.ref_domains || 0}</td>
-                        <td class="col-rdm text-center">${p.rd_main || 0}</td>
-                        <td class="col-norm text-center">${p.norm || 0}</td>
-                        <td class="col-kw text-center">${p.keywords || 0}</td>
-                        <td class="col-traf text-center">${p.traffic || 0}</td>
-                        <td class="col-geo text-center">${escapeHtml(p.geo || '—')}</td>
+                        <td class="col-dr text-center"><span class="${getMetricClass(p.site_dr)}">${p.site_dr || 0}</span></td>
+                        <td class="col-da text-center"><span class="${getMetricClass(p.site_da)}">${p.site_da || 0}</span></td>
+                        <td class="col-tf text-center">${p.site_tf || 0}</td>
+                        <td class="col-cf text-center">${p.site_cf || 0}</td>
+                        <td class="col-rd text-center">${p.site_ref_domains || 0}</td>
+                        <td class="col-rdm text-center">${p.site_rd_main || 0}</td>
+                        <td class="col-norm text-center">${p.site_norm || 0}</td>
+                        <td class="col-kw text-center">${p.site_keywords || 0}</td>
+                        <td class="col-traf text-center">${p.site_traffic || 0}</td>
+                        <td class="col-geo text-center">${escapeHtml(p.site_geo || '—')}</td>
                         <td class="col-sitetype text-center">${getSiteTypeBadge(p.site_type)}</td>
                         <td class="col-type text-center">${getTypeBadge(p.type)}</td>
                     </tr>
@@ -1101,7 +1101,7 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${getToken()}`
                     },
-                    body: JSON.stringify({ auto_renewal: enabled })
+                    body: JSON.stringify({ enabled: enabled })
                 });
                 const result = await response.json();
                 if (response.ok) {
@@ -1285,16 +1285,16 @@
                 parseFloat(p.final_price || 0).toFixed(2),
                 p.auto_renewal ? 'Да' : 'Нет',
                 p.status,
-                p.dr || 0,
-                p.da || 0,
-                p.tf || 0,
-                p.cf || 0,
-                p.ref_domains || 0,
-                p.rd_main || 0,
-                p.norm || 0,
-                p.keywords || 0,
-                p.traffic || 0,
-                p.geo || '',
+                p.site_dr || 0,
+                p.site_da || 0,
+                p.site_tf || 0,
+                p.site_cf || 0,
+                p.site_ref_domains || 0,
+                p.site_rd_main || 0,
+                p.site_norm || 0,
+                p.site_keywords || 0,
+                p.site_traffic || 0,
+                p.site_geo || '',
                 p.site_type || '',
                 p.type || ''
             ]);
@@ -1314,13 +1314,13 @@
             const ids = Array.from(selectedIds);
             try {
                 for (const id of ids) {
-                    await fetch(`/api/placements/${id}/auto-renewal`, {
+                    await fetch(`/api/billing/auto-renewal/${id}`, {
                         method: 'PATCH',
                         headers: {
                             'Content-Type': 'application/json',
                             'Authorization': `Bearer ${getToken()}`
                         },
-                        body: JSON.stringify({ auto_renewal: enable })
+                        body: JSON.stringify({ enabled: enable })
                     });
                 }
                 showAlert(`Автопродление ${enable ? 'включено' : 'выключено'} для ${ids.length} размещений`, 'success');
