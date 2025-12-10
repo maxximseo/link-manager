@@ -12,6 +12,9 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
+// Disable SSL certificate validation for DigitalOcean
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 // Database connection
 const connectionConfig = process.env.DATABASE_URL
   ? { connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }
@@ -21,7 +24,7 @@ const connectionConfig = process.env.DATABASE_URL
       database: process.env.DB_NAME,
       user: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
-      ssl: process.env.DB_HOST?.includes('digitalocean') ? { rejectUnauthorized: false } : false
+      ssl: { rejectUnauthorized: false }
     };
 
 const pool = new Pool(connectionConfig);
