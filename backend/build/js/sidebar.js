@@ -256,6 +256,13 @@ const SidebarNav = {
   renderMainWrapper(contentHTML) {
     const pageTitle = this.config.pageTitle || 'Dashboard';
     const pageSubtitle = this.config.pageSubtitle || '';
+    const pageIcon = this.config.pageIcon || null;
+    const pageIconGradient = this.config.pageIconGradient || 'from-yellow-400 to-orange-500';
+
+    // Render page icon if provided
+    const iconHTML = pageIcon
+      ? `<div class="page-title-icon ${pageIconGradient}"><i class="bi bi-${pageIcon}"></i></div>`
+      : '';
 
     return `
       <div class="main-wrapper">
@@ -264,8 +271,13 @@ const SidebarNav = {
             <i class="bi bi-list"></i>
           </button>
           <div class="page-title">
-            <h1>${pageTitle}</h1>
-            ${pageSubtitle ? `<p>${pageSubtitle}</p>` : ''}
+            <div class="page-title-row">
+              ${iconHTML}
+              <div class="page-title-text">
+                <h1>${pageTitle}</h1>
+                ${pageSubtitle ? `<p>${pageSubtitle}</p>` : ''}
+              </div>
+            </div>
           </div>
           <div class="header-right">
             ${this.renderBalanceBox()}
