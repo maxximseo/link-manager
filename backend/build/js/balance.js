@@ -7,6 +7,12 @@ let currentDiscount = 0;
 let totalSpent = 0;
 let discountTiers = [];
 
+// Pagination state
+let currentPage = 1;
+let itemsPerPage = 100;
+let totalTransactions = 0;
+let totalPages = 1;
+
 // Initialize page
 document.addEventListener('DOMContentLoaded', async () => {
     await loadBalanceData();
