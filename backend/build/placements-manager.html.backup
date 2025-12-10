@@ -7,7 +7,6 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="/css/styles.css">
-    <link rel="stylesheet" href="/css/modern-table.css">
     <style>
         /* Tabs styling - visual separation between tabs and content */
         .card > .nav-tabs {
@@ -60,7 +59,42 @@
             border-radius: 0.375rem;
         }
 
-        /* Table1 стиль теперь в modern-table.css */
+        /* Table styling - compact font */
+        .table {
+            font-size: 0.75rem;  /* Compact font size */
+        }
+
+        .table th, .table td {
+            padding: 0.4rem 0.5rem;  /* Compact padding */
+        }
+
+        /* Narrow "Сайт" columns - compact width */
+        .table th:nth-child(4),
+        .table td:nth-child(4),
+        .table th:nth-child(15),
+        .table td:nth-child(15) {
+            max-width: 100px;  /* Compact width */
+            width: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .table thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .table tbody tr:hover {
+            transform: scale(1.01);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
 
         /* Extra small buttons - 3x smaller than btn-sm */
         .btn-xs {
@@ -202,23 +236,23 @@
                         </div>
 
                         <div class="table-responsive">
-                            <table class="table1">
+                            <table class="table table-hover">
                                 <thead>
                                     <tr>
                                         <th><input type="checkbox" id="selectAllActive" onchange="toggleAllActive(this)" title="Выбрать все"></th>
                                         <th>ID</th>
                                         <th>Проект</th>
-                                        <th class="col-site">Площадка</th>
-                                        <th class="col-published sortable-header" onclick="sortActiveBy('published')">
-                                            Опубл.
+                                        <th>Площадка</th>
+                                        <th class="sortable-header" onclick="sortActiveBy('published')">
+                                            Опубликовано
                                             <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
                                         </th>
-                                        <th class="col-published sortable-header" onclick="sortActiveBy('expires')">
-                                            Истек.
+                                        <th class="sortable-header" onclick="sortActiveBy('expires')">
+                                            Истекает
                                             <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
                                         </th>
                                         <th>Цена</th>
-                                        <th class="col-autorenewal">Авто</th>
+                                        <th>Автопродление</th>
                                         <th>Действия</th>
                                         <th>DR</th>
                                         <th>DA</th>
@@ -269,18 +303,18 @@
                         </div>
 
                         <div class="table-responsive">
-                            <table class="table1">
+                            <table class="table table-hover">
                                 <thead>
                                     <tr>
                                         <th><input type="checkbox" id="selectAllScheduled" onchange="toggleAllScheduled(this)" title="Выбрать все"></th>
                                         <th>ID</th>
                                         <th>Проект</th>
-                                        <th class="col-site">Площадка</th>
-                                        <th class="col-published sortable-header" onclick="sortScheduledBy('scheduled')">
-                                            Публик.
+                                        <th>Площадка</th>
+                                        <th class="sortable-header" onclick="sortScheduledBy('scheduled')">
+                                            Дата публикации
                                             <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
                                         </th>
-                                        <th class="col-published sortable-header" onclick="sortScheduledBy('purchased')">
+                                        <th class="sortable-header" onclick="sortScheduledBy('purchased')">
                                             Куплено
                                             <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
                                         </th>
@@ -345,17 +379,17 @@
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table class="table1">
+                            <table class="table table-hover table-sm">
                                 <thead>
                                     <tr>
                                         <th>ID</th>
                                         <th>Проект</th>
-                                        <th class="col-site">Площадка</th>
+                                        <th>Площадка</th>
                                         <th>Статус</th>
-                                        <th class="col-published">Опубл.</th>
-                                        <th class="col-published">Истек.</th>
+                                        <th>Опубликовано</th>
+                                        <th>Истекло</th>
                                         <th>Цена</th>
-                                        <th>Прод.</th>
+                                        <th>Продлений</th>
                                         <th>DR</th>
                                         <th>DA</th>
                                         <th>TF</th>
