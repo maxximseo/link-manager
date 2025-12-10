@@ -805,6 +805,14 @@ body.modern-ui {
     color: #6366f1;
 }
 
+.notification-footer a.text-danger {
+    color: #dc2626;
+}
+
+.notification-footer a.text-danger:hover {
+    color: #b91c1c;
+}
+
 .notification-footer a i {
     margin-right: 4px;
 }
