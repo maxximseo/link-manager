@@ -663,25 +663,30 @@ body.modern-ui {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
-/* Notification type colors - matching screenshot */
+/* Notification type colors - matching screenshot with colored backgrounds */
 .notification-card.type-warning {
     border-left-color: #f59e0b;
+    background: linear-gradient(90deg, #fffbeb 0%, #ffffff 100%);
 }
 
 .notification-card.type-error {
     border-left-color: #ef4444;
+    background: linear-gradient(90deg, #fef2f2 0%, #ffffff 100%);
 }
 
 .notification-card.type-success {
     border-left-color: #22c55e;
+    background: linear-gradient(90deg, #f0fdf4 0%, #ffffff 100%);
 }
 
 .notification-card.type-info {
     border-left-color: #3b82f6;
+    background: linear-gradient(90deg, #eff6ff 0%, #ffffff 100%);
 }
 
 .notification-card.type-security {
     border-left-color: #8b5cf6;
+    background: linear-gradient(90deg, #f5f3ff 0%, #ffffff 100%);
 }
 
 /* Notification icon - circle with background */
@@ -748,6 +753,13 @@ body.modern-ui {
     white-space: nowrap;
     margin-left: 12px;
     flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.notification-time i {
+    font-size: 11px;
 }
 
 .notification-message {
