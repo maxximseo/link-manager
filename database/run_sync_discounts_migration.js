@@ -36,17 +36,22 @@ async function syncDiscounts() {
     console.log('🔄 Starting discount sync migration...\n');
 
     // Get all users with their calculated total_spent from transactions
+    // Formula: (purchase + renewal) - refunds, minimum 0
     const usersResult = await client.query(`
       SELECT
         u.id,
         u.username,
         u.total_spent as old_total_spent,
         u.current_discount as old_discount,
-        COALESCE(ABS((
+        GREATEST(0, COALESCE(ABS((
           SELECT SUM(amount)
           FROM transactions t
           WHERE t.user_id = u.id AND t.type IN ('purchase', 'renewal')
-        )), 0) as calculated_total_spent
+        )), 0) - COALESCE((
+          SELECT SUM(amount)
+          FROM transactions t
+          WHERE t.user_id = u.id AND t.type = 'refund'
+        ), 0)) as calculated_total_spent
       FROM users u
       ORDER BY u.id
     `);
