@@ -1,0 +1,679 @@
+/**
+ * Sidebar Navigation and Header Styles
+ * Based on design from: /Users/maximaffiliate/Downloads/Design User Interface (1)
+ *
+ * Sidebar: 256px expanded, 80px collapsed
+ * Colors: blue-600 (#2563eb) to purple-600 (#9333ea) gradient
+ */
+
+/* ========================================
+   SIDEBAR CONTAINER
+   ======================================== */
+
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 256px;
+    background: #ffffff;
+    border-right: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    transition: width 0.3s ease;
+    z-index: 1040;
+    overflow: hidden;
+}
+
+.sidebar.collapsed {
+    width: 80px;
+}
+
+/* ========================================
+   SIDEBAR HEADER (Logo)
+   ======================================== */
+
+.sidebar-header {
+    padding: 24px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 81px;
+}
+
+.sidebar.collapsed .sidebar-header {
+    justify-content: center;
+    padding: 24px 16px;
+}
+
+.sidebar-logo {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    background: linear-gradient(135deg, #2563eb, #9333ea);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sidebar-logo i {
+    color: #ffffff;
+    font-size: 18px;
+}
+
+.sidebar-brand-text {
+    font-weight: 600;
+    font-size: 16px;
+    color: #111827;
+    white-space: nowrap;
+    transition: opacity 0.2s ease;
+}
+
+.sidebar.collapsed .sidebar-brand-text {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+}
+
+/* ========================================
+   SIDEBAR NAVIGATION
+   ======================================== */
+
+.sidebar-nav {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+    background: #e5e7eb;
+    border-radius: 2px;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    color: #374151;
+    text-decoration: none;
+    transition: all 0.15s ease;
+    margin-bottom: 4px;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    width: 100%;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.nav-item:hover {
+    background: #f9fafb;
+    color: #374151;
+    text-decoration: none;
+}
+
+.nav-item.active {
+    background: linear-gradient(90deg, #2563eb, #9333ea);
+    color: #ffffff;
+    box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3);
+}
+
+.nav-item.active:hover {
+    color: #ffffff;
+}
+
+.nav-item i {
+    width: 20px;
+    min-width: 20px;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nav-item span {
+    white-space: nowrap;
+    transition: opacity 0.2s ease;
+}
+
+/* Collapsed sidebar nav items */
+.sidebar.collapsed .nav-item {
+    justify-content: center;
+    padding: 12px;
+}
+
+.sidebar.collapsed .nav-item span {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+    position: absolute;
+}
+
+.sidebar.collapsed .nav-item .badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    font-size: 10px;
+    padding: 2px 5px;
+}
+
+/* Nav divider for admin section */
+.nav-divider {
+    margin: 16px 0;
+    border-top: 1px solid #e5e7eb;
+}
+
+.sidebar.collapsed .nav-divider {
+    margin: 12px 8px;
+}
+
+/* Badge in nav item */
+.nav-item .badge {
+    margin-left: auto;
+    font-size: 11px;
+    padding: 3px 8px;
+}
+
+.sidebar.collapsed .nav-item {
+    position: relative;
+}
+
+/* ========================================
+   SIDEBAR FOOTER
+   ======================================== */
+
+.sidebar-footer {
+    padding: 16px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.sidebar-footer .nav-item {
+    margin-bottom: 4px;
+}
+
+.sidebar-footer .nav-item:last-child {
+    margin-bottom: 0;
+}
+
+/* ========================================
+   MAIN HEADER
+   ======================================== */
+
+.main-header {
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 256px;
+    height: 73px;
+    z-index: 1030;
+    transition: left 0.3s ease;
+}
+
+.sidebar.collapsed ~ .main-wrapper .main-header,
+body.sidebar-collapsed .main-header {
+    left: 80px;
+}
+
+/* Page title */
+.page-title h1 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.page-title p {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 4px 0 0 0;
+    line-height: 1.4;
+}
+
+/* Header right section */
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+/* ========================================
+   BALANCE BOX
+   ======================================== */
+
+.balance-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+    background: linear-gradient(90deg, #ecfdf5, #d1fae5);
+    border: 1px solid #a7f3d0;
+    border-radius: 8px;
+}
+
+.balance-box i {
+    color: #059669;
+    font-size: 20px;
+}
+
+.balance-box-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.balance-label {
+    font-size: 12px;
+    color: #6b7280;
+    line-height: 1.3;
+}
+
+.balance-amount {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+    line-height: 1.3;
+}
+
+/* ========================================
+   ADD LINK BUTTON
+   ======================================== */
+
+.btn-add-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: linear-gradient(90deg, #2563eb, #9333ea);
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 14px;
+    cursor: pointer;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+    text-decoration: none;
+}
+
+.btn-add-link:hover {
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+    color: #ffffff;
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+
+.btn-add-link:active {
+    transform: translateY(0);
+}
+
+.btn-add-link i {
+    font-size: 18px;
+}
+
+/* ========================================
+   NOTIFICATION BUTTON
+   ======================================== */
+
+.notification-btn {
+    position: relative;
+    padding: 8px;
+    background: transparent;
+    border: none;
+    color: #6b7280;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background 0.15s ease, color 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.notification-btn:hover {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.notification-btn i {
+    font-size: 20px;
+}
+
+.notification-dot {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 8px;
+    height: 8px;
+    background: #ef4444;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+}
+
+/* ========================================
+   USER PROFILE
+   ======================================== */
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px;
+    padding-left: 16px;
+    border-left: 1px solid #e5e7eb;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background 0.15s ease;
+    text-decoration: none;
+}
+
+.user-profile:hover {
+    background: #f9fafb;
+    text-decoration: none;
+}
+
+.user-info {
+    text-align: right;
+}
+
+.user-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #111827;
+    line-height: 1.3;
+}
+
+.user-email {
+    font-size: 12px;
+    color: #6b7280;
+    line-height: 1.3;
+}
+
+.user-avatar {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    background: linear-gradient(135deg, #2563eb, #9333ea);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+}
+
+.user-avatar i {
+    font-size: 18px;
+}
+
+/* ========================================
+   MAIN WRAPPER & CONTENT
+   ======================================== */
+
+.main-wrapper {
+    margin-left: 256px;
+    padding-top: 73px;
+    transition: margin-left 0.3s ease;
+    min-height: 100vh;
+    background: #f8fafc;
+}
+
+.sidebar.collapsed ~ .main-wrapper,
+body.sidebar-collapsed .main-wrapper {
+    margin-left: 80px;
+}
+
+.main-content {
+    padding: 24px;
+}
+
+/* Remove old container-fluid padding when inside main-content */
+.main-content > .container-fluid {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+/* ========================================
+   TOOLTIP FOR COLLAPSED SIDEBAR
+   ======================================== */
+
+.sidebar.collapsed .nav-item[title] {
+    position: relative;
+}
+
+.sidebar.collapsed .nav-item::after {
+    content: attr(title);
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #1f2937;
+    color: #ffffff;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    margin-left: 12px;
+    z-index: 1050;
+    pointer-events: none;
+}
+
+.sidebar.collapsed .nav-item::before {
+    content: '';
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 6px solid transparent;
+    border-right-color: #1f2937;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    margin-left: 0;
+    z-index: 1050;
+}
+
+.sidebar.collapsed .nav-item:hover::after,
+.sidebar.collapsed .nav-item:hover::before {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* ========================================
+   NOTIFICATION DROPDOWN ADJUSTMENTS
+   ======================================== */
+
+/* Position dropdown relative to new header */
+.header-right .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 8px;
+}
+
+/* Notification dropdown styles are in modern-table.css */
+
+/* ========================================
+   RESPONSIVE ADJUSTMENTS
+   ======================================== */
+
+@media (max-width: 1200px) {
+    .header-right {
+        gap: 12px;
+    }
+
+    .balance-box {
+        padding: 6px 12px;
+    }
+
+    .btn-add-link span {
+        display: none;
+    }
+
+    .btn-add-link {
+        padding: 8px 12px;
+    }
+}
+
+@media (max-width: 992px) {
+    .sidebar {
+        transform: translateX(-100%);
+        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .sidebar.mobile-open {
+        transform: translateX(0);
+    }
+
+    .main-wrapper {
+        margin-left: 0;
+    }
+
+    .main-header {
+        left: 0;
+    }
+
+    .sidebar.collapsed ~ .main-wrapper,
+    body.sidebar-collapsed .main-wrapper {
+        margin-left: 0;
+    }
+
+    .sidebar.collapsed ~ .main-wrapper .main-header,
+    body.sidebar-collapsed .main-header {
+        left: 0;
+    }
+
+    /* Mobile menu toggle button */
+    .mobile-menu-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        background: transparent;
+        border: none;
+        color: #374151;
+        cursor: pointer;
+        border-radius: 8px;
+        margin-right: 12px;
+    }
+
+    .mobile-menu-toggle:hover {
+        background: #f3f4f6;
+    }
+
+    .mobile-menu-toggle i {
+        font-size: 24px;
+    }
+
+    /* Overlay for mobile */
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1035;
+    }
+
+    .sidebar-overlay.active {
+        display: block;
+    }
+}
+
+@media (max-width: 768px) {
+    .main-header {
+        padding: 12px 16px;
+    }
+
+    .main-content {
+        padding: 16px;
+    }
+
+    .page-title h1 {
+        font-size: 18px;
+    }
+
+    .page-title p {
+        display: none;
+    }
+
+    .user-info {
+        display: none;
+    }
+
+    .user-profile {
+        padding-left: 8px;
+        border-left: none;
+    }
+
+    .balance-box .balance-label {
+        display: none;
+    }
+}
+
+@media (max-width: 576px) {
+    .header-right {
+        gap: 8px;
+    }
+
+    .balance-box {
+        display: none;
+    }
+}
+
+/* ========================================
+   PRINT STYLES
+   ======================================== */
+
+@media print {
+    .sidebar,
+    .main-header {
+        display: none !important;
+    }
+
+    .main-wrapper {
+        margin-left: 0 !important;
+        padding-top: 0 !important;
+    }
+}
+
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+
+.sidebar-hidden {
+    display: none !important;
+}
+
+/* Hide old navbar when sidebar is present */
+body.has-sidebar .navbar,
+body.has-sidebar #mainNavbar {
+    display: none !important;
+}
+
+/* Adjust body background */
+body.has-sidebar {
+    background: #f8fafc;
+}
