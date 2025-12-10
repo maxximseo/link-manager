@@ -247,6 +247,11 @@ function renderActivePlacements(placements) {
 
     // Reset bulk actions panel after render
     updateActiveBulkActions();
+
+    // Reapply column visibility settings after table is rendered
+    if (typeof window.reapplyColumnSettings === 'function') {
+        window.reapplyColumnSettings();
+    }
 }
 
 /**

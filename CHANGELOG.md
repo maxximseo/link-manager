@@ -7,6 +7,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.6.6] - 2025-12-10
+
+### 🎨 UI: Notification Redesign + Column Management
+
+#### Notification Dropdown Redesign
+- **REDESIGNED** Notification dropdown with modern card-based design
+- **ADDED** Color-coded left borders per notification type:
+  - Orange (warning) - moderation, expiring soon
+  - Red (error) - security alerts, failed operations
+  - Green (success) - purchases, publications
+  - Blue (info) - general notifications
+- **ADDED** Icons in colored circles (44px diameter)
+- **ADDED** Gray background (#f8fafc) for notification list
+- **ADDED** Header with "Уведомления" title and "Отметить все как прочитанные" link
+- **ADDED** Footer with "Удалить все" button
+- **ADDED** Helper functions in navbar.js:
+  - `getNotificationType(notification)` - Determines type from title/content
+  - `getNotificationIcon(type)` - Returns Bootstrap icon class
+  - `getNotificationAction(notification)` - Returns action link HTML
+  - `handleNotificationClick(event, id, url)` - Handles click with mark-as-read
+  - `markAllNotificationsRead(event)` - Batch mark all as read
+
+#### Column Management in placements-manager.html
+- **ADDED** "Фильтры" button (bi-funnel icon) to toggle filters panel
+- **ADDED** "Колонки" dropdown button (bi-layout-three-columns icon)
+- **ADDED** Dropdown with checkboxes for all 18+ columns:
+  - Core: ID, Проект, Площадка, Опубликовано, Истекает, Цена
+  - Settings: Автопродление, Действия
+  - SEO: DR, DA, TF, CF, RD, RDm, Norm, KW, Traf, GEO
+  - Meta: Тип сайта, Тип
+- **ADDED** Quick buttons: "Все" (show all) and "Минимум" (hide optional)
+- **ADDED** localStorage persistence for column visibility settings
+- **ADDED** New JavaScript functions:
+  - `toggleColumn(columnId)` - Toggle single column visibility
+  - `loadColumnSettings()` - Load settings from localStorage
+  - `saveColumnSettings()` - Save settings to localStorage
+  - `showAllColumns()` - Show all columns
+  - `hideOptionalColumns()` - Hide SEO/meta columns
+  - `applyColumnSettings()` - Apply settings on page load
+  - `toggleFiltersPanel()` - Toggle filters card visibility
+
+### 📦 Files Changed
+| File | Change |
+|------|--------|
+| `backend/build/css/modern-table.css` | ADDED notification card CSS (~250 lines) |
+| `backend/build/js/navbar.js` | UPDATED renderNotifications(), updateNotificationsList() |
+| `backend/build/placements-manager.html` | ADDED filter/column buttons and JavaScript |
+
+### 🔧 CSS Classes Added
+```css
+.notification-dropdown    - Main dropdown container
+.notification-header      - Header with title and actions
+.notification-list        - Scrollable notification container
+.notification-card        - Individual notification card
+.notification-card.type-* - Type-specific border colors
+.notification-icon        - Circular icon container
+.notification-icon.icon-* - Type-specific background colors
+.notification-content     - Content container
+.notification-title       - Title text
+.notification-time        - Timestamp
+.notification-message     - Description text
+.notification-action      - Action link ("Просмотреть →")
+.notification-footer      - Footer with actions
+```
+
+---
+
 ## [2.6.5] - 2025-12-09
 
 ### 🔒 Security: URL Masking for Premium Sites
