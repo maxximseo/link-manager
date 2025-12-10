@@ -23,13 +23,17 @@ const isValidTRC20Address = (address) => {
  */
 const getReferralStats = async (userId) => {
   try {
+    // Active referrals = users who have spent money (calculated from transactions, not cached field)
     const result = await query(
       `SELECT
         u.referral_code,
         u.referral_balance,
         u.total_referral_earnings,
         (SELECT COUNT(*) FROM users WHERE referred_by_user_id = $1) as total_referrals,
-        (SELECT COUNT(*) FROM users WHERE referred_by_user_id = $1 AND total_spent > 0) as active_referrals,
+        (SELECT COUNT(*) FROM users ref WHERE ref.referred_by_user_id = $1 AND (
+          SELECT COALESCE(ABS(SUM(t.amount)), 0) FROM transactions t
+          WHERE t.user_id = ref.id AND t.type IN ('purchase', 'renewal')
+        ) > 0) as active_referrals,
         (SELECT COALESCE(SUM(commission_amount), 0) FROM referral_transactions WHERE referrer_id = $1 AND status = 'credited') as pending_balance,
         (SELECT COALESCE(SUM(amount), 0) FROM referral_withdrawals WHERE user_id = $1 AND status = 'completed') as total_withdrawn
       FROM users u
