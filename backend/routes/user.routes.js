@@ -6,7 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const rateLimit = require('express-rate-limit');
-const authMiddleware = require('../middleware/auth.middleware');
+const authMiddleware = require('../middleware/auth');
 const userController = require('../controllers/user.controller');
 
 // Rate limiting for profile updates
