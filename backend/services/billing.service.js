@@ -35,11 +35,15 @@ const getUserBalance = async userId => {
         u.current_discount,
         dt.tier_name,
         dt.discount_percentage,
-        COALESCE(ABS((
+        GREATEST(0, COALESCE(ABS((
           SELECT SUM(amount)
           FROM transactions t
           WHERE t.user_id = u.id AND t.type IN ('purchase', 'renewal')
-        )), 0) as total_spent
+        )), 0) - COALESCE((
+          SELECT SUM(amount)
+          FROM transactions t
+          WHERE t.user_id = u.id AND t.type = 'refund'
+        ), 0)) as total_spent
       FROM users u
       LEFT JOIN discount_tiers dt ON u.current_discount = dt.discount_percentage
       WHERE u.id = $1
