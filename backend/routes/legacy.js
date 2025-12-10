@@ -176,7 +176,18 @@ router.get('/placements', authMiddleware, apiLimiter, async (req, res) => {
         p.purchase_transaction_id,
         pr.name as project_name,
         s.site_name,
-        s.site_url
+        s.site_url,
+        s.site_type,
+        s.dr,
+        s.da,
+        s.tf,
+        s.cf,
+        s.ref_domains,
+        s.rd_main,
+        s.norm,
+        s.keywords,
+        s.traffic,
+        s.geo
       FROM placements p
       JOIN projects pr ON p.project_id = pr.id
       JOIN sites s ON p.site_id = s.id
