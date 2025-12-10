@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Профиль - Link Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/sidebar.css">
+</head>
+<body>
+    <!-- Content will be wrapped by sidebar.js -->
+
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <!-- Profile Info Card -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-person-circle"></i> Информация профиля</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="profileForm">
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Имя пользователя</label>
+                                <input type="text" class="form-control" id="username" readonly>
+                                <small class="text-muted">Имя пользователя нельзя изменить</small>
+                            </div>
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" placeholder="Введите email">
+                            </div>
+                            <div class="mb-3">
+                                <label for="displayName" class="form-label">Отображаемое имя</label>
+                                <input type="text" class="form-control" id="displayName" placeholder="Как вас называть">
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Сохранить изменения
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Change Password Card -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-shield-lock"></i> Смена пароля</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="passwordForm">
+                            <div class="mb-3">
+                                <label for="currentPassword" class="form-label">Текущий пароль</label>
+                                <input type="password" class="form-control" id="currentPassword" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="newPassword" class="form-label">Новый пароль</label>
+                                <input type="password" class="form-control" id="newPassword" required minlength="6">
+                                <small class="text-muted">Минимум 6 символов</small>
+                            </div>
+                            <div class="mb-3">
+                                <label for="confirmPassword" class="form-label">Повторите новый пароль</label>
+                                <input type="password" class="form-control" id="confirmPassword" required>
+                            </div>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-key"></i> Сменить пароль
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Account Info Card -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-info-circle"></i> Информация об аккаунте</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6">
+                                <p class="mb-1 text-muted">ID пользователя</p>
+                                <p class="fw-bold" id="userId">-</p>
+                            </div>
+                            <div class="col-6">
+                                <p class="mb-1 text-muted">Роль</p>
+                                <p class="fw-bold"><span id="userRole" class="badge bg-secondary">-</span></p>
+                            </div>
+                            <div class="col-6">
+                                <p class="mb-1 text-muted">Дата регистрации</p>
+                                <p class="fw-bold" id="createdAt">-</p>
+                            </div>
+                            <div class="col-6">
+                                <p class="mb-1 text-muted">Текущий баланс</p>
+                                <p class="fw-bold text-success">$<span id="balance">0.00</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Logout Button -->
+                <div class="d-grid">
+                    <button class="btn btn-outline-danger" onclick="logout()">
+                        <i class="bi bi-box-arrow-right"></i> Выйти из аккаунта
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/security.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/badge-utils.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/sidebar.js"></script>
+    <script>
+        // Initialize sidebar navigation
+        SidebarNav.init({
+            activePage: 'profile',
+            pageTitle: 'Профиль',
+            pageSubtitle: 'Настройки аккаунта'
+        });
+
+        requireAuth();
+
+        // Load profile data
+        async function loadProfile() {
+            try {
+                const response = await fetch('/api/users/profile', {
+                    headers: {
+                        'Authorization': `Bearer ${getToken()}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load profile');
+                }
+
+                const data = await response.json();
+                const profile = data.data || data;
+
+                // Fill form fields
+                document.getElementById('username').value = profile.username || '';
+                document.getElementById('email').value = profile.email || '';
+                document.getElementById('displayName').value = profile.display_name || '';
+
+                // Fill account info
+                document.getElementById('userId').textContent = profile.id || '-';
+
+                const roleEl = document.getElementById('userRole');
+                if (profile.role === 'admin') {
+                    roleEl.textContent = 'Администратор';
+                    roleEl.className = 'badge bg-danger';
+                } else {
+                    roleEl.textContent = 'Пользователь';
+                    roleEl.className = 'badge bg-primary';
+                }
+
+                if (profile.created_at) {
+                    document.getElementById('createdAt').textContent = formatDate(profile.created_at);
+                }
+
+                // Load balance
+                const balanceResponse = await fetch('/api/billing/balance', {
+                    headers: {
+                        'Authorization': `Bearer ${getToken()}`
+                    }
+                });
+                if (balanceResponse.ok) {
+                    const balanceData = await balanceResponse.json();
+                    document.getElementById('balance').textContent =
+                        parseFloat(balanceData.balance || 0).toFixed(2);
+                }
+
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                showAlert('Ошибка загрузки профиля', 'danger');
+            }
+        }
+
+        // Handle profile form submission
+        document.getElementById('profileForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value.trim();
+            const displayName = document.getElementById('displayName').value.trim();
+
+            try {
+                const response = await fetch('/api/users/profile', {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${getToken()}`
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        display_name: displayName
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to update profile');
+                }
+
+                showAlert('Профиль успешно обновлён', 'success');
+            } catch (error) {
+                console.error('Error updating profile:', error);
+                showAlert(error.message || 'Ошибка обновления профиля', 'danger');
+            }
+        });
+
+        // Handle password form submission
+        document.getElementById('passwordForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            // Validate passwords match
+            if (newPassword !== confirmPassword) {
+                showAlert('Новые пароли не совпадают', 'danger');
+                return;
+            }
+
+            // Validate password length
+            if (newPassword.length < 6) {
+                showAlert('Пароль должен содержать минимум 6 символов', 'danger');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/users/change-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${getToken()}`
+                    },
+                    body: JSON.stringify({
+                        current_password: currentPassword,
+                        new_password: newPassword
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to change password');
+                }
+
+                showAlert('Пароль успешно изменён', 'success');
+
+                // Clear password fields
+                document.getElementById('currentPassword').value = '';
+                document.getElementById('newPassword').value = '';
+                document.getElementById('confirmPassword').value = '';
+
+            } catch (error) {
+                console.error('Error changing password:', error);
+                showAlert(error.message || 'Ошибка смены пароля', 'danger');
+            }
+        });
+
+        // Logout function
+        function logout() {
+            if (confirm('Вы уверены, что хотите выйти?')) {
+                localStorage.removeItem('token');
+                window.location.href = '/login.html';
+            }
+        }
+
+        // Format date helper
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('ru-RU', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        // Initialize page
+        loadProfile();
+    </script>
+</body>
+</html>

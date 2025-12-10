@@ -8,17 +8,11 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/modern-table.css">
-    <style>
-        body {
-            background-color: #f8fafc;
-        }
-    </style>
+    <link rel="stylesheet" href="/css/sidebar.css">
 </head>
 <body>
-    <!-- Navbar Container (injected by navbar.js) -->
-    <div id="navbar-container"></div>
-
-    <div class="container mt-4">
+    <!-- Content will be wrapped by sidebar.js -->
+    <div class="container-fluid">
         <!-- Page Header with Create Button -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
@@ -187,15 +181,14 @@
     <script src="/js/security.js"></script>
     <script src="/js/auth.js"></script>
     <script src="/js/api.js"></script>
-    <script src="/js/navbar-config.js"></script>
-    <script src="/js/navbar.js"></script>
+    <script src="/js/sidebar.js"></script>
     <script>
-        // Initialize navbar
-        initNavbar('user', 'dashboard');
-
-        if (!isAuthenticated()) {
-            window.location.href = '/index.html';
-        }
+        // Initialize sidebar navigation
+        SidebarNav.init({
+            activePage: 'projects',
+            pageTitle: 'Мои Проекты',
+            pageSubtitle: 'Управление проектами'
+        });
 
         let projects = [];
         let allPlacements = [];
@@ -469,6 +462,23 @@
                 console.error('Error deleting project:', error);
                 showNotification(error.message || 'Ошибка удаления', 'error');
             }
+        }
+
+        // Show notification helper
+        function showNotification(message, type = 'info') {
+            // Use SidebarNav's alert system or create a simple one
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
+            alertDiv.style.cssText = 'top: 90px; right: 24px; z-index: 1050; max-width: 400px;';
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(alertDiv);
+
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
         }
 
         // Load data on page load
