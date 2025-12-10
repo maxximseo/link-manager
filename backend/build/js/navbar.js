@@ -69,7 +69,7 @@ class Navbar {
                             </div>
                         </div>
                         <div class="notification-footer">
-                            <a href="#" onclick="Navbar.deleteAllNotifications(event)"><i class="bi bi-trash me-1"></i>Удалить все</a>
+                            <a href="#" onclick="Navbar.showAllNotifications(event)">Показать все уведомления</a>
                         </div>
                     </div>
                 </li>`;
