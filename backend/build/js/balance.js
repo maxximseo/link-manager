@@ -270,7 +270,17 @@ function renderTransactions(transactions) {
     tbody.innerHTML = '';
 
     if (transactions.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Нет транзакций</td></tr>';
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6">
+                    <div class="transactions-empty">
+                        <div class="empty-icon"><i class="bi bi-download"></i></div>
+                        <p>Транзакций пока нет</p>
+                        <span class="empty-subtitle">Пополните баланс, чтобы начать работу</span>
+                    </div>
+                </td>
+            </tr>
+        `;
         return;
     }
 
@@ -279,16 +289,46 @@ function renderTransactions(transactions) {
 
         // Use shared badge-utils functions
         const amount = parseFloat(tx.amount);
-        const amountClass = getAmountColorClass(amount);
         const amountPrefix = amount > 0 ? '+' : '';
+        const amountClass = amount > 0 ? 'amount-positive' : 'amount-negative';
+
+        // Transaction type icon and color
+        let typeIcon = '';
+        let typeColor = '';
+        switch(tx.type) {
+            case 'deposit':
+                typeIcon = '<i class="bi bi-arrow-down-right text-success"></i>';
+                typeColor = 'text-success';
+                break;
+            case 'withdrawal':
+                typeIcon = '<i class="bi bi-arrow-up-right text-danger"></i>';
+                typeColor = 'text-danger';
+                break;
+            case 'purchase':
+                typeIcon = '<i class="bi bi-arrow-up-right text-primary"></i>';
+                typeColor = 'text-primary';
+                break;
+            case 'refund':
+                typeIcon = '<i class="bi bi-arrow-down-right text-purple"></i>';
+                typeColor = 'text-purple';
+                break;
+            default:
+                typeIcon = '<i class="bi bi-circle"></i>';
+                typeColor = 'text-muted';
+        }
 
         row.innerHTML = `
-            <td>#${tx.id}</td>
-            <td>${new Date(tx.created_at).toLocaleString('ru-RU')}</td>
-            <td>${getTransactionTypeBadge(tx.type)}</td>
-            <td class="${amountClass} fw-bold">${amountPrefix}$${Math.abs(amount).toFixed(2)}</td>
-            <td>$${parseFloat(tx.balance_after).toFixed(2)}</td>
-            <td>${tx.description || '—'}</td>
+            <td><span class="transaction-id">#${tx.id}</span></td>
+            <td class="text-muted">${formatDate(tx.created_at)}</td>
+            <td>
+                <div class="transaction-type">
+                    ${typeIcon}
+                    <span class="${typeColor}">${tx.type}</span>
+                </div>
+            </td>
+            <td class="${amountClass}">${amountPrefix}${Math.abs(amount).toFixed(2)} $</td>
+            <td class="fw-medium">$${parseFloat(tx.balance_after).toFixed(2)}</td>
+            <td class="text-muted">${tx.description || '—'}</td>
         `;
 
         tbody.appendChild(row);
