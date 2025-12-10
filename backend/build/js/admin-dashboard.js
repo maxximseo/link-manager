@@ -2,9 +2,6 @@
  * Admin Dashboard with Charts
  */
 
-// Initialize navbar
-initNavbar('admin', 'dashboard');
-
 // Check authentication
 if (!isAuthenticated()) {
     window.location.href = '/index.html';
