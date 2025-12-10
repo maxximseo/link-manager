@@ -123,6 +123,10 @@ const SidebarNav = {
     const originalContent = document.querySelector('.container-fluid, .container, main, #main-content');
     const contentHTML = originalContent ? originalContent.outerHTML : '';
 
+    // Preserve modals and other elements outside the main container
+    const modals = document.querySelectorAll('.modal');
+    const stickyButtons = document.querySelectorAll('.delete-selected-btn, [style*="position: fixed"]');
+
     // Create sidebar HTML
     const sidebarHTML = this.renderSidebar();
 
@@ -131,6 +135,16 @@ const SidebarNav = {
 
     // Insert into body
     document.body.innerHTML = sidebarHTML + mainWrapperHTML;
+
+    // Re-append modals to body
+    modals.forEach((modal) => {
+      document.body.appendChild(modal.cloneNode(true));
+    });
+
+    // Re-append sticky buttons to body
+    stickyButtons.forEach((btn) => {
+      document.body.appendChild(btn.cloneNode(true));
+    });
 
     // Re-initialize any scripts that need the DOM
     this.reinitializeScripts();
