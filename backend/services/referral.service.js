@@ -70,12 +70,21 @@ const getReferredUsers = async (userId, { page = 1, limit = 50 }) => {
   try {
     const offset = (page - 1) * limit;
 
+    // Calculate total_spent from transactions: (purchase + renewal) - refunds
     const result = await query(
       `SELECT
         u.id,
         u.username,
         u.created_at as registered_at,
-        u.total_spent,
+        GREATEST(0, COALESCE(ABS((
+          SELECT SUM(t.amount)
+          FROM transactions t
+          WHERE t.user_id = u.id AND t.type IN ('purchase', 'renewal')
+        )), 0) - COALESCE((
+          SELECT SUM(t.amount)
+          FROM transactions t
+          WHERE t.user_id = u.id AND t.type = 'refund'
+        ), 0)) as total_spent,
         COALESCE(
           (SELECT SUM(commission_amount) FROM referral_transactions WHERE referrer_id = $1 AND referee_id = u.id),
           0
