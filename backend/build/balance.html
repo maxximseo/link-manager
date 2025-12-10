@@ -129,14 +129,14 @@
             </div>
         </div>
 
-        <!-- Transactions History -->
-        <div class="transactions-card mb-4">
-            <div class="card-header">
-                <div class="card-header-info">
-                    <h5>История транзакций</h5>
+        <!-- Transactions History - Modern Card Style -->
+        <div class="modern-card mb-4">
+            <div class="modern-card-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h2>История транзакций</h2>
                     <p>Все операции с вашим балансом</p>
                 </div>
-                <div class="export-buttons">
+                <div class="d-flex gap-2">
                     <button class="btn-export btn-csv" onclick="exportTransactions('csv')">
                         <i class="bi bi-file-earmark-spreadsheet"></i> CSV
                     </button>
@@ -145,31 +145,29 @@
                     </button>
                 </div>
             </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table mb-0">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Дата</th>
-                                <th>Тип</th>
-                                <th>Сумма</th>
-                                <th>Баланс после</th>
-                                <th>Описание</th>
-                            </tr>
-                        </thead>
-                        <tbody id="transactionsTable">
-                            <tr>
-                                <td colspan="6" class="text-center text-muted py-4">
-                                    <div class="spinner-border spinner-border-sm text-primary me-2"></div>
-                                    Загрузка...
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <nav id="transactionsPagination" class="p-3"></nav>
+            <div class="table-responsive">
+                <table class="table1">
+                    <thead>
+                        <tr>
+                            <th class="col-id">ID</th>
+                            <th class="col-date">Дата</th>
+                            <th>Тип</th>
+                            <th class="col-money">Сумма</th>
+                            <th class="col-money">Баланс</th>
+                            <th>Описание</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionsTable">
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                                Загрузка...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
+            <div class="p-3 border-top" id="transactionsPagination"></div>
         </div>
     </div>
 
@@ -278,8 +276,10 @@
         // Initialize sidebar navigation
         SidebarNav.init({
             activePage: 'balance',
-            pageTitle: 'Баланс',
-            pageSubtitle: 'Управление балансом и платежами'
+            pageTitle: 'Баланс и платежи',
+            pageSubtitle: 'Управление финансами и история транзакций',
+            pageIcon: 'wallet2',
+            pageIconGradient: 'gradient-yellow-orange'
         });
     </script>
     <script src="/js/balance.js"></script>

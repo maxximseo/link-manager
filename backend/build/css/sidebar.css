@@ -234,6 +234,49 @@ body.sidebar-collapsed .main-header {
 }
 
 /* Page title */
+.page-title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.page-title-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex-shrink: 0;
+}
+
+.page-title-icon i {
+    font-size: 24px;
+    color: white;
+}
+
+/* Gradient variants for page title icon */
+.page-title-icon.gradient-yellow-orange {
+    background: linear-gradient(135deg, #facc15 0%, #f97316 100%);
+}
+
+.page-title-icon.gradient-blue-indigo {
+    background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+}
+
+.page-title-icon.gradient-green-teal {
+    background: linear-gradient(135deg, #10b981 0%, #0d9488 100%);
+}
+
+.page-title-icon.gradient-purple-pink {
+    background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+}
+
+.page-title-text {
+    flex: 1;
+}
+
 .page-title h1 {
     font-size: 20px;
     font-weight: 600;
