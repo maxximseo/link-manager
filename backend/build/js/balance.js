@@ -280,7 +280,8 @@ function updateDiscountProgress() {
  */
 async function loadTransactions(page = 1) {
     try {
-        const response = await fetch(`/api/billing/transactions?page=${page}&limit=100`, {
+        currentPage = page;
+        const response = await fetch(`/api/billing/transactions?page=${page}&limit=${itemsPerPage}`, {
             headers: {
                 'Authorization': `Bearer ${getToken()}`
             }
@@ -291,6 +292,9 @@ async function loadTransactions(page = 1) {
         }
 
         const result = await response.json();
+        totalTransactions = result.pagination.total || 0;
+        totalPages = result.pagination.pages || 1;
+
         renderTransactions(result.data);
         renderTransactionsPagination(result.pagination);
 
@@ -298,6 +302,42 @@ async function loadTransactions(page = 1) {
         console.error('Failed to load transactions:', error);
         document.getElementById('transactionsTable').innerHTML =
             '<tr><td colspan="6" class="text-center text-danger">Ошибка загрузки транзакций</td></tr>';
+    }
+}
+
+/**
+ * Change items per page
+ */
+function changeItemsPerPage(value) {
+    itemsPerPage = parseInt(value);
+    currentPage = 1;
+    loadTransactions(1);
+}
+
+/**
+ * Go to previous page
+ */
+function goToPrevPage() {
+    if (currentPage > 1) {
+        loadTransactions(currentPage - 1);
+    }
+}
+
+/**
+ * Go to next page
+ */
+function goToNextPage() {
+    if (currentPage < totalPages) {
+        loadTransactions(currentPage + 1);
+    }
+}
+
+/**
+ * Go to specific page
+ */
+function goToPage(page) {
+    if (page >= 1 && page <= totalPages) {
+        loadTransactions(page);
     }
 }
 
