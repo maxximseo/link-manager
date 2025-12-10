@@ -360,6 +360,11 @@ function renderScheduledPlacements(placements) {
 
         tbody.appendChild(row);
     });
+
+    // Reapply column visibility settings after table is rendered
+    if (typeof window.reapplyColumnSettings === 'function') {
+        window.reapplyColumnSettings();
+    }
 }
 
 /**
