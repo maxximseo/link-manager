@@ -1,8 +1,5 @@
 // Admin Placements Management
 
-// Initialize navbar
-initNavbar('admin', 'placements');
-
 // Check authentication
 if (!isAuthenticated()) {
     window.location.href = '/index.html';

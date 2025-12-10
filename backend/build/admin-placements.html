@@ -7,12 +7,10 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/sidebar.css">
 </head>
 <body>
-    <!-- Navbar Container (injected by navbar.js) -->
-    <div id="navbar-container"></div>
-
-    <div class="container mt-4">
+    <div class="container-fluid">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>📦 Все размещения</h1>
             <div class="btn-group">
@@ -190,8 +188,14 @@
     <script src="/js/security.js"></script>
     <script src="/js/auth.js"></script>
     <script src="/js/badge-utils.js"></script>
-    <script src="/js/navbar-config.js"></script>
-    <script src="/js/navbar.js"></script>
+    <script src="/js/sidebar.js"></script>
+    <script>
+        SidebarNav.init({
+            activePage: 'admin-placements',
+            pageTitle: 'Все размещения',
+            pageSubtitle: 'Просмотр и управление размещениями'
+        });
+    </script>
     <script src="/js/admin-placements.js"></script>
 </body>
 </html>
