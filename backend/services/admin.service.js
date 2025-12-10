@@ -50,13 +50,21 @@ const getAdminStats = async (period = 'day') => {
       [days]
     );
 
-    // Get user stats - parameterized query
+    // Get user stats - calculate total_spent from transactions (purchase + renewal - refunds)
     const userResult = await query(
       `
       SELECT
         COUNT(*) as new_users,
         SUM(balance) as total_user_balance,
-        SUM(total_spent) as total_user_spending
+        (SELECT COALESCE(SUM(
+          GREATEST(0, COALESCE(ABS((
+            SELECT SUM(t.amount) FROM transactions t
+            WHERE t.user_id = u.id AND t.type IN ('purchase', 'renewal')
+          )), 0) - COALESCE((
+            SELECT SUM(t.amount) FROM transactions t
+            WHERE t.user_id = u.id AND t.type = 'refund'
+          ), 0))
+        ), 0) FROM users u WHERE u.created_at >= NOW() - make_interval(days => $1)) as total_user_spending
       FROM users
       WHERE created_at >= NOW() - make_interval(days => $1)
     `,
