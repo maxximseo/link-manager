@@ -1337,10 +1337,41 @@
 
         async function bulkDeleteSelected() {
             if (selectedIds.size === 0) return;
-            if (!confirm(`Удалить ${selectedIds.size} размещений?`)) return;
 
-            // Implementation would go here
-            showAlert('Удаление размещений недоступно', 'warning');
+            // Check if user is admin
+            if (!isAdmin()) {
+                showAlert('Удаление размещений доступно только администраторам', 'warning');
+                return;
+            }
+
+            if (!confirm(`Удалить ${selectedIds.size} размещений? Средства будут возвращены на баланс.`)) return;
+
+            const ids = Array.from(selectedIds);
+            try {
+                const response = await fetch('/api/placements/batch-delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${getToken()}`
+                    },
+                    body: JSON.stringify({ ids: ids })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    const deleted = result.results?.filter(r => r.success).length || ids.length;
+                    const refunded = result.results?.reduce((sum, r) => sum + (r.refundedAmount || 0), 0) || 0;
+                    showAlert(`Удалено ${deleted} размещений. Возврат: $${refunded.toFixed(2)}`, 'success');
+                    selectedIds.clear();
+                    loadPlacements();
+                } else {
+                    showAlert(result.error || 'Ошибка при удалении', 'danger');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Ошибка при удалении размещений', 'danger');
+            }
         }
 
         // Initialize
