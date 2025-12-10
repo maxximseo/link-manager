@@ -274,7 +274,7 @@ function updateDiscountProgress() {
  */
 async function loadTransactions(page = 1) {
     try {
-        const response = await fetch(`/api/billing/transactions?page=${page}&limit=20`, {
+        const response = await fetch(`/api/billing/transactions?page=${page}&limit=100`, {
             headers: {
                 'Authorization': `Bearer ${getToken()}`
             }

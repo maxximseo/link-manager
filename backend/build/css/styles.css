@@ -1391,9 +1391,9 @@ p {
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
 }
 
-/* Blue gradient card (Current Balance) */
+/* Blue gradient card (Current Balance) - from-blue-500 via-blue-600 to-indigo-600 */
 .balance-stat-card.card-blue {
-    background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #4f46e5 100%);
     color: white;
     box-shadow: 0 8px 32px rgba(59, 130, 246, 0.35);
 }
@@ -1491,12 +1491,12 @@ p {
     color: #6b7280;
 }
 
-/* Amber/Orange gradient card (Discount) */
+/* Amber/Orange gradient card (Discount) - from-amber-50 to-orange-50 */
 .balance-stat-card.card-amber {
-    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-    border: 2px solid #fcd34d;
+    background: linear-gradient(135deg, #fffbeb 0%, #fff7ed 100%);
+    border: 2px solid #fde68a;
     color: #78350f;
-    box-shadow: 0 4px 16px rgba(251, 191, 36, 0.25);
+    box-shadow: 0 4px 16px rgba(251, 191, 36, 0.15);
 }
 
 .balance-stat-card.card-amber .card-label {
