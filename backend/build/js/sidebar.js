@@ -584,9 +584,9 @@ const SidebarNav = {
 
       if (response.ok) {
         this.unreadCount = 0;
-        const dot = document.getElementById('notificationDot');
-        if (dot) {
-          dot.style.display = 'none';
+        const badge = document.getElementById('notificationBadge');
+        if (badge) {
+          badge.style.display = 'none';
         }
       }
     } catch (error) {
