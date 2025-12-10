@@ -8,6 +8,7 @@ const logger = require('../config/logger');
 
 // Import modular routes
 const authRoutes = require('./auth.routes');
+const userRoutes = require('./user.routes');
 const projectRoutes = require('./project.routes');
 const siteRoutes = require('./site.routes');
 const placementRoutes = require('./placement.routes');
