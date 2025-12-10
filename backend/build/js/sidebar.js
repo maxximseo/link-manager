@@ -31,14 +31,12 @@ const SidebarNav = {
   ],
 
   adminItems: [
-    { id: 'admin-dashboard', label: 'Админ панель', icon: 'bi-shield-lock', href: '/admin-dashboard.html' },
-    {
-      id: 'admin-moderation',
-      label: 'Модерация',
-      icon: 'bi-check2-square',
-      href: '/admin/moderation.html',
-      badge: true
-    }
+    { id: 'admin-dashboard', label: 'Статистика', icon: 'bi-graph-up', href: '/admin-dashboard.html' },
+    { id: 'admin-users', label: 'Пользователи', icon: 'bi-people', href: '/admin-users.html' },
+    { id: 'admin-sites', label: 'Сайты', icon: 'bi-globe2', href: '/admin-site-params.html' },
+    { id: 'admin-placements', label: 'Размещения', icon: 'bi-bookmark-star', href: '/admin-placements.html' },
+    { id: 'admin-moderation', label: 'Модерация', icon: 'bi-check2-square', href: '/admin-moderation.html', badge: true },
+    { id: 'admin-withdrawals', label: 'Выводы', icon: 'bi-cash-stack', href: '/admin-referral-withdrawals.html' }
   ],
 
   /**
