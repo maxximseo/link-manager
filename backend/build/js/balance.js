@@ -124,36 +124,76 @@ function renderDiscountTiers() {
     const tbody = document.getElementById('discountTiersTable');
     tbody.innerHTML = '';
 
-    // Filter out "Стандарт" tier (min_spent = 0, discount = 0%)
-    const visibleTiers = discountTiers.filter(tier => parseFloat(tier.min_spent) > 0);
+    // Add "Стандарт" tier at the beginning if not exists
+    const allTiers = [...discountTiers];
+    const hasStandardTier = allTiers.some(t => parseFloat(t.min_spent) === 0);
+    if (!hasStandardTier) {
+        allTiers.unshift({
+            tier_name: 'Стандарт',
+            min_spent: '0',
+            discount_percentage: 0
+        });
+    }
 
-    visibleTiers.forEach(tier => {
-        const isActive = currentDiscount === tier.discount_percentage;
-        const isGoldTier = tier.discount_percentage === 20;
+    // Find current and next tier indexes
+    let currentTierIndex = 0;
+    for (let i = allTiers.length - 1; i >= 0; i--) {
+        if (totalSpent >= parseFloat(allTiers[i].min_spent)) {
+            currentTierIndex = i;
+            break;
+        }
+    }
+    const nextTierIndex = currentTierIndex + 1;
+
+    allTiers.forEach((tier, index) => {
+        const isCurrent = index === currentTierIndex;
+        const isNext = index === nextTierIndex;
         const tierReached = totalSpent >= parseFloat(tier.min_spent);
-        const row = document.createElement('tr');
-        row.className = isActive ? 'table-success' : '';
+        const isGoldTier = tier.discount_percentage === 20;
 
-        // Status text with Gold tier bonus info
-        let statusHtml;
-        if (tierReached) {
-            statusHtml = '<span class="text-success"><i class="bi bi-check-circle-fill"></i> Достигнут</span>';
-        } else {
-            statusHtml = '<span class="text-muted"><i class="bi bi-lock-fill"></i> Заблокирован</span>';
-            // Add Gold tier benefit info for locked Gold tier
-            if (isGoldTier) {
-                statusHtml += '<br><small class="text-info"><i class="bi bi-eye-fill"></i> (Будут видны все адреса площадок)</small>';
-            }
+        const row = document.createElement('tr');
+        row.className = isCurrent ? 'tier-current' : '';
+
+        // Indicator dot color
+        let indicatorClass = 'locked';
+        if (isCurrent) indicatorClass = 'current';
+        else if (isNext) indicatorClass = 'next';
+
+        // Badge style
+        let badgeClass = 'badge-gray';
+        if (isCurrent) badgeClass = 'badge-amber';
+        else if (isNext) badgeClass = 'badge-blue';
+
+        // Status text
+        let statusText = 'Заблокирован';
+        let statusClass = 'status-locked';
+        if (isCurrent) {
+            statusText = 'Текущий';
+            statusClass = 'status-current';
+        } else if (isNext) {
+            statusText = 'Следующий';
+            statusClass = 'status-next';
+        }
+
+        // Gold tier extra info
+        let extraInfo = '';
+        if (isGoldTier && !tierReached) {
+            extraInfo = '<br><small class="text-info"><i class="bi bi-eye-fill"></i> Будут видны адреса площадок</small>';
         }
 
         row.innerHTML = `
             <td>
-                <strong>${tier.tier_name}</strong>
-                ${isActive ? '<span class="badge bg-success ms-2">Текущий</span>' : ''}
+                <div class="d-flex align-items-center gap-2">
+                    <span class="tier-indicator ${indicatorClass}"></span>
+                    <span class="tier-name">${tier.tier_name}</span>
+                </div>
             </td>
-            <td>$${parseFloat(tier.min_spent).toFixed(2)}</td>
-            <td><span class="badge bg-warning">${tier.discount_percentage}%</span></td>
-            <td>${statusHtml}</td>
+            <td class="text-muted">$${Number(parseFloat(tier.min_spent)).toLocaleString('ru-RU')}</td>
+            <td><span class="tier-badge ${badgeClass}">${tier.discount_percentage}%</span></td>
+            <td>
+                <span class="tier-status ${statusClass}">${statusText}</span>
+                ${extraInfo}
+            </td>
         `;
 
         tbody.appendChild(row);
