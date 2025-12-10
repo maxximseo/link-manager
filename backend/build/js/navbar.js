@@ -55,18 +55,23 @@ class Navbar {
         return `<li class="nav-item dropdown">
                     <a class="nav-link position-relative" href="#" id="notificationsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-bell"></i>
-                        <span class="badge bg-light text-dark rounded-pill position-absolute" id="notificationBadge" style="display: none; top: -2px; right: -8px; font-size: 0.55rem; padding: 2px 5px;">0</span>
+                        <span class="badge bg-danger rounded-pill position-absolute" id="notificationBadge" style="display: none; top: -2px; right: -8px; font-size: 0.55rem; padding: 2px 5px;">0</span>
                     </a>
-                    <ul class="dropdown-menu dropdown-menu-end notification-dropdown" id="notificationsList" style="min-width: 350px; max-height: 400px; overflow-y: auto;">
-                        <li class="dropdown-header d-flex justify-content-between align-items-center px-3 py-2">
-                            <span class="fw-bold">Уведомления</span>
-                            <button class="btn btn-sm" onclick="Navbar.deleteAllNotifications(event)" title="Прочитать все" style="background-color: #fff; color: #333; border: 1px solid #ccc;">
-                                <i class="bi bi-check2-all"></i> Прочитать все
-                            </button>
-                        </li>
-                        <li><hr class="dropdown-divider m-0"></li>
-                        <li id="notificationsEmpty"><span class="dropdown-item text-muted small">Загрузка...</span></li>
-                    </ul>
+                    <div class="dropdown-menu dropdown-menu-end notification-dropdown" id="notificationsList">
+                        <div class="notification-header">
+                            <h6>Уведомления</h6>
+                            <a href="#" class="mark-all-read" onclick="Navbar.markAllNotificationsRead(event)">Отметить все как прочитанные</a>
+                        </div>
+                        <div class="notification-list" id="notificationsListContent">
+                            <div class="notification-empty">
+                                <i class="bi bi-bell-slash"></i>
+                                <p>Загрузка...</p>
+                            </div>
+                        </div>
+                        <div class="notification-footer">
+                            <a href="#" onclick="Navbar.deleteAllNotifications(event)"><i class="bi bi-trash me-1"></i>Удалить все</a>
+                        </div>
+                    </div>
                 </li>`;
     }
 
