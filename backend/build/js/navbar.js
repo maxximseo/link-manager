@@ -403,12 +403,13 @@ Navbar.getNotificationType = function(notification) {
  * Get icon class based on notification type
  */
 Navbar.getNotificationIcon = function(type) {
+    // Icons matching lucide-react from AlertsPanel.tsx
     const icons = {
         'security': 'bi-shield-exclamation',
-        'error': 'bi-exclamation-triangle',
-        'warning': 'bi-exclamation-circle',
-        'success': 'bi-check-circle',
-        'info': 'bi-info-circle'
+        'error': 'bi-x-circle',           // XCircle
+        'warning': 'bi-exclamation-triangle', // AlertTriangle
+        'success': 'bi-check-circle',     // CheckCircle
+        'info': 'bi-info-circle'          // Info
     };
     return icons[type] || icons.info;
 };
