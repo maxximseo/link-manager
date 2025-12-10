@@ -418,71 +418,83 @@ function renderTransactions(transactions) {
  * Render transactions pagination
  */
 function renderTransactionsPagination(pagination) {
-    const container = document.getElementById('transactionsPagination');
-    container.innerHTML = '';
+    const total = pagination.total || 0;
+    totalPages = pagination.pages || 1;
 
-    if (pagination.pages <= 1) {
-        return;
+    // Update info text
+    const start = Math.min((currentPage - 1) * itemsPerPage + 1, total);
+    const end = Math.min(currentPage * itemsPerPage, total);
+
+    const paginationInfo = document.getElementById('paginationInfo');
+    if (paginationInfo) {
+        paginationInfo.textContent = `Показано ${start}–${end} из ${total}`;
     }
 
-    const nav = document.createElement('nav');
-    const ul = document.createElement('ul');
-    ul.className = 'pagination justify-content-center';
+    // Update prev/next buttons
+    const prevBtn = document.getElementById('prevPage');
+    const nextBtn = document.getElementById('nextPage');
 
-    // Previous button
-    const prevLi = document.createElement('li');
-    prevLi.className = `page-item ${!pagination.hasPrev ? 'disabled' : ''}`;
-    const prevLink = document.createElement('a');
-    prevLink.className = 'page-link';
-    prevLink.href = '#';
-    prevLink.textContent = 'Назад';
-    prevLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        if (pagination.hasPrev) {
-            loadTransactions(pagination.page - 1);
+    if (prevBtn) {
+        prevBtn.disabled = currentPage <= 1;
+    }
+    if (nextBtn) {
+        nextBtn.disabled = currentPage >= totalPages;
+    }
+
+    // Render page numbers
+    const pageNumbers = document.getElementById('pageNumbers');
+    if (!pageNumbers) return;
+
+    pageNumbers.innerHTML = '';
+
+    if (totalPages <= 1) return;
+
+    // Calculate visible pages
+    const maxVisible = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+
+    if (endPage - startPage + 1 < maxVisible) {
+        startPage = Math.max(1, endPage - maxVisible + 1);
+    }
+
+    // First page + ellipsis if needed
+    if (startPage > 1) {
+        pageNumbers.appendChild(createPageButton(1));
+        if (startPage > 2) {
+            const ellipsis = document.createElement('span');
+            ellipsis.className = 'pagination-ellipsis';
+            ellipsis.textContent = '...';
+            pageNumbers.appendChild(ellipsis);
         }
-    });
-    prevLi.appendChild(prevLink);
-    ul.appendChild(prevLi);
+    }
 
-    // Page numbers
-    const startPage = Math.max(1, pagination.page - 2);
-    const endPage = Math.min(pagination.pages, pagination.page + 2);
-
+    // Page buttons
     for (let i = startPage; i <= endPage; i++) {
-        const li = document.createElement('li');
-        li.className = `page-item ${i === pagination.page ? 'active' : ''}`;
-        const pageLink = document.createElement('a');
-        pageLink.className = 'page-link';
-        pageLink.href = '#';
-        pageLink.textContent = i;
-        const pageNum = i; // Capture current value for closure
-        pageLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            loadTransactions(pageNum);
-        });
-        li.appendChild(pageLink);
-        ul.appendChild(li);
+        pageNumbers.appendChild(createPageButton(i));
     }
 
-    // Next button
-    const nextLi = document.createElement('li');
-    nextLi.className = `page-item ${!pagination.hasNext ? 'disabled' : ''}`;
-    const nextLink = document.createElement('a');
-    nextLink.className = 'page-link';
-    nextLink.href = '#';
-    nextLink.textContent = 'Вперед';
-    nextLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        if (pagination.hasNext) {
-            loadTransactions(pagination.page + 1);
+    // Ellipsis + last page if needed
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            const ellipsis = document.createElement('span');
+            ellipsis.className = 'pagination-ellipsis';
+            ellipsis.textContent = '...';
+            pageNumbers.appendChild(ellipsis);
         }
-    });
-    nextLi.appendChild(nextLink);
-    ul.appendChild(nextLi);
+        pageNumbers.appendChild(createPageButton(totalPages));
+    }
+}
 
-    nav.appendChild(ul);
-    container.appendChild(nav);
+/**
+ * Create page button
+ */
+function createPageButton(page) {
+    const btn = document.createElement('button');
+    btn.className = 'pagination-btn' + (page === currentPage ? ' active' : '');
+    btn.textContent = page;
+    btn.onclick = () => goToPage(page);
+    return btn;
 }
 
 // Payment configuration
