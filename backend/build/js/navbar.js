@@ -600,3 +600,16 @@ Navbar.deleteAllNotifications = async function(event) {
         console.error('Error deleting notifications:', e);
     }
 };
+
+/**
+ * Show all notifications (future: could open a dedicated notifications page)
+ * For now: reloads with higher limit
+ */
+Navbar.showAllNotifications = async function(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    // For now, just reload notifications - could redirect to notifications page in future
+    localStorage.removeItem('notifications_cache');
+    await Navbar.loadNotifications();
+};
