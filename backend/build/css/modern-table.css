@@ -797,7 +797,7 @@ body.modern-ui {
 
 /* Notification footer */
 .notification-footer {
-    padding: 14px 20px;
+    padding: 16px 20px;
     text-align: center;
     border-top: 1px solid #e5e7eb;
     background: #fff;
@@ -807,13 +807,13 @@ body.modern-ui {
 .notification-footer a {
     font-size: 14px;
     font-weight: 500;
-    color: #64748b;
+    color: #374151;
     text-decoration: none;
     transition: color 0.15s;
 }
 
 .notification-footer a:hover {
-    color: #ef4444;
+    color: #6366f1;
 }
 
 .notification-footer a i {
