@@ -108,6 +108,101 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>🔗 Мои ссылки</h1>
             <div>
+                <button class="btn btn-light border me-2" style="background: white !important; color: #333 !important;" onclick="toggleFiltersPanel()" id="filtersToggleBtn">
+                    <i class="bi bi-funnel"></i> Фильтры
+                </button>
+                <div class="btn-group me-2">
+                    <button class="btn btn-light border dropdown-toggle" style="background: white !important; color: #333 !important;" type="button" id="columnsDropdown" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                        <i class="bi bi-layout-three-columns"></i> Колонки
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end p-3" style="width: 280px; max-height: 400px; overflow-y: auto;" aria-labelledby="columnsDropdown">
+                        <h6 class="dropdown-header px-0">Показать/скрыть колонки</h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="col-id" checked onchange="toggleColumn('id')">
+                            <label class="form-check-label" for="col-id">ID</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="col-project" checked onchange="toggleColumn('project')">
+                            <label class="form-check-label" for="col-project">Проект</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="col-site" checked onchange="toggleColumn('site')">
+                            <label class="form-check-label" for="col-site">Площадка</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="col-published" checked onchange="toggleColumn('published')">
+                            <label class="form-check-label" for="col-published">Опубликовано</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="col-expires" checked onchange="toggleColumn('expires')">
+                            <label class="form-check-label" for="col-expires">Истекает</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="col-price" checked onchange="toggleColumn('price')">
+                            <label class="form-check-label" for="col-price">Цена</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="col-autorenewal" checked onchange="toggleColumn('autorenewal')">
+                            <label class="form-check-label" for="col-autorenewal">Автопродление</label>
+                        </div>
+                        <hr class="my-2">
+                        <h6 class="dropdown-header px-0">SEO метрики</h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="col-dr" checked onchange="toggleColumn('dr')">
+                            <label class="form-check-label" for="col-dr">DR</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="col-da" checked onchange="toggleColumn('da')">
+                            <label class="form-check-label" for="col-da">DA</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="col-tf" onchange="toggleColumn('tf')">
+                            <label class="form-check-label" for="col-tf">TF</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="col-cf" onchange="toggleColumn('cf')">
+                            <label class="form-check-label" for="col-cf">CF</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="col-rd" onchange="toggleColumn('rd')">
+                            <label class="form-check-label" for="col-rd">RD</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="col-rdm" onchange="toggleColumn('rdm')">
+                            <label class="form-check-label" for="col-rdm">RDm</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="col-norm" onchange="toggleColumn('norm')">
+                            <label class="form-check-label" for="col-norm">Norm</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="col-kw" onchange="toggleColumn('kw')">
+                            <label class="form-check-label" for="col-kw">KW</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="col-traf" onchange="toggleColumn('traf')">
+                            <label class="form-check-label" for="col-traf">Traf</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="col-geo" onchange="toggleColumn('geo')">
+                            <label class="form-check-label" for="col-geo">GEO</label>
+                        </div>
+                        <hr class="my-2">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="col-sitetype" onchange="toggleColumn('sitetype')">
+                            <label class="form-check-label" for="col-sitetype">Тип сайта</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="col-type" checked onchange="toggleColumn('type')">
+                            <label class="form-check-label" for="col-type">Тип</label>
+                        </div>
+                        <hr class="my-2">
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-primary flex-fill" onclick="showAllColumns()">Все</button>
+                            <button class="btn btn-sm btn-outline-secondary flex-fill" onclick="hideOptionalColumns()">Минимум</button>
+                        </div>
+                    </div>
+                </div>
                 <button class="btn btn-light border" style="background: white !important; color: #333 !important;" onclick="exportPlacements('csv')">
                     <i class="bi bi-download"></i> Экспорт CSV
                 </button>
@@ -552,6 +647,204 @@
     <script>
         // Initialize navbar
         initNavbar('user', 'placements-manager');
+
+        // =====================
+        // Column Visibility Management
+        // =====================
+        const COLUMN_STORAGE_KEY = 'placements_columns_visibility';
+
+        // Mapping column ID to header text patterns (for finding columns dynamically)
+        // Note: Using startsWith matching, so 'Опубл' matches 'Опубл.' and 'Публик.'
+        const columnHeaderMap = {
+            'id': 'ID',
+            'project': 'Проект',
+            'site': 'Площадка',
+            'published': 'Опубл',      // Matches 'Опубл.' in Active table
+            'scheduled': 'Публик',      // Matches 'Публик.' in Scheduled table
+            'expires': 'Истек',        // Matches 'Истек.' in Active table
+            'purchased': 'Куплено',    // For Scheduled table
+            'price': 'Цена',
+            'autorenewal': 'Авто',
+            'actions': 'Действия',
+            'status': 'Статус',        // For History table
+            'renewals': 'Прод',        // For History table (Продлений)
+            'dr': 'DR',
+            'da': 'DA',
+            'tf': 'TF',
+            'cf': 'CF',
+            'rd': 'RD',
+            'rdm': 'RDm',
+            'norm': 'Norm',
+            'kw': 'KW',
+            'traf': 'Traf',
+            'geo': 'GEO',
+            'sitetype': 'Тип сайта',
+            'type': 'Тип'
+        };
+
+        // Default visible columns
+        const defaultVisibleColumns = ['id', 'project', 'site', 'published', 'expires', 'price', 'autorenewal', 'actions', 'dr', 'da', 'type'];
+
+        // Load saved column settings
+        function loadColumnSettings() {
+            const saved = localStorage.getItem(COLUMN_STORAGE_KEY);
+            if (saved) {
+                try {
+                    return JSON.parse(saved);
+                } catch (e) {
+                    return [...defaultVisibleColumns];
+                }
+            }
+            return [...defaultVisibleColumns];
+        }
+
+        // Save column settings
+        function saveColumnSettings(columns) {
+            localStorage.setItem(COLUMN_STORAGE_KEY, JSON.stringify(columns));
+        }
+
+        // Find column index by header text in a specific table
+        function findColumnIndex(table, headerText) {
+            const headers = table.querySelectorAll('thead th');
+            for (let i = 0; i < headers.length; i++) {
+                const text = headers[i].textContent.trim();
+                if (text.startsWith(headerText) || text === headerText) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        // Toggle column visibility
+        function toggleColumn(columnId) {
+            const checkbox = document.getElementById('col-' + columnId);
+            const isVisible = checkbox ? checkbox.checked : false;
+            const headerText = columnHeaderMap[columnId];
+
+            if (!headerText) return;
+
+            // Toggle visibility for all tables
+            const tables = document.querySelectorAll('.table1');
+            tables.forEach(table => {
+                const colIndex = findColumnIndex(table, headerText);
+                if (colIndex === -1) return;
+
+                const rows = table.querySelectorAll('tr');
+                rows.forEach(row => {
+                    const cell = row.children[colIndex];
+                    if (cell) {
+                        cell.style.display = isVisible ? '' : 'none';
+                    }
+                });
+            });
+
+            // Update saved settings
+            const visibleColumns = getVisibleColumns();
+            saveColumnSettings(visibleColumns);
+        }
+
+        // Get currently visible columns
+        function getVisibleColumns() {
+            const visible = [];
+            Object.keys(columnHeaderMap).forEach(col => {
+                const checkbox = document.getElementById('col-' + col);
+                if (checkbox && checkbox.checked) {
+                    visible.push(col);
+                }
+            });
+            return visible;
+        }
+
+        // Show all columns
+        function showAllColumns() {
+            Object.keys(columnHeaderMap).forEach(col => {
+                const checkbox = document.getElementById('col-' + col);
+                if (checkbox) {
+                    checkbox.checked = true;
+                }
+            });
+            applyColumnSettings();
+        }
+
+        // Hide optional columns (show only essential)
+        function hideOptionalColumns() {
+            const essentialColumns = ['id', 'project', 'site', 'published', 'expires', 'price', 'autorenewal', 'actions'];
+            Object.keys(columnHeaderMap).forEach(col => {
+                const checkbox = document.getElementById('col-' + col);
+                if (checkbox) {
+                    checkbox.checked = essentialColumns.includes(col);
+                }
+            });
+            applyColumnSettings();
+        }
+
+        // Apply column settings to all tables
+        function applyColumnSettings() {
+            const visibleColumns = loadColumnSettings();
+
+            // Update checkboxes first
+            Object.keys(columnHeaderMap).forEach(col => {
+                const checkbox = document.getElementById('col-' + col);
+                if (checkbox) {
+                    checkbox.checked = visibleColumns.includes(col);
+                }
+            });
+
+            // Apply to all tables
+            const tables = document.querySelectorAll('.table1');
+            tables.forEach(table => {
+                Object.keys(columnHeaderMap).forEach(col => {
+                    const headerText = columnHeaderMap[col];
+                    const colIndex = findColumnIndex(table, headerText);
+                    if (colIndex === -1) return;
+
+                    const shouldBeVisible = visibleColumns.includes(col);
+                    const rows = table.querySelectorAll('tr');
+                    rows.forEach(row => {
+                        const cell = row.children[colIndex];
+                        if (cell) {
+                            cell.style.display = shouldBeVisible ? '' : 'none';
+                        }
+                    });
+                });
+            });
+        }
+
+        // Toggle filters panel
+        function toggleFiltersPanel() {
+            const filtersCard = document.querySelector('.container > .card.mb-3');
+            const btn = document.getElementById('filtersToggleBtn');
+
+            if (filtersCard) {
+                const isHidden = filtersCard.style.display === 'none';
+                filtersCard.style.display = isHidden ? '' : 'none';
+
+                if (btn) {
+                    btn.classList.toggle('active', !isHidden);
+                    if (!isHidden) {
+                        btn.innerHTML = '<i class="bi bi-funnel"></i> Фильтры';
+                    } else {
+                        btn.innerHTML = '<i class="bi bi-funnel-fill"></i> Фильтры';
+                    }
+                }
+            }
+        }
+
+        // Apply column settings after tables are loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Wait for tables to be rendered
+            setTimeout(applyColumnSettings, 500);
+        });
+
+        // Re-apply settings when tabs change or data loads
+        document.addEventListener('shown.bs.tab', function() {
+            setTimeout(applyColumnSettings, 100);
+        });
+
+        // Global function to reapply column settings (called after table data loads)
+        window.reapplyColumnSettings = function() {
+            setTimeout(applyColumnSettings, 100);
+        };
     </script>
 </body>
 </html>
