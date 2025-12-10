@@ -217,7 +217,7 @@
         /* Table styles */
         .links-table {
             width: 100%;
-            min-width: 1800px;
+            min-width: 550px;
             border-collapse: collapse;
             table-layout: fixed;
         }
@@ -270,19 +270,18 @@
         }
 
         /* Column widths - compact */
-        .col-checkbox { width: 40px; }
-        .col-id { width: 50px; }
-        .col-project { width: 180px; max-width: 180px; }
-        .col-published { width: 90px; }
-        .col-expires { width: 90px; }
-        .col-price { width: 70px; }
-        .col-autorenewal { width: 70px; }
-        .col-actions { width: 90px; }
+        .col-checkbox { width: 4px; }
+        .col-id { width: 15px; }
+        .col-project { width: 50px; max-width: 50px; }
+        .col-published { width: 30px; }
+        .col-expires { width: 40px; }
+        .col-price { width: 15px; }
+        .col-autorenewal { width: 22px; }
+        .col-actions { width: 35px; }
         .col-status { width: 110px; }
-        .col-dr, .col-da, .col-tf, .col-cf, .col-rd, .col-rdm, .col-norm, .col-kw, .col-traf { width: 50px; }
-        .col-geo { width: 60px; }
-        .col-sitetype { width: 80px; }
-        .col-type { width: 70px; }
+        .col-dr, .col-da, .col-tf, .col-cf, .col-rd, .col-rdm, .col-norm, .col-kw, .col-traf { width: 15px; }
+        .col-geo { width: 23px; }
+        .col-type { width: 23px; }
 
         /* Auto-renewal toggle */
         .autorenewal-switch {
@@ -359,23 +358,6 @@
         .type-badge-article {
             background: #fef3c7;
             color: #92400e;
-        }
-
-        /* Site type badge */
-        .sitetype-badge {
-            display: inline-block;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: 500;
-        }
-        .sitetype-wp {
-            background: #e0e7ff;
-            color: #4338ca;
-        }
-        .sitetype-static {
-            background: #f3f4f6;
-            color: #374151;
         }
 
         /* Checkbox styling */
@@ -538,6 +520,119 @@
         /* Auto-renewal toggle - синий вместо зеленого (как в референсе) */
         .autorenewal-switch input:checked + .autorenewal-slider {
             background-color: #2563eb;
+        }
+
+        /* Pagination */
+        .pagination-wrapper {
+            padding: 16px 24px;
+            border-top: 1px solid #e5e7eb;
+            background: #f9fafb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .pagination-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pagination-left span {
+            font-size: 14px;
+            color: #4b5563;
+        }
+
+        .pagination-left select {
+            padding: 6px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+        }
+
+        .pagination-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pagination-info {
+            font-size: 14px;
+            color: #4b5563;
+            margin-right: 16px;
+        }
+
+        .pagination-buttons {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pagination-btn {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            background: white;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .pagination-btn:hover:not(:disabled):not(.active) {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination-btn.active {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+
+        .pagination-arrow {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .pagination-arrow:hover:not(:disabled) {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+        }
+
+        .pagination-arrow i {
+            font-size: 16px;
+            color: #6b7280;
+        }
+
+        #pageNumbers {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pagination-arrow:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         /* Responsive */
@@ -734,10 +829,6 @@
                         GEO
                     </label>
                     <label class="column-checkbox">
-                        <input type="checkbox" id="col-sitetype" onchange="toggleColumn('sitetype')">
-                        Тип сайта
-                    </label>
-                    <label class="column-checkbox">
                         <input type="checkbox" id="col-type" checked onchange="toggleColumn('type')">
                         Тип
                     </label>
@@ -754,10 +845,10 @@
                             </th>
                             <th class="col-id">ID</th>
                             <th class="col-project">ПРОЕКТ / ПЛОЩАДКА</th>
-                            <th class="col-published">ОПУБЛ.</th>
-                            <th class="col-expires">ИСТЕК.</th>
+                            <th class="col-published">Опубл.</th>
+                            <th class="col-expires"><i class="bi bi-clock"></i> Истекает</th>
                             <th class="col-price">ЦЕНА</th>
-                            <th class="col-autorenewal text-center">АВТО</th>
+                            <th class="col-autorenewal text-center"><i class="bi bi-arrow-repeat"></i> АВТО</th>
                             <th class="col-actions text-center">ДЕЙСТВИЯ</th>
                             <th class="col-dr text-center seo-metric-th">DR</th>
                             <th class="col-da text-center seo-metric-th">DA</th>
@@ -769,7 +860,6 @@
                             <th class="col-kw text-center seo-metric-th">KW</th>
                             <th class="col-traf text-center seo-metric-th">Traf</th>
                             <th class="col-geo text-center">GEO</th>
-                            <th class="col-sitetype text-center">ТИП САЙТА</th>
                             <th class="col-type text-center">ТИП</th>
                         </tr>
                     </thead>
@@ -779,6 +869,31 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination-wrapper" id="paginationWrapper">
+                <div class="pagination-left">
+                    <span>Показать:</span>
+                    <select id="itemsPerPage" onchange="changeItemsPerPage(this.value)">
+                        <option value="100" selected>100</option>
+                        <option value="200">200</option>
+                        <option value="500">500</option>
+                    </select>
+                    <span>записей на странице</span>
+                </div>
+                <div class="pagination-right">
+                    <span class="pagination-info" id="paginationInfo">Показано 1–100 из 100</span>
+                    <div class="pagination-buttons">
+                        <button class="pagination-arrow" id="prevPage" onclick="goToPrevPage()">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <div id="pageNumbers"></div>
+                        <button class="pagination-arrow" id="nextPage" onclick="goToNextPage()">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -939,10 +1054,79 @@
         let currentTab = 'all';
         let projects = [];
 
+        // Pagination state
+        let currentPage = 1;
+        let itemsPerPage = 100;
+
+        // Pagination functions
+        function changeItemsPerPage(value) {
+            itemsPerPage = parseInt(value);
+            currentPage = 1;
+            renderTable();
+            updatePagination();
+        }
+
+        function changePage(page) {
+            const totalPages = Math.ceil(filteredPlacements.length / itemsPerPage);
+            if (page < 1 || page > totalPages) return;
+            currentPage = page;
+            renderTable();
+            updatePagination();
+        }
+
+        function goToPrevPage() {
+            changePage(currentPage - 1);
+        }
+
+        function goToNextPage() {
+            changePage(currentPage + 1);
+        }
+
+        function updatePagination() {
+            const total = filteredPlacements.length;
+            const totalPages = Math.ceil(total / itemsPerPage);
+            const start = Math.min((currentPage - 1) * itemsPerPage + 1, total);
+            const end = Math.min(currentPage * itemsPerPage, total);
+
+            // Update info text
+            document.getElementById('paginationInfo').textContent =
+                total > 0 ? `Показано ${start}–${end} из ${total}` : 'Нет данных';
+
+            // Update prev/next buttons
+            document.getElementById('prevPage').disabled = currentPage === 1;
+            document.getElementById('nextPage').disabled = currentPage === totalPages || totalPages === 0;
+
+            // Generate page numbers
+            const pageNumbersContainer = document.getElementById('pageNumbers');
+            pageNumbersContainer.innerHTML = '';
+
+            if (totalPages === 0) return;
+
+            // Calculate visible page range (show max 5 pages)
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, currentPage + 2);
+
+            // Adjust range if at edges
+            if (currentPage <= 3) {
+                endPage = Math.min(5, totalPages);
+            }
+            if (currentPage >= totalPages - 2) {
+                startPage = Math.max(1, totalPages - 4);
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                const btn = document.createElement('button');
+                btn.className = `pagination-btn ${i === currentPage ? 'active' : ''}`;
+                btn.textContent = i;
+                btn.onclick = () => changePage(i);
+                pageNumbersContainer.appendChild(btn);
+            }
+        }
+
         // Column visibility
         const COLUMN_STORAGE_KEY = 'placements_columns_v3';
         const defaultColumns = ['id', 'project', 'published', 'expires', 'price', 'autorenewal', 'actions', 'dr', 'da', 'type'];
-        const allColumns = ['id', 'project', 'published', 'expires', 'price', 'autorenewal', 'actions', 'dr', 'da', 'tf', 'cf', 'rd', 'rdm', 'norm', 'kw', 'traf', 'geo', 'sitetype', 'type'];
+        const allColumns = ['id', 'project', 'published', 'expires', 'price', 'autorenewal', 'actions', 'dr', 'da', 'tf', 'cf', 'rd', 'rdm', 'norm', 'kw', 'traf', 'geo', 'type'];
 
         // Load placements
         async function loadPlacements() {
@@ -1014,6 +1198,7 @@
 
         // Apply filters
         function applyFilters() {
+            currentPage = 1; // Reset to first page on filter change
             const projectId = document.getElementById('projectFilter').value;
             const type = document.getElementById('typeFilter').value;
             const dateFrom = document.getElementById('dateFrom').value;
@@ -1045,6 +1230,7 @@
 
             document.getElementById('resultsCount').textContent = filteredPlacements.length;
             renderTable();
+            updatePagination();
         }
 
         // Render table
@@ -1053,10 +1239,16 @@
 
             if (filteredPlacements.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="20" class="text-center text-muted py-5">Нет данных</td></tr>';
+                updatePagination();
                 return;
             }
 
-            tbody.innerHTML = filteredPlacements.map(p => {
+            // Apply pagination
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const paginatedPlacements = filteredPlacements.slice(start, end);
+
+            tbody.innerHTML = paginatedPlacements.map(p => {
                 const isSelected = selectedIds.has(p.id);
                 const expiryDays = p.expires_at ? Math.ceil((new Date(p.expires_at) - new Date()) / (1000 * 60 * 60 * 24)) : null;
                 const canRenew = p.type === 'link' && p.status === 'placed';
@@ -1105,7 +1297,6 @@
                         <td class="col-kw text-center seo-metric-td"><span class="metric-value">${p.site_keywords || 0}</span></td>
                         <td class="col-traf text-center seo-metric-td"><span class="metric-value">${p.site_traffic || 0}</span></td>
                         <td class="col-geo text-center">${escapeHtml(p.site_geo || '—')}</td>
-                        <td class="col-sitetype text-center">${getSiteTypeBadge(p.site_type)}</td>
                         <td class="col-type text-center">${getTypeBadge(p.type)}</td>
                     </tr>
                 `;
@@ -1117,21 +1308,11 @@
         // Get type badge
         function getTypeBadge(type) {
             if (type === 'link') {
-                return '<span class="type-badge type-badge-link">Ссылка</span>';
+                return '<span class="type-badge type-badge-link">Главная</span>';
             } else if (type === 'article') {
                 return '<span class="type-badge type-badge-article">Гест-пост</span>';
             }
             return type || '—';
-        }
-
-        // Get site type badge
-        function getSiteTypeBadge(siteType) {
-            if (siteType === 'wordpress') {
-                return '<span class="sitetype-badge sitetype-wp">WP</span>';
-            } else if (siteType === 'static_php') {
-                return '<span class="sitetype-badge sitetype-static">Static</span>';
-            }
-            return siteType || '—';
         }
 
         // Toggle auto-renewal for single placement
