@@ -217,9 +217,22 @@ function updateDiscountProgress() {
     if (!nextTier) {
         // Max tier achieved
         document.getElementById('discountProgress').style.width = '100%';
-        document.getElementById('discountProgressText').textContent = '100%';
+        document.getElementById('discountProgressText').textContent = '100';
         document.getElementById('discountProgressMessage').innerHTML =
             '<i class="bi bi-trophy-fill text-warning"></i> Поздравляем! Вы достигли максимального уровня скидки!';
+
+        // Update new progress bar elements for max tier
+        const progressIndicator = document.getElementById('progressIndicator');
+        const progressTooltip = document.getElementById('progressTooltip');
+        const progressSpentValue = document.getElementById('progressSpentValue');
+        const progressGoalValue = document.getElementById('progressGoalValue');
+        const progressRemainingValue = document.getElementById('progressRemainingValue');
+
+        if (progressIndicator) progressIndicator.style.left = '100%';
+        if (progressTooltip) progressTooltip.textContent = `$${totalSpent.toFixed(0)}`;
+        if (progressSpentValue) progressSpentValue.textContent = `$${totalSpent.toFixed(2)}`;
+        if (progressGoalValue) progressGoalValue.textContent = 'Максимум';
+        if (progressRemainingValue) progressRemainingValue.textContent = '$0';
         return;
     }
 
@@ -235,12 +248,25 @@ function updateDiscountProgress() {
     const percentage = Math.min(100, Math.max(0, (progress / range) * 100));
 
     document.getElementById('discountProgress').style.width = `${percentage}%`;
-    document.getElementById('discountProgressText').textContent = `${percentage.toFixed(0)}%`;
+    document.getElementById('discountProgressText').textContent = `${percentage.toFixed(0)}`;
 
     const remaining = nextTierMinSpent - totalSpent;
     document.getElementById('amountToNextTier').textContent = remaining.toFixed(2);
     document.getElementById('nextTierDiscount').textContent = nextTier.discount_percentage;
     document.getElementById('nextTierName').textContent = nextTier.tier_name;
+
+    // Update new enhanced progress bar elements
+    const progressIndicator = document.getElementById('progressIndicator');
+    const progressTooltip = document.getElementById('progressTooltip');
+    const progressSpentValue = document.getElementById('progressSpentValue');
+    const progressGoalValue = document.getElementById('progressGoalValue');
+    const progressRemainingValue = document.getElementById('progressRemainingValue');
+
+    if (progressIndicator) progressIndicator.style.left = `${percentage}%`;
+    if (progressTooltip) progressTooltip.textContent = `$${totalSpent.toFixed(0)}`;
+    if (progressSpentValue) progressSpentValue.textContent = `$${totalSpent.toFixed(2)}`;
+    if (progressGoalValue) progressGoalValue.textContent = `$${nextTierMinSpent.toLocaleString()}`;
+    if (progressRemainingValue) progressRemainingValue.textContent = `$${remaining.toLocaleString()}`;
 }
 
 /**

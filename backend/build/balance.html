@@ -80,10 +80,25 @@
                 Прогресс до следующего уровня •
                 <span class="highlight-text">Потратьте еще $<span id="amountToNextTier">800</span> для получения скидки <span id="nextTierDiscount">10</span>% (<span id="nextTierName">Bronze</span>)</span>
             </p>
-            <div class="progress-modern">
-                <div class="progress-bar-modern" id="discountProgress" style="width: 0%;">
-                    <span id="discountProgressText">0%</span>
+
+            <!-- Enhanced Progress Bar -->
+            <div class="progress-stats mb-2">
+                <span class="progress-spent"><span class="fw-semibold text-dark" id="progressSpentValue">$0.00</span> потрачено</span>
+                <span class="progress-goal">Цель: <span class="fw-semibold text-amber" id="progressGoalValue">$1,000</span></span>
+            </div>
+            <div class="progress-modern-wrapper">
+                <div class="progress-modern">
+                    <div class="progress-bar-modern" id="discountProgress" style="width: 0%;"></div>
+                    <!-- Progress indicator dot -->
+                    <div class="progress-indicator" id="progressIndicator" style="left: 0%;">
+                        <div class="progress-dot"></div>
+                        <div class="progress-tooltip" id="progressTooltip">$0</div>
+                    </div>
                 </div>
+            </div>
+            <div class="progress-footer">
+                <span class="progress-percent"><span id="discountProgressText">0</span>% выполнено</span>
+                <span class="progress-remaining">Осталось: <span class="fw-semibold text-amber" id="progressRemainingValue">$1,000</span></span>
             </div>
         </div>
 
@@ -158,63 +173,96 @@
         </div>
     </div>
 
-    <!-- Deposit Modal -->
+    <!-- Modern Deposit Modal -->
     <div class="modal fade" id="depositModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-currency-bitcoin"></i> Пополнение баланса</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content deposit-modal-modern">
+                <!-- Gradient Header -->
+                <div class="deposit-modal-header">
+                    <div class="deposit-header-content">
+                        <div class="deposit-header-icon">
+                            <i class="bi bi-wallet2"></i>
+                        </div>
+                        <div class="deposit-header-text">
+                            <h5 class="deposit-title">Пополнение баланса</h5>
+                            <p class="deposit-subtitle">Выберите сумму пополнения</p>
+                        </div>
+                    </div>
+                    <button type="button" class="deposit-close-btn" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
                 </div>
-                <div class="modal-body">
+
+                <div class="deposit-modal-body">
                     <!-- Step 1: Enter Amount -->
                     <div id="depositStep1">
-                        <div class="alert alert-info">
-                            <i class="bi bi-info-circle"></i> Оплата криптовалютой: USDT, BTC, ETH, LTC, TRX и другие
-                        </div>
-                        <div class="mb-3">
-                            <label for="depositAmount" class="form-label">Сумма пополнения</label>
-                            <div class="input-group">
-                                <span class="input-group-text">$</span>
-                                <input type="number" class="form-control" id="depositAmount" min="10" max="10000" step="1" value="100">
+                        <!-- Info Block -->
+                        <div class="deposit-info-block">
+                            <div class="deposit-info-icon">
+                                <i class="bi bi-info-circle-fill"></i>
                             </div>
-                            <small class="text-muted">Минимум: $<span id="minDepositAmount">10</span>, Максимум: $<span id="maxDepositAmount">10,000</span></small>
+                            <div class="deposit-info-content">
+                                <h6>Оплата криптовалютой</h6>
+                                <p>USDT, BTC, ETH, LTC, TRX и другие</p>
+                            </div>
                         </div>
-                        <div class="d-grid">
-                            <button type="button" class="btn btn-success btn-lg" onclick="createPaymentInvoice()" id="createInvoiceBtn">
-                                <i class="bi bi-receipt"></i> Создать счёт на оплату
-                            </button>
+
+                        <!-- Amount Input -->
+                        <div class="deposit-amount-section">
+                            <label class="deposit-amount-label">
+                                <i class="bi bi-currency-dollar"></i>
+                                Сумма пополнения
+                            </label>
+                            <div class="deposit-amount-input-wrapper">
+                                <span class="deposit-currency-symbol">$</span>
+                                <input type="number" class="deposit-amount-input" id="depositAmount" min="10" max="10000" step="1" value="100" placeholder="100">
+                            </div>
+                            <p class="deposit-amount-hint">
+                                Минимум: $<span id="minDepositAmount">10</span>, Максимум: $<span id="maxDepositAmount">10 000</span>
+                            </p>
                         </div>
                     </div>
 
                     <!-- Step 2: Invoice Created -->
                     <div id="depositStep2" style="display: none;">
-                        <div class="alert alert-success">
-                            <i class="bi bi-check-circle"></i> <strong>Счёт создан!</strong>
+                        <div class="deposit-success-block">
+                            <div class="deposit-success-icon">
+                                <i class="bi bi-check-circle-fill"></i>
+                            </div>
+                            <h6>Счёт создан!</h6>
                         </div>
-                        <div class="text-center mb-4">
-                            <h3 class="text-primary">$<span id="invoiceAmount">0</span></h3>
-                            <p class="text-muted mb-1">Действителен до: <span id="invoiceExpiry">-</span></p>
+                        <div class="deposit-invoice-info">
+                            <h3 class="deposit-invoice-amount">$<span id="invoiceAmount">0</span></h3>
+                            <p class="deposit-invoice-expiry">Действителен до: <span id="invoiceExpiry">-</span></p>
                         </div>
-                        <div class="d-grid gap-2 mb-3">
-                            <a href="#" target="_blank" class="btn btn-primary btn-lg" id="paymentLink">
-                                <i class="bi bi-box-arrow-up-right"></i> Перейти к оплате
-                            </a>
-                        </div>
-                        <div class="alert alert-warning mb-0">
-                            <i class="bi bi-clock"></i> После оплаты баланс пополнится автоматически в течение 1-5 минут.
+                        <a href="#" target="_blank" class="deposit-pay-btn" id="paymentLink">
+                            <i class="bi bi-box-arrow-up-right"></i> Перейти к оплате
+                        </a>
+                        <div class="deposit-warning-block">
+                            <i class="bi bi-clock"></i>
+                            <span>После оплаты баланс пополнится автоматически в течение 1-5 минут.</span>
                         </div>
                     </div>
 
                     <!-- Pending Invoices -->
-                    <div id="pendingInvoicesSection" class="mt-3" style="display: none;">
-                        <hr>
-                        <h6><i class="bi bi-hourglass-split"></i> Ожидающие оплаты</h6>
+                    <div id="pendingInvoicesSection" class="mt-4" style="display: none;">
+                        <div class="deposit-pending-header">
+                            <i class="bi bi-hourglass-split"></i>
+                            <span>Ожидающие оплаты</span>
+                        </div>
                         <div id="pendingInvoicesList"></div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="closeDepositModal">Закрыть</button>
+
+                <!-- Footer -->
+                <div class="deposit-modal-footer">
+                    <button type="button" class="deposit-btn-secondary" data-bs-dismiss="modal" id="closeDepositModal">
+                        Закрыть
+                    </button>
+                    <button type="button" class="deposit-btn-primary" onclick="createPaymentInvoice()" id="createInvoiceBtn">
+                        <i class="bi bi-credit-card"></i>
+                        Создать счёт на оплату
+                    </button>
                 </div>
             </div>
         </div>
