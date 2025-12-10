@@ -7,141 +7,153 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/modern-table.css">
     <link rel="stylesheet" href="/css/sidebar.css">
 </head>
 <body>
     <!-- Content will be wrapped by sidebar.js -->
 
-    <div class="container mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>💰 Баланс и платежи</h1>
-        </div>
-
-        <!-- Balance Widget -->
-        <div class="row mb-4">
+    <div class="container-fluid px-4">
+        <!-- 3 Stat Cards -->
+        <div class="row g-4 mb-4">
+            <!-- Current Balance - Blue Gradient -->
             <div class="col-md-4">
-                <div class="card border-success h-100">
-                    <div class="card-body text-center d-flex flex-column justify-content-center">
-                        <h6 class="card-subtitle mb-2 text-muted">Текущий баланс</h6>
-                        <h2 class="text-success mb-3">$<span id="currentBalance">0.00</span></h2>
-                        <div>
-                            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#depositModal">
-                                <i class="bi bi-plus-circle"></i> Пополнить
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card border-primary h-100">
-                    <div class="card-body text-center d-flex flex-column justify-content-center">
-                        <h6 class="card-subtitle mb-2 text-muted">Потрачено всего</h6>
-                        <h2 class="text-primary mb-3">$<span id="totalSpent">0.00</span></h2>
-                        <small class="text-muted">За все время</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card border-info h-100">
-                    <div class="card-body text-center d-flex flex-column justify-content-center">
-                        <h6 class="card-subtitle mb-2 text-muted">Скидка на продление</h6>
-                        <h2 class="text-info mb-3"><span id="renewalTotalDiscount">40</span>%</h2>
-                        <small class="text-muted d-block">30% базовая + <span id="renewalPersonalDiscount">10</span>%</small>
-                        <small class="text-muted"><i class="bi bi-info-circle"></i> Макс 60%</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Discount Progress Bar -->
-        <div class="row mb-4">
-            <div class="col-md-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            Ваша скидка: <span class="text-warning"><span id="currentDiscount">0</span>% <span id="discountTier">Стандарт</span></span>
-                            <span class="text-muted ms-2">•</span>
-                            <span class="text-muted">Прогресс до следующего уровня</span>
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="progress mb-2" style="height: 30px;">
-                            <div class="progress-bar" role="progressbar" id="discountProgress" style="width: 0%;">
-                                <span id="discountProgressText">0%</span>
+                <div class="balance-stat-card card-blue">
+                    <div class="card-circle card-circle-lg"></div>
+                    <div class="card-circle card-circle-sm"></div>
+                    <div class="card-content">
+                        <div class="card-header-row">
+                            <span class="card-label">Текущий баланс</span>
+                            <div class="card-icon">
+                                <i class="bi bi-wallet2"></i>
                             </div>
                         </div>
-                        <p class="text-muted mb-0" id="discountProgressMessage">
-                            Потратьте еще $<span id="amountToNextTier">800</span> для получения скидки <span id="nextTierDiscount">10</span>% (<span id="nextTierName">Bronze</span>)
-                        </p>
+                        <p class="card-value">$<span id="currentBalance">0.00</span></p>
+                        <button class="btn-deposit" data-bs-toggle="modal" data-bs-target="#depositModal">
+                            <i class="bi bi-plus"></i> Пополнить
+                        </button>
                     </div>
+                </div>
+            </div>
+
+            <!-- Total Spent - White -->
+            <div class="col-md-4">
+                <div class="balance-stat-card card-white">
+                    <div class="card-content">
+                        <div class="card-header-row">
+                            <span class="card-label">Потрачено всего</span>
+                            <div class="card-icon">
+                                <i class="bi bi-graph-up-arrow"></i>
+                            </div>
+                        </div>
+                        <p class="card-value">$<span id="totalSpent">0.00</span></p>
+                        <span class="card-subtitle">За все время</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Renewal Discount - Amber -->
+            <div class="col-md-4">
+                <div class="balance-stat-card card-amber">
+                    <div class="card-content">
+                        <div class="card-header-row">
+                            <span class="card-label">Скидка на продление</span>
+                            <div class="card-icon">
+                                <i class="bi bi-gift"></i>
+                            </div>
+                        </div>
+                        <p class="card-value"><span id="renewalTotalDiscount">40</span>%</p>
+                        <div class="card-subtitle">
+                            <span>30% базовая + <span id="renewalPersonalDiscount">10</span>%</span>
+                            <span class="info-badge"><i class="bi bi-info"></i></span>
+                            <span>Макс 60%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Discount Progress -->
+        <div class="discount-progress-card">
+            <h5 class="card-title">Ваша скидка: <span id="currentDiscount">0</span>% <span id="discountTier">Стандарт</span></h5>
+            <p class="card-subtitle" id="discountProgressMessage">
+                Прогресс до следующего уровня •
+                <span class="highlight-text">Потратьте еще $<span id="amountToNextTier">800</span> для получения скидки <span id="nextTierDiscount">10</span>% (<span id="nextTierName">Bronze</span>)</span>
+            </p>
+            <div class="progress-modern">
+                <div class="progress-bar-modern" id="discountProgress" style="width: 0%;">
+                    <span id="discountProgressText">0%</span>
                 </div>
             </div>
         </div>
 
         <!-- Discount Tiers Table -->
-        <div class="row mb-4">
-            <div class="col-md-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">Уровни скидок</h5>
-                    </div>
-                    <div class="card-body">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Уровень</th>
-                                    <th>Минимальная сумма</th>
-                                    <th>Скидка</th>
-                                    <th>Статус</th>
-                                </tr>
-                            </thead>
-                            <tbody id="discountTiersTable">
-                                <tr>
-                                    <td colspan="4" class="text-center text-muted">Загрузка...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+        <div class="discount-tiers-table mb-4">
+            <div class="table-header">
+                <h5>Уровни скидок</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Уровень</th>
+                            <th>Минимальная сумма</th>
+                            <th>Скидка</th>
+                            <th>Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody id="discountTiersTable">
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">
+                                <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                                Загрузка...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
         <!-- Transactions History -->
-        <div class="row mb-4">
-            <div class="col-md-12">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">История транзакций</h5>
-                        <div>
-                            <button class="btn btn-sm btn-primary" onclick="exportTransactions('csv')">
-                                <i class="bi bi-download"></i> CSV
-                            </button>
-                            <button class="btn btn-sm btn-primary" onclick="exportTransactions('json')">
-                                <i class="bi bi-download"></i> JSON
-                            </button>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Дата</th>
-                                    <th>Тип</th>
-                                    <th>Сумма</th>
-                                    <th>Баланс после</th>
-                                    <th>Описание</th>
-                                </tr>
-                            </thead>
-                            <tbody id="transactionsTable">
-                                <tr>
-                                    <td colspan="6" class="text-center text-muted">Загрузка...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <nav id="transactionsPagination"></nav>
-                    </div>
+        <div class="transactions-card mb-4">
+            <div class="card-header">
+                <div class="card-header-info">
+                    <h5>История транзакций</h5>
+                    <p>Все операции с вашим балансом</p>
                 </div>
+                <div class="export-buttons">
+                    <button class="btn-export btn-csv" onclick="exportTransactions('csv')">
+                        <i class="bi bi-file-earmark-spreadsheet"></i> CSV
+                    </button>
+                    <button class="btn-export btn-json" onclick="exportTransactions('json')">
+                        <i class="bi bi-filetype-json"></i> JSON
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Дата</th>
+                                <th>Тип</th>
+                                <th>Сумма</th>
+                                <th>Баланс после</th>
+                                <th>Описание</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionsTable">
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                                    Загрузка...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <nav id="transactionsPagination" class="p-3"></nav>
             </div>
         </div>
     </div>

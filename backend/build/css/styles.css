@@ -1371,3 +1371,521 @@ p {
 .text-purple {
     color: #667eea !important;
 }
+
+/* ========================================
+   BALANCE PAGE STYLES
+   ======================================== */
+
+/* Balance stat cards with gradient backgrounds */
+.balance-stat-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    min-height: 180px;
+    transition: all 0.3s ease;
+}
+
+.balance-stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* Blue gradient card (Current Balance) */
+.balance-stat-card.card-blue {
+    background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+    color: white;
+    box-shadow: 0 8px 32px rgba(59, 130, 246, 0.35);
+}
+
+/* Decorative circles */
+.balance-stat-card .card-circle {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+}
+
+.balance-stat-card .card-circle-lg {
+    width: 8rem;
+    height: 8rem;
+    top: -2rem;
+    right: -2rem;
+}
+
+.balance-stat-card .card-circle-sm {
+    width: 6rem;
+    height: 6rem;
+    bottom: -1.5rem;
+    left: -1.5rem;
+}
+
+.balance-stat-card .card-content {
+    position: relative;
+    z-index: 10;
+}
+
+.balance-stat-card .card-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.balance-stat-card .card-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    opacity: 0.9;
+}
+
+.balance-stat-card.card-blue .card-label {
+    color: rgba(219, 234, 254, 1);
+}
+
+.balance-stat-card .card-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.balance-stat-card.card-blue .card-icon {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(4px);
+}
+
+.balance-stat-card .card-icon i {
+    font-size: 1.25rem;
+}
+
+.balance-stat-card .card-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    line-height: 1.2;
+}
+
+/* White card (Total Spent) */
+.balance-stat-card.card-white {
+    background: white;
+    border: 2px solid #e5e7eb;
+    color: #111827;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.balance-stat-card.card-white .card-label {
+    color: #6b7280;
+}
+
+.balance-stat-card.card-white .card-icon {
+    background: #f3e8ff;
+}
+
+.balance-stat-card.card-white .card-icon i {
+    color: #9333ea;
+}
+
+.balance-stat-card.card-white .card-subtitle {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+/* Amber/Orange gradient card (Discount) */
+.balance-stat-card.card-amber {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border: 2px solid #fcd34d;
+    color: #78350f;
+    box-shadow: 0 4px 16px rgba(251, 191, 36, 0.25);
+}
+
+.balance-stat-card.card-amber .card-label {
+    color: #92400e;
+}
+
+.balance-stat-card.card-amber .card-icon {
+    background: linear-gradient(135deg, #fbbf24 0%, #f97316 100%);
+}
+
+.balance-stat-card.card-amber .card-icon i {
+    color: white;
+}
+
+.balance-stat-card.card-amber .card-subtitle {
+    font-size: 0.75rem;
+    color: #b45309;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.balance-stat-card.card-amber .info-badge {
+    width: 1rem;
+    height: 1rem;
+    background: #fde68a;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.625rem;
+}
+
+/* Deposit button */
+.btn-deposit {
+    width: 100%;
+    padding: 0.625rem 1rem;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(4px);
+    border: none;
+    border-radius: 0.75rem;
+    color: white;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.btn-deposit:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+.btn-deposit:active {
+    transform: translateY(0);
+}
+
+/* Discount Progress Section */
+.discount-progress-card {
+    background: white;
+    border-radius: 1rem;
+    border: 2px solid #e5e7eb;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.discount-progress-card .card-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 0.25rem;
+}
+
+.discount-progress-card .card-subtitle {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-bottom: 1rem;
+}
+
+.discount-progress-card .highlight-text {
+    color: #d97706;
+    font-weight: 600;
+}
+
+/* Modern progress bar */
+.progress-modern {
+    height: 0.75rem;
+    background: #f3f4f6;
+    border-radius: 9999px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+
+.progress-bar-modern {
+    height: 100%;
+    background: linear-gradient(90deg, #fbbf24 0%, #f97316 50%, #ef4444 100%);
+    border-radius: 9999px;
+    transition: width 0.5s ease;
+    position: relative;
+}
+
+.progress-bar-modern span {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.625rem;
+    font-weight: 700;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+/* Discount tiers table */
+.discount-tiers-table {
+    background: white;
+    border-radius: 1rem;
+    border: 2px solid #e5e7eb;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.discount-tiers-table .table-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.discount-tiers-table .table-header h5 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+    margin: 0;
+}
+
+.discount-tiers-table table {
+    margin-bottom: 0;
+}
+
+.discount-tiers-table th {
+    background: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 0.75rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.discount-tiers-table td {
+    padding: 0.75rem 1rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.discount-tiers-table tr:hover {
+    background: #f9fafb;
+}
+
+.discount-tiers-table tr.tier-current {
+    background: #fffbeb;
+}
+
+.discount-tiers-table .tier-indicator {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 0.5rem;
+}
+
+.discount-tiers-table .tier-indicator.current {
+    background: #f59e0b;
+}
+
+.discount-tiers-table .tier-indicator.next {
+    background: #3b82f6;
+}
+
+.discount-tiers-table .tier-indicator.locked {
+    background: #d1d5db;
+}
+
+.discount-tiers-table .tier-name {
+    font-weight: 500;
+    color: #111827;
+}
+
+.discount-tiers-table tr.tier-current .tier-name {
+    color: #92400e;
+}
+
+.discount-tiers-table .tier-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.discount-tiers-table .tier-badge.badge-amber {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.discount-tiers-table .tier-badge.badge-blue {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.discount-tiers-table .tier-badge.badge-gray {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.discount-tiers-table .tier-status {
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.discount-tiers-table .tier-status.status-current {
+    color: #d97706;
+}
+
+.discount-tiers-table .tier-status.status-next {
+    color: #3b82f6;
+}
+
+.discount-tiers-table .tier-status.status-locked {
+    color: #9ca3af;
+}
+
+/* Transactions section */
+.transactions-card {
+    background: white;
+    border-radius: 1rem;
+    border: 2px solid #e5e7eb;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.transactions-card .card-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.transactions-card .card-header-info h5 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 0.25rem;
+}
+
+.transactions-card .card-header-info p {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin: 0;
+}
+
+.transactions-card .export-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-export {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-export.btn-csv {
+    background: #eef2ff;
+    color: #4f46e5;
+}
+
+.btn-export.btn-csv:hover {
+    background: #e0e7ff;
+}
+
+.btn-export.btn-json {
+    background: #faf5ff;
+    color: #9333ea;
+}
+
+.btn-export.btn-json:hover {
+    background: #f3e8ff;
+}
+
+.transactions-card .card-body {
+    padding: 0;
+}
+
+.transactions-card table {
+    margin-bottom: 0;
+}
+
+.transactions-card th {
+    background: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.transactions-card td {
+    padding: 1rem 1.5rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.transactions-card tr:hover {
+    background: #f9fafb;
+}
+
+.transactions-card .transaction-id {
+    font-weight: 500;
+    color: #3b82f6;
+}
+
+.transactions-card .transaction-type {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.transactions-card .transaction-type i {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.transactions-card .amount-positive {
+    color: #059669;
+    font-weight: 600;
+}
+
+.transactions-card .amount-negative {
+    color: #dc2626;
+    font-weight: 600;
+}
+
+/* Empty transactions state */
+.transactions-empty {
+    padding: 3rem 1.5rem;
+    text-align: center;
+}
+
+.transactions-empty .empty-icon {
+    width: 4rem;
+    height: 4rem;
+    background: #f3f4f6;
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+}
+
+.transactions-empty .empty-icon i {
+    font-size: 2rem;
+    color: #9ca3af;
+}
+
+.transactions-empty p {
+    color: #6b7280;
+    margin-bottom: 0.25rem;
+}
+
+.transactions-empty .empty-subtitle {
+    font-size: 0.875rem;
+    color: #9ca3af;
+}
