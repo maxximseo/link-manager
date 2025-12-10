@@ -47,13 +47,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `hideOptionalColumns()` - Hide SEO/meta columns
   - `applyColumnSettings()` - Apply settings on page load
   - `toggleFiltersPanel()` - Toggle filters card visibility
+  - `findColumnIndex(table, headerText)` - Dynamic column index lookup by header text
+  - `window.reapplyColumnSettings()` - Global function to reapply after table refresh
+- **FIXED** Column visibility now uses dynamic header text matching instead of hardcoded indices
+- **FIXED** Columns correctly hide/show across all tabs (Active, Scheduled, History)
+- **FIXED** Settings reapply automatically when:
+  - Page loads (with 500ms delay for table render)
+  - Tab switches (Bootstrap `shown.bs.tab` event)
+  - Table data is re-rendered (via `reapplyColumnSettings()` calls)
+- **ADDED** Extended columnHeaderMap with table-specific headers:
+  - `scheduled`, `purchased` for Scheduled tab
+  - `status`, `renewals` for History tab
 
 ### 📦 Files Changed
 | File | Change |
 |------|--------|
 | `backend/build/css/modern-table.css` | ADDED notification card CSS (~250 lines) |
 | `backend/build/js/navbar.js` | UPDATED renderNotifications(), updateNotificationsList() |
-| `backend/build/placements-manager.html` | ADDED filter/column buttons and JavaScript |
+| `backend/build/placements-manager.html` | ADDED filter/column buttons, FIXED column visibility logic |
+| `backend/build/js/placements-manager.js` | ADDED reapplyColumnSettings() calls in all render functions |
 
 ### 🔧 CSS Classes Added
 ```css

@@ -365,7 +365,7 @@ Navbar.updateNotificationsList = function(notifications) {
                 <div class="notification-content">
                     <div class="notification-content-header">
                         <h6 class="notification-title">${Navbar.escapeHtml(notification.title)}</h6>
-                        <span class="notification-time">${timeStr}</span>
+                        <span class="notification-time"><i class="bi bi-clock"></i> ${timeStr}</span>
                     </div>
                     <p class="notification-message">${Navbar.formatNotificationMessage(notification.message)}</p>
                     ${actionLink ? `<a href="${actionLink.url}" class="notification-action" onclick="event.stopPropagation()">${actionLink.text} <i class="bi bi-arrow-right"></i></a>` : ''}
