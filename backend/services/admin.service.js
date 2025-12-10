@@ -175,7 +175,7 @@ const getUsers = async ({ page = 1, limit = 50, search = null, role = null }) =>
       whereClause += ` AND role = $${params.length}`;
     }
 
-    // Get users with placement count
+    // Get users with placement count - calculate total_spent from transactions (purchase + renewal - refunds)
     const result = await query(
       `
       SELECT
@@ -184,7 +184,15 @@ const getUsers = async ({ page = 1, limit = 50, search = null, role = null }) =>
         u.email,
         u.role,
         u.balance,
-        u.total_spent,
+        GREATEST(0, COALESCE(ABS((
+          SELECT SUM(t.amount)
+          FROM transactions t
+          WHERE t.user_id = u.id AND t.type IN ('purchase', 'renewal')
+        )), 0) - COALESCE((
+          SELECT SUM(t.amount)
+          FROM transactions t
+          WHERE t.user_id = u.id AND t.type = 'refund'
+        ), 0)) as total_spent,
         u.current_discount,
         u.last_login,
         u.email_verified,
