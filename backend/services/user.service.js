@@ -12,11 +12,21 @@ const logger = require('../config/logger');
  */
 const getProfile = async (userId) => {
   try {
+    // Calculate total_spent from transactions: (purchase + renewal) - refunds
     const result = await query(
-      `SELECT id, username, email, display_name, role, created_at, last_login,
-              balance, total_spent, current_discount, referral_code
-       FROM users
-       WHERE id = $1`,
+      `SELECT u.id, u.username, u.email, u.display_name, u.role, u.created_at, u.last_login,
+              u.balance, u.current_discount, u.referral_code,
+              GREATEST(0, COALESCE(ABS((
+                SELECT SUM(amount)
+                FROM transactions t
+                WHERE t.user_id = u.id AND t.type IN ('purchase', 'renewal')
+              )), 0) - COALESCE((
+                SELECT SUM(amount)
+                FROM transactions t
+                WHERE t.user_id = u.id AND t.type = 'refund'
+              ), 0)) as total_spent
+       FROM users u
+       WHERE u.id = $1`,
       [userId]
     );
 
