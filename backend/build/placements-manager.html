@@ -1354,14 +1354,15 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${getToken()}`
                     },
-                    body: JSON.stringify({ ids: ids })
+                    body: JSON.stringify({ placementIds: ids })
                 });
 
                 const result = await response.json();
 
                 if (response.ok) {
-                    const deleted = result.results?.filter(r => r.success).length || ids.length;
-                    const refunded = result.results?.reduce((sum, r) => sum + (r.refundedAmount || 0), 0) || 0;
+                    const data = result.data || result;
+                    const deleted = data.successful || ids.length;
+                    const refunded = data.totalRefunded || 0;
                     showAlert(`Удалено ${deleted} размещений. Возврат: $${refunded.toFixed(2)}`, 'success');
                     selectedIds.clear();
                     loadPlacements();
