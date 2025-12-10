@@ -503,12 +503,17 @@ const SidebarNav = {
    * Update notification display
    */
   updateNotificationDisplay(notifications) {
-    const dot = document.getElementById('notificationDot');
+    const badge = document.getElementById('notificationBadge');
     const list = document.getElementById('notificationList');
 
-    // Show/hide notification dot
-    if (dot) {
-      dot.style.display = this.unreadCount > 0 ? 'block' : 'none';
+    // Show/hide notification badge with count
+    if (badge) {
+      if (this.unreadCount > 0) {
+        badge.style.display = 'flex';
+        badge.textContent = this.unreadCount > 99 ? '99+' : this.unreadCount;
+      } else {
+        badge.style.display = 'none';
+      }
     }
 
     // Render notification list
