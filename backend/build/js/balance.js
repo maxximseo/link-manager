@@ -74,18 +74,25 @@ async function loadPricing() {
         const result = await response.json();
         const pricing = result.data;
 
-        // Update link pricing
-        document.getElementById('linkBasePrice').textContent = `$${pricing.link.basePrice.toFixed(2)}`;
-        document.getElementById('linkFinalPrice').textContent = pricing.link.finalPrice.toFixed(2);
-        document.getElementById('linkRenewalPrice').textContent = pricing.renewal.finalPrice.toFixed(2);
+        // Update link pricing (with null checks - elements may not exist on all pages)
+        const linkBasePrice = document.getElementById('linkBasePrice');
+        const linkFinalPrice = document.getElementById('linkFinalPrice');
+        const linkRenewalPrice = document.getElementById('linkRenewalPrice');
+        const articleBasePrice = document.getElementById('articleBasePrice');
+        const articleFinalPrice = document.getElementById('articleFinalPrice');
 
-        // Update article pricing
-        document.getElementById('articleBasePrice').textContent = `$${pricing.article.basePrice.toFixed(2)}`;
-        document.getElementById('articleFinalPrice').textContent = pricing.article.finalPrice.toFixed(2);
+        if (linkBasePrice) linkBasePrice.textContent = `$${pricing.link.basePrice.toFixed(2)}`;
+        if (linkFinalPrice) linkFinalPrice.textContent = pricing.link.finalPrice.toFixed(2);
+        if (linkRenewalPrice) linkRenewalPrice.textContent = pricing.renewal.finalPrice.toFixed(2);
+        if (articleBasePrice) articleBasePrice.textContent = `$${pricing.article.basePrice.toFixed(2)}`;
+        if (articleFinalPrice) articleFinalPrice.textContent = pricing.article.finalPrice.toFixed(2);
 
         // Update renewal discount info
-        document.getElementById('renewalTotalDiscount').textContent = pricing.renewal.totalDiscount;
-        document.getElementById('renewalPersonalDiscount').textContent = pricing.renewal.personalDiscount;
+        const renewalTotalDiscount = document.getElementById('renewalTotalDiscount');
+        const renewalPersonalDiscount = document.getElementById('renewalPersonalDiscount');
+
+        if (renewalTotalDiscount) renewalTotalDiscount.textContent = pricing.renewal.totalDiscount;
+        if (renewalPersonalDiscount) renewalPersonalDiscount.textContent = pricing.renewal.personalDiscount;
 
     } catch (error) {
         console.error('Failed to load pricing:', error);
