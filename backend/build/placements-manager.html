@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/modern-table.css">
+    <link rel="stylesheet" href="/css/sidebar.css">
     <style>
         /* Tabs styling - visual separation between tabs and content */
         .card > .nav-tabs {
@@ -101,8 +102,7 @@
     </style>
 </head>
 <body>
-    <!-- Navbar Container (injected by navbar.js) -->
-    <div id="navbar-container"></div>
+    <!-- Content will be wrapped by sidebar.js -->
 
     <div class="container mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -642,11 +642,14 @@
     <script src="/js/purchase-modal.js"></script>
     <script src="/js/placements-manager.js"></script>
     <script src="/js/placements-manager-filters.js"></script>
-    <script src="/js/navbar-config.js"></script>
-    <script src="/js/navbar.js"></script>
+    <script src="/js/sidebar.js"></script>
     <script>
-        // Initialize navbar
-        initNavbar('user', 'placements-manager');
+        // Initialize sidebar navigation
+        SidebarNav.init({
+            activePage: 'links',
+            pageTitle: 'Мои размещения',
+            pageSubtitle: 'Управление размещениями'
+        });
 
         // =====================
         // Column Visibility Management
