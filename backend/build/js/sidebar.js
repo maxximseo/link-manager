@@ -621,17 +621,31 @@ const SidebarNav = {
 
   /**
    * Render a single notification card
+   * Supports special types: placement, bulk-purchase
    */
   renderNotificationCard(notification) {
-    const typeClass = `type-${notification.type || 'info'}`;
-    const iconMap = {
-      success: 'bi-check-circle',
-      error: 'bi-x-circle',
-      warning: 'bi-exclamation-triangle',
-      info: 'bi-info-circle'
-    };
-    const icon = iconMap[notification.type] || iconMap.info;
+    const metadata = notification.metadata || {};
     const timeAgo = this.formatTimeAgo(notification.created_at);
+
+    // Determine notification type and styling
+    const notificationType = this.getNotificationType(notification);
+    const typeClass = `type-${notificationType}`;
+    const icon = this.getNotificationIcon(notificationType);
+
+    // Special rendering for placement notifications (link placement)
+    if (notificationType === 'placement' || metadata.siteUrl || metadata.site_url) {
+      return this.renderPlacementNotification(notification, metadata, timeAgo);
+    }
+
+    // Special rendering for bulk purchase notifications
+    if (notificationType === 'bulk-purchase' || metadata.count) {
+      return this.renderBulkPurchaseNotification(notification, metadata, timeAgo);
+    }
+
+    // Amount badge if present
+    const amountBadge = metadata.amount
+      ? `<span class="notification-amount-badge"><i class="bi bi-currency-dollar"></i>${parseFloat(metadata.amount).toFixed(2)}</span>`
+      : '';
 
     return `
       <div class="notification-card ${typeClass}" data-id="${notification.id}">
@@ -639,14 +653,146 @@ const SidebarNav = {
           <i class="bi ${icon}"></i>
         </div>
         <div class="notification-content">
-          <div class="notification-title">${this.escapeHtml(notification.title || '')}</div>
-          <div class="notification-time">
-            <i class="bi bi-clock"></i> ${timeAgo}
+          <div class="notification-content-header">
+            <div class="notification-title">${this.escapeHtml(notification.title || '')}</div>
+            ${amountBadge}
           </div>
           <div class="notification-message">${this.escapeHtml(notification.message || '')}</div>
+          <div class="notification-meta">
+            <span class="notification-time">
+              <i class="bi bi-clock"></i> ${timeAgo}
+            </span>
+          </div>
         </div>
       </div>
     `;
+  },
+
+  /**
+   * Get notification type from notification data
+   */
+  getNotificationType(notification) {
+    const type = notification.type || 'info';
+
+    // Map backend types to display types
+    if (type.includes('placement') || type.includes('link')) return 'placement';
+    if (type.includes('bulk') || type.includes('batch')) return 'bulk-purchase';
+    if (type.includes('success') || type.includes('published')) return 'success';
+    if (type.includes('error') || type.includes('fail')) return 'error';
+    if (type.includes('warning') || type.includes('expir')) return 'warning';
+
+    return type;
+  },
+
+  /**
+   * Get icon for notification type
+   */
+  getNotificationIcon(type) {
+    const iconMap = {
+      success: 'bi-check-circle-fill',
+      error: 'bi-x-circle-fill',
+      warning: 'bi-exclamation-triangle-fill',
+      info: 'bi-info-circle-fill',
+      placement: 'bi-link-45deg',
+      'bulk-purchase': 'bi-cart-check-fill'
+    };
+    return iconMap[type] || iconMap.info;
+  },
+
+  /**
+   * Render placement notification with fromUrl → toUrl
+   */
+  renderPlacementNotification(notification, metadata, timeAgo) {
+    const siteUrl = metadata.siteUrl || metadata.site_url || metadata.toUrl || '';
+    const contentUrl = metadata.contentUrl || metadata.fromUrl || metadata.url || '';
+    const amount = metadata.amount || metadata.price || metadata.final_price;
+
+    // Extract domain from URL for display
+    const siteDomain = siteUrl ? this.extractDomain(siteUrl) : 'Сайт';
+    const contentDomain = contentUrl ? this.extractDomain(contentUrl) : '';
+
+    const amountBadge = amount
+      ? `<span class="notification-amount-badge"><i class="bi bi-currency-dollar"></i>${parseFloat(amount).toFixed(2)}</span>`
+      : '';
+
+    return `
+      <div class="notification-card type-placement" data-id="${notification.id}">
+        <div class="notification-icon">
+          <i class="bi bi-link-45deg"></i>
+        </div>
+        <div class="notification-content">
+          <div class="notification-content-header">
+            <div class="notification-title">${this.escapeHtml(notification.title || 'Размещение')}</div>
+            ${amountBadge}
+          </div>
+          <div class="notification-placement-info">
+            ${contentUrl ? `
+              <span class="notification-from-url">${this.escapeHtml(contentDomain || contentUrl)}</span>
+              <i class="bi bi-arrow-right"></i>
+            ` : ''}
+            <a href="${this.escapeHtml(siteUrl)}" target="_blank" class="notification-to-url" onclick="event.stopPropagation()">
+              ${this.escapeHtml(siteDomain)}
+              <i class="bi bi-box-arrow-up-right"></i>
+            </a>
+          </div>
+          <div class="notification-meta">
+            <span class="notification-time">
+              <i class="bi bi-clock"></i> ${timeAgo}
+            </span>
+          </div>
+        </div>
+      </div>
+    `;
+  },
+
+  /**
+   * Render bulk purchase notification
+   */
+  renderBulkPurchaseNotification(notification, metadata, timeAgo) {
+    const projectName = metadata.projectName || metadata.project_name || 'Проект';
+    const count = metadata.count || metadata.total || 1;
+    const amount = metadata.amount || metadata.total_price;
+
+    const amountBadge = amount
+      ? `<span class="notification-amount-badge"><i class="bi bi-currency-dollar"></i>${parseFloat(amount).toFixed(2)}</span>`
+      : '';
+
+    return `
+      <div class="notification-card type-bulk-purchase" data-id="${notification.id}">
+        <div class="notification-icon">
+          <i class="bi bi-cart-check-fill"></i>
+        </div>
+        <div class="notification-content">
+          <div class="notification-content-header">
+            <div class="notification-title">${this.escapeHtml(notification.title || 'Массовая покупка')}</div>
+            ${amountBadge}
+          </div>
+          <div class="notification-bulk-info">
+            <span class="notification-project-name">
+              <i class="bi bi-folder"></i> ${this.escapeHtml(projectName)}
+            </span>
+            <span class="notification-count-badge">${count} размещений</span>
+          </div>
+          <div class="notification-meta">
+            <span class="notification-time">
+              <i class="bi bi-clock"></i> ${timeAgo}
+            </span>
+          </div>
+        </div>
+      </div>
+    `;
+  },
+
+  /**
+   * Extract domain from URL
+   */
+  extractDomain(url) {
+    try {
+      const urlObj = new URL(url);
+      return urlObj.hostname.replace('www.', '');
+    } catch {
+      return url;
+    }
   },
 
   /**
