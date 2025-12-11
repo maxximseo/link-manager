@@ -486,10 +486,17 @@ function renderHistoryPlacements(placements) {
 
 /**
  * Update tab counts
+ * Loads placements for specific project if selected (from activeFilters.projectId)
  */
 async function updateTabCounts() {
     try {
-        const response = await fetch('/api/placements?limit=5000', {
+        // Build URL with project_id filter if selected
+        let url = '/api/placements?limit=5000';
+        if (activeFilters.projectId) {
+            url += `&project_id=${activeFilters.projectId}`;
+        }
+
+        const response = await fetch(url, {
             headers: { 'Authorization': `Bearer ${getToken()}` }
         });
 
@@ -498,11 +505,7 @@ async function updateTabCounts() {
         const result = await response.json();
         let placements = Array.isArray(result.data) ? result.data : result;
 
-        // Apply same filters as loadScheduledPlacements/loadActivePlacements
-        // This ensures badge counts match the displayed data
-        if (activeFilters.projectId) {
-            placements = placements.filter(p => p.project_id == activeFilters.projectId);
-        }
+        // Apply remaining filters (type, date) - project already filtered by server
         if (activeFilters.type) {
             placements = placements.filter(p => p.type === activeFilters.type);
         }
