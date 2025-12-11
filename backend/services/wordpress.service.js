@@ -267,6 +267,9 @@ const getContentByDomain = async domain => {
     }
 
     // Get all links for this site (static_php only supports links, not articles)
+    // CRITICAL: Only return links that are:
+    // 1. Already placed (status = 'placed')
+    // 2. OR scheduled AND publish date has passed
     const linksResult = await query(
       `
       SELECT
@@ -279,7 +282,8 @@ const getContentByDomain = async domain => {
       JOIN placements plc ON pc.placement_id = plc.id
       WHERE plc.site_id = $1
         AND pc.link_id IS NOT NULL
-        AND plc.status = 'placed'
+        AND (plc.status = 'placed'
+             OR (plc.status = 'scheduled' AND plc.scheduled_publish_date <= NOW()))
       ORDER BY pc.id DESC
     `,
       [site.id]
