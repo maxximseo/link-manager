@@ -188,10 +188,7 @@ const SidebarNav = {
     // Regular menu items
     let navHTML = this.menuItems
       .map((item) => {
-        const isActive =
-          item.id === activePage ||
-          (activePage === 'projects' && item.id === 'overview') ||
-          (activePage === 'overview' && item.id === 'projects');
+        const isActive = item.id === activePage;
         const activeClass = isActive ? 'active' : '';
 
         return `
