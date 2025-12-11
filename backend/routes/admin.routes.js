@@ -683,9 +683,10 @@ router.post('/bulk-update-placement-status', async (req, res) => {
   } catch (error) {
     logger.error('Failed to bulk update placement status', {
       adminId: req.user.id,
-      error: error.message
+      error: error.message,
+      stack: error.stack
     });
-    res.status(500).json({ error: 'Failed to update placements' });
+    res.status(500).json({ error: 'Failed to update placements', details: error.message });
   }
 });
 
