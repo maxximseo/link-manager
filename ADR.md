@@ -1874,6 +1874,182 @@ if (userRole !== 'admin') {
 
 ---
 
+---
+
+## ADR-025: Notification System API Consistency
+
+**Status**: Accepted
+**Date**: December 2025
+**Context**: Notification badge and "Mark all as read" button were not working correctly
+
+### Decision
+
+Standardized notification API endpoints and HTTP methods across frontend and backend:
+
+**Correct API Pattern**:
+```
+PATCH /api/notifications/mark-all-read
+```
+
+### Problem Statement
+
+Multiple inconsistencies caused the "Mark all as read" button to fail:
+1. **HTTP Method Mismatch**: Frontend used `POST`, backend expected `PATCH`
+2. **URL Mismatch**: navbar.js used `/api/notifications/read-all` instead of `/mark-all-read`
+3. **Invalid SQL**: Backend had `RETURNING COUNT(*)` in UPDATE (not valid in PostgreSQL)
+
+### Fixes Applied
+
+**1. sidebar.js** (line 775):
+```javascript
+// Before:
+method: 'POST'
+// After:
+method: 'PATCH'
+```
+
+**2. navbar.js** (line 469):
+```javascript
+// Before:
+'/api/notifications/read-all'
+// After:
+'/api/notifications/mark-all-read'
+```
+
+**3. notification.routes.js** (line 149-156):
+```sql
+-- Before:
+UPDATE notifications SET read = true WHERE ... RETURNING COUNT(*) as count
+-- After:
+UPDATE notifications SET read = true WHERE ...
+-- Use result.rowCount instead
+```
+
+### Bootstrap Dropdown Configuration
+
+Added `data-bs-auto-close="outside"` to notification dropdown button:
+- Prevents dropdown from closing when clicking inside (e.g., text selection)
+- Only closes on click outside or on the bell icon
+- Enables proper text selection in notifications
+
+### Files Modified
+- `backend/build/js/sidebar.js` - HTTP method fix, dropdown config
+- `backend/build/js/navbar.js` - URL fix
+- `backend/routes/notification.routes.js` - SQL fix, added cache error handling
+
+### Testing
+
+Puppeteer tests verify:
+```
+✅ Badge hidden after mark read
+✅ Header text updated to "Все прочитано"
+✅ Dropdown stays open during text selection
+```
+
+Test files: `tests/visual/test-notifications.js`, `tests/visual/test-notifications-debug.js`
+
+### Consequences
+- ✅ "Mark all as read" now works correctly
+- ✅ Badge counter updates immediately
+- ✅ Text selection works in notifications
+- ✅ Automated tests prevent regression
+
+---
+
+## ADR-026: Local Credentials Management
+
+**Status**: Accepted
+**Date**: December 2025
+**Context**: Need to access credentials without committing them to GitHub
+
+### Decision
+
+All sensitive credentials stored in `.credentials.local` file, never committed to version control.
+
+### Implementation
+
+**File**: `.credentials.local` (in project root)
+- Contains all passwords, tokens, API keys
+- Added to `.gitignore`
+- Read by Claude Code when needed
+
+**Protected by .gitignore**:
+```
+.env
+.credentials.local
+*.log
+backend/logs/
+```
+
+### Security Verification
+
+Before any git push:
+```bash
+git diff --cached | grep -i "password\|secret\|token\|AVNS_"
+```
+
+### Consequences
+- ✅ Credentials never pushed to GitHub
+- ✅ Single source of truth for local access
+- ✅ Easy to update credentials in one place
+- ⚠️ Must manually keep `.credentials.local` updated
+
+---
+
+## ADR-027: Puppeteer Visual Testing Strategy
+
+**Status**: Accepted
+**Date**: December 2025
+**Context**: Need automated verification of UI changes
+
+### Decision
+
+Use Puppeteer for automated visual testing of all UI components.
+
+### When to Use
+
+**ALWAYS use Puppeteer for**:
+- CSS/styling changes
+- Notification system changes
+- Modal/dropdown behavior
+- User-reported UI bugs
+- Before finalizing frontend changes
+
+### Test Structure
+
+```
+tests/visual/
+├── test-notifications.js       # Full test suite
+├── test-notifications-debug.js # With API logging
+├── test-time.js               # Timestamp verification
+└── screenshots/               # Output images
+```
+
+### Running Tests
+
+```bash
+node tests/visual/test-notifications.js
+```
+
+### Test Output
+
+```
+📊 TEST SUMMARY:
+═══════════════════════════════════════════
+   Badge hidden after mark read: ✅ YES
+   Header text updated: ✅ YES
+   Dropdown stays open on text select: ✅ YES
+═══════════════════════════════════════════
+```
+
+### Consequences
+- ✅ Automated UI regression detection
+- ✅ Screenshots for visual verification
+- ✅ Network logging for debugging
+- ⚠️ Requires server running on port 3003
+
+---
+
 ## Decision Review Process
 
 ADRs should be reviewed when:
