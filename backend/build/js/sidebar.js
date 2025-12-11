@@ -559,8 +559,10 @@ const SidebarNav = {
       });
 
       if (response.ok) {
-        const notifications = await response.json();
-        this.unreadCount = Array.isArray(notifications) ? notifications.length : 0;
+        const result = await response.json();
+        // API returns { success, data: notifications[], pagination: { unread } }
+        const notifications = result.data || [];
+        this.unreadCount = result.pagination?.unread || (Array.isArray(notifications) ? notifications.length : 0);
         this.updateNotificationDisplay(notifications);
       }
     } catch (error) {
