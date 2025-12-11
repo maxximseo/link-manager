@@ -132,10 +132,8 @@ function applyFilters() {
         loadHistoryPlacements(); // History has its own filters
     }
 
-    // Update tab counts when project changes
-    if (projectChanged) {
-        updateTabCounts();
-    }
+    // Always update tab counts when any filter changes
+    updateTabCounts();
 }
 
 /**
