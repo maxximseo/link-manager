@@ -2183,3 +2183,133 @@ git push
 ```
 
 **IMPORTANT**: Auto-commit is for development convenience. For production/feature releases, use manual commits with descriptive messages.
+
+## 🔐 Local Credentials Management
+
+### CRITICAL: Credentials Security Rules
+
+**NEVER commit credentials to GitHub!** All sensitive data must stay local.
+
+**Local credentials file**: `.credentials.local`
+- Location: Project root (same level as package.json)
+- Contains: All passwords, API tokens, database credentials
+- **Added to `.gitignore`** - will never be pushed to GitHub
+
+**What's in `.credentials.local`**:
+```
+# GitHub, DigitalOcean tokens
+# PostgreSQL connection details (host, password, etc.)
+# Redis/Valkey credentials
+# JWT secrets
+# Admin login credentials
+# Backup/CDN keys
+```
+
+**How to use credentials in Claude Code**:
+1. Read from `.credentials.local` file when needed
+2. NEVER hardcode credentials in code
+3. NEVER include in commits or logs
+4. Use environment variables in production
+
+**Protected files in `.gitignore`**:
+```
+.env
+.credentials.local
+*.log
+backend/logs/
+```
+
+### Verification Before Push
+Before any git push, verify no credentials in staged files:
+```bash
+git diff --cached | grep -i "password\|secret\|token\|AVNS_"
+```
+If matches found - **DO NOT PUSH**. Remove sensitive data first.
+
+## 🎭 Visual Testing with Puppeteer
+
+### When to Use Puppeteer Tests
+
+**ALWAYS use Puppeteer for visual/UI verification**:
+- After CSS/styling changes
+- After notification system changes
+- After modal/dropdown behavior changes
+- When user reports UI bugs
+- Before finalizing any frontend changes
+
+### Test Files Location
+
+```
+tests/visual/
+├── test-notifications.js       # Full notification test suite
+├── test-notifications-debug.js # Debug version with network logs
+├── test-time.js                # Timestamp verification test
+└── screenshots/                # Test output screenshots
+    ├── notifications-1-before.png
+    ├── notifications-2-dropdown-open.png
+    ├── notifications-3-after-mark-read.png
+    └── notifications-4-text-selection.png
+```
+
+### Running Visual Tests
+
+```bash
+# Full notification test
+node tests/visual/test-notifications.js
+
+# Debug test with API call logs
+node tests/visual/test-notifications-debug.js
+
+# Timestamp verification
+node tests/test-time.js
+```
+
+### Test Requirements
+
+- Server must be running on port 3003
+- Uses credentials from `.credentials.local`
+- Screenshots saved to `tests/visual/screenshots/`
+- Headless mode by default
+
+### Creating New Visual Tests
+
+Template for new visual test:
+```javascript
+const puppeteer = require('puppeteer');
+
+const CONFIG = {
+  baseUrl: 'http://localhost:3003',
+  credentials: {
+    username: 'maximator',
+    password: '***' // Read from .credentials.local
+  }
+};
+
+async function test() {
+  const browser = await puppeteer.launch({ headless: true });
+  const page = await browser.newPage();
+  await page.setViewport({ width: 1920, height: 1080 });
+
+  // Login
+  await page.goto(`${CONFIG.baseUrl}/login.html`);
+  await page.type('#username', CONFIG.credentials.username);
+  await page.type('#password', CONFIG.credentials.password);
+  await page.click('button[type="submit"]');
+  await page.waitForNavigation();
+
+  // Your test logic here...
+
+  await browser.close();
+}
+```
+
+### Test Output Format
+
+```
+📊 TEST SUMMARY:
+═══════════════════════════════════════════
+   Badge hidden after mark read: ✅ YES
+   Header text updated: ✅ YES
+   Dropdown stays open on text select: ✅ YES
+═══════════════════════════════════════════
+```

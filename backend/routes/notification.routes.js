@@ -18,7 +18,8 @@ const cache = require('../services/cache.service');
  */
 router.get('/', authMiddleware, apiLimiter, async (req, res) => {
   try {
-    const { page = 1, limit = 20, unreadOnly = false } = req.query;
+    const { page = 1, limit = 20, unread = false } = req.query;
+    const unreadOnly = unread === 'true' || unread === true;
     const offset = (page - 1) * limit;
     const userId = req.user.id;
 
@@ -37,7 +38,7 @@ router.get('/', authMiddleware, apiLimiter, async (req, res) => {
         (SELECT COUNT(*) FROM notifications WHERE user_id = $1) as total_count,
         (SELECT COUNT(*) FROM notifications WHERE user_id = $1 AND read = false) as unread_count
       FROM notifications n
-      WHERE n.user_id = $1 ${unreadOnly === 'true' ? 'AND n.read = false' : ''}
+      WHERE n.user_id = $1 ${unreadOnly ? 'AND n.read = false' : ''}
       ORDER BY n.created_at DESC
       LIMIT $2 OFFSET $3
     `,
