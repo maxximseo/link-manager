@@ -383,7 +383,7 @@ const SidebarNav = {
   renderNotificationButton() {
     return `
       <div class="dropdown notification-dropdown-wrapper">
-        <button class="notification-btn" id="notificationsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+        <button class="notification-btn" id="notificationsDropdown" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
           <i class="bi bi-bell"></i>
           <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
         </button>
