@@ -527,7 +527,10 @@ async function updateTabCounts() {
 
         const activeCount = placements.filter(p => p.status === 'placed').length;
         const scheduledCount = placements.filter(p => p.status === 'scheduled').length;
+        const allCount = activeCount + scheduledCount;
 
+        // Update all tab counts
+        document.getElementById('allCount').textContent = allCount;
         document.getElementById('activeCount').textContent = activeCount;
         document.getElementById('scheduledCount').textContent = scheduledCount;
 
