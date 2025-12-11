@@ -603,4 +603,90 @@ router.post(
   referralController.rejectWithdrawal
 );
 
+// ==================== SCHEDULED PLACEMENTS MANAGEMENT ====================
+
+/**
+ * POST /api/admin/process-scheduled-placements
+ * Manually trigger processing of scheduled placements
+ * This will publish all placements where scheduled_publish_date <= NOW
+ */
+router.post('/process-scheduled-placements', async (req, res) => {
+  try {
+    logger.info('Manual scheduled placements processing triggered', {
+      adminId: req.user.id
+    });
+
+    const result = await processScheduledPlacements();
+
+    res.json({
+      success: true,
+      message: 'Scheduled placements processed',
+      data: {
+        total: result.total,
+        success: result.success,
+        failed: result.failed
+      }
+    });
+  } catch (error) {
+    logger.error('Failed to process scheduled placements', {
+      adminId: req.user.id,
+      error: error.message
+    });
+    res.status(500).json({ error: 'Failed to process scheduled placements' });
+  }
+});
+
+/**
+ * POST /api/admin/bulk-update-placement-status
+ * Bulk update placement statuses from scheduled to placed
+ * For placements that are already live on sites but stuck in scheduled status
+ */
+router.post('/bulk-update-placement-status', async (req, res) => {
+  try {
+    const { placementIds, newStatus = 'placed' } = req.body;
+
+    if (!placementIds || !Array.isArray(placementIds) || placementIds.length === 0) {
+      return res.status(400).json({ error: 'placementIds array is required' });
+    }
+
+    if (!['placed', 'scheduled', 'failed'].includes(newStatus)) {
+      return res.status(400).json({ error: 'Invalid status' });
+    }
+
+    logger.info('Bulk placement status update requested', {
+      adminId: req.user.id,
+      count: placementIds.length,
+      newStatus
+    });
+
+    const { query } = require('../config/database');
+    const result = await query(
+      `
+      UPDATE placements
+      SET status = $1,
+          published_at = CASE WHEN $1 = 'placed' AND published_at IS NULL THEN NOW() ELSE published_at END,
+          updated_at = NOW()
+      WHERE id = ANY($2::int[])
+      RETURNING id
+      `,
+      [newStatus, placementIds]
+    );
+
+    res.json({
+      success: true,
+      message: `Updated ${result.rowCount} placements to ${newStatus}`,
+      data: {
+        updated: result.rowCount,
+        ids: result.rows.map(r => r.id)
+      }
+    });
+  } catch (error) {
+    logger.error('Failed to bulk update placement status', {
+      adminId: req.user.id,
+      error: error.message
+    });
+    res.status(500).json({ error: 'Failed to update placements' });
+  }
+});
+
 module.exports = router;
