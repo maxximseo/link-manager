@@ -706,12 +706,19 @@ const SidebarNav = {
    */
   getNotificationIcon(type) {
     const iconMap = {
+      // Status icons
       success: 'bi-check-circle-fill',
       error: 'bi-x-circle-fill',
       warning: 'bi-exclamation-triangle-fill',
       info: 'bi-info-circle-fill',
-      placement: 'bi-link-45deg',
-      'bulk-purchase': 'bi-cart-check-fill'
+      // Purchase icons
+      purchase: 'bi-bag-check-fill',
+      batch: 'bi-cart-check-fill',
+      renewal: 'bi-arrow-repeat',
+      refund: 'bi-arrow-counterclockwise',
+      // Finance icons
+      deposit: 'bi-wallet2',
+      commission: 'bi-gift-fill'
     };
     return iconMap[type] || iconMap.info;
   },
