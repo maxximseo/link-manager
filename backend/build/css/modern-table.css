@@ -896,27 +896,61 @@ body.modern-ui {
 }
 
 /* ============================================
-   New Notification Types - Placement & Bulk Purchase
+   Notification Types - Color Coding
    ============================================ */
 
-/* Placement notification type */
-.notification-card.type-placement {
+/* Purchase notification type (single) */
+.notification-card.type-purchase {
     background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
     border-color: #bfdbfe;
 }
-
-.notification-card.type-placement .notification-icon {
+.notification-card.type-purchase .notification-icon {
     color: #3b82f6;
 }
 
-/* Bulk purchase notification type */
-.notification-card.type-bulk-purchase {
+/* Batch notification type */
+.notification-card.type-batch {
     background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
     border-color: #a7f3d0;
 }
-
-.notification-card.type-bulk-purchase .notification-icon {
+.notification-card.type-batch .notification-icon {
     color: #10b981;
+}
+
+/* Renewal notification type */
+.notification-card.type-renewal {
+    background: linear-gradient(135deg, #fefce8 0%, #fef3c7 100%);
+    border-color: #fde68a;
+}
+.notification-card.type-renewal .notification-icon {
+    color: #d97706;
+}
+
+/* Refund notification type */
+.notification-card.type-refund {
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    border-color: #fecaca;
+}
+.notification-card.type-refund .notification-icon {
+    color: #dc2626;
+}
+
+/* Deposit notification type */
+.notification-card.type-deposit {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border-color: #bbf7d0;
+}
+.notification-card.type-deposit .notification-icon {
+    color: #16a34a;
+}
+
+/* Commission notification type */
+.notification-card.type-commission {
+    background: linear-gradient(135deg, #fdf4ff 0%, #f3e8ff 100%);
+    border-color: #e9d5ff;
+}
+.notification-card.type-commission .notification-icon {
+    color: #9333ea;
 }
 
 /* Notification content header with amount */
@@ -1039,6 +1073,39 @@ body.modern-ui {
     align-items: center;
     gap: 12px;
     margin-top: 8px;
+}
+
+/* Site link row */
+.notification-site-row {
+    margin-top: 8px;
+}
+
+.notification-site-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #3b82f6;
+    padding: 4px 10px;
+    background: rgba(59, 130, 246, 0.1);
+    border-radius: 4px;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.notification-site-link:hover {
+    background: rgba(59, 130, 246, 0.2);
+    color: #2563eb;
+}
+
+.notification-site-link i.bi-box-arrow-up-right {
+    font-size: 11px;
+    opacity: 0.7;
+}
+
+.notification-site-link:hover i.bi-box-arrow-up-right {
+    opacity: 1;
 }
 
 /* Delete all button styling */

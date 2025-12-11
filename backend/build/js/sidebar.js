@@ -621,7 +621,7 @@ const SidebarNav = {
 
   /**
    * Render a single notification card
-   * Renders all notification types uniformly with title, message, and optional site link
+   * Renders all notification types uniformly with title, message, and inline site link
    */
   renderNotificationCard(notification) {
     const metadata = notification.metadata || {};
@@ -638,14 +638,13 @@ const SidebarNav = {
       ? `<span class="notification-amount-badge"><i class="bi bi-currency-dollar"></i>${parseFloat(amount).toFixed(2)}</span>`
       : '';
 
-    // Site link with external icon (if siteUrl in metadata)
+    // Build message with inline site link icon
     const siteUrl = metadata.siteUrl || metadata.site_url;
-    const siteName = metadata.siteName || metadata.site_name;
-    const siteLink = siteUrl
-      ? `<a href="${this.escapeHtml(siteUrl)}" target="_blank" class="notification-site-link" onclick="event.stopPropagation()">
-           ${this.escapeHtml(siteName || this.extractDomain(siteUrl))}
-           <i class="bi bi-box-arrow-up-right"></i>
-         </a>`
+    let messageHtml = this.escapeHtml(notification.message || '');
+
+    // Add inline external link icon after message if siteUrl exists
+    const inlineSiteLink = siteUrl
+      ? ` <a href="${this.escapeHtml(siteUrl)}" target="_blank" class="notification-inline-link" title="Открыть сайт"><i class="bi bi-box-arrow-up-right"></i></a>`
       : '';
 
     return `
@@ -658,8 +657,7 @@ const SidebarNav = {
             <div class="notification-title">${this.escapeHtml(notification.title || '')}</div>
             ${amountBadge}
           </div>
-          <div class="notification-message">${this.escapeHtml(notification.message || '')}</div>
-          ${siteLink ? `<div class="notification-site-row">${siteLink}</div>` : ''}
+          <div class="notification-message">${messageHtml}${inlineSiteLink}</div>
           <div class="notification-meta">
             <span class="notification-time">
               <i class="bi bi-clock"></i> ${timeAgo}
