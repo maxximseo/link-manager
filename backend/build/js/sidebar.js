@@ -20,7 +20,6 @@ const SidebarNav = {
 
   // Menu configuration
   menuItems: [
-    { id: 'overview', label: 'Обзор', icon: 'bi-grid-1x2', href: '/dashboard.html' },
     { id: 'projects', label: 'Проекты', icon: 'bi-bullseye', href: '/dashboard.html' },
     { id: 'links', label: 'Ссылки', icon: 'bi-link-45deg', href: '/placements-manager.html' },
     { id: 'sites', label: 'Сайты', icon: 'bi-globe', href: '/sites.html' },
