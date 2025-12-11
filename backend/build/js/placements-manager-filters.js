@@ -140,12 +140,16 @@ function applyFilters() {
 
 /**
  * Reset all filters
+ * Clears localStorage saved project and reloads all data
  */
 function resetFilters() {
     document.getElementById('projectFilter').value = '';
     document.getElementById('typeFilter').value = '';
     document.getElementById('dateFrom').value = '';
     document.getElementById('dateTo').value = '';
+
+    // Clear saved project from localStorage
+    localStorage.removeItem('selectedProjectId');
 
     activeFilters = {
         projectId: '',
@@ -154,7 +158,19 @@ function resetFilters() {
         dateTo: ''
     };
 
-    applyFilters();
+    // Reload data from server (will load all projects since projectId is empty)
+    const activePane = document.querySelector('.tab-pane.active');
+    const activeTab = activePane ? '#' + activePane.id : '#active';
+
+    if (activeTab === '#active') {
+        loadActivePlacements();
+    } else if (activeTab === '#scheduled') {
+        loadScheduledPlacements();
+    } else if (activeTab === '#history') {
+        loadHistoryPlacements();
+    }
+
+    updateTabCounts();
 }
 
 /**
