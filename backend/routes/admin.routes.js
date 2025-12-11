@@ -12,6 +12,7 @@ const adminService = require('../services/admin.service');
 const siteService = require('../services/site.service');
 const referralController = require('../controllers/referral.controller');
 const logger = require('../config/logger');
+const { processScheduledPlacements } = require('../cron/scheduled-placements.cron');
 
 // Admin authorization middleware
 const requireAdmin = (req, res, next) => {

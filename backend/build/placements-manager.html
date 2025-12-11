@@ -127,35 +127,51 @@
         .action-buttons {
             display: flex;
             align-items: center;
-            gap: 12px;
-        }
-
-        .action-btn {
-            display: flex;
-            align-items: center;
             gap: 8px;
-            padding: 8px 12px;
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            background: white;
-            color: #374151;
-            font-size: 14px;
+        }
+
+        .actions-bar .action-btn {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            padding: 8px 16px !important;
+            border: 1px solid #e5e7eb !important;
+            border-radius: 8px !important;
+            background: white !important;
+            color: #374151 !important;
+            font-size: 14px !important;
+            font-weight: 500 !important;
             cursor: pointer;
-            transition: background 0.15s;
+            transition: all 0.15s;
+            white-space: nowrap !important;
+            width: auto !important;
+            height: auto !important;
+            justify-content: center !important;
         }
 
-        .action-btn:hover {
-            background: #f9fafb;
+        .actions-bar .action-btn i {
+            font-size: 14px !important;
+            color: #6b7280 !important;
         }
 
-        .action-btn-primary {
-            background: #2563eb;
-            color: white;
-            border-color: #2563eb;
+        .actions-bar .action-btn:hover {
+            background: #f9fafb !important;
+            border-color: #d1d5db !important;
         }
 
-        .action-btn-primary:hover {
-            background: #1d4ed8;
+        .actions-bar .action-btn-primary {
+            background: #22c55e !important;
+            color: white !important;
+            border-color: #22c55e !important;
+        }
+
+        .actions-bar .action-btn-primary:hover {
+            background: #16a34a !important;
+            border-color: #16a34a !important;
+        }
+
+        .actions-bar .action-btn-primary i {
+            color: white !important;
         }
 
         /* Bulk actions bar */
