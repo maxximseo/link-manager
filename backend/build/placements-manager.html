@@ -292,10 +292,10 @@
         .col-project { width: 50px; max-width: 50px; }
         .col-published { width: 30px; }
         .col-expires { width: 40px; }
-        .col-price { width: 15px; }
+        .col-price { width: 20px; }
         .col-autorenewal { width: 22px; }
         .col-actions { width: 35px; }
-        .col-status { width: 110px; }
+        .col-status { width: 43px; }
         .col-dr, .col-da, .col-tf, .col-cf, .col-rd, .col-rdm, .col-norm, .col-kw, .col-traf { width: 15px; }
         .col-geo { width: 23px; }
         .col-type { width: 23px; }
@@ -519,6 +519,17 @@
         }
         .expiry-cell .expiry-days {
             font-size: 11px;
+            margin-top: 2px;
+        }
+
+        /* Scheduled date cell styling */
+        .scheduled-date-cell .scheduled-date {
+            font-weight: 500;
+            color: #111827;
+        }
+        .scheduled-date-cell .scheduled-label {
+            font-size: 11px;
+            color: #6b7280;
             margin-top: 2px;
         }
 
@@ -863,6 +874,7 @@
                             <th class="col-id">ID</th>
                             <th class="col-project">ПРОЕКТ / ПЛОЩАДКА</th>
                             <th class="col-published">Опубл.</th>
+                            <th class="col-status">Статус</th>
                             <th class="col-expires"><i class="bi bi-clock"></i> Истекает</th>
                             <th class="col-price">ЦЕНА</th>
                             <th class="col-autorenewal text-center"><i class="bi bi-arrow-repeat"></i> АВТО</th>
@@ -882,7 +894,7 @@
                     </thead>
                     <tbody id="placementsTable">
                         <tr>
-                            <td colspan="20" class="text-center text-muted py-4">Загрузка...</td>
+                            <td colspan="21" class="text-center text-muted py-4">Загрузка...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -1168,7 +1180,7 @@
             } catch (error) {
                 console.error('Error loading placements:', error);
                 document.getElementById('placementsTable').innerHTML =
-                    '<tr><td colspan="12" class="text-center text-danger py-5">Ошибка загрузки данных</td></tr>';
+                    '<tr><td colspan="21" class="text-center text-danger py-5">Ошибка загрузки данных</td></tr>';
             }
         }
 
@@ -1287,7 +1299,7 @@
             const tbody = document.getElementById('placementsTable');
 
             if (filteredPlacements.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="20" class="text-center text-muted py-5">Нет данных</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="21" class="text-center text-muted py-5">Нет данных</td></tr>';
                 updatePagination();
                 return;
             }
@@ -1317,12 +1329,22 @@
                                 </a>
                             </div>
                         </td>
-                        <td class="col-published">${formatDate(p.placed_at || p.created_at)}</td>
+                        <td class="col-published">
+                            ${p.status === 'scheduled'
+                                ? `<div class="scheduled-date-cell">
+                                     <div class="scheduled-date">${formatDate(p.scheduled_publish_date)}</div>
+                                     <div class="scheduled-label">будет размещено</div>
+                                   </div>`
+                                : formatDate(p.placed_at || p.created_at)}
+                        </td>
+                        <td class="col-status">${getStatusBadge(p.status)}</td>
                         <td class="col-expires">
-                            <div class="expiry-cell">
-                                <div class="expiry-date">${p.expires_at ? formatDate(p.expires_at) : '—'}</div>
-                                ${expiryDays !== null ? `<div class="expiry-days ${getExpiryClass(expiryDays)}">через ${expiryDays} дн.</div>` : ''}
-                            </div>
+                            ${p.status === 'scheduled'
+                                ? '—'
+                                : `<div class="expiry-cell">
+                                     <div class="expiry-date">${p.expires_at ? formatDate(p.expires_at) : '—'}</div>
+                                     ${expiryDays !== null ? `<div class="expiry-days ${getExpiryClass(expiryDays)}">через ${expiryDays} дн.</div>` : ''}
+                                   </div>`}
                         </td>
                         <td class="col-price"><span class="price-cell">$${parseFloat(p.final_price || 0).toFixed(2)}</span></td>
                         <td class="col-autorenewal text-center" onclick="event.stopPropagation()">
