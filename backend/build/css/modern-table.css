@@ -1079,37 +1079,29 @@ body.modern-ui {
     margin-top: 8px;
 }
 
-/* Site link row */
-.notification-site-row {
-    margin-top: 8px;
-}
-
-.notification-site-link {
+/* Inline external link icon in message */
+.notification-inline-link {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    font-weight: 500;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    margin-left: 6px;
     color: #3b82f6;
-    padding: 4px 10px;
     background: rgba(59, 130, 246, 0.1);
     border-radius: 4px;
     text-decoration: none;
-    transition: all 0.2s;
+    transition: all 0.15s;
+    vertical-align: middle;
 }
 
-.notification-site-link:hover {
+.notification-inline-link:hover {
     background: rgba(59, 130, 246, 0.2);
     color: #2563eb;
 }
 
-.notification-site-link i.bi-box-arrow-up-right {
-    font-size: 11px;
-    opacity: 0.7;
-}
-
-.notification-site-link:hover i.bi-box-arrow-up-right {
-    opacity: 1;
+.notification-inline-link i {
+    font-size: 12px;
 }
 
 /* Delete all button styling */
