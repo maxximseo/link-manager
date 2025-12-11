@@ -772,7 +772,7 @@ const SidebarNav = {
       if (!token) return;
 
       const response = await fetch('/api/notifications/mark-all-read', {
-        method: 'POST',
+        method: 'PATCH',
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
