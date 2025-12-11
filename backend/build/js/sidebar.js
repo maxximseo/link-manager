@@ -797,6 +797,7 @@ const SidebarNav = {
 
   /**
    * Mark all notifications as read
+   * Note: Only hides the badge, doesn't remove notifications from list
    */
   async markAllAsRead(event) {
     if (event) event.preventDefault();
@@ -815,9 +816,17 @@ const SidebarNav = {
 
       if (response.ok) {
         this.unreadCount = 0;
+
+        // Hide badge
         const badge = document.getElementById('notificationBadge');
         if (badge) {
           badge.style.display = 'none';
+        }
+
+        // Update header count text
+        const headerCount = document.getElementById('notificationHeaderCount');
+        if (headerCount) {
+          headerCount.textContent = 'Все прочитано';
         }
       }
     } catch (error) {
