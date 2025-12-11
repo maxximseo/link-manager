@@ -4,3 +4,4 @@ node_modules/
 dev.log
 backend/logs/
 .DS_Store
+.credentials.local
