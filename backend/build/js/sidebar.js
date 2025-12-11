@@ -638,14 +638,38 @@ const SidebarNav = {
       ? `<span class="notification-amount-badge"><i class="bi bi-currency-dollar"></i>${parseFloat(amount).toFixed(2)}</span>`
       : '';
 
-    // Build message with inline site link icon
+    // Build message with inline site link icon inserted after siteUrl in text
     const siteUrl = metadata.siteUrl || metadata.site_url;
     let messageHtml = this.escapeHtml(notification.message || '');
 
-    // Add inline external link icon after message if siteUrl exists
-    const inlineSiteLink = siteUrl
-      ? ` <a href="${this.escapeHtml(siteUrl)}" target="_blank" class="notification-inline-link" title="Открыть сайт"><i class="bi bi-box-arrow-up-right"></i></a>`
-      : '';
+    // Insert external link icon right after the siteUrl in the message text
+    if (siteUrl) {
+      const escapedSiteUrl = this.escapeHtml(siteUrl);
+      const linkIcon = `<a href="${escapedSiteUrl}" target="_blank" class="notification-inline-link" title="Открыть сайт"><i class="bi bi-box-arrow-up-right"></i></a>`;
+
+      // Try to find siteUrl in message and insert icon after it
+      // The URL appears in format: "https://site.com" or just site name
+      const urlPatterns = [
+        escapedSiteUrl,
+        this.escapeHtml(siteUrl.replace(/\/$/, '')), // without trailing slash
+        `"${escapedSiteUrl}"`,
+        `"${this.escapeHtml(siteUrl.replace(/\/$/, ''))}"`,
+      ];
+
+      let inserted = false;
+      for (const pattern of urlPatterns) {
+        if (messageHtml.includes(pattern)) {
+          messageHtml = messageHtml.replace(pattern, pattern + linkIcon);
+          inserted = true;
+          break;
+        }
+      }
+
+      // If URL not found in text, append icon at the end
+      if (!inserted) {
+        messageHtml += ' ' + linkIcon;
+      }
+    }
 
     return `
       <div class="notification-card ${typeClass}" data-id="${notification.id}">
@@ -657,7 +681,7 @@ const SidebarNav = {
             <div class="notification-title">${this.escapeHtml(notification.title || '')}</div>
             ${amountBadge}
           </div>
-          <div class="notification-message">${messageHtml}${inlineSiteLink}</div>
+          <div class="notification-message">${messageHtml}</div>
           <div class="notification-meta">
             <span class="notification-time">
               <i class="bi bi-clock"></i> ${timeAgo}
