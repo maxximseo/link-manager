@@ -46,7 +46,7 @@ router.get('/', authMiddleware, apiLimiter, async (req, res) => {
     );
 
     const total = parseInt(result.rows[0]?.total_count || 0, 10);
-    const unread = parseInt(result.rows[0]?.unread_count || 0, 10);
+    const unreadCount = parseInt(result.rows[0]?.unread_count || 0, 10);
 
     // Remove count columns from response
     const notifications = result.rows.map(({ total_count: _tc, unread_count: _uc, ...n }) => n);
@@ -58,7 +58,7 @@ router.get('/', authMiddleware, apiLimiter, async (req, res) => {
         page: parseInt(page, 10),
         limit: parseInt(limit, 10),
         total,
-        unread,
+        unread: unreadCount,
         pages: Math.ceil(total / limit)
       }
     };
