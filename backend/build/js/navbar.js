@@ -466,7 +466,7 @@ Navbar.markAllNotificationsRead = async function(event) {
     if (!token) return;
 
     try {
-        await fetch('/api/notifications/read-all', {
+        await fetch('/api/notifications/mark-all-read', {
             method: 'PATCH',
             headers: { 'Authorization': `Bearer ${token}` }
         });
