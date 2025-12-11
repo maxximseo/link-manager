@@ -621,7 +621,7 @@ const SidebarNav = {
 
   /**
    * Render a single notification card
-   * Supports special types: placement, bulk-purchase
+   * Renders all notification types uniformly with title, message, and optional site link
    */
   renderNotificationCard(notification) {
     const metadata = notification.metadata || {};
@@ -632,19 +632,20 @@ const SidebarNav = {
     const typeClass = `type-${notificationType}`;
     const icon = this.getNotificationIcon(notificationType);
 
-    // Special rendering for placement notifications (link placement)
-    if (notificationType === 'placement' || metadata.siteUrl || metadata.site_url) {
-      return this.renderPlacementNotification(notification, metadata, timeAgo);
-    }
+    // Amount badge (from metadata.amount or metadata.totalSpent)
+    const amount = metadata.amount || metadata.totalSpent;
+    const amountBadge = amount
+      ? `<span class="notification-amount-badge"><i class="bi bi-currency-dollar"></i>${parseFloat(amount).toFixed(2)}</span>`
+      : '';
 
-    // Special rendering for bulk purchase notifications
-    if (notificationType === 'bulk-purchase' || metadata.count) {
-      return this.renderBulkPurchaseNotification(notification, metadata, timeAgo);
-    }
-
-    // Amount badge if present
-    const amountBadge = metadata.amount
-      ? `<span class="notification-amount-badge"><i class="bi bi-currency-dollar"></i>${parseFloat(metadata.amount).toFixed(2)}</span>`
+    // Site link with external icon (if siteUrl in metadata)
+    const siteUrl = metadata.siteUrl || metadata.site_url;
+    const siteName = metadata.siteName || metadata.site_name;
+    const siteLink = siteUrl
+      ? `<a href="${this.escapeHtml(siteUrl)}" target="_blank" class="notification-site-link" onclick="event.stopPropagation()">
+           ${this.escapeHtml(siteName || this.extractDomain(siteUrl))}
+           <i class="bi bi-box-arrow-up-right"></i>
+         </a>`
       : '';
 
     return `
@@ -658,6 +659,7 @@ const SidebarNav = {
             ${amountBadge}
           </div>
           <div class="notification-message">${this.escapeHtml(notification.message || '')}</div>
+          ${siteLink ? `<div class="notification-site-row">${siteLink}</div>` : ''}
           <div class="notification-meta">
             <span class="notification-time">
               <i class="bi bi-clock"></i> ${timeAgo}
