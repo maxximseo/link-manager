@@ -263,10 +263,17 @@ function renderActivePlacements(placements) {
 
 /**
  * Load scheduled placements
+ * Loads placements for specific project if selected (from activeFilters.projectId)
  */
 async function loadScheduledPlacements() {
     try {
-        const response = await fetch('/api/placements?status=scheduled&limit=5000', {
+        // Build URL with project_id filter if selected
+        let url = '/api/placements?status=scheduled&limit=5000';
+        if (activeFilters.projectId) {
+            url += `&project_id=${activeFilters.projectId}`;
+        }
+
+        const response = await fetch(url, {
             headers: { 'Authorization': `Bearer ${getToken()}` }
         });
 
@@ -275,10 +282,10 @@ async function loadScheduledPlacements() {
         const result = await response.json();
         const placements = Array.isArray(result.data) ? result.data : result;
 
-        // Cache all placements
+        // Cache placements (already filtered by project on server if project_id was sent)
         allScheduledPlacements = placements.filter(p => p.status === 'scheduled');
 
-        // Apply filters and render
+        // Apply remaining filters (type, date) and render
         const filtered = applyPlacementFilters(allScheduledPlacements);
         renderScheduledPlacements(filtered);
 
