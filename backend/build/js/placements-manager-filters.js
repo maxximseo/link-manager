@@ -4,6 +4,7 @@
 
 /**
  * Load projects and sites for filter dropdowns
+ * Restores saved project selection from localStorage
  */
 async function loadFilterDropdowns() {
     try {
@@ -27,6 +28,15 @@ async function loadFilterDropdowns() {
                 option.textContent = project.name;
                 projectFilter.appendChild(option);
             });
+
+            // Restore saved project from localStorage (if not already set by URL param)
+            if (!activeFilters.projectId) {
+                const savedProjectId = localStorage.getItem('selectedProjectId');
+                if (savedProjectId && projects.some(p => p.id == savedProjectId)) {
+                    projectFilter.value = savedProjectId;
+                    activeFilters.projectId = savedProjectId;
+                }
+            }
         }
 
     } catch (error) {
