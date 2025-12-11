@@ -249,12 +249,13 @@ const updateProjectLink = async (req, res) => {
       return res.status(400).json({ error: 'Invalid project or link ID' });
     }
     const userId = req.user.id;
-    const { url, anchor_text, usage_limit } = req.body;
+    const { url, anchor_text, usage_limit, html_context } = req.body;
 
     const link = await projectService.updateProjectLink(projectId, linkId, userId, {
       url,
       anchor_text,
-      usage_limit
+      usage_limit,
+      html_context
     });
 
     if (link === null) {
