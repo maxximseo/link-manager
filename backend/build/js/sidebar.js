@@ -670,18 +670,35 @@ const SidebarNav = {
 
   /**
    * Get notification type from notification data
+   * Maps backend notification types to display categories
    */
   getNotificationType(notification) {
     const type = notification.type || 'info';
 
-    // Map backend types to display types
-    if (type.includes('placement') || type.includes('link')) return 'placement';
-    if (type.includes('bulk') || type.includes('batch')) return 'bulk-purchase';
-    if (type.includes('success') || type.includes('published')) return 'success';
-    if (type.includes('error') || type.includes('fail')) return 'error';
-    if (type.includes('warning') || type.includes('expir')) return 'warning';
+    // Exact type mapping (order matters - specific before general)
+    const typeMap = {
+      // Batch/bulk - check BEFORE placement
+      'batch_placement_purchased': 'batch',
+      'admin_batch_purchased': 'batch',
+      // Single placement
+      'placement_purchased': 'purchase',
+      'admin_placement_purchased': 'purchase',
+      'placement_renewed': 'renewal',
+      'placement_published': 'success',
+      'placement_failed': 'error',
+      'placement_failed_refund': 'refund',
+      // Balance & Discount
+      'balance_deposited': 'deposit',
+      'discount_tier_achieved': 'success',
+      'discount_tier_changed': 'info',
+      // Referral
+      'referral_commission': 'commission',
+      // Security
+      'security_alert': 'warning',
+      'error_alert': 'error'
+    };
 
-    return type;
+    return typeMap[type] || type;
   },
 
   /**
