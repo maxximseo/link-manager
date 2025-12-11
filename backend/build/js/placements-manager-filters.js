@@ -86,27 +86,55 @@ function applyPlacementFilters(placements) {
 
 /**
  * Apply filters from UI
+ * Saves selected project to localStorage and reloads data from server
  */
 function applyFilters() {
     // Read filter values
-    activeFilters.projectId = document.getElementById('projectFilter').value;
+    const newProjectId = document.getElementById('projectFilter').value;
     activeFilters.type = document.getElementById('typeFilter').value;
     activeFilters.dateFrom = document.getElementById('dateFrom').value;
     activeFilters.dateTo = document.getElementById('dateTo').value;
 
+    // Check if project changed - need to reload from server
+    const projectChanged = activeFilters.projectId !== newProjectId;
+    activeFilters.projectId = newProjectId;
+
+    // Save selected project to localStorage
+    if (activeFilters.projectId) {
+        localStorage.setItem('selectedProjectId', activeFilters.projectId);
+    } else {
+        localStorage.removeItem('selectedProjectId');
+    }
+
     // Re-render current tab with filters
-    // Check which tab content is currently visible
     const activePane = document.querySelector('.tab-pane.active');
     const activeTab = activePane ? '#' + activePane.id : '#active';
 
     if (activeTab === '#active') {
-        const filtered = applyPlacementFilters(allActivePlacements);
-        renderActivePlacements(filtered);
+        if (projectChanged) {
+            // Project changed - reload from server with new project_id
+            loadActivePlacements();
+        } else {
+            // Only other filters changed - apply locally
+            const filtered = applyPlacementFilters(allActivePlacements);
+            renderActivePlacements(filtered);
+        }
     } else if (activeTab === '#scheduled') {
-        const filtered = applyPlacementFilters(allScheduledPlacements);
-        renderScheduledPlacements(filtered);
+        if (projectChanged) {
+            // Project changed - reload from server with new project_id
+            loadScheduledPlacements();
+        } else {
+            // Only other filters changed - apply locally
+            const filtered = applyPlacementFilters(allScheduledPlacements);
+            renderScheduledPlacements(filtered);
+        }
     } else if (activeTab === '#history') {
         loadHistoryPlacements(); // History has its own filters
+    }
+
+    // Update tab counts when project changes
+    if (projectChanged) {
+        updateTabCounts();
     }
 }
 
