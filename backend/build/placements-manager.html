@@ -1148,18 +1148,24 @@
         // Load placements
         async function loadPlacements() {
             try {
-                // Построить URL с фильтром по проекту из localStorage
+                // Получить project_id из select (уже установлен из localStorage через loadProjects)
+                const projectSelect = document.getElementById('projectFilter');
+                const projectId = projectSelect ? projectSelect.value : '';
+
                 let url = '/api/placements?limit=5000';
-                const savedProjectId = localStorage.getItem('selectedProjectId');
-                if (savedProjectId) {
-                    url += `&project_id=${savedProjectId}`;
+                if (projectId) {
+                    url += `&project_id=${projectId}`;
                 }
+
+                console.log('loadPlacements: projectId =', projectId, 'url =', url);
 
                 const response = await fetch(url, {
                     headers: { 'Authorization': `Bearer ${getToken()}` }
                 });
                 const result = await response.json();
                 allPlacements = result.data || result.placements || [];
+
+                console.log('loadPlacements: loaded', allPlacements.length, 'placements');
 
                 updateTabCounts();
                 applyFilters();
@@ -1187,8 +1193,14 @@
 
                 // Восстановить сохранённый проект из localStorage
                 const savedProjectId = localStorage.getItem('selectedProjectId');
+                console.log('loadProjects: savedProjectId from localStorage =', savedProjectId);
+                console.log('loadProjects: projects loaded =', projects.length, 'items');
+
                 if (savedProjectId && projects.some(p => String(p.id) === savedProjectId)) {
                     select.value = savedProjectId;
+                    console.log('loadProjects: select.value set to', select.value);
+                } else {
+                    console.log('loadProjects: no matching project found for savedProjectId');
                 }
             } catch (error) {
                 console.error('Error loading projects:', error);
@@ -1646,9 +1658,9 @@
         }
 
         // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            loadProjects();
-            loadPlacements();
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadProjects();  // Сначала загрузить проекты и восстановить выбор из localStorage
+            loadPlacements();      // Потом загрузить размещения (с учётом выбранного проекта)
         });
     </script>
 </body>
