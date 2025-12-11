@@ -96,11 +96,19 @@ async function deepTest() {
     await page.click('#notificationsDropdown');
     await sleep(500);
 
-    // Click mark all as read
+    // Click mark all as read and wait for API response
     const markAllBtn = await page.$('.notification-mark-all-btn');
     if (markAllBtn) {
-      await markAllBtn.click();
-      await sleep(2000);
+      // Click and wait for the API call to complete
+      await Promise.all([
+        page.waitForResponse(
+          (response) =>
+            response.url().includes('/api/notifications/mark-all-read') && response.status() === 200,
+          { timeout: 10000 }
+        ),
+        markAllBtn.click()
+      ]);
+      await sleep(500); // Wait for UI to update
       console.log('✅ Clicked mark all as read\n');
     } else {
       console.log('❌ Mark all button not found!\n');
