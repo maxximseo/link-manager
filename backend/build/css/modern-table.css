@@ -701,7 +701,11 @@ body.modern-ui {
     border-radius: 8px;
     border: 1px solid #e5e7eb;
     transition: box-shadow 0.2s ease;
-    cursor: pointer;
+    cursor: default;
+    user-select: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
 }
 
 .notification-card:last-child {
