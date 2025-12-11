@@ -14,6 +14,7 @@ const SidebarNav = {
   // State
   collapsed: false,
   mobileOpen: false,
+  adminExpanded: false,
   user: null,
   balance: 0,
   unreadCount: 0,
@@ -50,6 +51,14 @@ const SidebarNav = {
 
     // Load collapsed state from localStorage
     this.collapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+
+    // Load admin expanded state from localStorage
+    this.adminExpanded = localStorage.getItem('adminExpanded') === 'true';
+
+    // Auto-expand if we're on an admin page
+    if (this.adminItems.some((item) => item.id === config.activePage)) {
+      this.adminExpanded = true;
+    }
 
     // Parse user from token
     this.user = this.getUserFromToken();
@@ -200,9 +209,29 @@ const SidebarNav = {
       })
       .join('');
 
-    // Admin items (if admin)
+    // Admin section (if admin) - collapsible
     if (this.isAdmin()) {
       navHTML += '<div class="nav-divider"></div>';
+
+      // Check if any admin item is active
+      const isAdminActive = this.adminItems.some((item) => item.id === activePage);
+      const adminActiveClass = isAdminActive ? 'active' : '';
+      const expandedClass = this.adminExpanded ? 'expanded' : '';
+      const chevronClass = this.adminExpanded ? 'bi-chevron-down' : 'bi-chevron-right';
+
+      // Admin toggle button
+      navHTML += `
+        <button class="nav-item admin-toggle ${adminActiveClass} ${expandedClass}" onclick="SidebarNav.toggleAdmin()" title="Админка">
+          <i class="bi bi-person-gear"></i>
+          <span>Админка</span>
+          <i class="bi ${chevronClass} admin-chevron"></i>
+        </button>
+      `;
+
+      // Admin submenu
+      const submenuStyle = this.adminExpanded ? '' : 'style="display: none;"';
+      navHTML += `<div class="admin-submenu" id="adminSubmenu" ${submenuStyle}>`;
+
       navHTML += this.adminItems
         .map((item) => {
           const isActive = activePage === item.id;
@@ -212,7 +241,7 @@ const SidebarNav = {
             : '';
 
           return `
-          <a href="${item.href}" class="nav-item ${activeClass}" title="${item.label}">
+          <a href="${item.href}" class="nav-item nav-subitem ${activeClass}" title="${item.label}">
             <i class="bi ${item.icon}"></i>
             <span>${item.label}</span>
             ${badgeHTML}
@@ -220,9 +249,41 @@ const SidebarNav = {
         `;
         })
         .join('');
+
+      navHTML += '</div>';
     }
 
     return `<nav class="sidebar-nav">${navHTML}</nav>`;
+  },
+
+  /**
+   * Toggle admin submenu
+   */
+  toggleAdmin() {
+    this.adminExpanded = !this.adminExpanded;
+    localStorage.setItem('adminExpanded', this.adminExpanded);
+
+    const submenu = document.getElementById('adminSubmenu');
+    const toggle = document.querySelector('.admin-toggle');
+    const chevron = document.querySelector('.admin-chevron');
+
+    if (submenu) {
+      if (this.adminExpanded) {
+        submenu.style.display = 'block';
+        toggle?.classList.add('expanded');
+        if (chevron) {
+          chevron.classList.remove('bi-chevron-right');
+          chevron.classList.add('bi-chevron-down');
+        }
+      } else {
+        submenu.style.display = 'none';
+        toggle?.classList.remove('expanded');
+        if (chevron) {
+          chevron.classList.remove('bi-chevron-down');
+          chevron.classList.add('bi-chevron-right');
+        }
+      }
+    }
   },
 
   /**
@@ -427,7 +488,7 @@ const SidebarNav = {
     }
 
     // Close mobile sidebar on navigation
-    document.querySelectorAll('.sidebar .nav-item').forEach((item) => {
+    document.querySelectorAll('.sidebar .nav-item:not(.admin-toggle)').forEach((item) => {
       item.addEventListener('click', () => {
         if (this.mobileOpen) {
           this.toggleMobile();
