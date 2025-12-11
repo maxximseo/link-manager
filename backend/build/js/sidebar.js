@@ -388,11 +388,17 @@ const SidebarNav = {
           <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
         </button>
         <div class="dropdown-menu dropdown-menu-end notification-dropdown" aria-labelledby="notificationsDropdown">
-          <div class="notification-header">
-            <h6 class="mb-0">Уведомления</h6>
-            <a href="#" class="mark-all-read" onclick="SidebarNav.markAllAsRead(event)">
-              Отметить все как прочитанные
-            </a>
+          <div class="notification-header-gradient">
+            <div class="notification-header-content">
+              <div class="notification-header-title">
+                <h6>Уведомления</h6>
+                <span class="notification-header-count" id="notificationHeaderCount">0 непрочитанных</span>
+              </div>
+              <button class="notification-mark-all-btn" onclick="SidebarNav.markAllAsRead(event)">
+                <i class="bi bi-check2-all"></i>
+                <span>Отметить все как прочитанные</span>
+              </button>
+            </div>
           </div>
           <div class="notification-list" id="notificationList">
             <div class="notification-empty">
@@ -401,8 +407,8 @@ const SidebarNav = {
             </div>
           </div>
           <div class="notification-footer">
-            <a href="#" onclick="SidebarNav.deleteAllNotifications(event)" class="text-danger">
-              <i class="bi bi-trash"></i> Удалить все
+            <a href="#" onclick="SidebarNav.deleteAllNotifications(event)" class="notification-delete-all-btn">
+              <i class="bi bi-trash3"></i> Удалить все
             </a>
           </div>
         </div>
