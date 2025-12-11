@@ -151,13 +151,16 @@ router.patch('/mark-all-read', authMiddleware, apiLimiter, async (req, res) => {
       UPDATE notifications
       SET read = true
       WHERE user_id = $1 AND read = false
-      RETURNING COUNT(*) as count
     `,
       [req.user.id]
     );
 
     // Clear notification cache for this user
-    await cache.delPattern(`notifications:${req.user.id}:*`);
+    try {
+      await cache.delPattern(`notifications:${req.user.id}:*`);
+    } catch (cacheError) {
+      logger.warn('Failed to clear notification cache', { userId: req.user.id, error: cacheError.message });
+    }
 
     res.json({
       success: true,
@@ -168,7 +171,8 @@ router.patch('/mark-all-read', authMiddleware, apiLimiter, async (req, res) => {
   } catch (error) {
     logger.error('Failed to mark all notifications as read', {
       userId: req.user.id,
-      error: error.message
+      error: error.message,
+      stack: error.stack
     });
     res.status(500).json({ error: 'Failed to mark all notifications as read' });
   }
