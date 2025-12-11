@@ -10,90 +10,9 @@
     <link rel="stylesheet" href="/css/modern-table.css">
     <link rel="stylesheet" href="/css/sidebar.css">
     <style>
-        /* Sticky action bar (neutral gray bar at bottom) */
-        #stickyActionBar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-            background: #f8f9fa;
-            border-top: 1px solid #dee2e6;
-            box-shadow: 0 -4px 12px rgba(0,0,0,0.1);
-            padding: 15px 0;
-            display: none; /* Hidden by default */
-            transition: all 0.3s ease;
-        }
-
-        #stickyActionBar.show {
-            display: block;
-        }
-
-        #stickyActionBar .action-buttons {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        #stickyActionBar .btn {
-            min-width: 140px;
-            font-weight: 600;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        }
-
-        #stickyActionBar .btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        }
-
-        #stickyActionBar .badge {
-            font-size: 0.85rem;
-            padding: 0.35em 0.6em;
-            margin-left: 6px;
-        }
-
-        #stickyActionBar .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        /* Add bottom padding to body to prevent content hiding behind bar */
+        /* Add bottom padding to body when sticky bar is active */
         body.sticky-bar-active {
             padding-bottom: 80px;
-        }
-
-        /* Pagination buttons - white when not selected */
-        .btn-group .btn-check + .btn-outline-dark {
-            background-color: #fff;
-            color: #212529;
-            border-color: #dee2e6;
-        }
-        .btn-group .btn-check + .btn-outline-dark:hover {
-            background-color: #f8f9fa;
-            border-color: #adb5bd;
-        }
-        .btn-group .btn-check:checked + .btn-outline-dark {
-            background-color: #212529;
-            color: #fff;
-            border-color: #212529;
-        }
-
-        /* Table styling - compact font */
-        .table {
-            font-size: 0.75rem;
-        }
-
-        .table th, .table td {
-            padding: 0.4rem 0.5rem;
-        }
-
-        /* "Контент" column (3rd) - show full text */
-        .table th:nth-child(3),
-        .table td:nth-child(3) {
-            white-space: normal;
-            min-width: 150px;
         }
 
         /* Content dropdown - show full text without truncation */
@@ -109,164 +28,1128 @@
             text-overflow: clip !important;
             padding: 8px 12px;
         }
+
+        /* Table styles from placements-manager.html */
+        .links-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .links-table thead {
+            background: #f9fafb;
+        }
+
+        .links-table th {
+            padding: 10px 8px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 500;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
+        }
+
+        .links-table th.text-center {
+            text-align: center;
+        }
+
+        .links-table tbody tr {
+            border-bottom: 1px solid #f3f4f6;
+            transition: background 0.15s;
+        }
+
+        .links-table tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        .links-table td {
+            padding: 10px 8px;
+            font-size: 13px;
+            color: #374151;
+            white-space: nowrap;
+        }
+
+        .links-table td.text-center {
+            text-align: center;
+        }
+
+        /* SEO Metrics columns - голубой фон */
+        .seo-metric-th,
+        .seo-metric-td {
+            background: #eff6ff !important;
+        }
+
+        .seo-metric-th {
+            color: #1d4ed8 !important;
+            font-weight: 600 !important;
+        }
+
+        /* Metric colors */
+        .metric-green { color: #15803d; font-weight: 600; }
+        .metric-blue { color: #2563eb; font-weight: 600; }
+        .metric-orange { color: #c2410c; font-weight: 600; }
+        .metric-gray { color: #9ca3af; }
+
+        /* Pagination wrapper */
+        .pagination-wrapper {
+            padding: 16px 24px;
+            border-top: 1px solid #e5e7eb;
+            background: #f9fafb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .pagination-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pagination-left span {
+            font-size: 14px;
+            color: #4b5563;
+        }
+
+        .pagination-left select {
+            padding: 6px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+        }
+
+        .pagination-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pagination-info {
+            font-size: 14px;
+            color: #4b5563;
+            margin-right: 16px;
+        }
+
+        .pagination-buttons {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pagination-btn {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            background: white;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .pagination-btn:hover:not(:disabled):not(.active) {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+        }
+
+        .pagination-btn.active {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+
+        .pagination-arrow {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .pagination-arrow:hover:not(:disabled) {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+        }
+
+        .pagination-arrow:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #pageNumbers, #bottomPageNumbers {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ===== Block Headers - GRAY style (React reference: bg-gray-50) ===== */
+        .placements-card-header.header-settings,
+        .placements-card-header.header-calendar {
+            background: #f9fafb;
+            border-bottom: 2px solid #e5e7eb;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .placements-card-header .header-icon {
+            width: 20px;
+            height: 20px;
+            color: #6b7280;
+            font-size: 20px;
+        }
+
+        .placements-header-text h5 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .placements-header-text p {
+            display: none; /* No subtitle in React reference */
+        }
+
+        /* Form labels with asterisk */
+        .placements-form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+
+        .placements-form-label .required {
+            color: #ef4444;
+            margin-left: 2px;
+        }
+
+        /* Custom radio buttons (circular style from React) */
+        .placements-radio-modern {
+            display: flex;
+            gap: 16px;
+        }
+
+        .placements-radio-option {
+            position: relative;
+        }
+
+        .placements-radio-option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .placements-radio-option label {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            color: #374151;
+        }
+
+        .placements-radio-option label:hover {
+            border-color: #d1d5db;
+            background: #f9fafb;
+        }
+
+        .placements-radio-option input[type="radio"]:checked + label {
+            border-color: #8b5cf6;
+            background: #faf5ff;
+        }
+
+        .placements-radio-option.green-style input[type="radio"]:checked + label {
+            border-color: #22c55e;
+            background: #f0fdf4;
+        }
+
+        /* Custom radio circle indicator */
+        .radio-circle {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #d1d5db;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .placements-radio-option input[type="radio"]:checked + label .radio-circle {
+            border-color: #8b5cf6;
+            border-width: 6px;
+        }
+
+        .placements-radio-option.green-style input[type="radio"]:checked + label .radio-circle {
+            border-color: #22c55e;
+            border-width: 6px;
+        }
+
+        /* ===== Slider Container - Orange gradient background (React reference) ===== */
+        .slider-container {
+            margin-top: 24px;
+            padding: 20px;
+            background: linear-gradient(to bottom right, #fff7ed, #fffbeb, #fefce8);
+            border: 2px solid #fed7aa;
+            border-radius: 16px;
+        }
+
+        .slider-title {
+            display: block;
+            font-size: 14px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 16px;
+        }
+
+        /* Slider wrapper */
+        .slider-wrapper {
+            position: relative;
+            padding-bottom: 16px;
+        }
+
+        /* Slider labels row: min | badge | max */
+        .slider-labels-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 8px;
+        }
+
+        .slider-min-label,
+        .slider-max-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+        }
+
+        /* Badge "Выбрано: X дней" */
+        .slider-badge {
+            background: linear-gradient(to right, #f97316, #ea580c);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 9999px;
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.3);
+            white-space: nowrap;
+        }
+
+        /* Slider track with gradient (orange to red) */
+        .slider-track-wrapper {
+            position: relative;
+            height: 10px;
+            border-radius: 9999px;
+            background: linear-gradient(to right, #fdba74, #fb923c, #f97316, #ea580c, #dc2626);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .slider-input {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 10px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        .slider-input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid #f97316;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.15);
+            cursor: grab;
+            margin-top: -7px;
+        }
+
+        .slider-input::-webkit-slider-thumb:active {
+            cursor: grabbing;
+            transform: scale(1.1);
+        }
+
+        .slider-input::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid #f97316;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.15);
+            cursor: grab;
+        }
+
+        /* Zone cards grid */
+        .zone-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .zone-card {
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+            transition: all 0.2s;
+            cursor: default;
+        }
+
+        /* Zone card: Быстро (green) */
+        .zone-card.fast {
+            background: white;
+            border: 2px solid #d1fae5;
+        }
+        .zone-card.fast.active {
+            background: #dcfce7;
+            border-color: #22c55e;
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+        }
+        .zone-card.fast .zone-icon {
+            color: #22c55e;
+        }
+
+        /* Zone card: Средне (orange) */
+        .zone-card.medium {
+            background: white;
+            border: 2px solid #fed7aa;
+        }
+        .zone-card.medium.active {
+            background: #fff7ed;
+            border-color: #f97316;
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
+        }
+        .zone-card.medium .zone-icon {
+            color: #f97316;
+        }
+
+        /* Zone card: Долго (red) */
+        .zone-card.slow {
+            background: white;
+            border: 2px solid #fecaca;
+        }
+        .zone-card.slow.active {
+            background: #fef2f2;
+            border-color: #ef4444;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+        }
+        .zone-card.slow .zone-icon {
+            color: #ef4444;
+        }
+
+        .zone-card .zone-icon {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+
+        .zone-card .zone-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            margin: 4px 0 2px 0;
+        }
+
+        .zone-card .zone-range {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        /* Blue info block (React reference) */
+        .info-block {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 16px;
+            background: #eff6ff;
+            border-radius: 12px;
+            border: 1px solid #bfdbfe;
+            margin-top: 20px;
+        }
+
+        .info-block-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #3b82f6;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .info-block-text {
+            font-size: 13px;
+            color: #1e40af;
+            line-height: 1.5;
+        }
+
+        .info-block-text strong {
+            font-weight: 600;
+        }
+
+        /* ===== List Management Section (React reference) ===== */
+        .list-management-section {
+            padding: 24px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .list-management-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        @media (min-width: 768px) {
+            .list-management-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        /* Card wrapper */
+        .list-card {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 20px;
+        }
+
+        /* Card header with icon */
+        .list-card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .list-card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .list-card-icon.whitelist {
+            background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+        }
+
+        .list-card-icon.whitelist i {
+            color: #16a34a;
+            font-size: 20px;
+        }
+
+        .list-card-icon.blacklist {
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+        }
+
+        .list-card-icon.blacklist i {
+            color: #dc2626;
+            font-size: 20px;
+        }
+
+        .list-card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .list-card-badge {
+            font-size: 12px;
+            font-weight: 500;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            margin-left: 8px;
+        }
+
+        .list-card-badge.whitelist {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .list-card-badge.blacklist {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* Description text */
+        .list-card-description {
+            font-size: 13px;
+            color: #6b7280;
+            margin-bottom: 16px;
+        }
+
+        /* Gradient add button */
+        .list-add-btn {
+            width: 100%;
+            padding: 10px 16px;
+            border-radius: 12px;
+            border: none;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .list-add-btn.whitelist {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(34, 197, 94, 0.3);
+        }
+
+        .list-add-btn.whitelist:hover:not(:disabled) {
+            background: linear-gradient(135deg, #16a34a, #15803d);
+        }
+
+        .list-add-btn.blacklist {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3);
+        }
+
+        .list-add-btn.blacklist:hover:not(:disabled) {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+        }
+
+        .list-add-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Action buttons row */
+        .list-action-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .list-action-btn {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            background: white;
+            font-size: 13px;
+            font-weight: 500;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .list-action-btn:hover {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+        }
+
+        .list-action-btn i {
+            font-size: 14px;
+        }
+
+        /* Items list */
+        .list-items-container {
+            margin-top: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .list-items-container.show {
+            display: block;
+        }
+
+        /* ===== Sortable Headers (React reference style) ===== */
+        .sortable-th {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+
+        .sortable-th:hover {
+            background: #f5f3ff !important;
+        }
+
+        .sortable-th .sort-icon {
+            margin-left: 4px;
+            font-size: 12px;
+            color: #9ca3af; /* text-gray-400 */
+            vertical-align: middle;
+        }
+
+        .sortable-th.sort-asc .sort-icon,
+        .sortable-th.sort-desc .sort-icon {
+            color: #9333ea; /* text-purple-600 */
+        }
+
+        .sortable-th.sort-asc .sort-icon::before {
+            content: "↑";
+        }
+
+        .sortable-th.sort-desc .sort-icon::before {
+            content: "↓";
+        }
+
+        .sortable-th:not(.sort-asc):not(.sort-desc) .sort-icon::before {
+            content: "⇅";
+        }
+
+        /* ===== Modern Import Modal (React reference) ===== */
+        #importListModal .modal-dialog {
+            max-width: 640px;
+        }
+
+        #importListModal .modal-content {
+            border: none;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        #importListModal .modal-header {
+            border: none;
+            padding: 20px 24px;
+        }
+
+        #importListModal .modal-header.whitelist-header {
+            background: linear-gradient(135deg, #22c55e, #10b981);
+        }
+
+        #importListModal .modal-header.blacklist-header {
+            background: linear-gradient(135deg, #ef4444, #f43f5e);
+        }
+
+        #importListModal .modal-header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        #importListModal .modal-title-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        #importListModal .modal-title {
+            color: white;
+            font-weight: 700;
+            font-size: 18px;
+            margin: 0;
+        }
+
+        #importListModal .modal-title i {
+            font-size: 22px;
+        }
+
+        #importListModal .modal-close-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 8px;
+            padding: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: white;
+        }
+
+        #importListModal .modal-close-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        #importListModal .modal-body {
+            padding: 24px;
+        }
+
+        #importListModal .import-description {
+            font-size: 14px;
+            color: #4b5563;
+            margin-bottom: 16px;
+        }
+
+        #importListModal .import-description code {
+            color: #db2777;
+            font-weight: 600;
+            background: transparent;
+        }
+
+        #importListModal .import-textarea {
+            width: 100%;
+            height: 256px;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 14px;
+            font-family: monospace;
+            color: #374151;
+            resize: none;
+            transition: border-color 0.2s;
+        }
+
+        #importListModal .import-textarea:focus {
+            outline: none;
+            border-color: #8b5cf6;
+        }
+
+        #importListModal .import-info-block {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-top: 16px;
+            padding: 12px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+        }
+
+        #importListModal .import-info-block i {
+            color: #2563eb;
+            font-size: 16px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        #importListModal .import-info-block p {
+            font-size: 14px;
+            color: #1d4ed8;
+            margin: 0;
+        }
+
+        #importListModal .modal-footer {
+            border-top: 1px solid #e5e7eb;
+            background: #f9fafb;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        #importListModal .btn-modal-cancel {
+            padding: 10px 20px;
+            background: white;
+            border: 2px solid #d1d5db;
+            border-radius: 12px;
+            font-weight: 600;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        #importListModal .btn-modal-cancel:hover {
+            background: #f9fafb;
+        }
+
+        #importListModal .btn-modal-import {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+        }
+
+        #importListModal .btn-modal-import.whitelist-btn {
+            background: linear-gradient(135deg, #22c55e, #10b981);
+        }
+
+        #importListModal .btn-modal-import.whitelist-btn:hover {
+            background: linear-gradient(135deg, #16a34a, #059669);
+        }
+
+        #importListModal .btn-modal-import.blacklist-btn {
+            background: linear-gradient(135deg, #ef4444, #f43f5e);
+        }
+
+        #importListModal .btn-modal-import.blacklist-btn:hover {
+            background: linear-gradient(135deg, #dc2626, #e11d48);
+        }
+
+        /* ===== Sticky Action Bar (React reference) ===== */
+        .sticky-action-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+            z-index: 50;
+            padding: 12px 24px;
+        }
+
+        .sticky-action-bar .action-buttons {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .sticky-action-btn {
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            padding: 8px 16px !important;
+            background: white !important;
+            border: 1px solid #d1d5db !important;
+            border-radius: 8px !important;
+            font-size: 14px !important;
+            font-weight: 600 !important;
+            color: #374151 !important;
+            cursor: pointer !important;
+            transition: all 0.2s !important;
+        }
+
+        .sticky-action-btn:hover:not(:disabled) {
+            background: #f9fafb !important;
+        }
+
+        .sticky-action-btn:disabled {
+            opacity: 0.5 !important;
+            cursor: not-allowed !important;
+        }
+
+        .sticky-action-btn i {
+            font-size: 16px !important;
+            color: #6b7280 !important;
+        }
+
+        .sticky-action-btn.whitelist i {
+            color: #6b7280 !important;
+        }
+
+        .sticky-action-btn.blacklist i {
+            color: #6b7280 !important;
+        }
+
+        .sticky-action-btn.purchase i {
+            color: #6b7280 !important;
+        }
+
+        .action-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2px 8px;
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #374151;
+            min-width: 20px;
+        }
     </style>
 </head>
 <body>
     <!-- Content will be wrapped by sidebar.js -->
 
-    <div class="container mt-4">
-        <h1 class="mb-4">Купить ссылки</h1>
+    <div class="container-fluid px-4">
+        <!-- Unified Card: Project Selection + Publication Settings (React reference structure) -->
+        <div class="placements-card">
+            <!-- Section 1: Выбор проекта (with border-b) -->
+            <div class="placements-unified-section section-with-border">
+                <h3 class="placements-section-title">
+                    <i class="bi bi-gear"></i>
+                    Выбор проекта
+                </h3>
+                <div style="max-width: 40%;">
+                    <label for="projectSelect" class="placements-form-label">Select Project <span class="required">*</span></label>
+                    <select class="placements-select" id="projectSelect">
+                        <option value="">Выберите проект...</option>
+                    </select>
+                </div>
+            </div>
 
-        <!-- Step 1 & 2: Project and Content Type Selection -->
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Выбор проекта и типа контента</h5>
-                <div class="row">
-                    <div class="col-md-6">
-                        <label for="projectSelect" class="form-label fw-bold">Select Project</label>
-                        <select class="form-select" id="projectSelect">
-                            <option value="">Select project...</option>
-                        </select>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">Content Type</label>
-                        <div class="d-flex gap-3 align-items-center" style="height: 38px;">
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="contentType" id="typeLinks" value="links">
-                                <label class="form-check-label" for="typeLinks">
-                                    <i class="bi bi-link-45deg"></i> Main page
-                                </label>
+            <!-- Section 2: Тип контента (with border-b) -->
+            <div class="placements-unified-section section-with-border">
+                <h3 class="placements-section-title">
+                    <i class="bi bi-gear"></i>
+                    Тип контента
+                </h3>
+                <label class="placements-form-label">Content Type <span class="required">*</span></label>
+                <div class="custom-radio-group">
+                    <label class="custom-radio-label radio-blue">
+                        <input type="radio" name="contentType" id="typeLinks" value="links">
+                        <div class="radio-circle"></div>
+                        <span>📄 Main page</span>
+                    </label>
+                    <label class="custom-radio-label radio-purple">
+                        <input type="radio" name="contentType" id="typeArticles" value="articles">
+                        <div class="radio-circle"></div>
+                        <span>📰 Articles</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Section 3: Настройки публикации (with border-b for 4-section layout) -->
+            <div class="placements-unified-section section-with-border">
+                <h3 class="placements-section-title">
+                    <i class="bi bi-calendar-event"></i>
+                    Настройки публикации
+                </h3>
+                <label class="placements-form-label">Дата публикации</label>
+                <div class="custom-radio-group vertical">
+                    <label class="custom-radio-label radio-green">
+                        <input type="radio" name="publishType" id="publishImmediate" value="immediate" checked>
+                        <div class="radio-circle"></div>
+                        <span>Опубликовать сразу</span>
+                    </label>
+                    <label class="custom-radio-label radio-orange">
+                        <input type="radio" name="publishType" id="publishDistributed" value="distributed">
+                        <div class="radio-circle"></div>
+                        <span>Отложенная публикация (период)</span>
+                    </label>
+                </div>
+
+                <!-- Slider container (hidden by default) -->
+                <div id="distributedPeriodDiv" style="display: none;">
+                    <div class="slider-container">
+                        <label class="slider-title">Период распределения:</label>
+
+                        <!-- Slider with labels and badge -->
+                        <div class="slider-wrapper">
+                            <div class="slider-track-wrapper">
+                                <input type="range" class="slider-input" id="distributionPeriod"
+                                       min="5" max="90" value="30" step="1">
                             </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="contentType" id="typeArticles" value="articles">
-                                <label class="form-check-label" for="typeArticles">
-                                    <i class="bi bi-file-text"></i> Articles
-                                </label>
+                            <div class="slider-labels-row">
+                                <span class="slider-min-label">5 дней</span>
+                                <span class="slider-badge">Выбрано: <span id="selectedDays">30</span> дней</span>
+                                <span class="slider-max-label">90 дней</span>
                             </div>
                         </div>
+
+                        <!-- Zone cards -->
+                        <div class="zone-cards">
+                            <div class="zone-card fast active" id="zoneFast">
+                                <div class="zone-icon"><i class="bi bi-lightning-charge-fill"></i></div>
+                                <div class="zone-name">Быстро</div>
+                                <div class="zone-range">5-30 дней</div>
+                            </div>
+                            <div class="zone-card medium" id="zoneMedium">
+                                <div class="zone-icon"><i class="bi bi-speedometer2"></i></div>
+                                <div class="zone-name">Средне</div>
+                                <div class="zone-range">31-60 дней</div>
+                            </div>
+                            <div class="zone-card slow" id="zoneSlow">
+                                <div class="zone-icon"><i class="bi bi-hourglass-split"></i></div>
+                                <div class="zone-name">Долго</div>
+                                <div class="zone-range">61-90 дней</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Blue info block -->
+                    <div class="info-block">
+                        <div class="info-block-icon">
+                            <i class="bi bi-info-circle-fill"></i>
+                        </div>
+                        <div class="info-block-text">
+                            <strong>Рекомендация:</strong> Распределение публикаций на 30-60 дней создает наиболее естественный профиль ссылок для поисковых систем.
+                        </div>
+                    </div>
+
+                    <div id="distributionPreview" class="placements-preview" style="display: none; margin-top: 16px;">
+                        <i class="bi bi-info-circle"></i> <span id="distributionPreviewText"></span>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Publication Date Selection -->
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Настройки публикации</h5>
-                <div class="row">
-                    <div class="col-md-12">
-                        <label class="form-label fw-bold">Дата публикации</label>
-                        <div class="mb-2">
-                            <input class="form-check-input" type="radio" name="publishType" id="publishImmediate" value="immediate" checked>
-                            <label class="form-check-label" for="publishImmediate">
-                                <i class="bi bi-lightning-fill"></i> Опубликовать сразу
-                            </label>
-                        </div>
-                        <div class="mb-2">
-                            <input class="form-check-input" type="radio" name="publishType" id="publishDistributed" value="distributed">
-                            <label class="form-check-label" for="publishDistributed">
-                                <i class="bi bi-calendar-range"></i> Отложенная публикация (период)
-                            </label>
-                        </div>
-                        <div id="distributedPeriodDiv" style="display: none;" class="mt-3">
-                            <label for="distributionPeriod" class="form-label">Период распределения:</label>
-                            <input type="range" class="form-range" id="distributionPeriod"
-                                   min="5" max="90" value="30" step="1">
-                            <div class="d-flex justify-content-between mt-1">
-                                <small class="text-muted">5 дней</small>
-                                <small class="text-muted fw-bold">Выбрано: <span id="selectedDays">30</span> дней</small>
-                                <small class="text-muted">90 дней</small>
-                            </div>
-                            <div id="distributionPreview" class="mt-2 p-2 bg-light rounded" style="display: none;">
-                                <small class="text-muted">
-                                    <i class="bi bi-info-circle"></i> <span id="distributionPreviewText"></span>
-                                </small>
-                            </div>
-                        </div>
-                    </div>
+            <!-- Section 4: Доступные сайты (inside unified card, no border) -->
+            <div class="placements-unified-section" id="sitesTableDiv" style="display: none;">
+                <h3 class="placements-section-title">
+                    <i class="bi bi-globe2" style="color: #22c55e;"></i>
+                    Доступные сайты
+                </h3>
+
+                <!-- Active filters info -->
+                <div class="mb-3">
+                    <span id="activeFiltersInfo"></span>
                 </div>
-            </div>
-        </div>
 
-        <!-- Step 3: Sites Table -->
-        <div id="sitesTableDiv" style="display: none;">
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h5 class="card-title">Доступные сайты для размещения</h5>
-
-                    <!-- Active filters info -->
-                    <div class="mb-3">
-                        <span id="activeFiltersInfo"></span>
-                    </div>
-
-                    <!-- Hide Already Purchased Filter -->
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="hideAlreadyPurchasedCheckbox" checked>
-                            <label class="form-check-label" for="hideAlreadyPurchasedCheckbox">
-                                Скрыть купленные
-                            </label>
+                <!-- Filters Row (React style) -->
+                <div class="sites-filter-row">
+                    <label class="custom-checkbox-label">
+                        <input type="checkbox" id="hideAlreadyPurchasedCheckbox" checked>
+                        <div class="checkbox-box">
+                            <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"></path></svg>
                         </div>
-                    </div>
-
-                    <!-- GEO Filter -->
-                    <div class="mb-3">
-                        <label for="geoFilter" class="form-label">Фильтр по GEO:</label>
-                        <select class="form-select form-select-sm" id="geoFilter" style="max-width: 200px;">
+                        <span>Скрыть купленные</span>
+                    </label>
+                    <div class="sites-filter-right">
+                        <label>Фильтр по GEO:</label>
+                        <select class="geo-filter-select" id="geoFilter">
                             <option value="">Все регионы</option>
-                            <!-- Options will be populated dynamically -->
                         </select>
                     </div>
+                </div>
 
-                    <!-- Pagination Controls -->
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="btn-group" role="group">
-                                <input type="radio" class="btn-check" name="sitesPerPage" id="sites100" value="100" checked>
-                                <label class="btn btn-outline-dark btn-sm" for="sites100">100</label>
-
-                                <input type="radio" class="btn-check" name="sitesPerPage" id="sites300" value="300">
-                                <label class="btn btn-outline-dark btn-sm" for="sites300">300</label>
-
-                                <input type="radio" class="btn-check" name="sitesPerPage" id="sites500" value="500">
-                                <label class="btn btn-outline-dark btn-sm" for="sites500">500</label>
-                            </div>
-                            <span class="text-muted" id="sitesCountInfo"></span>
-                        </div>
-                        <div id="paginationControls">
-                            <!-- Pagination buttons will be inserted here -->
-                        </div>
-                    </div>
-
-                    <div class="table-responsive">
-                        <table class="table table-sm table-hover table-bordered">
-                            <thead class="table-light">
+                <div class="placements-table-wrapper">
+                        <table class="links-table">
+                            <thead>
                                 <tr>
-                                    <th style="width: 50px;">
+                                    <th style="width: 40px;">
                                         <input type="checkbox" id="selectAllSites" onclick="toggleAllSites()">
                                     </th>
                                     <th>Сайт</th>
                                     <th>Контент</th>
-                                    <th>DR</th>
-                                    <th>DA</th>
-                                    <th>TF</th>
-                                    <th>CF</th>
-                                    <th>RD</th>
-                                    <th>RDm</th>
-                                    <th>Norm</th>
-                                    <th>KW</th>
-                                    <th>Traf</th>
-                                    <th>GEO</th>
-                                    <th>Тип</th>
-                                    <th>Слоты</th>
-                                    <th>Цена</th>
-                                    <th>Статус</th>
-                                    <th>Видимость</th>
+                                    <th class="text-center seo-metric-th sortable-th" data-sort="dr" onclick="sortByColumn('dr')">DR <span class="sort-icon"></span></th>
+                                    <th class="text-center seo-metric-th sortable-th" data-sort="da" onclick="sortByColumn('da')">DA <span class="sort-icon"></span></th>
+                                    <th class="text-center seo-metric-th sortable-th" data-sort="tf" onclick="sortByColumn('tf')">TF <span class="sort-icon"></span></th>
+                                    <th class="text-center seo-metric-th sortable-th" data-sort="cf" onclick="sortByColumn('cf')">CF <span class="sort-icon"></span></th>
+                                    <th class="text-center seo-metric-th sortable-th" data-sort="ref_domains" onclick="sortByColumn('ref_domains')">RD <span class="sort-icon"></span></th>
+                                    <th class="text-center seo-metric-th sortable-th" data-sort="rd_main" onclick="sortByColumn('rd_main')">RDm <span class="sort-icon"></span></th>
+                                    <th class="text-center seo-metric-th sortable-th" data-sort="norm" onclick="sortByColumn('norm')">Norm <span class="sort-icon"></span></th>
+                                    <th class="text-center seo-metric-th sortable-th" data-sort="keywords" onclick="sortByColumn('keywords')">KW <span class="sort-icon"></span></th>
+                                    <th class="text-center seo-metric-th sortable-th" data-sort="traffic" onclick="sortByColumn('traffic')">Traf <span class="sort-icon"></span></th>
+                                    <th class="text-center">GEO</th>
+                                    <th class="text-center">Тип</th>
+                                    <th class="text-center">Слоты</th>
+                                    <th class="text-center">Цена</th>
+                                    <th class="text-center">Статус</th>
+                                    <th class="text-center">Видимость</th>
                                 </tr>
                             </thead>
                             <tbody id="sitesTableBody">
                                 <tr>
-                                    <td colspan="18" class="text-center text-muted">
+                                    <td colspan="18" class="text-center text-muted py-4">
                                         Выберите проект и тип контента выше
                                     </td>
                                 </tr>
@@ -274,124 +1157,153 @@
                         </table>
                     </div>
 
-                    <!-- Bottom pagination (duplicate of top pagination) -->
-                    <nav aria-label="Sites pagination bottom" class="mt-3" id="bottomPaginationNav" style="display: none;">
-                        <ul class="pagination justify-content-center" id="bottomPaginationControls">
-                            <!-- Pagination buttons will be inserted here -->
-                        </ul>
-                    </nav>
+                    <!-- Bottom pagination -->
+                    <div class="pagination-wrapper" id="bottomPaginationNav" style="display: none;">
+                        <div class="pagination-left">
+                            <span>Показать:</span>
+                            <select id="bottomItemsPerPage" onchange="changeBottomItemsPerPage(this.value)">
+                                <option value="100" selected>100</option>
+                                <option value="300">300</option>
+                                <option value="500">500</option>
+                            </select>
+                            <span>записей на странице</span>
+                        </div>
+                        <div class="pagination-right">
+                            <span class="pagination-info" id="bottomPaginationInfo">Показано 1–100 из 100</span>
+                            <div class="pagination-buttons" id="bottomPaginationControls">
+                                <!-- Pagination buttons will be inserted here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- List Management Section (React style) -->
+                    <div class="list-management-section" id="listManagementSection">
+                        <div class="list-management-grid">
+                            <!-- Whitelist Card -->
+                            <div class="list-card">
+                                <div class="list-card-header">
+                                    <div class="list-card-icon whitelist">
+                                        <i class="bi bi-check-circle-fill"></i>
+                                    </div>
+                                    <span class="list-card-title">Whitelist</span>
+                                    <span class="list-card-badge whitelist" id="whitelistTotal">0</span>
+                                </div>
+                                <p class="list-card-description">Добавьте сайты в белый список для быстрого доступа</p>
+                                <button type="button" class="list-add-btn whitelist" id="addToWhitelistBtn" onclick="addSelectedToWhitelist()" disabled>
+                                    <i class="bi bi-plus-circle"></i>
+                                    Добавить выбранные
+                                    <span id="whitelistCount">(0)</span>
+                                </button>
+                                <div class="list-action-row">
+                                    <button type="button" class="list-action-btn" onclick="importWhitelist()">
+                                        <i class="bi bi-upload"></i> Импорт
+                                    </button>
+                                    <button type="button" class="list-action-btn" onclick="toggleWhitelistView()">
+                                        <i class="bi bi-eye"></i> Показать
+                                    </button>
+                                    <button type="button" class="list-action-btn" onclick="clearWhitelist()">
+                                        <i class="bi bi-trash"></i> Очистить
+                                    </button>
+                                </div>
+                                <div id="whitelistItems" class="list-items-container"></div>
+                            </div>
+
+                            <!-- Blacklist Card -->
+                            <div class="list-card">
+                                <div class="list-card-header">
+                                    <div class="list-card-icon blacklist">
+                                        <i class="bi bi-x-circle-fill"></i>
+                                    </div>
+                                    <span class="list-card-title">Blacklist</span>
+                                    <span class="list-card-badge blacklist" id="blacklistTotal">0</span>
+                                </div>
+                                <p class="list-card-description">Скройте нежелательные сайты из списка</p>
+                                <button type="button" class="list-add-btn blacklist" id="addToBlacklistBtn" onclick="addSelectedToBlacklist()" disabled>
+                                    <i class="bi bi-plus-circle"></i>
+                                    Добавить выбранные
+                                    <span id="blacklistCount">(0)</span>
+                                </button>
+                                <div class="list-action-row">
+                                    <button type="button" class="list-action-btn" onclick="importBlacklist()">
+                                        <i class="bi bi-upload"></i> Импорт
+                                    </button>
+                                    <button type="button" class="list-action-btn" onclick="toggleBlacklistView()">
+                                        <i class="bi bi-eye"></i> Показать
+                                    </button>
+                                    <button type="button" class="list-action-btn" onclick="clearBlacklist()">
+                                        <i class="bi bi-trash"></i> Очистить
+                                    </button>
+                                </div>
+                                <div id="blacklistItems" class="list-items-container"></div>
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- Bottom purchase button -->
                     <div class="text-center mt-4 mb-4" id="bottomPurchaseDiv" style="display: none;">
-                        <button type="button" class="btn btn-dark btn-lg" onclick="createPlacement()" id="bottomPurchaseBtn" disabled>
+                        <button type="button" class="btn btn-dark btn-lg" onclick="createPlacement()" id="bottomPurchaseBtn" disabled style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 0.75rem;">
                             <i class="bi bi-cart-check-fill"></i> Купить
                             <span class="badge bg-light text-dark ms-2" id="bottomPurchaseBadge">0</span>
                             <span class="badge bg-light text-dark ms-1" id="bottomPurchaseTotalBadge">$0.00</span>
                         </button>
                     </div>
-
-                </div>
             </div>
-        </div>
+            <!-- End of Section 3: Доступные сайты -->
 
-        <!-- Sticky Action Bar (purple bar at bottom with 3 buttons) -->
-        <div id="stickyActionBar">
+        </div>
+        <!-- End of Unified Card -->
+
+        <!-- Sticky Action Bar (React reference design) -->
+        <div id="stickyActionBar" class="sticky-action-bar">
             <div class="action-buttons">
-                <button type="button" class="btn btn-outline-dark btn-lg" id="stickyWhitelistBtn" onclick="addSelectedToWhitelist()" disabled>
-                    <i class="bi bi-check-circle-fill"></i> Whitelist
-                    <span class="badge bg-dark" id="whitelistBadge">0</span>
+                <button type="button" class="sticky-action-btn whitelist" id="stickyWhitelistBtn" onclick="addSelectedToWhitelist()" disabled>
+                    <i class="bi bi-check-circle-fill"></i>
+                    <span>Whitelist</span>
+                    <span class="action-badge" id="whitelistBadge">0</span>
                 </button>
-                <button type="button" class="btn btn-dark btn-lg" id="stickyPurchaseBtn" onclick="createPlacement()" disabled>
-                    <i class="bi bi-cart-check-fill"></i> Купить
-                    <span class="badge bg-light text-dark" id="purchaseBadge">0</span>
-                    <span class="badge bg-light text-dark ms-1" id="purchaseTotalBadge">$0.00</span>
+                <button type="button" class="sticky-action-btn purchase" id="stickyPurchaseBtn" onclick="createPlacement()" disabled>
+                    <i class="bi bi-cart-check-fill"></i>
+                    <span>Купить</span>
+                    <span class="action-badge" id="purchaseBadge">0</span>
+                    <span class="action-badge" id="purchaseTotalBadge">$0.00</span>
                 </button>
-                <button type="button" class="btn btn-outline-dark btn-lg" id="stickyBlacklistBtn" onclick="addSelectedToBlacklist()" disabled>
-                    <i class="bi bi-x-circle-fill"></i> Blacklist
-                    <span class="badge bg-dark" id="blacklistBadge">0</span>
+                <button type="button" class="sticky-action-btn blacklist" id="stickyBlacklistBtn" onclick="addSelectedToBlacklist()" disabled>
+                    <i class="bi bi-x-circle-fill"></i>
+                    <span>Blacklist</span>
+                    <span class="action-badge" id="blacklistBadge">0</span>
                 </button>
-            </div>
-        </div>
-
-            <!-- Whitelist/Blacklist Actions -->
-            <div class="row mt-4" id="listActionsDiv" style="display: none;">
-                <div class="col-12">
-                    <div class="card border">
-                        <div class="card-header bg-light border-bottom">
-                            <span><i class="bi bi-gear"></i> Управление списками</span>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <!-- Whitelist Section -->
-                                <div class="col-md-6 mb-3 mb-md-0">
-                                    <div class="d-flex align-items-center mb-2">
-                                        <i class="bi bi-check-circle text-secondary me-2"></i>
-                                        <strong>Whitelist</strong>
-                                        <span class="badge bg-secondary ms-2" id="whitelistTotal">0</span>
-                                    </div>
-                                    <div class="d-flex gap-2 flex-wrap">
-                                        <button type="button" class="btn btn-outline-dark btn-sm" id="addToWhitelistBtn" onclick="addSelectedToWhitelist()" disabled>
-                                            <i class="bi bi-plus"></i> Добавить (<span id="whitelistCount">0</span>)
-                                        </button>
-                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="importWhitelist()">
-                                            <i class="bi bi-upload"></i> Импорт
-                                        </button>
-                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleWhitelistView()">
-                                            <i class="bi bi-eye"></i> Показать
-                                        </button>
-                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearWhitelist()">
-                                            <i class="bi bi-trash"></i> Очистить
-                                        </button>
-                                    </div>
-                                </div>
-                                <!-- Blacklist Section -->
-                                <div class="col-md-6">
-                                    <div class="d-flex align-items-center mb-2">
-                                        <i class="bi bi-x-circle text-secondary me-2"></i>
-                                        <strong>Blacklist</strong>
-                                        <span class="badge bg-secondary ms-2" id="blacklistTotal">0</span>
-                                    </div>
-                                    <div class="d-flex gap-2 flex-wrap">
-                                        <button type="button" class="btn btn-outline-dark btn-sm" id="addToBlacklistBtn" onclick="addSelectedToBlacklist()" disabled>
-                                            <i class="bi bi-plus"></i> Добавить (<span id="blacklistCount">0</span>)
-                                        </button>
-                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="importBlacklist()">
-                                            <i class="bi bi-upload"></i> Импорт
-                                        </button>
-                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleBlacklistView()">
-                                            <i class="bi bi-eye"></i> Показать
-                                        </button>
-                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearBlacklist()">
-                                            <i class="bi bi-trash"></i> Очистить
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
 
-    <!-- Import List Modal -->
+    <!-- Import List Modal (React reference design) -->
     <div class="modal fade" id="importListModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="importListModalTitle">Import Domains</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-header whitelist-header" id="importModalHeader">
+                    <div class="modal-header-content">
+                        <div class="modal-title-wrapper">
+                            <i class="bi bi-check-circle-fill" id="importModalIcon"></i>
+                            <h5 class="modal-title" id="importListModalTitle">Import Whitelist Domains</h5>
+                        </div>
+                        <button type="button" class="modal-close-btn" data-bs-dismiss="modal">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted">Enter domains (one per line). Format: <code>site.com</code> or <code>https://site.com</code></p>
-                    <textarea class="form-control" id="importDomainsText" rows="10" placeholder="example.com&#10;https://another-site.com&#10;third-site.org"></textarea>
-                    <div class="mt-2">
-                        <small class="text-muted">Only domains that exist in the system will be added.</small>
+                    <p class="import-description">
+                        Enter domains (one per line). Format: <code>site.com</code> or <code>https://site.com</code>
+                    </p>
+                    <textarea class="import-textarea" id="importDomainsText" placeholder="example.com&#10;https://another-site.com&#10;third-site.org"></textarea>
+                    <div class="import-info-block">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <p>Only domains that exist in the system will be added.</p>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="processImportedDomains()">Import</button>
+                    <button type="button" class="btn-modal-cancel" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn-modal-import whitelist-btn" id="importModalBtn" onclick="processImportedDomains()">Import</button>
                 </div>
             </div>
         </div>
@@ -471,7 +1383,9 @@
         SidebarNav.init({
             activePage: 'purchase',
             pageTitle: 'Покупка ссылок',
-            pageSubtitle: 'Выберите сайты для размещения'
+            pageSubtitle: 'Выберите сайты для размещения',
+            pageIcon: 'cart-check-fill',
+            pageIconGradient: 'gradient-purple-pink'
         });
 
         let projects = [];
@@ -498,6 +1412,8 @@
         let importListModal;
         let hasAvailableContent = false; // Whether project has links/articles to purchase
         let userPricing = null; // Pricing data with user's discount
+        let currentSortColumn = null; // Current sort column (dr, da, tf, cf, etc.)
+        let currentSortDirection = 'desc'; // Sort direction: 'asc' or 'desc'
 
         /**
          * Mask URL for premium sites (DR >= 20 OR DA >= 30)
@@ -540,6 +1456,66 @@
             return name.slice(0, 4) + '***' + name.slice(-2) + '.' + domain;
         }
 
+        /**
+         * Get metric color class based on value thresholds
+         * High values (>=50) = green, Medium (>=20) = blue, Low (<20) = gray
+         */
+        function getMetricColorClass(value, isRating = true) {
+            if (!isRating) return 'metric-gray';
+            if (value >= 50) return 'metric-green';
+            if (value >= 20) return 'metric-blue';
+            return 'metric-gray';
+        }
+
+        /**
+         * Sort sites table by SEO metric column
+         * Toggles between ascending and descending order
+         */
+        function sortByColumn(column) {
+            // Toggle direction if same column, otherwise default to desc
+            if (currentSortColumn === column) {
+                currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSortColumn = column;
+                currentSortDirection = 'desc'; // High values first by default
+            }
+
+            // Sort filteredSites array
+            filteredSites.sort((a, b) => {
+                const aVal = parseFloat(a[column]) || 0;
+                const bVal = parseFloat(b[column]) || 0;
+
+                if (currentSortDirection === 'asc') {
+                    return aVal - bVal;
+                } else {
+                    return bVal - aVal;
+                }
+            });
+
+            // Update header icons
+            document.querySelectorAll('.sortable-th').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+                if (th.dataset.sort === column) {
+                    th.classList.add(currentSortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+                }
+            });
+
+            // Reset to first page and re-render
+            currentPage = 1;
+            renderSitesTable();
+        }
+
+        /**
+         * Reset sort state when loading new sites
+         */
+        function resetSort() {
+            currentSortColumn = null;
+            currentSortDirection = 'desc';
+            document.querySelectorAll('.sortable-th').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
             progressModal = new bootstrap.Modal(document.getElementById('progressModal'));
             importListModal = new bootstrap.Modal(document.getElementById('importListModal'));
@@ -547,15 +1523,6 @@
             document.getElementById('projectSelect').addEventListener('change', onProjectSelectedNew);
             document.getElementById('typeLinks').addEventListener('change', onContentTypeSelected);
             document.getElementById('typeArticles').addEventListener('change', onContentTypeSelected);
-
-            // Add event listeners for sites per page radio buttons
-            document.querySelectorAll('input[name="sitesPerPage"]').forEach(radio => {
-                radio.addEventListener('change', (e) => {
-                    sitesPerPage = parseInt(e.target.value);
-                    currentPage = 1; // Reset to first page
-                    renderSitesTable(); // Re-render with new page size
-                });
-            });
 
             // Add event listener for hide already purchased checkbox
             document.getElementById('hideAlreadyPurchasedCheckbox').addEventListener('change', async (e) => {
@@ -594,7 +1561,28 @@
 
             // Add event listener for distribution period slider (input event for real-time update)
             document.getElementById('distributionPeriod').addEventListener('input', (e) => {
-                document.getElementById('selectedDays').textContent = e.target.value;
+                const value = parseInt(e.target.value);
+                document.getElementById('selectedDays').textContent = value;
+
+                // Update zone cards - highlight active zone based on value
+                const zoneFast = document.getElementById('zoneFast');
+                const zoneMedium = document.getElementById('zoneMedium');
+                const zoneSlow = document.getElementById('zoneSlow');
+
+                // Remove active class from all zones
+                zoneFast.classList.remove('active');
+                zoneMedium.classList.remove('active');
+                zoneSlow.classList.remove('active');
+
+                // Add active class to current zone
+                if (value <= 30) {
+                    zoneFast.classList.add('active');
+                } else if (value <= 60) {
+                    zoneMedium.classList.add('active');
+                } else {
+                    zoneSlow.classList.add('active');
+                }
+
                 updateDistributionPreview();
             });
 
@@ -867,11 +1855,14 @@
                 // Reset assignments and round-robin index
                 siteAssignments = {};
                 nextContentIndex = 0;
+                resetSort(); // Reset sort state when loading new sites
 
                 // Hide sticky action bar on project/type change
                 const actionBar = document.getElementById('stickyActionBar');
-                actionBar.classList.remove('show');
-                document.body.classList.remove('sticky-bar-active');
+                if (actionBar) {
+                    actionBar.classList.remove('show');
+                    document.body.classList.remove('sticky-bar-active');
+                }
 
                 // Reset to first page and render
                 currentPage = 1;
@@ -891,11 +1882,14 @@
             updateActiveFiltersInfo();
 
             if (filteredSites.length === 0) {
-                document.getElementById('sitesTableBody').innerHTML = `
-                    <tr><td colspan="18" class="text-center text-warning">
-                        No sites match current filters. Try clearing whitelist/blacklist.
-                    </td></tr>
-                `;
+                const tbody = document.getElementById('sitesTableBody');
+                if (tbody) {
+                    tbody.innerHTML = `
+                        <tr><td colspan="18" class="text-center text-warning">
+                            No sites match current filters. Try clearing whitelist/blacklist.
+                        </td></tr>
+                    `;
+                }
                 return;
             }
 
@@ -910,8 +1904,10 @@
             const pageSites = filteredSites.slice(startIndex, endIndex);
 
             // Update sites count info
-            document.getElementById('sitesCountInfo').textContent =
-                `Showing ${startIndex + 1}-${endIndex} of ${totalSites} sites`;
+            const sitesCountEl = document.getElementById('sitesCountInfo');
+            if (sitesCountEl) {
+                sitesCountEl.textContent = `Showing ${startIndex + 1}-${endIndex} of ${totalSites} sites`;
+            }
 
             // Build dropdown options for available content with usage counters
             // FILTER OUT EXHAUSTED CONTENT - only show items with usage_count < usage_limit
@@ -941,6 +1937,7 @@
 
             // Render table rows for current page
             const tbody = document.getElementById('sitesTableBody');
+            if (!tbody) return; // Element not found, exit early
             tbody.innerHTML = pageSites.map(site => {
                 const dropdownHtml = site.isDisabled
                     ? '-'
@@ -1045,15 +2042,15 @@
                             ${escapeHtml(maskUrl(cleanUrl, drValue, daValue))}
                         </td>
                         <td id="assigned_${site.id}">${dropdownHtml}</td>
-                        <td class="${drClass} text-center">${drValue}</td>
-                        <td class="${daClass} text-center">${daValue}</td>
-                        <td class="${tfClass} text-center">${tfValue}</td>
-                        <td class="${cfClass} text-center">${cfValue}</td>
-                        <td class="text-muted text-center">${refDomainsValue}</td>
-                        <td class="text-muted text-center">${rdMainValue}</td>
-                        <td class="text-muted text-center">${normValue}</td>
-                        <td class="text-muted text-center">${keywordsValue}</td>
-                        <td class="text-muted text-center">${trafficValue}</td>
+                        <td class="seo-metric-td text-center ${getMetricColorClass(drValue)}">${drValue}</td>
+                        <td class="seo-metric-td text-center ${getMetricColorClass(daValue)}">${daValue}</td>
+                        <td class="seo-metric-td text-center ${getMetricColorClass(tfValue)}">${tfValue}</td>
+                        <td class="seo-metric-td text-center ${getMetricColorClass(cfValue)}">${cfValue}</td>
+                        <td class="seo-metric-td text-center metric-gray">${refDomainsValue}</td>
+                        <td class="seo-metric-td text-center metric-gray">${rdMainValue}</td>
+                        <td class="seo-metric-td text-center metric-gray">${normValue}</td>
+                        <td class="seo-metric-td text-center metric-gray">${keywordsValue}</td>
+                        <td class="seo-metric-td text-center metric-gray">${trafficValue}</td>
                         <td class="text-muted text-center">${geoValue}</td>
                         <td class="text-center">${siteTypeBadge}</td>
                         <td class="${slotsClass} text-nowrap text-center"><small>${slotsDisplay}</small></td>
@@ -1078,23 +2075,32 @@
             const paginationDiv = document.getElementById('paginationControls');
             const bottomPaginationNav = document.getElementById('bottomPaginationNav');
             const bottomPaginationDiv = document.getElementById('bottomPaginationControls');
+            const bottomPaginationInfo = document.getElementById('bottomPaginationInfo');
 
             if (totalPages <= 1) {
-                paginationDiv.innerHTML = '';
-                bottomPaginationNav.style.display = 'none';
+                if (paginationDiv) paginationDiv.innerHTML = '';
+                if (bottomPaginationNav) bottomPaginationNav.style.display = 'none';
                 return;
             }
 
             // Show bottom pagination
-            bottomPaginationNav.style.display = 'block';
+            if (bottomPaginationNav) bottomPaginationNav.style.display = 'flex';
 
-            let paginationHTML = '<nav><ul class="pagination pagination-sm mb-0">';
+            // Update info text
+            const startIndex = (currentPage - 1) * sitesPerPage + 1;
+            const endIndex = Math.min(currentPage * sitesPerPage, filteredSites.length);
+            if (bottomPaginationInfo) {
+                bottomPaginationInfo.textContent = `Показано ${startIndex}–${endIndex} из ${filteredSites.length}`;
+            }
+
+            // Build pagination buttons for new format
+            let paginationHTML = '';
 
             // Previous button
             paginationHTML += `
-                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-                    <a class="page-link" href="#" onclick="changePage(${currentPage - 1}); return false;">Previous</a>
-                </li>
+                <button class="pagination-arrow" onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
+                    <i class="bi bi-chevron-left"></i>
+                </button>
             `;
 
             // Page numbers (show max 5 pages around current)
@@ -1106,40 +2112,40 @@
                 startPage = Math.max(1, endPage - maxVisible + 1);
             }
 
+            paginationHTML += '<div id="pageNumbers">';
+
             if (startPage > 1) {
-                paginationHTML += `<li class="page-item"><a class="page-link" href="#" onclick="changePage(1); return false;">1</a></li>`;
+                paginationHTML += `<button class="pagination-btn" onclick="changePage(1)">1</button>`;
                 if (startPage > 2) {
-                    paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                    paginationHTML += `<span style="color: #9ca3af;">...</span>`;
                 }
             }
 
             for (let i = startPage; i <= endPage; i++) {
                 paginationHTML += `
-                    <li class="page-item ${i === currentPage ? 'active' : ''}">
-                        <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
-                    </li>
+                    <button class="pagination-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>
                 `;
             }
 
             if (endPage < totalPages) {
                 if (endPage < totalPages - 1) {
-                    paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                    paginationHTML += `<span style="color: #9ca3af;">...</span>`;
                 }
-                paginationHTML += `<li class="page-item"><a class="page-link" href="#" onclick="changePage(${totalPages}); return false;">${totalPages}</a></li>`;
+                paginationHTML += `<button class="pagination-btn" onclick="changePage(${totalPages})">${totalPages}</button>`;
             }
+
+            paginationHTML += '</div>';
 
             // Next button
             paginationHTML += `
-                <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
-                    <a class="page-link" href="#" onclick="changePage(${currentPage + 1}); return false;">Next</a>
-                </li>
+                <button class="pagination-arrow" onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>
+                    <i class="bi bi-chevron-right"></i>
+                </button>
             `;
 
-            paginationHTML += '</ul></nav>';
-
-            // Set both paginations to the same HTML
-            paginationDiv.innerHTML = paginationHTML;
-            bottomPaginationDiv.innerHTML = paginationHTML.replace('<nav><ul class="pagination pagination-sm mb-0">', '<ul class="pagination pagination-sm mb-0">').replace('</ul></nav>', '</ul>');
+            // Set pagination in both places
+            if (paginationDiv) paginationDiv.innerHTML = paginationHTML;
+            if (bottomPaginationDiv) bottomPaginationDiv.innerHTML = paginationHTML;
         }
 
         function changePage(page) {
@@ -1147,6 +2153,13 @@
                 return;
             }
             currentPage = page;
+            renderSitesTable();
+        }
+
+        function changeBottomItemsPerPage(value) {
+            sitesPerPage = parseInt(value);
+            currentPage = 1;
+
             renderSitesTable();
         }
 
@@ -1266,11 +2279,11 @@
 
             if (selectedCount > 0) {
                 // Show sticky bar and add body padding
-                actionBar.classList.add('show');
+                if (actionBar) actionBar.classList.add('show');
                 document.body.classList.add('sticky-bar-active');
 
                 // Show bottom purchase button
-                bottomPurchaseDiv.style.display = 'block';
+                if (bottomPurchaseDiv) bottomPurchaseDiv.style.display = 'block';
 
                 // Calculate total price - check each site's ownership for pricing
                 const currentUser = getCurrentUser();
@@ -1290,38 +2303,38 @@
                 });
 
                 // Update all badges
-                purchaseBadge.textContent = selectedCount;
-                whitelistBadge.textContent = selectedCount;
-                blacklistBadge.textContent = selectedCount;
-                bottomPurchaseBadge.textContent = selectedCount;
+                if (purchaseBadge) purchaseBadge.textContent = selectedCount;
+                if (whitelistBadge) whitelistBadge.textContent = selectedCount;
+                if (blacklistBadge) blacklistBadge.textContent = selectedCount;
+                if (bottomPurchaseBadge) bottomPurchaseBadge.textContent = selectedCount;
 
                 // Update total price badges - с 2 десятичными знаками
-                purchaseTotalBadge.textContent = `$${totalPrice.toFixed(2)}`;
-                bottomPurchaseTotalBadge.textContent = `$${totalPrice.toFixed(2)}`;
+                if (purchaseTotalBadge) purchaseTotalBadge.textContent = `$${totalPrice.toFixed(2)}`;
+                if (bottomPurchaseTotalBadge) bottomPurchaseTotalBadge.textContent = `$${totalPrice.toFixed(2)}`;
 
                 // Enable/disable buttons based on content assignment AND project content availability
                 const isEnabled = allHaveContent && hasAvailableContent;
-                purchaseBtn.disabled = !isEnabled;
-                bottomPurchaseBtn.disabled = !isEnabled;
-                whitelistBtn.disabled = false;
-                blacklistBtn.disabled = false;
+                if (purchaseBtn) purchaseBtn.disabled = !isEnabled;
+                if (bottomPurchaseBtn) bottomPurchaseBtn.disabled = !isEnabled;
+                if (whitelistBtn) whitelistBtn.disabled = false;
+                if (blacklistBtn) blacklistBtn.disabled = false;
             } else {
                 // Hide sticky bar and remove body padding
-                actionBar.classList.remove('show');
+                if (actionBar) actionBar.classList.remove('show');
                 document.body.classList.remove('sticky-bar-active');
 
                 // Hide bottom purchase button
-                bottomPurchaseDiv.style.display = 'none';
+                if (bottomPurchaseDiv) bottomPurchaseDiv.style.display = 'none';
 
                 // Reset buttons
-                purchaseBtn.disabled = true;
-                bottomPurchaseBtn.disabled = true;
-                whitelistBtn.disabled = true;
-                blacklistBtn.disabled = true;
+                if (purchaseBtn) purchaseBtn.disabled = true;
+                if (bottomPurchaseBtn) bottomPurchaseBtn.disabled = true;
+                if (whitelistBtn) whitelistBtn.disabled = true;
+                if (blacklistBtn) blacklistBtn.disabled = true;
 
                 // Reset total price badges
-                purchaseTotalBadge.textContent = '$0.00';
-                bottomPurchaseTotalBadge.textContent = '$0.00';
+                if (purchaseTotalBadge) purchaseTotalBadge.textContent = '$0.00';
+                if (bottomPurchaseTotalBadge) bottomPurchaseTotalBadge.textContent = '$0.00';
             }
         }
 
@@ -1806,6 +2819,16 @@
 
         function importWhitelist() {
             currentImportTarget = 'whitelist';
+            // Update modal styling for whitelist
+            const header = document.getElementById('importModalHeader');
+            const icon = document.getElementById('importModalIcon');
+            const btn = document.getElementById('importModalBtn');
+            header.classList.remove('blacklist-header');
+            header.classList.add('whitelist-header');
+            icon.classList.remove('bi-x-circle-fill');
+            icon.classList.add('bi-check-circle-fill');
+            btn.classList.remove('blacklist-btn');
+            btn.classList.add('whitelist-btn');
             document.getElementById('importListModalTitle').textContent = 'Import Whitelist Domains';
             document.getElementById('importDomainsText').value = '';
             importListModal.show();
@@ -1813,6 +2836,16 @@
 
         function importBlacklist() {
             currentImportTarget = 'blacklist';
+            // Update modal styling for blacklist
+            const header = document.getElementById('importModalHeader');
+            const icon = document.getElementById('importModalIcon');
+            const btn = document.getElementById('importModalBtn');
+            header.classList.remove('whitelist-header');
+            header.classList.add('blacklist-header');
+            icon.classList.remove('bi-check-circle-fill');
+            icon.classList.add('bi-x-circle-fill');
+            btn.classList.remove('whitelist-btn');
+            btn.classList.add('blacklist-btn');
             document.getElementById('importListModalTitle').textContent = 'Import Blacklist Domains';
             document.getElementById('importDomainsText').value = '';
             importListModal.show();
@@ -1879,16 +2912,27 @@
             // Toggle filter activation (don't show/hide the list below)
             whitelistActive = !whitelistActive;
 
-            // Update button text
-            const btn = event.target.closest('button');
-            if (whitelistActive) {
-                btn.innerHTML = '<i class="bi bi-eye-slash"></i> Hide (' + whitelist.size + ')';
-                btn.classList.remove('btn-outline-success');
-                btn.classList.add('btn-success');
-            } else {
-                btn.innerHTML = '<i class="bi bi-eye"></i> Show (' + whitelist.size + ')';
-                btn.classList.remove('btn-success');
-                btn.classList.add('btn-outline-success');
+            // Toggle items container visibility
+            const container = document.getElementById('whitelistItems');
+            if (container) {
+                container.classList.toggle('show');
+                if (container.classList.contains('show')) {
+                    renderWhitelistView();
+                }
+            }
+
+            // Update button text (for old list block if still exists)
+            const btn = event?.target?.closest('button');
+            if (btn && btn.classList.contains('btn-outline-success') || btn?.classList.contains('btn-success')) {
+                if (whitelistActive) {
+                    btn.innerHTML = '<i class="bi bi-eye-slash"></i> Hide (' + whitelist.size + ')';
+                    btn.classList.remove('btn-outline-success');
+                    btn.classList.add('btn-success');
+                } else {
+                    btn.innerHTML = '<i class="bi bi-eye"></i> Show (' + whitelist.size + ')';
+                    btn.classList.remove('btn-success');
+                    btn.classList.add('btn-outline-success');
+                }
             }
 
             // Refresh sites table
@@ -1902,16 +2946,27 @@
             // Toggle filter activation (don't show/hide the list below)
             blacklistActive = !blacklistActive;
 
-            // Update button text
-            const btn = event.target.closest('button');
-            if (blacklistActive) {
-                btn.innerHTML = '<i class="bi bi-eye-slash"></i> Hide (' + blacklist.size + ')';
-                btn.classList.remove('btn-outline-danger');
-                btn.classList.add('btn-danger');
-            } else {
-                btn.innerHTML = '<i class="bi bi-eye"></i> Show (' + blacklist.size + ')';
-                btn.classList.remove('btn-danger');
-                btn.classList.add('btn-outline-danger');
+            // Toggle items container visibility
+            const container = document.getElementById('blacklistItems');
+            if (container) {
+                container.classList.toggle('show');
+                if (container.classList.contains('show')) {
+                    renderBlacklistView();
+                }
+            }
+
+            // Update button text (for old list block if still exists)
+            const btn = event?.target?.closest('button');
+            if (btn && btn.classList.contains('btn-outline-danger') || btn?.classList.contains('btn-danger')) {
+                if (blacklistActive) {
+                    btn.innerHTML = '<i class="bi bi-eye-slash"></i> Hide (' + blacklist.size + ')';
+                    btn.classList.remove('btn-outline-danger');
+                    btn.classList.add('btn-danger');
+                } else {
+                    btn.innerHTML = '<i class="bi bi-eye"></i> Show (' + blacklist.size + ')';
+                    btn.classList.remove('btn-danger');
+                    btn.classList.add('btn-outline-danger');
+                }
             }
 
             // Refresh sites table

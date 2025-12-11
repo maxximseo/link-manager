@@ -1428,6 +1428,59 @@ All 6 tests should pass when system is properly configured.
 - Database with migrations applied (including nullable api_key)
 - Admin user: username='admin', password='admin123'
 
+### Puppeteer Visual Testing (December 2025)
+
+**Status**: Active - installed as devDependency
+
+Puppeteer is used for automated visual testing of frontend pages. This allows Claude to verify UI styling changes before showing them to the user.
+
+**Installation**: Already included in `package.json` devDependencies
+```bash
+npm install puppeteer --save-dev
+```
+
+**Test Scripts Location**: `tests/visual/`
+
+**Available Visual Tests**:
+```bash
+# Screenshot placements page and verify styling
+node tests/visual/screenshot-placements.js
+```
+
+**Output**: Screenshots saved to `tests/visual/screenshots/`
+- `placements-full.png` - Full page screenshot
+- `placements-header-settings.png` - Settings block header
+- `placements-header-calendar.png` - Calendar block header
+- `placements-slider-section.png` - Distribution slider
+- `placements-zone-cards.png` - Zone cards (Быстро/Средне/Долго)
+
+**Test Configuration**:
+- Credentials: Uses admin account (maximator)
+- Viewport: 1920x1080
+- Headless mode: enabled
+
+**When to Run Visual Tests**:
+1. After CSS/styling changes
+2. After HTML structure changes
+3. Before finalizing UI updates
+4. When user reports visual discrepancies
+
+**Test Output Format**:
+```
+📸 Taking screenshot of Settings block header...
+   Saved: placements-header-settings.png
+   Computed styles:
+     - backgroundColor: rgb(249, 250, 251)  ✅ #f9fafb
+     - borderBottom: 2px solid rgb(229, 231, 235)  ✅ #e5e7eb
+     - padding: 16px 24px
+```
+
+**Adding New Visual Tests**:
+1. Create new script in `tests/visual/`
+2. Use existing pattern from `screenshot-placements.js`
+3. Save screenshots to `tests/visual/screenshots/`
+4. Log computed styles for verification
+
 ## Recent Critical Updates (November 2025)
 
 ### 1. API Key Made Nullable
