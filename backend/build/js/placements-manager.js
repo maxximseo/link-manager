@@ -118,10 +118,17 @@ async function loadBalance() {
 
 /**
  * Load active placements
+ * Loads placements for specific project if selected (from activeFilters.projectId)
  */
 async function loadActivePlacements() {
     try {
-        const response = await fetch('/api/placements?status=placed&limit=5000', {
+        // Build URL with project_id filter if selected
+        let url = '/api/placements?status=placed&limit=5000';
+        if (activeFilters.projectId) {
+            url += `&project_id=${activeFilters.projectId}`;
+        }
+
+        const response = await fetch(url, {
             headers: { 'Authorization': `Bearer ${getToken()}` }
         });
 
@@ -130,10 +137,10 @@ async function loadActivePlacements() {
         const result = await response.json();
         const placements = Array.isArray(result.data) ? result.data : result;
 
-        // Cache all placements
+        // Cache placements (already filtered by project on server if project_id was sent)
         allActivePlacements = placements.filter(p => p.status === 'placed');
 
-        // Apply filters and render
+        // Apply remaining filters (type, date) and render
         const filtered = applyPlacementFilters(allActivePlacements);
         renderActivePlacements(filtered);
 
