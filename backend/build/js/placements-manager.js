@@ -383,6 +383,7 @@ function renderScheduledPlacements(placements) {
 
 /**
  * Load history placements
+ * Loads placements for specific project if selected (from activeFilters.projectId)
  */
 async function loadHistoryPlacements(page = 1) {
     try {
@@ -392,6 +393,10 @@ async function loadHistoryPlacements(page = 1) {
         let url = `/api/placements?page=${page}&limit=5000`;
         if (type) url += `&type=${type}`;
         if (status) url += `&status=${status}`;
+        // Add project_id filter if selected
+        if (activeFilters.projectId) {
+            url += `&project_id=${activeFilters.projectId}`;
+        }
 
         const response = await fetch(url, {
             headers: { 'Authorization': `Bearer ${getToken()}` }
