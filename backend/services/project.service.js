@@ -250,17 +250,18 @@ const updateProjectLink = async (projectId, linkId, userId, linkData) => {
       return null;
     }
 
-    const { url, anchor_text, usage_limit } = linkData;
+    const { url, anchor_text, usage_limit, html_context } = linkData;
 
     const result = await query(
       `UPDATE project_links
        SET url = COALESCE($1, url),
            anchor_text = COALESCE($2, anchor_text),
            usage_limit = COALESCE($3, usage_limit),
+           html_context = COALESCE($4, html_context),
            updated_at = NOW()
-       WHERE id = $4 AND project_id = $5
+       WHERE id = $5 AND project_id = $6
        RETURNING *`,
-      [url, anchor_text, usage_limit, linkId, projectId]
+      [url, anchor_text, usage_limit, html_context, linkId, projectId]
     );
 
     if (result.rows.length === 0) {
