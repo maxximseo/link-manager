@@ -581,6 +581,7 @@ const SidebarNav = {
    */
   updateNotificationDisplay(notifications) {
     const badge = document.getElementById('notificationBadge');
+    const headerCount = document.getElementById('notificationHeaderCount');
     const list = document.getElementById('notificationList');
 
     // Show/hide notification badge with count
@@ -591,6 +592,13 @@ const SidebarNav = {
       } else {
         badge.style.display = 'none';
       }
+    }
+
+    // Update header count text
+    if (headerCount) {
+      headerCount.textContent = this.unreadCount > 0
+        ? `${this.unreadCount} непрочитанных`
+        : 'Все прочитано';
     }
 
     // Render notification list
@@ -604,7 +612,7 @@ const SidebarNav = {
         `;
       } else {
         list.innerHTML = notifications
-          .slice(0, 5)
+          .slice(0, 10)
           .map((n) => this.renderNotificationCard(n))
           .join('');
       }
