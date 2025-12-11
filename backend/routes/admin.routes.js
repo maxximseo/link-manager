@@ -663,8 +663,8 @@ router.post('/bulk-update-placement-status', async (req, res) => {
     const result = await query(
       `
       UPDATE placements
-      SET status = $1,
-          published_at = CASE WHEN $1 = 'placed' AND published_at IS NULL THEN NOW() ELSE published_at END,
+      SET status = $1::text,
+          published_at = CASE WHEN $1::text = 'placed' AND published_at IS NULL THEN NOW() ELSE published_at END,
           updated_at = NOW()
       WHERE id = ANY($2::int[])
       RETURNING id
