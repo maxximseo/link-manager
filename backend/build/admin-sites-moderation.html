@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Модерация сайтов - Link Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/sidebar.css">
+    <style>
+        .moderation-card {
+            border-left: 4px solid #0d6efd;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+        .moderation-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .moderation-card .card-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+        .user-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            background: #e9ecef;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+        .site-url {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #0d6efd;
+            text-decoration: none;
+        }
+        .site-url:hover {
+            text-decoration: underline;
+        }
+        .seo-metrics {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .seo-metric {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .seo-metric-label {
+            font-size: 0.75rem;
+            color: #6c757d;
+            text-transform: uppercase;
+        }
+        .seo-metric-value {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        .seo-metric-value.high { color: #198754; }
+        .seo-metric-value.medium { color: #0d6efd; }
+        .seo-metric-value.low { color: #6c757d; }
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #6c757d;
+        }
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        .reject-reason-input {
+            display: none;
+        }
+        .reject-reason-input.show {
+            display: block;
+        }
+        .meta-info {
+            font-size: 0.875rem;
+            color: #6c757d;
+        }
+        .type-badge {
+            font-size: 0.75rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1><i class="bi bi-shield-check text-primary"></i> Модерация сайтов</h1>
+                <p class="text-muted mb-0">
+                    На модерации: <span id="pendingCount" class="badge bg-warning">0</span> сайтов
+                </p>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <span class="badge bg-success" id="autoRefreshBadge">
+                    <i class="bi bi-arrow-repeat"></i> Авто: 30с
+                </span>
+                <button class="btn btn-primary" onclick="loadPendingSites()">
+                    <i class="bi bi-arrow-clockwise"></i> Обновить
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Загрузка...</span>
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="empty-state" style="display: none;">
+            <i class="bi bi-check2-all"></i>
+            <h3>Все сайты проверены!</h3>
+            <p>Нет сайтов, ожидающих модерации</p>
+        </div>
+
+        <!-- Pending Sites List -->
+        <div id="pendingSitesList"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/security.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/sidebar.js"></script>
+    <script>
+        let autoRefreshInterval = null;
+        const REFRESH_INTERVAL = 30000; // 30 seconds
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Check admin access
+            if (!isAdmin()) {
+                window.location.href = '/dashboard.html';
+                return;
+            }
+
+            // Initialize sidebar
+            SidebarNav.init({
+                activePage: 'admin-sites-moderation',
+                pageTitle: 'Модерация сайтов',
+                pageIcon: 'shield-check',
+                pageIconGradient: 'gradient-blue-indigo'
+            });
+
+            // Load pending sites
+            await loadPendingSites();
+
+            // Start auto-refresh
+            startAutoRefresh();
+        });
+
+        function startAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+            autoRefreshInterval = setInterval(loadPendingSites, REFRESH_INTERVAL);
+        }
+
+        async function loadPendingSites() {
+            const loadingState = document.getElementById('loadingState');
+            const emptyState = document.getElementById('emptyState');
+            const pendingSitesList = document.getElementById('pendingSitesList');
+            const pendingCount = document.getElementById('pendingCount');
+
+            loadingState.style.display = 'block';
+            emptyState.style.display = 'none';
+            pendingSitesList.innerHTML = '';
+
+            try {
+                const response = await fetch('/api/admin/sites/moderation', {
+                    headers: {
+                        'Authorization': `Bearer ${getToken()}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load pending sites');
+                }
+
+                const result = await response.json();
+                const sites = result.data || [];
+
+                loadingState.style.display = 'none';
+                pendingCount.textContent = sites.length;
+
+                if (sites.length === 0) {
+                    emptyState.style.display = 'block';
+                    return;
+                }
+
+                pendingSitesList.innerHTML = sites.map(site => renderSiteCard(site)).join('');
+            } catch (error) {
+                console.error('Error loading pending sites:', error);
+                loadingState.style.display = 'none';
+                pendingSitesList.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i> Ошибка загрузки: ${escapeHtml(error.message)}
+                    </div>
+                `;
+            }
+        }
+
+        function renderSiteCard(site) {
+            const siteType = site.site_type || 'wordpress';
+            const typeBadge = siteType === 'wordpress'
+                ? '<span class="badge bg-primary type-badge"><i class="bi bi-wordpress"></i> WordPress</span>'
+                : '<span class="badge bg-success type-badge"><i class="bi bi-filetype-php"></i> Static PHP</span>';
+
+            const drClass = site.dr >= 50 ? 'high' : site.dr >= 20 ? 'medium' : 'low';
+            const daClass = site.da >= 50 ? 'high' : site.da >= 20 ? 'medium' : 'low';
+
+            const createdAt = new Date(site.created_at).toLocaleString('ru-RU');
+
+            return `
+                <div class="card moderation-card" id="site-card-${site.id}">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <a href="${escapeHtml(site.site_url)}" target="_blank" class="site-url">
+                                <i class="bi bi-globe2"></i> ${escapeHtml(site.site_url.replace(/^https?:\/\//, ''))}
+                            </a>
+                            <span class="ms-2">${typeBadge}</span>
+                        </div>
+                        <span class="user-badge">
+                            <i class="bi bi-person"></i> ${escapeHtml(site.owner_username || 'Unknown')}
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <h6 class="text-muted mb-2">SEO метрики</h6>
+                                <div class="seo-metrics">
+                                    <div class="seo-metric">
+                                        <span class="seo-metric-label">DR</span>
+                                        <span class="seo-metric-value ${drClass}">${site.dr || 0}</span>
+                                    </div>
+                                    <div class="seo-metric">
+                                        <span class="seo-metric-label">DA</span>
+                                        <span class="seo-metric-value ${daClass}">${site.da || 0}</span>
+                                    </div>
+                                    <div class="seo-metric">
+                                        <span class="seo-metric-label">TF</span>
+                                        <span class="seo-metric-value">${site.tf || 0}</span>
+                                    </div>
+                                    <div class="seo-metric">
+                                        <span class="seo-metric-label">CF</span>
+                                        <span class="seo-metric-value">${site.cf || 0}</span>
+                                    </div>
+                                    <div class="seo-metric">
+                                        <span class="seo-metric-label">RD</span>
+                                        <span class="seo-metric-value">${site.ref_domains || 0}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-muted mb-2">Лимиты</h6>
+                                <p class="mb-1">
+                                    <i class="bi bi-link-45deg"></i> Links: ${site.max_links || 0}
+                                </p>
+                                ${siteType === 'wordpress' ? `
+                                <p class="mb-1">
+                                    <i class="bi bi-file-text"></i> Articles: ${site.max_articles || 0}
+                                </p>
+                                ` : ''}
+                            </div>
+                        </div>
+
+                        <p class="meta-info mb-3">
+                            <i class="bi bi-calendar3"></i> Добавлен: ${createdAt}
+                            ${site.geo ? `<span class="ms-2"><i class="bi bi-geo-alt"></i> ${escapeHtml(site.geo)}</span>` : ''}
+                        </p>
+
+                        <!-- Reject Reason Input -->
+                        <div class="reject-reason-input mb-3" id="reject-input-${site.id}">
+                            <input type="text" class="form-control" id="reject-reason-${site.id}"
+                                   placeholder="Причина отклонения (необязательно)">
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-success" onclick="approveSite(${site.id})">
+                                <i class="bi bi-check-lg"></i> Одобрить
+                            </button>
+                            <button class="btn btn-outline-danger" onclick="toggleRejectInput(${site.id})">
+                                <i class="bi bi-x-lg"></i> Отклонить
+                            </button>
+                            <button class="btn btn-danger" id="confirm-reject-${site.id}" style="display: none;"
+                                    onclick="rejectSite(${site.id})">
+                                <i class="bi bi-x-circle"></i> Подтвердить отклонение
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function toggleRejectInput(siteId) {
+            const input = document.getElementById(`reject-input-${siteId}`);
+            const confirmBtn = document.getElementById(`confirm-reject-${siteId}`);
+
+            if (input.classList.contains('show')) {
+                input.classList.remove('show');
+                confirmBtn.style.display = 'none';
+            } else {
+                input.classList.add('show');
+                confirmBtn.style.display = 'inline-block';
+                document.getElementById(`reject-reason-${siteId}`).focus();
+            }
+        }
+
+        async function approveSite(siteId) {
+            const card = document.getElementById(`site-card-${siteId}`);
+
+            try {
+                const response = await fetch(`/api/admin/sites/${siteId}/approve`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${getToken()}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.error || 'Failed to approve site');
+                }
+
+                // Animate card removal
+                card.style.opacity = '0';
+                card.style.transform = 'translateX(100px)';
+
+                setTimeout(() => {
+                    card.remove();
+                    updatePendingCount(-1);
+                    checkEmptyState();
+                }, 300);
+
+                showNotification('Сайт одобрен', 'success');
+            } catch (error) {
+                console.error('Error approving site:', error);
+                showNotification('Ошибка: ' + error.message, 'error');
+            }
+        }
+
+        async function rejectSite(siteId) {
+            const card = document.getElementById(`site-card-${siteId}`);
+            const reason = document.getElementById(`reject-reason-${siteId}`).value;
+
+            try {
+                const response = await fetch(`/api/admin/sites/${siteId}/reject`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${getToken()}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ reason })
+                });
+
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.error || 'Failed to reject site');
+                }
+
+                // Animate card removal
+                card.style.opacity = '0';
+                card.style.transform = 'translateX(-100px)';
+
+                setTimeout(() => {
+                    card.remove();
+                    updatePendingCount(-1);
+                    checkEmptyState();
+                }, 300);
+
+                showNotification('Сайт отклонён', 'warning');
+            } catch (error) {
+                console.error('Error rejecting site:', error);
+                showNotification('Ошибка: ' + error.message, 'error');
+            }
+        }
+
+        function updatePendingCount(delta) {
+            const countEl = document.getElementById('pendingCount');
+            const current = parseInt(countEl.textContent) || 0;
+            countEl.textContent = Math.max(0, current + delta);
+        }
+
+        function checkEmptyState() {
+            const pendingSitesList = document.getElementById('pendingSitesList');
+            const emptyState = document.getElementById('emptyState');
+
+            if (pendingSitesList.children.length === 0) {
+                emptyState.style.display = 'block';
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            const alertClass = type === 'success' ? 'alert-success' :
+                              type === 'error' ? 'alert-danger' :
+                              type === 'warning' ? 'alert-warning' : 'alert-info';
+
+            const notification = document.createElement('div');
+            notification.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 400px;';
+            notification.innerHTML = `
+                ${escapeHtml(message)}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+    </script>
+</body>
+</html>

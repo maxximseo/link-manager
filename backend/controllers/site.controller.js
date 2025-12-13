@@ -155,7 +155,7 @@ const createSite = async (req, res) => {
           ? parseFloat(price_article)
           : null,
       userId: req.user.id
-    });
+    }, req.user.role); // Pass user role for auto-approve logic
 
     res.json({ data: site });
   } catch (error) {
@@ -295,7 +295,13 @@ const deleteSite = async (req, res) => {
     const result = await siteService.deleteSite(siteId, userId);
 
     if (!result.deleted) {
-      return res.status(404).json({ error: result.error || 'Site not found' });
+      // Use 409 Conflict for active placements (can't delete), 404 for not found
+      const statusCode = result.reason === 'active_placements' ? 409 : 404;
+      return res.status(statusCode).json({
+        error: result.error || 'Site not found',
+        reason: result.reason,
+        activeCount: result.activeCount
+      });
     }
 
     // Return detailed refund information for frontend

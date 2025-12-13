@@ -36,6 +36,7 @@ const SidebarNav = {
     { id: 'admin-sites', label: 'Сайты', icon: 'bi-globe2', href: '/admin-site-params.html' },
     { id: 'admin-placements', label: 'Размещения', icon: 'bi-bookmark-star', href: '/admin-placements.html' },
     { id: 'admin-moderation', label: 'Модерация', icon: 'bi-check2-square', href: '/admin-moderation.html', badge: true },
+    { id: 'admin-sites-moderation', label: 'Модерация сайтов', icon: 'bi-shield-check', href: '/admin-sites-moderation.html' },
     { id: 'admin-withdrawals', label: 'Выводы', icon: 'bi-cash-stack', href: '/admin-referral-withdrawals.html' }
   ],
 

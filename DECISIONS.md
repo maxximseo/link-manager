@@ -700,6 +700,54 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 
 ---
 
+### ✅ Pass ALL Fields Through Controller-Service Stack
+
+When updating a record, ALL editable fields must be:
+1. Extracted in controller from `req.body`
+2. Passed to service function
+3. Included in SQL UPDATE with COALESCE
+
+```javascript
+// ✅ CORRECT - All fields passed through
+// Controller
+const { url, anchor_text, usage_limit, html_context } = req.body;
+await service.updateLink(id, { url, anchor_text, usage_limit, html_context });
+
+// Service
+const result = await query(`
+  UPDATE project_links
+  SET url = COALESCE($1, url),
+      anchor_text = COALESCE($2, anchor_text),
+      usage_limit = COALESCE($3, usage_limit),
+      html_context = COALESCE($4, html_context),
+      updated_at = NOW()
+  WHERE id = $5
+`, [url, anchor_text, usage_limit, html_context, id]);
+
+// ❌ WRONG - html_context not passed through
+const { url, anchor_text, usage_limit } = req.body;  // Missing html_context!
+await service.updateLink(id, { url, anchor_text, usage_limit });
+// Result: html_context silently not saved
+```
+
+**See**: [ADR-028](ADR.md#adr-028-complete-field-pass-through-in-controller-service-layer)
+
+---
+
+### ✅ Always Include updated_at in UPDATE Queries
+
+```javascript
+// ✅ CORRECT
+UPDATE table SET field = $1, updated_at = NOW() WHERE id = $2
+
+// ❌ WRONG
+UPDATE table SET field = $1 WHERE id = $2  // No audit trail
+```
+
+**See**: [ADR-029](ADR.md#adr-029-database-timestamp-columns-updated_at)
+
+---
+
 ## When in Doubt
 
 1. **Database operations** → Check [ADR-001](ADR.md#adr-001-no-orm---direct-sql-queries), [ADR-004](ADR.md#adr-004-transaction-wrapped-multi-step-operations)
@@ -724,5 +772,5 @@ When adding new patterns:
 4. Group by category (Database, API, Frontend, etc.)
 
 **Review**: Monthly during team sync
-**Last Review**: November 2025
-**Next Review**: December 2025
+**Last Review**: December 2025
+**Next Review**: January 2026

@@ -19,7 +19,7 @@ const getUserSites = async (userId, page = 0, limit = 0, recalculate = false) =>
 
     // Fetch sites data
     let sitesQuery =
-      'SELECT id, user_id, site_name, site_url, api_key, site_type, max_links, max_articles, used_links, used_articles, allow_articles, is_public, available_for_purchase, price_link, price_article, dr, da, ref_domains, rd_main, norm, tf, cf, keywords, traffic, geo, limits_changed_at, created_at FROM sites WHERE user_id = $1 ORDER BY created_at DESC';
+      'SELECT id, user_id, site_name, site_url, api_key, site_type, max_links, max_articles, used_links, used_articles, allow_articles, is_public, available_for_purchase, price_link, price_article, dr, da, ref_domains, rd_main, norm, tf, cf, keywords, traffic, geo, limits_changed_at, moderation_status, rejection_reason, created_at FROM sites WHERE user_id = $1 ORDER BY created_at DESC';
     const queryParams = [userId];
 
     if (usePagination) {
@@ -98,7 +98,8 @@ const getMarketplaceSites = async userId => {
 };
 
 // Create new site
-const createSite = async data => {
+// userRole parameter is optional - if 'admin', site gets auto-approved
+const createSite = async (data, userRole = null) => {
   try {
     const {
       site_url,
@@ -168,8 +169,12 @@ const createSite = async data => {
     const finalAvailableForPurchase =
       available_for_purchase !== undefined ? available_for_purchase : true; // Default to available
 
+    // Admin sites are auto-approved, others go to pending
+    const isAdmin = userRole === 'admin';
+    const finalModerationStatus = isAdmin ? 'approved' : 'pending';
+
     const result = await query(
-      'INSERT INTO sites (site_url, site_name, api_key, site_type, user_id, max_links, max_articles, used_links, used_articles, allow_articles, is_public, available_for_purchase, price_link, price_article) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *',
+      'INSERT INTO sites (site_url, site_name, api_key, site_type, user_id, max_links, max_articles, used_links, used_articles, allow_articles, is_public, available_for_purchase, price_link, price_article, moderation_status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *',
       [
         site_url,
         site_name,
@@ -184,7 +189,8 @@ const createSite = async data => {
         finalIsPublic,
         finalAvailableForPurchase,
         price_link !== undefined ? price_link : null,
-        price_article !== undefined ? price_article : null
+        price_article !== undefined ? price_article : null,
+        finalModerationStatus
       ]
     );
 
@@ -372,6 +378,35 @@ const deleteSite = async (siteId, userId) => {
     }
 
     const site = siteResult.rows[0];
+
+    // 1.5. Check for ACTIVE placements (status='placed' AND expires_at > NOW())
+    // Cannot delete site if there are active placements - buyers' links must be protected
+    const activePlacementsResult = await client.query(
+      `
+      SELECT COUNT(*) as count
+      FROM placements
+      WHERE site_id = $1
+        AND status = 'placed'
+        AND expires_at > NOW()
+    `,
+      [siteId]
+    );
+
+    const activeCount = parseInt(activePlacementsResult.rows[0].count, 10);
+    if (activeCount > 0) {
+      await client.query('ROLLBACK');
+      logger.info('Site deletion blocked due to active placements', {
+        siteId,
+        userId,
+        activeCount
+      });
+      return {
+        deleted: false,
+        reason: 'active_placements',
+        activeCount,
+        error: `Невозможно удалить сайт: ${activeCount} активных размещений. Дождитесь истечения срока или обратитесь к администратору.`
+      };
+    }
 
     // 2. Get all placements for this site with financial data
     const placementsResult = await client.query(
@@ -613,7 +648,7 @@ const recalculateSiteStats = async userId => {
 const getSiteById = async (siteId, userId) => {
   try {
     const result = await query(
-      'SELECT id, user_id, site_name, site_url, api_key, site_type, max_links, max_articles, used_links, used_articles, allow_articles, is_public, available_for_purchase, price_link, price_article, dr, da, ref_domains, rd_main, norm, tf, cf, keywords, traffic, geo, limits_changed_at, created_at FROM sites WHERE id = $1 AND user_id = $2',
+      'SELECT id, user_id, site_name, site_url, api_key, site_type, max_links, max_articles, used_links, used_articles, allow_articles, is_public, available_for_purchase, price_link, price_article, dr, da, ref_domains, rd_main, norm, tf, cf, keywords, traffic, geo, limits_changed_at, moderation_status, rejection_reason, created_at FROM sites WHERE id = $1 AND user_id = $2',
       [siteId, userId]
     );
 
@@ -965,6 +1000,100 @@ const bulkUpdateSiteParams = async (parameter, updates) => {
  * @param {string} parameter - Parameter name ('dr', etc.)
  * @returns {Array} - Array of sites with zero/null value
  */
+// ============================================================================
+// Site Moderation Methods
+// ============================================================================
+
+/**
+ * Get sites pending moderation (for admin panel)
+ */
+const getSitesForModeration = async () => {
+  try {
+    const result = await query(
+      `SELECT s.*, u.username as owner_username
+       FROM sites s
+       LEFT JOIN users u ON s.user_id = u.id
+       WHERE s.moderation_status = 'pending'
+       ORDER BY s.created_at DESC`
+    );
+    return result.rows;
+  } catch (error) {
+    logger.error('Get sites for moderation error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Approve site for public marketplace
+ */
+const approveSite = async (siteId) => {
+  try {
+    const result = await query(
+      `UPDATE sites
+       SET moderation_status = 'approved',
+           is_public = true,
+           rejection_reason = NULL
+       WHERE id = $1
+       RETURNING *`,
+      [siteId]
+    );
+
+    if (result.rows.length > 0) {
+      logger.info('Site approved', { siteId, siteName: result.rows[0].site_name });
+    }
+
+    return result.rows[0] || null;
+  } catch (error) {
+    logger.error('Approve site error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Reject site from public marketplace
+ */
+const rejectSite = async (siteId, reason = null) => {
+  try {
+    const result = await query(
+      `UPDATE sites
+       SET moderation_status = 'rejected',
+           is_public = false,
+           rejection_reason = $2
+       WHERE id = $1
+       RETURNING *`,
+      [siteId, reason]
+    );
+
+    if (result.rows.length > 0) {
+      logger.info('Site rejected', { siteId, siteName: result.rows[0].site_name, reason });
+    }
+
+    return result.rows[0] || null;
+  } catch (error) {
+    logger.error('Reject site error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get moderation statistics
+ */
+const getModerationStats = async () => {
+  try {
+    const result = await query(
+      `SELECT
+         COUNT(*) FILTER (WHERE moderation_status = 'pending') as pending_count,
+         COUNT(*) FILTER (WHERE moderation_status = 'approved') as approved_count,
+         COUNT(*) FILTER (WHERE moderation_status = 'rejected') as rejected_count
+       FROM sites`
+    );
+    return result.rows[0];
+  } catch (error) {
+    logger.error('Get moderation stats error:', error);
+    throw error;
+  }
+};
+
 const getSitesWithZeroParam = async parameter => {
   const allowedParams = [
     'dr',
@@ -1044,5 +1173,10 @@ module.exports = {
   deleteToken,
   // Bulk update methods
   bulkUpdateSiteParams,
-  getSitesWithZeroParam
+  getSitesWithZeroParam,
+  // Site moderation methods
+  getSitesForModeration,
+  approveSite,
+  rejectSite,
+  getModerationStats
 };

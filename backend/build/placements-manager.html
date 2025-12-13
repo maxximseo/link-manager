@@ -686,13 +686,7 @@
 <body>
     <!-- Content will be wrapped by sidebar.js -->
 
-    <div class="container-fluid mt-4 px-4">
-        <!-- Page Header with subtitle from reference -->
-        <div class="mb-4">
-            <h4 class="fw-semibold mb-1">Мои ссылки</h4>
-            <p class="text-muted mb-0" style="font-size: 14px;">Управление и мониторинг всех ваших бэклинков</p>
-        </div>
-
+    <div class="container-fluid">
         <!-- Main Card -->
         <div class="links-card">
             <!-- Tabs -->
@@ -1071,7 +1065,9 @@
         SidebarNav.init({
             activePage: 'links',
             pageTitle: 'Мои ссылки',
-            pageSubtitle: 'Управление и мониторинг всех ваших бэклинков'
+            pageSubtitle: 'Управление и мониторинг всех ваших бэклинков',
+            pageIcon: 'link-45deg',
+            pageIconGradient: 'gradient-purple-pink'
         });
 
         requireAuth();
@@ -1333,7 +1329,7 @@
                             ${p.status === 'scheduled'
                                 ? `<div class="scheduled-date-cell">
                                      <div class="scheduled-date">${formatDate(p.scheduled_publish_date)}</div>
-                                     <div class="scheduled-label">будет размещено</div>
+                                     <div class="scheduled-label">разместится</div>
                                    </div>`
                                 : formatDate(p.placed_at || p.created_at)}
                         </td>
@@ -1447,7 +1443,7 @@
         function getStatusBadge(status) {
             const badges = {
                 'placed': '<span class="status-badge status-badge-live"><i class="bi bi-check-circle"></i> Активна</span>',
-                'scheduled': '<span class="status-badge status-badge-scheduled"><i class="bi bi-clock"></i> Запланирована</span>',
+                'scheduled': '<span class="status-badge status-badge-scheduled"><i class="bi bi-clock"></i> В плане</span>',
                 'expired': '<span class="status-badge status-badge-expired"><i class="bi bi-x-circle"></i> Истекла</span>',
                 'cancelled': '<span class="status-badge status-badge-expired"><i class="bi bi-x-circle"></i> Отменена</span>',
                 'failed': '<span class="status-badge status-badge-expired"><i class="bi bi-exclamation-circle"></i> Ошибка</span>'
