@@ -13,7 +13,7 @@
 <body>
     <!-- Content will be wrapped by sidebar.js -->
 
-    <div class="container mt-4">
+    <div class="container-fluid">
         <div class="row justify-content-center">
             <div class="col-md-8 col-lg-6">
                 <!-- Profile Info Card -->
@@ -118,7 +118,9 @@
         SidebarNav.init({
             activePage: 'profile',
             pageTitle: 'Профиль',
-            pageSubtitle: 'Настройки аккаунта'
+            pageSubtitle: 'Настройки аккаунта',
+            pageIcon: 'person-circle',
+            pageIconGradient: 'gradient-blue-indigo'
         });
 
         requireAuth();

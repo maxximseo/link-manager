@@ -603,6 +603,117 @@ router.post(
   referralController.rejectWithdrawal
 );
 
+// ==================== SITE MODERATION ENDPOINTS ====================
+
+/**
+ * GET /api/admin/sites/moderation
+ * Get all sites pending moderation
+ */
+router.get('/sites/moderation', async (req, res) => {
+  try {
+    const sites = await siteService.getSitesForModeration();
+
+    res.json({
+      success: true,
+      data: sites
+    });
+  } catch (error) {
+    logger.error('Failed to get sites for moderation', { error: error.message });
+    res.status(500).json({ error: 'Failed to get sites for moderation' });
+  }
+});
+
+/**
+ * GET /api/admin/sites/moderation/stats
+ * Get moderation statistics
+ */
+router.get('/sites/moderation/stats', async (req, res) => {
+  try {
+    const stats = await siteService.getModerationStats();
+
+    res.json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    logger.error('Failed to get moderation stats', { error: error.message });
+    res.status(500).json({ error: 'Failed to get moderation stats' });
+  }
+});
+
+/**
+ * POST /api/admin/sites/:id/approve
+ * Approve site for public marketplace
+ */
+router.post('/sites/:id/approve', async (req, res) => {
+  try {
+    const siteId = parseInt(req.params.id, 10);
+
+    if (isNaN(siteId)) {
+      return res.status(400).json({ error: 'Invalid site ID' });
+    }
+
+    const site = await siteService.approveSite(siteId);
+
+    if (!site) {
+      return res.status(404).json({ error: 'Site not found' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Site approved successfully',
+      data: site
+    });
+  } catch (error) {
+    logger.error('Failed to approve site', {
+      adminId: req.user.id,
+      siteId: req.params.id,
+      error: error.message
+    });
+    res.status(400).json({ error: error.message || 'Failed to approve site' });
+  }
+});
+
+/**
+ * POST /api/admin/sites/:id/reject
+ * Reject site from public marketplace
+ * Body: { reason: string } - optional rejection reason
+ */
+router.post(
+  '/sites/:id/reject',
+  [body('reason').optional().isString().trim().withMessage('Reason must be a string')],
+  validateRequest,
+  async (req, res) => {
+    try {
+      const siteId = parseInt(req.params.id, 10);
+      const { reason } = req.body;
+
+      if (isNaN(siteId)) {
+        return res.status(400).json({ error: 'Invalid site ID' });
+      }
+
+      const site = await siteService.rejectSite(siteId, reason);
+
+      if (!site) {
+        return res.status(404).json({ error: 'Site not found' });
+      }
+
+      res.json({
+        success: true,
+        message: 'Site rejected',
+        data: site
+      });
+    } catch (error) {
+      logger.error('Failed to reject site', {
+        adminId: req.user.id,
+        siteId: req.params.id,
+        error: error.message
+      });
+      res.status(400).json({ error: error.message || 'Failed to reject site' });
+    }
+  }
+);
+
 // ==================== SCHEDULED PLACEMENTS MANAGEMENT ====================
 
 /**

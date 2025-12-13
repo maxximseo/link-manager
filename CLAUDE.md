@@ -2124,21 +2124,43 @@ The following major architectural decisions govern this codebase:
     - Non-admin users can change max_links/max_articles once per 6 months
     - limits_changed_at column tracks last change
 
+25. **[ADR-025: Notification Mark-All-Read Fix](ADR.md#adr-025-notification-mark-all-read-fix)**
+    - Fixed HTTP method and endpoint URL
+    - Bootstrap dropdown auto-close configuration
+
+26. **[ADR-026: Local Credentials Management](ADR.md#adr-026-local-credentials-management)**
+    - All credentials in `.credentials.local`
+    - Never commit to version control
+
+27. **[ADR-027: Puppeteer Visual Testing Strategy](ADR.md#adr-027-puppeteer-visual-testing-strategy)**
+    - Automated UI verification
+    - Tests in `tests/visual/`
+
+28. **[ADR-028: Complete Field Pass-Through in Controller-Service Layer](ADR.md#adr-028-complete-field-pass-through-in-controller-service-layer)** ⚠️ CRITICAL
+    - All editable fields must be extracted in controller AND included in service SQL
+    - Fixed link edit bug where `html_context` was not saved
+
+29. **[ADR-029: Database Timestamp Columns (updated_at)](ADR.md#adr-029-database-timestamp-columns-updated_at)**
+    - All mutable tables must have `updated_at` column
+    - Migration: `run_updated_at_migration.js`
+
 ### When to Consult ADR
 
 **Before making these changes, read relevant ADRs**:
-- ✅ Adding new database tables or columns → ADR-001, ADR-004, ADR-007
+- ✅ Adding new database tables or columns → ADR-001, ADR-004, ADR-007, ADR-029
 - ✅ Changing authentication logic → ADR-002
 - ✅ Adding caching layer → ADR-003
 - ✅ Modifying frontend architecture → ADR-005, ADR-021
 - ✅ Adding new API endpoints → ADR-006, ADR-007
-- ✅ Database schema changes → ADR-001, ADR-008, ADR-014, ADR-024
+- ✅ Database schema changes → ADR-001, ADR-008, ADR-014, ADR-024, ADR-029
 - ✅ Performance optimization → ADR-003, ADR-010, ADR-015
 - ✅ Security improvements → ADR-007, ADR-011, ADR-020, ADR-023
 - ✅ Site public status changes → ADR-020
 - ✅ Site limits changes → ADR-024
 - ✅ URL masking/visibility → ADR-023
 - ✅ Code quality/linting → ADR-022
+- ✅ API controller/service field handling → ADR-028 ⚠️ CRITICAL
+- ✅ Visual testing → ADR-027
 
 **ADR Review Schedule**:
 - **Last Review**: December 2025

@@ -1,32 +1,27 @@
+#!/usr/bin/env node
+/**
+ * Import data to Supabase from export file
+ *
+ * Usage:
+ *   node scripts/import-to-supabase.js migration-data/export-TIMESTAMP.json
+ */
+
 const { Pool } = require('pg');
-const fs = require('fs').promises;
+const fs = require('fs');
 const path = require('path');
-
-console.log('===========================================');
-console.log('IMPORT DATA TO SUPABASE');
-console.log('===========================================\n');
-
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
-const SUPABASE_CONFIG = {
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT || 5432,
-  database: process.env.DB_NAME || 'postgres',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD,
-  ssl: { rejectUnauthorized: false }
-};
-
-const IMPORT_ORDER = [
+// Tables in dependency order (parents before children)
+const TABLES_ORDER = [
   'users',
   'discount_tiers',
   'projects',
   'sites',
   'project_links',
   'project_articles',
-  'transactions',
   'placements',
   'placement_content',
+  'transactions',
   'renewal_history',
   'referral_transactions',
   'referral_withdrawals',
@@ -35,112 +30,166 @@ const IMPORT_ORDER = [
   'registration_tokens'
 ];
 
-async function importData(exportFile) {
-  const pool = new Pool(SUPABASE_CONFIG);
+// Supabase connection config from .env
+const config = {
+  host: process.env.DB_HOST,
+  port: parseInt(process.env.DB_PORT || '5432'),
+  database: process.env.DB_NAME || 'postgres',
+  user: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASSWORD,
+  ssl: { rejectUnauthorized: false }
+};
+
+async function importData(inputFile) {
+  console.log('========================================');
+  console.log('IMPORT TO SUPABASE');
+  console.log('========================================\n');
+
+  if (!inputFile) {
+    console.error('Usage: node scripts/import-to-supabase.js <export-file.json>');
+    process.exit(1);
+  }
+
+  if (!fs.existsSync(inputFile)) {
+    console.error(`ERROR: File not found: ${inputFile}`);
+    process.exit(1);
+  }
+
+  if (!config.password) {
+    console.error('ERROR: DB_PASSWORD not set in .env');
+    process.exit(1);
+  }
+
+  console.log(`Target: ${config.host}`);
+  console.log(`Database: ${config.database}`);
+  console.log(`User: ${config.user}\n`);
+
+  // Read export file
+  console.log('Reading export file...');
+  const exportData = JSON.parse(fs.readFileSync(inputFile, 'utf8'));
+  console.log(`Source: ${exportData.source || 'unknown'}`);
+  console.log(`Export timestamp: ${exportData.timestamp}`);
+  console.log(`Tables: ${Object.keys(exportData.tables).length}`);
+  console.log(`Total records: ${exportData.metadata?.total_records || 'unknown'}\n`);
+
+  const pool = new Pool(config);
+  const startTime = Date.now();
+
+  const stats = {
+    imported: 0,
+    skipped: 0,
+    errors: 0,
+    byTable: {}
+  };
 
   try {
-    console.log('Reading export file...');
-    const data = JSON.parse(await fs.readFile(exportFile, 'utf-8'));
-    console.log('✅ Export file loaded\n');
+    console.log('Connecting to Supabase...');
+    const client = await pool.connect();
+    console.log('Connected!\n');
 
-    console.log('Connecting to Supabase database...');
-    await pool.query('SELECT 1');
-    console.log('✅ Connected successfully!\n');
+    // Start transaction
+    await client.query('BEGIN');
 
-    console.log('⚠️  WARNING: This will import data into Supabase');
-    console.log('Make sure you have backed up any existing data\n');
+    console.log('Importing tables...\n');
 
-    let totalImported = 0;
-    let totalSkipped = 0;
+    for (const tableName of TABLES_ORDER) {
+      const tableData = exportData.tables[tableName];
 
-    await pool.query('BEGIN');
-
-    for (const table of IMPORT_ORDER) {
-      const records = data[table] || [];
-
-      if (records.length === 0) {
-        console.log(`⏭️  Skipping ${table} (no data)`);
+      if (!tableData || tableData.length === 0) {
+        console.log(`  ${tableName}: Skipped (no data)`);
+        stats.byTable[tableName] = { imported: 0, skipped: 0 };
         continue;
       }
 
-      console.log(`📥 Importing ${records.length} records into ${table}...`);
+      stats.byTable[tableName] = { imported: 0, skipped: 0 };
 
-      try {
-        for (const record of records) {
-          const columns = Object.keys(record);
-          const values = Object.values(record);
-          const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
+      for (const row of tableData) {
+        try {
+          const columns = Object.keys(row);
+          const values = Object.values(row);
+          const placeholders = columns.map((_, i) => `$${i + 1}`).join(', ');
 
-          const insertQuery = `
-            INSERT INTO ${table} (${columns.join(', ')})
-            VALUES (${placeholders})
-            ON CONFLICT (id) DO NOTHING
-          `;
+          await client.query(
+            `INSERT INTO ${tableName} (${columns.join(', ')})
+             VALUES (${placeholders})
+             ON CONFLICT DO NOTHING`,
+            values
+          );
 
-          await pool.query(insertQuery, values);
+          stats.byTable[tableName].imported++;
+          stats.imported++;
+        } catch (err) {
+          if (err.code === '23505') {
+            // Duplicate key - skip
+            stats.byTable[tableName].skipped++;
+            stats.skipped++;
+          } else {
+            console.error(`    Error in ${tableName}: ${err.message}`);
+            stats.errors++;
+          }
         }
-
-        console.log(`   ✅ Imported ${records.length} records into ${table}`);
-        totalImported += records.length;
-
-      } catch (error) {
-        console.log(`   ⚠️  Error importing ${table}: ${error.message}`);
-        totalSkipped += records.length;
       }
+
+      const tableStats = stats.byTable[tableName];
+      const status = tableStats.skipped > 0 ? '⚠️' : '✅';
+      console.log(`  ${status} ${tableName}: ${tableStats.imported} imported, ${tableStats.skipped} skipped`);
     }
 
-    console.log('\n🔄 Updating sequences...');
-    for (const table of IMPORT_ORDER) {
+    // Update sequences
+    console.log('\nUpdating sequences...');
+    for (const tableName of TABLES_ORDER) {
       try {
-        await pool.query(`
-          SELECT setval(
-            pg_get_serial_sequence('${table}', 'id'),
-            COALESCE((SELECT MAX(id) FROM ${table}), 1),
-            true
-          )
+        await client.query(`
+          SELECT setval(pg_get_serial_sequence('${tableName}', 'id'),
+                        COALESCE((SELECT MAX(id) FROM ${tableName}), 1),
+                        true)
         `);
-        console.log(`   ✅ Updated sequence for ${table}`);
-      } catch (error) {
-        console.log(`   ⚠️  No sequence for ${table} (skipped)`);
+      } catch (err) {
+        // Table might not have id column or sequence
       }
     }
+    console.log('Sequences updated');
 
-    await pool.query('COMMIT');
+    // Commit transaction
+    await client.query('COMMIT');
+    client.release();
 
-    console.log(`\n===========================================`);
-    console.log(`✅ IMPORT COMPLETED`);
-    console.log(`===========================================`);
-    console.log(`Total records imported: ${totalImported}`);
-    console.log(`Total records skipped: ${totalSkipped}`);
-    console.log(`\n✅ Data successfully imported to Supabase!`);
-    console.log(`\nNext steps:`);
-    console.log(`1. Test your application: npm start`);
-    console.log(`2. Verify data in Supabase Dashboard`);
-    console.log(`3. Update WordPress plugins with new API endpoint`);
+    const duration = Date.now() - startTime;
+
+    console.log('\n========================================');
+    console.log('IMPORT COMPLETE');
+    console.log('========================================');
+    console.log(`Imported: ${stats.imported}`);
+    console.log(`Skipped (duplicates): ${stats.skipped}`);
+    console.log(`Errors: ${stats.errors}`);
+    console.log(`Duration: ${duration}ms`);
+    console.log('========================================\n');
+
+    if (stats.errors > 0) {
+      console.log('⚠️  Some errors occurred. Check logs above.');
+    } else {
+      console.log('✅ Import successful!');
+    }
+
+    console.log('\nNext: Test the application');
+    console.log('npm run dev');
 
   } catch (error) {
-    await pool.query('ROLLBACK');
-    console.error('❌ Import failed:', error.message);
-    console.error('\nTransaction rolled back. Database is unchanged.');
+    console.error('\nIMPORT FAILED:', error.message);
+
+    try {
+      const client = await pool.connect();
+      await client.query('ROLLBACK');
+      client.release();
+    } catch (e) {
+      // Ignore rollback errors
+    }
+
     process.exit(1);
   } finally {
     await pool.end();
   }
 }
 
-const exportFile = process.argv[2];
-
-if (!exportFile) {
-  console.error('❌ Error: Please provide export file path\n');
-  console.log('Usage:');
-  console.log('node scripts/import-to-supabase.js path/to/export-file.json\n');
-  process.exit(1);
-}
-
-if (!SUPABASE_CONFIG.password) {
-  console.error('❌ Error: DB_PASSWORD is not set in .env file\n');
-  console.log('Please set DB_PASSWORD in your .env file');
-  process.exit(1);
-}
-
-importData(exportFile);
+const inputFile = process.argv[2];
+importData(inputFile);

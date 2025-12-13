@@ -2050,6 +2050,179 @@ node tests/visual/test-notifications.js
 
 ---
 
+## ADR-028: Complete Field Pass-Through in Controller-Service Layer
+
+**Status**: ✅ ACTIVE
+**Date**: December 2025
+**Context**: Link edit functionality broke because `html_context` field was not being passed through the stack
+
+### Problem Statement
+
+When adding fields to database tables, all layers must be updated:
+1. **Frontend** - Form fields collect data
+2. **Controller** - Extract from `req.body`
+3. **Service** - Include in SQL query
+4. **Database** - Column must exist
+
+Missing ANY layer causes silent failures (data not saved but no error).
+
+### Decision
+
+**All optional fields must be explicitly extracted and passed through every layer**, even if they use `COALESCE` for partial updates.
+
+### Implementation Pattern
+
+**Controller Pattern** (always extract all editable fields):
+```javascript
+const updateProjectLink = async (req, res) => {
+  const { id: projectId, linkId } = req.params;
+  const userId = req.user.id;
+
+  // CRITICAL: Extract ALL fields that can be edited
+  const { url, anchor_text, usage_limit, html_context } = req.body;
+
+  const link = await projectService.updateProjectLink(projectId, linkId, userId, {
+    url,
+    anchor_text,
+    usage_limit,
+    html_context  // Must be included even if optional
+  });
+
+  res.json(link);
+};
+```
+
+**Service Pattern** (use COALESCE for all fields):
+```javascript
+const updateProjectLink = async (projectId, linkId, userId, linkData) => {
+  const { url, anchor_text, usage_limit, html_context } = linkData;
+
+  const result = await query(
+    `UPDATE project_links
+     SET url = COALESCE($1, url),
+         anchor_text = COALESCE($2, anchor_text),
+         usage_limit = COALESCE($3, usage_limit),
+         html_context = COALESCE($4, html_context),  -- Include ALL fields
+         updated_at = NOW()
+     WHERE id = $5 AND project_id = $6
+     RETURNING *`,
+    [url, anchor_text, usage_limit, html_context, linkId, projectId]
+  );
+
+  return result.rows[0];
+};
+```
+
+### Checklist for Adding New Fields
+
+When adding a new field to an entity:
+
+1. ☐ **Database**: Add column via migration
+2. ☐ **Service (CREATE)**: Include in INSERT query
+3. ☐ **Service (UPDATE)**: Include in UPDATE query with COALESCE
+4. ☐ **Controller (CREATE)**: Extract from `req.body`
+5. ☐ **Controller (UPDATE)**: Extract from `req.body`
+6. ☐ **Frontend**: Add form field
+7. ☐ **API Docs**: Update API_REFERENCE.md
+
+### Bug Fixed
+
+**Issue**: Link save not working after editing
+**Root Cause**: `html_context` was:
+- ✅ Saved in database
+- ✅ Displayed in frontend form
+- ❌ NOT extracted in controller
+- ❌ NOT included in service UPDATE
+
+**Fix**:
+- `backend/controllers/project.controller.js` line 252: Added `html_context` extraction
+- `backend/services/project.service.js` lines 253-264: Added `html_context` to UPDATE query
+
+### Consequences
+- ✅ All fields properly saved on edit
+- ✅ COALESCE pattern allows partial updates
+- ✅ `updated_at` automatically set on changes
+- ⚠️ Must remember to update ALL layers when adding fields
+
+### Testing
+
+```bash
+# Run visual test to verify
+node tests/visual/test-link-edit.js
+```
+
+---
+
+## ADR-029: Database Timestamp Columns (updated_at)
+
+**Status**: ✅ ACTIVE
+**Date**: December 2025
+**Context**: Many tables lacked `updated_at` tracking
+
+### Decision
+
+All mutable tables must have `updated_at TIMESTAMP` column for audit trail.
+
+### Tables Updated
+
+| Table | Fallback Column | Migration |
+|-------|-----------------|-----------|
+| `placements` | `published_at` | migrate_add_updated_at.sql |
+| `project_links` | `created_at` | migrate_add_updated_at.sql |
+| `project_articles` | `created_at` | migrate_add_updated_at.sql |
+| `registration_tokens` | `created_at` | migrate_add_updated_at.sql |
+
+### Migration Pattern
+
+```javascript
+// Check if column exists before adding
+const checkResult = await pool.query(`
+  SELECT column_name
+  FROM information_schema.columns
+  WHERE table_name = $1 AND column_name = 'updated_at'
+`, [tableName]);
+
+if (checkResult.rows.length === 0) {
+  // Add column with default
+  await pool.query(`
+    ALTER TABLE ${tableName}
+    ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  `);
+
+  // Backfill existing records
+  await pool.query(`
+    UPDATE ${tableName}
+    SET updated_at = COALESCE(${fallbackColumn}, NOW())
+    WHERE updated_at IS NULL
+  `);
+}
+```
+
+### Running Migration
+
+```bash
+# With SSL for DigitalOcean
+NODE_TLS_REJECT_UNAUTHORIZED=0 node database/run_updated_at_migration.js
+```
+
+### Service Pattern
+
+Always set `updated_at = NOW()` in UPDATE queries:
+```sql
+UPDATE table_name
+SET field = $1,
+    updated_at = NOW()
+WHERE id = $2
+```
+
+### Consequences
+- ✅ All modifications tracked with timestamp
+- ✅ Enables change auditing
+- ✅ Supports "last modified" display in UI
+- ⚠️ Requires migration on existing databases
+
+---
+
 ## Decision Review Process
 
 ADRs should be reviewed when:

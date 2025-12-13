@@ -13,23 +13,171 @@
         /* Custom styles for sites table */
         .table-responsive {
             overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         /* Card border styling */
         .card {
-            border: 1px solid #dee2e6;
-            border-radius: 0.375rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            overflow: hidden;
         }
 
-        /* Table1 стили теперь в modern-table.css */
-
-        /* Row background colors with transparency for better visibility */
-        .table1 tr.table-danger {
-            background-color: rgba(220, 38, 38, 0.08) !important;
+        /* === SEO Metrics columns - голубой фон как в placements-manager === */
+        .seo-metric-th,
+        .seo-metric-td {
+            background: #eff6ff !important;
         }
 
-        .table1 tr.table-success {
-            background-color: rgba(34, 197, 94, 0.08) !important;
+        .seo-metric-th {
+            color: #1d4ed8 !important;
+            font-weight: 600 !important;
+        }
+
+        /* Sites Table - стиль как на dashboard */
+        .sites-table {
+            width: 100%;
+            border-collapse: collapse;
+            /* Убрали table-layout: fixed чтобы колонки могли расширяться */
+        }
+
+        .sites-table thead {
+            background: #f9fafb;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .sites-table th {
+            padding: 12px 8px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 500;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .sites-table th:first-child {
+            padding-left: 16px;
+        }
+
+        .sites-table tbody tr {
+            border-bottom: 1px solid #f3f4f6;
+            transition: background 0.15s;
+        }
+
+        .sites-table tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        .sites-table td {
+            padding: 10px 8px;
+            font-size: 13px;
+            color: #374151;
+            vertical-align: middle;
+        }
+
+        .sites-table td:first-child {
+            padding-left: 16px;
+        }
+
+        /* Row background colors */
+        .sites-table tr.table-danger {
+            background-color: rgba(220, 38, 38, 0.06) !important;
+        }
+
+        .sites-table tr.table-success {
+            background-color: rgba(34, 197, 94, 0.06) !important;
+        }
+
+        /* Pagination - стиль dashboard */
+        .pagination-wrapper {
+            padding: 16px 24px;
+            border-top: 1px solid #e5e7eb;
+            background: #f9fafb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-radius: 0 0 16px 16px;
+        }
+
+        .pagination-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pagination-left span {
+            font-size: 14px;
+            color: #4b5563;
+        }
+
+        .pagination-left select {
+            padding: 6px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+        }
+
+        .pagination-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pagination-info {
+            font-size: 14px;
+            color: #4b5563;
+            margin-right: 16px;
+        }
+
+        .pagination-buttons {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pagination-btn {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            background: white;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .pagination-btn:hover:not(:disabled):not(.active) {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination-btn.active {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+
+        #pageNumbers {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         /* Progress bar custom styling */
@@ -64,6 +212,69 @@
             .table tbody td:nth-child(7) {
                 display: none;
             }
+        }
+
+        /* === Moderation Status Badges === */
+        .status-approved {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #198754;
+            font-size: 13px;
+        }
+        .status-approved i { color: #198754; }
+
+        .status-pending {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #ffc107;
+            font-size: 13px;
+        }
+        .status-pending i { color: #ffc107; }
+
+        .status-rejected {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #dc3545;
+            font-size: 13px;
+        }
+        .status-rejected i { color: #dc3545; }
+
+        /* === Action Buttons (Reference Style) === */
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+        .action-btn {
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        .action-edit {
+            background: #e7f1ff;
+            color: #0d6efd;
+        }
+        .action-edit:hover {
+            background: #0d6efd;
+            color: white;
+        }
+        .action-delete {
+            background: #ffebee;
+            color: #dc3545;
+        }
+        .action-delete:hover {
+            background: #dc3545;
+            color: white;
         }
 
         /* Inline editable price cells */
@@ -109,53 +320,370 @@
         .price-display {
             display: inline-block;
         }
+
+        /* Page Header with icon */
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .header-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+        }
+
+        .header-text h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0;
+            color: #111827;
+        }
+
+        .header-text .subtitle {
+            font-size: 14px;
+            color: #6b7280;
+            margin: 4px 0 0;
+        }
+
+        /* Stats Grid - Reference Design */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 20px 24px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            min-height: 120px;
+        }
+
+        .stat-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #6b7280;
+            font-weight: 400;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .stat-value {
+            font-size: 48px;
+            font-weight: 600;
+            color: #111827;
+            line-height: 1;
+            margin-top: auto;
+        }
+
+        /* Card 1: Всего сайтов - white bg, blue icon */
+        .stat-card.card-total {
+            background: white;
+        }
+        .stat-card.card-total .stat-icon {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+        .stat-card.card-total .stat-value {
+            color: #111827;
+        }
+
+        /* Card 2: Активных - FULL green background */
+        .stat-card.card-active {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            border-color: #16a34a;
+        }
+        .stat-card.card-active .stat-label {
+            color: rgba(255,255,255,0.9);
+        }
+        .stat-card.card-active .stat-icon {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+        .stat-card.card-active .stat-value {
+            color: white;
+        }
+
+        /* Card 3: Средний DR - white bg, purple value */
+        .stat-card.card-dr {
+            background: white;
+        }
+        .stat-card.card-dr .stat-icon {
+            background: #f3e8ff;
+            color: #9333ea;
+        }
+        .stat-card.card-dr .stat-value {
+            color: #9333ea;
+        }
+
+        /* Card 4: Средний RD - cream bg, orange icon */
+        .stat-card.card-rd {
+            background: #fffbeb;
+            border-color: #fde68a;
+        }
+        .stat-card.card-rd .stat-icon {
+            background: #fed7aa;
+            color: #ea580c;
+        }
+        .stat-card.card-rd .stat-value {
+            color: #92400e;
+        }
+
+        /* Add Site Button - gradient */
+        .btn-gradient {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-gradient:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+            color: white;
+        }
+
+        /* Table Toolbar */
+        .table-toolbar {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .search-wrapper {
+            position: relative;
+        }
+
+        .search-wrapper i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            font-size: 14px;
+        }
+
+        .search-input {
+            width: 280px;
+            padding: 10px 16px 10px 40px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .filter-btn {
+            padding: 10px 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            background: white;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            background: #f9fafb;
+            border-color: #d1d5db;
+        }
+
+        .filter-btn.active {
+            background: #eff6ff;
+            border-color: #3b82f6;
+            color: #2563eb;
+        }
+
+        .export-btn {
+            padding: 10px 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            background: white;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .export-btn:hover {
+            background: #f9fafb;
+            border-color: #d1d5db;
+        }
+
+        /* Filters Dropdown */
+        .filters-dropdown {
+            position: relative;
+        }
+
+        .filters-panel {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            z-index: 100;
+            min-width: 280px;
+            display: none;
+        }
+
+        .filters-panel.show {
+            display: block;
+        }
+
+        .filter-group {
+            margin-bottom: 12px;
+        }
+
+        .filter-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .filter-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            color: #6b7280;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .filter-group select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        /* Responsive Stats Grid */
+        @media (max-width: 992px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 576px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            .search-input {
+                width: 100%;
+            }
+            .toolbar-left, .toolbar-right {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
     <!-- Content will be wrapped by sidebar.js -->
 
-    <div class="container mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>Sites</h1>
-            <div class="d-flex gap-2">
-                <button class="btn btn-light border" style="background: white !important; color: #333 !important;" onclick="showExportModal()">
-                    <i class="bi bi-download"></i> Export Sites
-                </button>
-                <button class="btn btn-light border" style="background: white !important; color: #333 !important;" onclick="showCreateModal()">
-                    <i class="bi bi-plus-circle"></i> Add Site
-                </button>
+    <div class="container-fluid">
+        <!-- Stats Grid (4 cards) - Reference Design -->
+        <div class="stats-grid">
+            <!-- Card 1: Всего сайтов - white bg, blue icon -->
+            <div class="stat-card card-total">
+                <div class="stat-card-header">
+                    <div class="stat-label">Всего<br>сайтов</div>
+                    <div class="stat-icon">
+                        <i class="bi bi-globe2"></i>
+                    </div>
+                </div>
+                <div class="stat-value" id="statTotalSites">0</div>
             </div>
-        </div>
-
-        <div class="row mb-3">
-            <div class="col-md-3">
-                <input type="text" class="form-control" id="searchInput" placeholder="Search sites...">
+            <!-- Card 2: Активных - FULL green background -->
+            <div class="stat-card card-active">
+                <div class="stat-card-header">
+                    <div class="stat-label">Активных</div>
+                    <div class="stat-icon">
+                        <i class="bi bi-check-circle"></i>
+                    </div>
+                </div>
+                <div class="stat-value" id="statActiveSites">0</div>
             </div>
-            <div class="col-md-3">
-                <select class="form-select" id="allowArticlesFilter">
-                    <option value="">Все (гест-посты)</option>
-                    <option value="true">Разрешены</option>
-                    <option value="false">Запрещены</option>
-                </select>
+            <!-- Card 3: Средний DR - white bg, purple value -->
+            <div class="stat-card card-dr">
+                <div class="stat-card-header">
+                    <div class="stat-label">Средний DR</div>
+                    <div class="stat-icon">
+                        <i class="bi bi-graph-up-arrow"></i>
+                    </div>
+                </div>
+                <div class="stat-value" id="statAvgDR">0</div>
             </div>
-            <div class="col-md-2">
-                <select class="form-select" id="isPublicFilter">
-                    <option value="">Все (видимость)</option>
-                    <option value="true">Публичные</option>
-                    <option value="false">Скрытые</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <select class="form-select" id="availableForPurchaseFilter">
-                    <option value="">Все (покупка)</option>
-                    <option value="true">Доступны</option>
-                    <option value="false">Недоступны</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <button type="button" class="btn btn-sm btn-outline-secondary w-100" onclick="resetFilters()">
-                    <i class="bi bi-x-circle"></i> Сбросить
-                </button>
+            <!-- Card 4: Средний RD - cream bg, orange icon -->
+            <div class="stat-card card-rd">
+                <div class="stat-card-header">
+                    <div class="stat-label">Средний RD</div>
+                    <div class="stat-icon">
+                        <i class="bi bi-link-45deg"></i>
+                    </div>
+                </div>
+                <div class="stat-value" id="statAvgRD">0</div>
             </div>
         </div>
 
@@ -203,30 +731,73 @@
 
         <!-- Sites Table Card -->
         <div class="card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <div>
-                        <span class="text-muted">Показано: <strong id="sitesCount">0</strong> из <strong id="sitesTotal">0</strong></span>
+            <!-- Table Toolbar -->
+            <div class="table-toolbar">
+                <div class="toolbar-left">
+                    <div class="search-wrapper">
+                        <i class="bi bi-search"></i>
+                        <input type="text" class="search-input" id="searchInput" placeholder="Поиск по названию или URL...">
                     </div>
-                    <div>
-                        <label class="me-2">На странице:</label>
-                        <select class="form-select form-select-sm d-inline-block w-auto" id="limitSelect">
-                            <option value="100" selected>100</option>
-                            <option value="200">200</option>
-                            <option value="500">500</option>
-                        </select>
+                    <div class="filters-dropdown">
+                        <button class="filter-btn" onclick="toggleFiltersPanel()" id="filtersBtn">
+                            <i class="bi bi-funnel"></i> Фильтры
+                            <span id="activeFiltersCount" class="badge bg-primary ms-1" style="display: none;">0</span>
+                        </button>
+                        <div class="filters-panel" id="filtersPanel">
+                            <div class="filter-group">
+                                <label>Гест-посты</label>
+                                <select class="form-select" id="allowArticlesFilter">
+                                    <option value="">Все</option>
+                                    <option value="true">Разрешены</option>
+                                    <option value="false">Запрещены</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label>Видимость</label>
+                                <select class="form-select" id="isPublicFilter">
+                                    <option value="">Все</option>
+                                    <option value="true">Публичные</option>
+                                    <option value="false">Скрытые</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label>Покупка</label>
+                                <select class="form-select" id="availableForPurchaseFilter">
+                                    <option value="">Все</option>
+                                    <option value="true">Доступны</option>
+                                    <option value="false">Недоступны</option>
+                                </select>
+                            </div>
+                            <div class="d-flex gap-2 mt-3">
+                                <button type="button" class="btn btn-sm btn-outline-secondary flex-grow-1" onclick="resetFilters()">
+                                    <i class="bi bi-x-circle"></i> Сбросить
+                                </button>
+                                <button type="button" class="btn btn-sm btn-primary flex-grow-1" onclick="toggleFiltersPanel()">
+                                    Применить
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-
+                <div class="toolbar-right">
+                    <button class="export-btn" onclick="showExportModal()">
+                        <i class="bi bi-download"></i> Export
+                    </button>
+                    <button class="btn-gradient" onclick="showCreateModal()">
+                        <i class="bi bi-plus-lg"></i> Добавить сайт
+                    </button>
+                </div>
+            </div>
+            <div class="card-body" style="padding: 0;">
                 <div class="table-responsive">
-                    <table class="table1">
-                        <thead class="table-light sticky-top">
+                    <table class="sites-table">
+                        <thead>
                             <tr>
                                 <th class="text-center" style="width: 40px;">
                                     <input type="checkbox" class="form-check-input" id="selectAllSites" onchange="toggleSelectAll()">
                                 </th>
-                                <th style="max-width: 200px; cursor: pointer;" onclick="sortTable('site_name')">
-                                    Site Name <span id="sort-site_name"></span>
+                                <th style="width: 35px; cursor: pointer;" onclick="sortTable('site_name')">
+                                    Site <span id="sort-site_name"></span>
                                 </th>
                                 <th class="text-center" style="width: 60px; cursor: pointer;" onclick="sortTable('price_link')">
                                     Main <span id="sort-price_link"></span>
@@ -234,35 +805,38 @@
                                 <th class="text-center" style="width: 60px; cursor: pointer;" onclick="sortTable('price_article')">
                                     GP <span id="sort-price_article"></span>
                                 </th>
-                                <th class="text-center" style="width: 40px; cursor: pointer;" onclick="sortTable('dr')">
+                                <th class="text-center seo-metric-th" style="width: 40px; cursor: pointer;" onclick="sortTable('dr')">
                                     DR <span id="sort-dr"></span>
                                 </th>
-                                <th class="text-center" style="width: 40px; cursor: pointer;" onclick="sortTable('da')">
+                                <th class="text-center seo-metric-th" style="width: 40px; cursor: pointer;" onclick="sortTable('da')">
                                     DA <span id="sort-da"></span>
                                 </th>
-                                <th class="text-center" style="width: 40px; cursor: pointer;" onclick="sortTable('tf')">
+                                <th class="text-center seo-metric-th" style="width: 40px; cursor: pointer;" onclick="sortTable('tf')">
                                     TF <span id="sort-tf"></span>
                                 </th>
-                                <th class="text-center" style="width: 40px; cursor: pointer;" onclick="sortTable('cf')">
+                                <th class="text-center seo-metric-th" style="width: 40px; cursor: pointer;" onclick="sortTable('cf')">
                                     CF <span id="sort-cf"></span>
                                 </th>
-                                <th class="text-center" style="width: 50px; cursor: pointer;" onclick="sortTable('ref_domains')">
+                                <th class="text-center seo-metric-th" style="width: 50px; cursor: pointer;" onclick="sortTable('ref_domains')">
                                     RD <span id="sort-ref_domains"></span>
                                 </th>
-                                <th class="text-center" style="width: 50px; cursor: pointer;" onclick="sortTable('rd_main')">
+                                <th class="text-center seo-metric-th" style="width: 50px; cursor: pointer;" onclick="sortTable('rd_main')">
                                     RDm <span id="sort-rd_main"></span>
                                 </th>
-                                <th class="text-center" style="width: 50px; cursor: pointer;" onclick="sortTable('norm')">
+                                <th class="text-center seo-metric-th" style="width: 50px; cursor: pointer;" onclick="sortTable('norm')">
                                     Norm <span id="sort-norm"></span>
                                 </th>
-                                <th class="text-center" style="width: 60px; cursor: pointer;" onclick="sortTable('keywords')">
+                                <th class="text-center seo-metric-th" style="width: 60px; cursor: pointer;" onclick="sortTable('keywords')">
                                     KW <span id="sort-keywords"></span>
                                 </th>
-                                <th class="text-center" style="width: 60px; cursor: pointer;" onclick="sortTable('traffic')">
+                                <th class="text-center seo-metric-th" style="width: 60px; cursor: pointer;" onclick="sortTable('traffic')">
                                     Traf <span id="sort-traffic"></span>
                                 </th>
                                 <th class="text-center" style="width: 50px; cursor: pointer;" onclick="sortTable('geo')">
                                     GEO <span id="sort-geo"></span>
+                                </th>
+                                <th class="text-center" style="width: 100px; cursor: pointer;" onclick="sortTable('moderation_status')">
+                                    Статус <span id="sort-moderation_status"></span>
                                 </th>
                                 <th class="text-center" style="width: 80px;">Тип</th>
                                 <th class="text-center" style="width: 60px;" title="Открыть сайт">
@@ -288,12 +862,32 @@
                     </table>
                 </div>
 
-                <!-- Pagination Controls -->
-                <nav aria-label="Sites pagination" class="mt-3">
-                    <ul class="pagination justify-content-center" id="paginationControls">
-                        <!-- Pagination buttons will be generated here -->
-                    </ul>
-                </nav>
+                <!-- Pagination Controls - стиль dashboard -->
+                <div class="pagination-wrapper" id="paginationWrapper">
+                    <div class="pagination-left">
+                        <span>Показать:</span>
+                        <select id="limitSelect" onchange="changeItemsPerPage(this.value)">
+                            <option value="100" selected>100</option>
+                            <option value="200">200</option>
+                            <option value="500">500</option>
+                        </select>
+                        <span>сайтов</span>
+                    </div>
+                    <div class="pagination-right">
+                        <span class="pagination-info" id="paginationInfo">Показано 0–0 из 0</span>
+                        <div class="pagination-buttons">
+                            <button class="pagination-btn" id="prevPageBtn" onclick="changePage(currentPage - 1)" disabled>
+                                <i class="bi bi-chevron-left"></i>
+                            </button>
+                            <div id="pageNumbers">
+                                <!-- Page buttons will be generated here -->
+                            </div>
+                            <button class="pagination-btn" id="nextPageBtn" onclick="changePage(currentPage + 1)" disabled>
+                                <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -572,7 +1166,9 @@
         SidebarNav.init({
             activePage: 'sites',
             pageTitle: 'Сайты',
-            pageSubtitle: 'Управление сайтами для размещений'
+            pageSubtitle: 'Управление сайтами для размещений',
+            pageIcon: 'globe2',
+            pageIconGradient: 'gradient-green-teal'
         });
 
         window.sites = [];  // Make sites globally accessible
@@ -810,6 +1406,7 @@
 
             await loadSites();
             await loadActiveTokens(); // Load active registration tokens on page load
+            await loadAllSitesForStats(); // Load ALL sites for accurate stats calculation
 
             // Show admin-only fields if user is admin
             if (isAdmin()) {
@@ -828,11 +1425,7 @@
             document.getElementById('isPublicFilter').addEventListener('change', applyClientFilters);
             document.getElementById('availableForPurchaseFilter').addEventListener('change', applyClientFilters);
 
-            document.getElementById('limitSelect').addEventListener('change', (e) => {
-                const newLimit = parseInt(e.target.value);
-                localStorage.setItem('sitesPageLimit', newLimit);
-                loadSites(1, newLimit);
-            });
+            // limitSelect теперь использует onchange="changeItemsPerPage()" в HTML
 
             // Event delegation is now handled via onclick in HTML template
             // No need for addEventListener since onclick is directly on <td> elements
@@ -925,6 +1518,9 @@
 
             // Update total count display - use totalSites (from API) not allSites.length (current page only)
             updateFilteredCount(filteredSites.length, totalSites);
+
+            // Update filter button state
+            updateFiltersButtonState();
         }
 
         function updateFilteredCount(filtered, total) {
@@ -951,6 +1547,95 @@
             displaySites();
             // Update counter to show all sites - use totalSites from API pagination
             updateFilteredCount(window.sites.length, totalSites);
+
+            // Update filter button state
+            updateFiltersButtonState();
+        }
+
+        // Filters panel toggle
+        function toggleFiltersPanel() {
+            const panel = document.getElementById('filtersPanel');
+            panel.classList.toggle('show');
+        }
+
+        // Update filters button state (show badge if filters active)
+        function updateFiltersButtonState() {
+            const allowArticles = document.getElementById('allowArticlesFilter').value;
+            const isPublic = document.getElementById('isPublicFilter').value;
+            const availableForPurchase = document.getElementById('availableForPurchaseFilter').value;
+
+            let activeCount = 0;
+            if (allowArticles !== '') activeCount++;
+            if (isPublic !== '') activeCount++;
+            if (availableForPurchase !== '') activeCount++;
+
+            const badge = document.getElementById('activeFiltersCount');
+            const btn = document.getElementById('filtersBtn');
+
+            if (activeCount > 0) {
+                badge.textContent = activeCount;
+                badge.style.display = 'inline';
+                btn.classList.add('active');
+            } else {
+                badge.style.display = 'none';
+                btn.classList.remove('active');
+            }
+        }
+
+        // Close filters panel when clicking outside
+        document.addEventListener('click', function(e) {
+            const panel = document.getElementById('filtersPanel');
+            const btn = document.getElementById('filtersBtn');
+            if (panel && !panel.contains(e.target) && !btn.contains(e.target)) {
+                panel.classList.remove('show');
+            }
+        });
+
+        // Stats calculation - загружаем ВСЕ сайты для корректной статистики
+        let allSitesForStats = null;
+
+        async function loadAllSitesForStats() {
+            try {
+                // Загружаем ВСЕ сайты (limit=5000) для корректной статистики
+                const response = await SitesAPI.getAll(1, 5000);
+                allSitesForStats = response.data || [];
+                updateStatsCards();
+            } catch (error) {
+                console.error('Failed to load stats:', error);
+            }
+        }
+
+        function calculateAvgDR() {
+            const sites = allSitesForStats || [];
+            if (sites.length === 0) return 0;
+            const sitesWithDR = sites.filter(s => s.dr > 0);
+            if (sitesWithDR.length === 0) return 0;
+            return Math.round(sitesWithDR.reduce((sum, s) => sum + (parseFloat(s.dr) || 0), 0) / sitesWithDR.length);
+        }
+
+        function calculateAvgRD() {
+            const sites = allSitesForStats || [];
+            if (sites.length === 0) return 0;
+            const sitesWithRD = sites.filter(s => s.ref_domains > 0);
+            if (sitesWithRD.length === 0) return 0;
+            return Math.round(sitesWithRD.reduce((sum, s) => sum + (parseFloat(s.ref_domains) || 0), 0) / sitesWithRD.length);
+        }
+
+        function updateStatsCards() {
+            const sites = allSitesForStats || [];
+
+            // Total sites
+            document.getElementById('statTotalSites').textContent = sites.length;
+
+            // Active sites (available_for_purchase = true)
+            const activeSites = sites.filter(s => s.available_for_purchase === true);
+            document.getElementById('statActiveSites').textContent = activeSites.length;
+
+            // Average DR
+            document.getElementById('statAvgDR').textContent = calculateAvgDR();
+
+            // Average RD
+            document.getElementById('statAvgRD').textContent = calculateAvgRD().toLocaleString();
         }
 
         // Sorting state
@@ -1093,16 +1778,18 @@
                 // GEO value
                 const geoValue = s.geo || 'EN';
 
-                // Clean site name - remove https:// and trailing slash
-                const cleanSiteName = (s.site_name || '').replace(/^https?:\/\//, '').replace(/\/$/, '');
+                // Clean site URL - remove https:// and trailing slash for display
+                const displayUrl = (s.site_url || s.site_name || '').replace(/^https?:\/\//, '').replace(/\/$/, '');
 
                 return `
                 <tr class="${rowClass}" data-site-id="${s.id}" onclick="toggleRowSelection(event, ${s.id})" style="cursor: pointer;">
                     <td class="text-center" onclick="event.stopPropagation();">
                         <input type="checkbox" class="form-check-input site-checkbox" data-site-id="${s.id}" onchange="updateBulkSelection()">
                     </td>
-                    <td style="max-width: 200px;">
-                        <div class="fw-semibold text-truncate" title="${escapeHtml(s.site_name)}">${escapeHtml(cleanSiteName)}</div>
+                    <td style="min-width: 200px;">
+                        <a href="${escapeHtml(s.site_url)}" target="_blank" class="text-decoration-none" title="${escapeHtml(s.site_url)}">
+                            <span class="fw-semibold text-primary">${escapeHtml(displayUrl)}</span>
+                        </a>
                     </td>
                     <td class="text-center ${s.is_public ? 'price-cell' : ''}"
                         ${s.is_public ? `
@@ -1136,16 +1823,19 @@
                                     : '<span class="text-muted">$15.00</span>'}
                         </span>
                     </td>
-                    <td class="text-center ${drClass}">${drValue}</td>
-                    <td class="text-center ${daClass}">${daValue}</td>
-                    <td class="text-center ${tfClass}">${tfValue}</td>
-                    <td class="text-center ${cfClass}">${cfValue}</td>
-                    <td class="text-center text-muted">${refDomainsValue}</td>
-                    <td class="text-center text-muted">${rdMainValue}</td>
-                    <td class="text-center text-muted">${normValue}</td>
-                    <td class="text-center text-muted">${keywordsValue}</td>
-                    <td class="text-center text-muted">${trafficValue}</td>
+                    <td class="text-center seo-metric-td ${drClass}">${drValue}</td>
+                    <td class="text-center seo-metric-td ${daClass}">${daValue}</td>
+                    <td class="text-center seo-metric-td ${tfClass}">${tfValue}</td>
+                    <td class="text-center seo-metric-td ${cfClass}">${cfValue}</td>
+                    <td class="text-center seo-metric-td text-muted">${refDomainsValue}</td>
+                    <td class="text-center seo-metric-td text-muted">${rdMainValue}</td>
+                    <td class="text-center seo-metric-td text-muted">${normValue}</td>
+                    <td class="text-center seo-metric-td text-muted">${keywordsValue}</td>
+                    <td class="text-center seo-metric-td text-muted">${trafficValue}</td>
                     <td class="text-center text-muted">${geoValue}</td>
+                    <td class="text-center">
+                        ${getStatusBadge(s.moderation_status)}
+                    </td>
                     <td class="text-center">
                         ${typeBadge}
                     </td>
@@ -1206,12 +1896,12 @@
                         </div>
                     </td>
                     <td>
-                        <div class="d-flex gap-1">
-                            <button class="btn btn-sm btn-primary" onclick="editSite(${s.id})" title="Edit">
-                                <i class="bi bi-pencil"></i>
+                        <div class="action-buttons">
+                            <button class="action-btn action-edit" onclick="editSite(${s.id})" title="Настройки">
+                                <i class="bi bi-gear"></i>
                             </button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteSite(${s.id})" title="Delete">
-                                <i class="bi bi-trash"></i>
+                            <button class="action-btn action-delete" onclick="deleteSite(${s.id})" title="Удалить">
+                                <i class="bi bi-trash3"></i>
                             </button>
                         </div>
                     </td>
@@ -1221,22 +1911,39 @@
         }
 
         function updatePaginationControls() {
-            const pagination = document.getElementById('paginationControls');
+            const pageNumbers = document.getElementById('pageNumbers');
+            const prevBtn = document.getElementById('prevPageBtn');
+            const nextBtn = document.getElementById('nextPageBtn');
+            const paginationInfo = document.getElementById('paginationInfo');
+            const paginationWrapper = document.getElementById('paginationWrapper');
+
+            // Скрыть пагинацию если только 1 страница
             if (totalPages <= 1) {
-                pagination.innerHTML = '';
-                return;
+                if (paginationWrapper) {
+                    paginationWrapper.style.display = totalSites > 0 ? 'flex' : 'none';
+                }
+                if (pageNumbers) pageNumbers.innerHTML = '';
+                if (prevBtn) prevBtn.disabled = true;
+                if (nextBtn) nextBtn.disabled = true;
+            } else {
+                if (paginationWrapper) paginationWrapper.style.display = 'flex';
             }
 
+            // Обновить информацию о показанных записях
+            const startItem = totalSites > 0 ? (currentPage - 1) * currentLimit + 1 : 0;
+            const endItem = Math.min(currentPage * currentLimit, totalSites);
+            if (paginationInfo) {
+                paginationInfo.textContent = `Показано ${startItem}–${endItem} из ${totalSites}`;
+            }
+
+            // Обновить кнопки prev/next
+            if (prevBtn) prevBtn.disabled = currentPage <= 1;
+            if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
+
+            // Генерация номеров страниц
+            if (!pageNumbers || totalPages <= 1) return;
+
             let html = '';
-
-            // Previous button
-            html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-                <a class="page-link" href="#" onclick="loadSites(${currentPage - 1}, ${currentLimit}); return false;" aria-label="Previous">
-                    <i class="bi bi-chevron-left"></i>
-                </a>
-            </li>`;
-
-            // Page numbers (smart display)
             const maxButtons = 5;
             let startPage = Math.max(1, currentPage - 2);
             let endPage = Math.min(totalPages, startPage + maxButtons - 1);
@@ -1247,44 +1954,45 @@
 
             // First page
             if (startPage > 1) {
-                html += `<li class="page-item">
-                    <a class="page-link" href="#" onclick="loadSites(1, ${currentLimit}); return false;">1</a>
-                </li>`;
+                html += `<button class="pagination-btn" onclick="changePage(1)">1</button>`;
                 if (startPage > 2) {
-                    html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                    html += `<span style="color: #6b7280;">...</span>`;
                 }
             }
 
             // Page buttons
             for (let i = startPage; i <= endPage; i++) {
-                html += `<li class="page-item ${i === currentPage ? 'active' : ''}">
-                    <a class="page-link" href="#" onclick="loadSites(${i}, ${currentLimit}); return false;">${i}</a>
-                </li>`;
+                html += `<button class="pagination-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
             }
 
             // Last page
             if (endPage < totalPages) {
                 if (endPage < totalPages - 1) {
-                    html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                    html += `<span style="color: #6b7280;">...</span>`;
                 }
-                html += `<li class="page-item">
-                    <a class="page-link" href="#" onclick="loadSites(${totalPages}, ${currentLimit}); return false;">${totalPages}</a>
-                </li>`;
+                html += `<button class="pagination-btn" onclick="changePage(${totalPages})">${totalPages}</button>`;
             }
 
-            // Next button
-            html += `<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
-                <a class="page-link" href="#" onclick="loadSites(${currentPage + 1}, ${currentLimit}); return false;" aria-label="Next">
-                    <i class="bi bi-chevron-right"></i>
-                </a>
-            </li>`;
-
-            pagination.innerHTML = html;
+            pageNumbers.innerHTML = html;
         }
 
+        // Новые функции пагинации в стиле dashboard
+        function changeItemsPerPage(value) {
+            const newLimit = parseInt(value);
+            localStorage.setItem('sitesPageLimit', newLimit);
+            currentLimit = newLimit;
+            loadSites(1, newLimit);
+        }
+
+        function changePage(page) {
+            if (page < 1 || page > totalPages) return;
+            loadSites(page, currentLimit);
+        }
+
+        // Функция обновления счетчика (для совместимости с updateFilteredCount)
         function updateSitesCount() {
-            document.getElementById('sitesCount').textContent = window.sites.length;
-            document.getElementById('sitesTotal').textContent = totalSites;
+            // Счетчик теперь обновляется в updatePaginationControls через paginationInfo
+            // Эта функция оставлена для обратной совместимости
         }
 
         // Toggle site type fields visibility
@@ -1742,6 +2450,20 @@
                 "'": '&#039;'
             };
             return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        // Get moderation status badge HTML
+        function getStatusBadge(status) {
+            switch(status) {
+                case 'approved':
+                    return '<div class="status-approved"><i class="bi bi-check-circle-fill"></i> Активен</div>';
+                case 'pending':
+                    return '<div class="status-pending"><i class="bi bi-clock"></i> На проверке</div>';
+                case 'rejected':
+                    return '<div class="status-rejected"><i class="bi bi-x-circle-fill"></i> Отклонён</div>';
+                default:
+                    return '<span class="text-muted">—</span>';
+            }
         }
 
         // ========== Export Functions ==========

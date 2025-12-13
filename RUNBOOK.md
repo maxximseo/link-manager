@@ -235,6 +235,7 @@ node database/run_nullable_migration.js
 node database/run_remove_anchor_unique.js
 node database/run_extended_fields_migration.js
 node database/run_limits_cooldown_migration.js
+NODE_TLS_REJECT_UNAUTHORIZED=0 node database/run_updated_at_migration.js
 
 # 3. Site parameters migrations
 node database/run_da_migration.js
@@ -254,6 +255,48 @@ psql -d linkmanager -f database/seed.sql
 ```bash
 psql -d linkmanager -c "\dt"  # List tables (should show 8+ tables)
 psql -d linkmanager -c "SELECT COUNT(*) FROM users;"  # Should have admin user
+```
+
+---
+
+### Add updated_at Columns (v2.6.7+)
+
+**When needed**: If link editing doesn't save properly or you see `column updated_at does not exist` error.
+
+```bash
+# Run with SSL disabled for DigitalOcean
+NODE_TLS_REJECT_UNAUTHORIZED=0 node database/run_updated_at_migration.js
+```
+
+**Expected output**:
+```
+🚀 Starting migration: Add updated_at columns to tables...
+
+📋 Processing table: placements
+   ✅ Column updated_at already exists
+
+📋 Processing table: project_links
+   📝 Adding updated_at column...
+   ✓ Column added successfully
+   📝 Updating existing records...
+   ✓ Updated 155 records
+
+📋 Processing table: project_articles
+   ...
+
+✅ Migration completed successfully!
+```
+
+**Tables affected**:
+- `placements` (fallback: `published_at`)
+- `project_links` (fallback: `created_at`)
+- `project_articles` (fallback: `created_at`)
+- `registration_tokens` (fallback: `created_at`)
+
+**Verification**:
+```bash
+PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
+  -c "SELECT id, updated_at FROM project_links LIMIT 5;"
 ```
 
 ---

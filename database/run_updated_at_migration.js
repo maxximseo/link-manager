@@ -1,8 +1,9 @@
 /**
- * Migration runner: Add updated_at column to placements table
+ * Migration runner: Add updated_at column to tables that need it
  *
- * Fixes the scheduled placements cron job failure:
- * "column updated_at of relation placements does not exist"
+ * Fixes errors like:
+ * - "column updated_at of relation placements does not exist"
+ * - "column updated_at of relation project_links does not exist"
  *
  * Usage: node database/run_updated_at_migration.js
  */
@@ -10,64 +11,63 @@
 require('dotenv').config();
 const { Pool } = require('pg');
 
+// Always use SSL for DigitalOcean
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' || process.env.DATABASE_URL?.includes('digitalocean')
-    ? { rejectUnauthorized: false }
-    : false
+  ssl: { rejectUnauthorized: false }
 });
 
+const TABLES_TO_UPDATE = [
+  { table: 'placements', fallback: 'published_at' },
+  { table: 'project_links', fallback: 'created_at' },
+  { table: 'project_articles', fallback: 'created_at' },
+  { table: 'registration_tokens', fallback: 'created_at' }
+];
+
+async function addUpdatedAtToTable(tableName, fallbackColumn) {
+  console.log(`\n📋 Processing table: ${tableName}`);
+
+  // Check if column already exists
+  const checkResult = await pool.query(`
+    SELECT column_name
+    FROM information_schema.columns
+    WHERE table_name = $1
+      AND column_name = 'updated_at'
+  `, [tableName]);
+
+  if (checkResult.rows.length > 0) {
+    console.log(`   ✅ Column updated_at already exists`);
+    return;
+  }
+
+  // Add the column
+  console.log(`   📝 Adding updated_at column...`);
+  await pool.query(`
+    ALTER TABLE ${tableName}
+    ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  `);
+  console.log(`   ✓ Column added successfully`);
+
+  // Update existing records
+  console.log(`   📝 Updating existing records...`);
+  const updateResult = await pool.query(`
+    UPDATE ${tableName}
+    SET updated_at = COALESCE(${fallbackColumn}, NOW())
+    WHERE updated_at IS NULL
+  `);
+  console.log(`   ✓ Updated ${updateResult.rowCount} records`);
+}
+
 async function runMigration() {
-  console.log('🚀 Starting migration: Add updated_at column to placements...\n');
+  console.log('🚀 Starting migration: Add updated_at columns to tables...');
 
   try {
-    // Step 1: Check if column already exists
-    const checkResult = await pool.query(`
-      SELECT column_name
-      FROM information_schema.columns
-      WHERE table_name = 'placements'
-        AND column_name = 'updated_at'
-    `);
-
-    if (checkResult.rows.length > 0) {
-      console.log('✅ Column updated_at already exists in placements table.');
-      console.log('   Migration not needed.');
-      await pool.end();
-      return;
+    for (const { table, fallback } of TABLES_TO_UPDATE) {
+      await addUpdatedAtToTable(table, fallback);
     }
 
-    // Step 2: Add the column
-    console.log('📝 Adding updated_at column...');
-    await pool.query(`
-      ALTER TABLE placements
-      ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    `);
-    console.log('   ✓ Column added successfully');
-
-    // Step 3: Update existing records
-    console.log('📝 Updating existing records with timestamps...');
-    const updateResult = await pool.query(`
-      UPDATE placements
-      SET updated_at = COALESCE(published_at, NOW())
-      WHERE updated_at IS NULL
-    `);
-    console.log(`   ✓ Updated ${updateResult.rowCount} records`);
-
-    // Step 4: Verify
-    console.log('📝 Verifying migration...');
-    const verifyResult = await pool.query(`
-      SELECT COUNT(*) as total,
-             COUNT(updated_at) as with_updated_at,
-             COUNT(*) - COUNT(updated_at) as without_updated_at
-      FROM placements
-    `);
-    const stats = verifyResult.rows[0];
-    console.log(`   ✓ Total placements: ${stats.total}`);
-    console.log(`   ✓ With updated_at: ${stats.with_updated_at}`);
-    console.log(`   ✓ Without updated_at: ${stats.without_updated_at}`);
-
     console.log('\n✅ Migration completed successfully!');
-    console.log('   Scheduled placements cron job should now work correctly.');
+    console.log('   All tables now have updated_at column.');
 
   } catch (error) {
     console.error('\n❌ Migration failed:', error.message);

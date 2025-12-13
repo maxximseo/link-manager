@@ -183,12 +183,8 @@
 <body>
     <!-- Content will be wrapped by sidebar.js -->
     <div class="container-fluid">
-        <!-- Page Header with Create Button -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h1 style="font-size: 24px; font-weight: 700; color: #1e293b; margin: 0;">Мои Проекты</h1>
-                <p style="font-size: 14px; color: #64748b; margin: 4px 0 0 0;">Управление вашими проектами и размещениями</p>
-            </div>
+        <!-- Action Button Row -->
+        <div class="d-flex justify-content-end mb-3">
             <button class="btn-create" onclick="showCreateModal()">
                 <i class="bi bi-plus-circle"></i> Создать проект
             </button>
@@ -382,7 +378,9 @@
         SidebarNav.init({
             activePage: 'projects',
             pageTitle: 'Мои Проекты',
-            pageSubtitle: 'Управление проектами'
+            pageSubtitle: 'Управление проектами',
+            pageIcon: 'folder2',
+            pageIconGradient: 'gradient-blue-indigo'
         });
 
         let projects = [];

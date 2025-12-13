@@ -373,6 +373,60 @@ Add new link to project.
 
 ---
 
+### PUT /api/projects/:id/links/:linkId
+
+Update an existing link.
+
+**Request Body** (all fields optional):
+```json
+{
+  "url": "https://example.com/updated-page",
+  "anchor_text": "Updated anchor text",
+  "usage_limit": 5,
+  "html_context": "Updated context with <a href=\"...\">link</a> in text",
+  "image_url": "https://example.com/image.png",
+  "link_attributes": {
+    "class": "btn btn-primary",
+    "rel": "sponsored"
+  },
+  "wrapper_config": {
+    "wrapper_tag": "div",
+    "wrapper_class": "featured"
+  },
+  "custom_data": {}
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "id": 123,
+  "project_id": 1,
+  "url": "https://example.com/updated-page",
+  "anchor_text": "Updated anchor text",
+  "usage_limit": 5,
+  "usage_count": 0,
+  "html_context": "Updated context with <a href=\"...\">link</a> in text",
+  "image_url": "https://example.com/image.png",
+  "link_attributes": {"class": "btn btn-primary", "rel": "sponsored"},
+  "wrapper_config": {"wrapper_tag": "div", "wrapper_class": "featured"},
+  "custom_data": {},
+  "created_at": "2025-01-15T10:00:00.000Z",
+  "updated_at": "2025-12-11T14:30:00.000Z"
+}
+```
+
+**Features**:
+- Partial updates supported (only send fields to change)
+- Uses COALESCE pattern - omitted fields retain current values
+- `updated_at` automatically set to current timestamp
+
+**Errors**:
+- `400 Bad Request` - Invalid field values
+- `404 Not Found` - Link not found or not owned by user
+
+---
+
 ### DELETE /api/projects/:id/links/:linkId
 
 Delete link from project.
