@@ -160,7 +160,7 @@ const getDiscountTiers = async () => {
  * @param {number|null} adminId - Admin ID if deposit is made by admin
  * @param {string|null} promoCode - Optional promo code for bonus activation
  */
-const addBalance = async (userId, amount, description = 'Balance deposit', adminId = null, promoCode = null) => {
+const addBalance = async (userId, amount, description = 'Пополнение баланса', adminId = null, promoCode = null) => {
   const client = await pool.connect();
 
   try {
@@ -603,7 +603,7 @@ const purchasePlacement = async ({
         -finalPrice,
         user.balance,
         newBalance,
-        `Purchase ${type} placement on ${site.site_name}`,
+        `Покупка размещения ${type === 'article' ? 'статьи' : 'ссылки'} на ${site.site_name}`,
         JSON.stringify({ type, discount, basePrice, finalPrice, projectId, siteId })
       ]
     );
