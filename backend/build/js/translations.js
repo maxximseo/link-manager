@@ -159,6 +159,7 @@ const translations = {
     export: 'Экспорт',
     addSite: 'Добавить сайт',
     configureSiteSettings: 'Настройте параметры сайта и интеграцию',
+    configureProjectSettings: 'Настройте параметры вашего проекта',
     showSites: 'Показать',
     sitesPerPage: 'сайтов',
     bulkRegistration: 'Массовая регистрация WordPress сайтов',

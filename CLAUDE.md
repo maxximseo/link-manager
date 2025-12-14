@@ -220,7 +220,7 @@ Services (backend/services/*.service.js) - Business logic
     ↓
 Database (config/database.js) - Direct query() calls with parameterized SQL
     ↓
-PostgreSQL 17.6 on DigitalOcean
+PostgreSQL (Supabase)
 ```
 
 **Key Pattern**: This codebase does NOT use ORM models. Services call `query()` directly with parameterized SQL.
@@ -281,8 +281,8 @@ const articleId = req.params.articleId;
 ```
 
 ### Database Connection
-- **Production**: PostgreSQL 17.6 on DigitalOcean with SSL (`rejectUnauthorized: false`)
-- **Local**: Standard PostgreSQL connection
+- **Production**: Supabase PostgreSQL with SSL (`rejectUnauthorized: false`)
+- **Local**: Standard PostgreSQL connection or Supabase
 - Connection is initialized via `DATABASE_URL` or individual `DB_*` env vars
 - Uses connection pooling (max 25 connections)
 
@@ -760,7 +760,7 @@ Redis Configuration (optional, graceful degradation):
 - `REDIS_PORT` - Redis port (default: 6379)
 - `REDIS_DB` - Redis database number (default: 0)
 - `REDIS_PASSWORD` - Redis password (if required)
-- `REDIS_USER` - Redis username (DigitalOcean uses 'default')
+- `REDIS_USER` - Redis username (cloud providers typically use 'default')
 
 Security Configuration (recommended for production):
 - `CORS_ORIGINS` - Comma-separated list of allowed origins (e.g., `https://yourdomain.com,https://api.yourdomain.com`)
@@ -982,7 +982,7 @@ See `database/MIGRATION_INSTRUCTIONS.md` for detailed instructions and troublesh
 Repository: https://github.com/maxximseo/link-manager.git
 - Branch: `main`
 - **Auto-commit on file changes**: Nodemon automatically commits and pushes changes when files are modified
-- Auto-deploy to DigitalOcean on push
+- Auto-deploy on push
 - Always commit with message ending in:
   ```
   🤖 Generated with [Claude Code](https://claude.com/claude-code)
@@ -1211,7 +1211,7 @@ Implemented in `cache.service.js:delPattern()`.
 
 ### Database Errors
 1. Check connection in logs: "Successfully parsed DATABASE_URL"
-2. For DigitalOcean: Ensure SSL config present (`rejectUnauthorized: false`)
+2. For Supabase: Ensure SSL config present (`rejectUnauthorized: false`)
 3. Verify tables exist: Run `database/init.sql` if needed
 4. **Slow queries**: Run `EXPLAIN ANALYZE` on problematic queries
 
@@ -2174,7 +2174,7 @@ The following major architectural decisions govern this codebase:
 Repository: https://github.com/maxximseo/link-manager.git
 - Branch: `main`
 - **Auto-commit on file changes**: Nodemon automatically commits and pushes changes when files are modified
-- Auto-deploy to DigitalOcean on push
+- Auto-deploy on push
 - Always commit with message ending in:
   ```
   🤖 Generated with [Claude Code](https://claude.com/claude-code)
@@ -2219,8 +2219,8 @@ git push
 
 **What's in `.credentials.local`**:
 ```
-# GitHub, DigitalOcean tokens
-# PostgreSQL connection details (host, password, etc.)
+# GitHub tokens
+# Supabase PostgreSQL connection details (host, password, etc.)
 # Redis/Valkey credentials
 # JWT secrets
 # Admin login credentials

@@ -232,7 +232,7 @@ New sites should use API key authentication.
 - ✅ **Rate limiting** (5 tiers: login, API, create, placement, WordPress)
 - ✅ **SQL injection protection** (parameterized queries)
 - ✅ **CORS configuration**
-- ✅ **SSL support** (auto-detected for DigitalOcean)
+- ✅ **SSL support** (auto-detected for Supabase)
 - ✅ **Admin-only public sites** - Only admins can make sites public (v2.5.4+)
 
 ## ⚡ Performance Optimizations
