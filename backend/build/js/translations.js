@@ -1412,7 +1412,7 @@ const translations = {
     sidebarAnalytics: 'Statistics',
     sidebarPartners: 'Partners',
     sidebarBalanceLabel: 'Balance',
-    sidebarAddLink: 'Add link',
+    sidebarAddLink: 'Buy links',
     sidebarNotifications: 'Notifications',
     sidebarMarkAllRead: 'Mark all as read',
     sidebarNoNotifications: 'No new notifications',
