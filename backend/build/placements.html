@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" id="htmlRoot">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Купить ссылки - Link Manager</title>
+    <title data-i18n="buyLinksTitle">Купить ссылки - Link Manager</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="/css/styles.css">
@@ -993,12 +993,12 @@
             <div class="placements-unified-section section-with-border">
                 <h3 class="placements-section-title">
                     <i class="bi bi-gear"></i>
-                    Выбор проекта
+                    <span data-i18n="projectSelection">Выбор проекта</span>
                 </h3>
                 <div style="max-width: 40%;">
-                    <label for="projectSelect" class="placements-form-label">Select Project <span class="required">*</span></label>
+                    <label for="projectSelect" class="placements-form-label"><span data-i18n="selectProject">Выберите проект</span> <span class="required">*</span></label>
                     <select class="placements-select" id="projectSelect">
-                        <option value="">Выберите проект...</option>
+                        <option value="" data-i18n="selectProjectPlaceholder">Выберите проект...</option>
                     </select>
                 </div>
             </div>
@@ -1007,19 +1007,19 @@
             <div class="placements-unified-section section-with-border">
                 <h3 class="placements-section-title">
                     <i class="bi bi-gear"></i>
-                    Тип контента
+                    <span data-i18n="contentType">Тип контента</span>
                 </h3>
-                <label class="placements-form-label">Content Type <span class="required">*</span></label>
+                <label class="placements-form-label"><span data-i18n="contentType">Тип контента</span> <span class="required">*</span></label>
                 <div class="custom-radio-group">
                     <label class="custom-radio-label radio-blue">
                         <input type="radio" name="contentType" id="typeLinks" value="links">
                         <div class="radio-circle"></div>
-                        <span>📄 Main page</span>
+                        <span data-i18n="mainPage">Main page</span>
                     </label>
                     <label class="custom-radio-label radio-purple">
                         <input type="radio" name="contentType" id="typeArticles" value="articles">
                         <div class="radio-circle"></div>
-                        <span>📰 Articles</span>
+                        <span data-i18n="articles">Статьи</span>
                     </label>
                 </div>
             </div>
@@ -1028,26 +1028,26 @@
             <div class="placements-unified-section section-with-border">
                 <h3 class="placements-section-title">
                     <i class="bi bi-calendar-event"></i>
-                    Настройки публикации
+                    <span data-i18n="publicationSettings">Настройки публикации</span>
                 </h3>
-                <label class="placements-form-label">Дата публикации</label>
+                <label class="placements-form-label" data-i18n="publicationDate">Дата публикации</label>
                 <div class="custom-radio-group vertical">
                     <label class="custom-radio-label radio-green">
                         <input type="radio" name="publishType" id="publishImmediate" value="immediate" checked>
                         <div class="radio-circle"></div>
-                        <span>Опубликовать сразу</span>
+                        <span data-i18n="publishImmediately">Опубликовать сразу</span>
                     </label>
                     <label class="custom-radio-label radio-orange">
                         <input type="radio" name="publishType" id="publishDistributed" value="distributed">
                         <div class="radio-circle"></div>
-                        <span>Отложенная публикация (период)</span>
+                        <span data-i18n="delayedPublication">Отложенная публикация (период)</span>
                     </label>
                 </div>
 
                 <!-- Slider container (hidden by default) -->
                 <div id="distributedPeriodDiv" style="display: none;">
                     <div class="slider-container">
-                        <label class="slider-title">Период распределения:</label>
+                        <label class="slider-title" data-i18n="distributionPeriod">Период распределения:</label>
 
                         <!-- Slider with labels and badge -->
                         <div class="slider-wrapper">
@@ -1056,9 +1056,9 @@
                                        min="5" max="90" value="30" step="1">
                             </div>
                             <div class="slider-labels-row">
-                                <span class="slider-min-label">5 дней</span>
-                                <span class="slider-badge">Выбрано: <span id="selectedDays">30</span> дней</span>
-                                <span class="slider-max-label">90 дней</span>
+                                <span class="slider-min-label">5 <span data-i18n="days">дней</span></span>
+                                <span class="slider-badge"><span data-i18n="selected">Выбрано</span>: <span id="selectedDays">30</span> <span data-i18n="days">дней</span></span>
+                                <span class="slider-max-label">90 <span data-i18n="days">дней</span></span>
                             </div>
                         </div>
 
@@ -1066,18 +1066,18 @@
                         <div class="zone-cards">
                             <div class="zone-card fast active" id="zoneFast">
                                 <div class="zone-icon"><i class="bi bi-lightning-charge-fill"></i></div>
-                                <div class="zone-name">Быстро</div>
-                                <div class="zone-range">5-30 дней</div>
+                                <div class="zone-name" data-i18n="fast">Быстро</div>
+                                <div class="zone-range">5-30 <span data-i18n="days">дней</span></div>
                             </div>
                             <div class="zone-card medium" id="zoneMedium">
                                 <div class="zone-icon"><i class="bi bi-speedometer2"></i></div>
-                                <div class="zone-name">Средне</div>
-                                <div class="zone-range">31-60 дней</div>
+                                <div class="zone-name" data-i18n="medium">Средне</div>
+                                <div class="zone-range">31-60 <span data-i18n="days">дней</span></div>
                             </div>
                             <div class="zone-card slow" id="zoneSlow">
                                 <div class="zone-icon"><i class="bi bi-hourglass-split"></i></div>
-                                <div class="zone-name">Долго</div>
-                                <div class="zone-range">61-90 дней</div>
+                                <div class="zone-name" data-i18n="slow">Долго</div>
+                                <div class="zone-range">61-90 <span data-i18n="days">дней</span></div>
                             </div>
                         </div>
                     </div>
@@ -1088,7 +1088,7 @@
                             <i class="bi bi-info-circle-fill"></i>
                         </div>
                         <div class="info-block-text">
-                            <strong>Рекомендация:</strong> Распределение публикаций на 30-60 дней создает наиболее естественный профиль ссылок для поисковых систем.
+                            <strong data-i18n="recommendation">Рекомендация</strong>: <span data-i18n="distributionRecommendation">Распределение публикаций на 30-60 дней создает наиболее естественный профиль ссылок для поисковых систем.</span>
                         </div>
                     </div>
 
@@ -1102,7 +1102,7 @@
             <div class="placements-unified-section" id="sitesTableDiv" style="display: none;">
                 <h3 class="placements-section-title">
                     <i class="bi bi-globe2" style="color: #22c55e;"></i>
-                    Доступные сайты
+                    <span data-i18n="availableSites">Доступные сайты</span>
                 </h3>
 
                 <!-- Active filters info -->
@@ -1117,12 +1117,12 @@
                         <div class="checkbox-box">
                             <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"></path></svg>
                         </div>
-                        <span>Скрыть купленные</span>
+                        <span data-i18n="hidePurchased">Скрыть купленные</span>
                     </label>
                     <div class="sites-filter-right">
-                        <label>Фильтр по GEO:</label>
+                        <label data-i18n="geoFilter">Фильтр по GEO:</label>
                         <select class="geo-filter-select" id="geoFilter">
-                            <option value="">Все регионы</option>
+                            <option value="" data-i18n="allRegions">Все регионы</option>
                         </select>
                     </div>
                 </div>
@@ -1134,8 +1134,8 @@
                                     <th style="width: 40px;">
                                         <input type="checkbox" id="selectAllSites" onclick="toggleAllSites()">
                                     </th>
-                                    <th>Сайт</th>
-                                    <th>Контент</th>
+                                    <th data-i18n="site">Сайт</th>
+                                    <th data-i18n="content">Контент</th>
                                     <th class="text-center seo-metric-th sortable-th" data-sort="dr" onclick="sortByColumn('dr')">DR <span class="sort-icon"></span></th>
                                     <th class="text-center seo-metric-th sortable-th" data-sort="da" onclick="sortByColumn('da')">DA <span class="sort-icon"></span></th>
                                     <th class="text-center seo-metric-th sortable-th" data-sort="tf" onclick="sortByColumn('tf')">TF <span class="sort-icon"></span></th>
@@ -1146,16 +1146,16 @@
                                     <th class="text-center seo-metric-th sortable-th" data-sort="keywords" onclick="sortByColumn('keywords')">KW <span class="sort-icon"></span></th>
                                     <th class="text-center seo-metric-th sortable-th" data-sort="traffic" onclick="sortByColumn('traffic')">Traf <span class="sort-icon"></span></th>
                                     <th class="text-center">GEO</th>
-                                    <th class="text-center">Тип</th>
-                                    <th class="text-center">Слоты</th>
-                                    <th class="text-center">Цена</th>
-                                    <th class="text-center">Статус</th>
-                                    <th class="text-center">Видимость</th>
+                                    <th class="text-center" data-i18n="siteType">Тип</th>
+                                    <th class="text-center" data-i18n="slots">Слоты</th>
+                                    <th class="text-center" data-i18n="price">Цена</th>
+                                    <th class="text-center" data-i18n="status">Статус</th>
+                                    <th class="text-center" data-i18n="visibility">Видимость</th>
                                 </tr>
                             </thead>
                             <tbody id="sitesTableBody">
                                 <tr>
-                                    <td colspan="18" class="text-center text-muted py-4">
+                                    <td colspan="18" class="text-center text-muted py-4" data-i18n="selectProjectAndContentType">
                                         Выберите проект и тип контента выше
                                     </td>
                                 </tr>
@@ -1166,16 +1166,16 @@
                     <!-- Bottom pagination -->
                     <div class="pagination-wrapper" id="bottomPaginationNav" style="display: none;">
                         <div class="pagination-left">
-                            <span>Показать:</span>
+                            <span data-i18n="show">Показать:</span>
                             <select id="bottomItemsPerPage" onchange="changeBottomItemsPerPage(this.value)">
                                 <option value="100" selected>100</option>
                                 <option value="300">300</option>
                                 <option value="500">500</option>
                             </select>
-                            <span>записей на странице</span>
+                            <span data-i18n="recordsPerPage">записей на странице</span>
                         </div>
                         <div class="pagination-right">
-                            <span class="pagination-info" id="bottomPaginationInfo">Показано 1–100 из 100</span>
+                            <span class="pagination-info" id="bottomPaginationInfo"></span>
                             <div class="pagination-buttons" id="bottomPaginationControls">
                                 <!-- Pagination buttons will be inserted here -->
                             </div>
@@ -1191,24 +1191,24 @@
                                     <div class="list-card-icon whitelist">
                                         <i class="bi bi-check-circle-fill"></i>
                                     </div>
-                                    <span class="list-card-title">Whitelist</span>
+                                    <span class="list-card-title" data-i18n="whitelistTitle">Whitelist</span>
                                     <span class="list-card-badge whitelist" id="whitelistTotal">0</span>
                                 </div>
-                                <p class="list-card-description">Добавьте сайты в белый список для быстрого доступа</p>
+                                <p class="list-card-description" data-i18n="whitelistDesc">Добавьте сайты в белый список для быстрого доступа</p>
                                 <button type="button" class="list-add-btn whitelist" id="addToWhitelistBtn" onclick="addSelectedToWhitelist()" disabled>
                                     <i class="bi bi-plus-circle"></i>
-                                    Добавить выбранные
+                                    <span data-i18n="addSelected">Добавить выбранные</span>
                                     <span id="whitelistCount">(0)</span>
                                 </button>
                                 <div class="list-action-row">
                                     <button type="button" class="list-action-btn" onclick="importWhitelist()">
-                                        <i class="bi bi-upload"></i> Импорт
+                                        <i class="bi bi-upload"></i> <span data-i18n="import">Импорт</span>
                                     </button>
                                     <button type="button" class="list-action-btn" onclick="toggleWhitelistView()">
-                                        <i class="bi bi-eye"></i> Показать
+                                        <i class="bi bi-eye"></i> <span data-i18n="showList">Показать</span>
                                     </button>
                                     <button type="button" class="list-action-btn" onclick="clearWhitelist()">
-                                        <i class="bi bi-trash"></i> Очистить
+                                        <i class="bi bi-trash"></i> <span data-i18n="clear">Очистить</span>
                                     </button>
                                 </div>
                                 <div id="whitelistItems" class="list-items-container"></div>
@@ -1220,24 +1220,24 @@
                                     <div class="list-card-icon blacklist">
                                         <i class="bi bi-x-circle-fill"></i>
                                     </div>
-                                    <span class="list-card-title">Blacklist</span>
+                                    <span class="list-card-title" data-i18n="blacklistTitle">Blacklist</span>
                                     <span class="list-card-badge blacklist" id="blacklistTotal">0</span>
                                 </div>
-                                <p class="list-card-description">Скройте нежелательные сайты из списка</p>
+                                <p class="list-card-description" data-i18n="blacklistDescription">Скройте нежелательные сайты из списка</p>
                                 <button type="button" class="list-add-btn blacklist" id="addToBlacklistBtn" onclick="addSelectedToBlacklist()" disabled>
                                     <i class="bi bi-plus-circle"></i>
-                                    Добавить выбранные
+                                    <span data-i18n="addSelected">Добавить выбранные</span>
                                     <span id="blacklistCount">(0)</span>
                                 </button>
                                 <div class="list-action-row">
                                     <button type="button" class="list-action-btn" onclick="importBlacklist()">
-                                        <i class="bi bi-upload"></i> Импорт
+                                        <i class="bi bi-upload"></i> <span data-i18n="import">Импорт</span>
                                     </button>
                                     <button type="button" class="list-action-btn" onclick="toggleBlacklistView()">
-                                        <i class="bi bi-eye"></i> Показать
+                                        <i class="bi bi-eye"></i> <span data-i18n="showList">Показать</span>
                                     </button>
                                     <button type="button" class="list-action-btn" onclick="clearBlacklist()">
-                                        <i class="bi bi-trash"></i> Очистить
+                                        <i class="bi bi-trash"></i> <span data-i18n="clear">Очистить</span>
                                     </button>
                                 </div>
                                 <div id="blacklistItems" class="list-items-container"></div>
@@ -1248,7 +1248,7 @@
                     <!-- Bottom purchase button -->
                     <div class="text-center mt-4 mb-4" id="bottomPurchaseDiv" style="display: none;">
                         <button type="button" class="btn btn-dark btn-lg" onclick="createPlacement()" id="bottomPurchaseBtn" disabled style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 0.75rem;">
-                            <i class="bi bi-cart-check-fill"></i> Купить
+                            <i class="bi bi-cart-check-fill"></i> <span data-i18n="purchaseSelected">Купить</span>
                             <span class="badge bg-light text-dark ms-2" id="bottomPurchaseBadge">0</span>
                             <span class="badge bg-light text-dark ms-1" id="bottomPurchaseTotalBadge">$0.00</span>
                         </button>
@@ -1264,18 +1264,18 @@
             <div class="action-buttons">
                 <button type="button" class="sticky-action-btn whitelist" id="stickyWhitelistBtn" onclick="addSelectedToWhitelist()" disabled>
                     <i class="bi bi-check-circle-fill"></i>
-                    <span>Whitelist</span>
+                    <span data-i18n="whitelistTitle">Whitelist</span>
                     <span class="action-badge" id="whitelistBadge">0</span>
                 </button>
                 <button type="button" class="sticky-action-btn purchase" id="stickyPurchaseBtn" onclick="createPlacement()" disabled>
                     <i class="bi bi-cart-check-fill"></i>
-                    <span>Купить</span>
+                    <span data-i18n="purchaseSelected">Купить</span>
                     <span class="action-badge" id="purchaseBadge">0</span>
                     <span class="action-badge" id="purchaseTotalBadge">$0.00</span>
                 </button>
                 <button type="button" class="sticky-action-btn blacklist" id="stickyBlacklistBtn" onclick="addSelectedToBlacklist()" disabled>
                     <i class="bi bi-x-circle-fill"></i>
-                    <span>Blacklist</span>
+                    <span data-i18n="blacklistTitle">Blacklist</span>
                     <span class="action-badge" id="blacklistBadge">0</span>
                 </button>
             </div>
@@ -1326,8 +1326,8 @@
                             <i class="bi bi-stars text-white" style="font-size: 24px;"></i>
                         </div>
                         <div>
-                            <h5 class="modal-title text-white fw-bold mb-0" style="font-size: 18px;">Массовая покупка</h5>
-                            <p class="text-white-50 mb-0" style="font-size: 13px;">Обработка размещений...</p>
+                            <h5 class="modal-title text-white fw-bold mb-0" style="font-size: 18px;" data-i18n="bulkPurchase">Массовая покупка</h5>
+                            <p class="text-white-50 mb-0" style="font-size: 13px;" data-i18n="processingPlacements">Обработка размещений...</p>
                         </div>
                     </div>
                 </div>
@@ -1338,7 +1338,7 @@
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <div class="d-flex align-items-center gap-2">
                                 <i class="bi bi-clock text-purple" style="font-size: 18px;"></i>
-                                <span id="progressStatus" class="fw-semibold" style="color: #111827;">Начинаем покупку...</span>
+                                <span id="progressStatus" class="fw-semibold" style="color: #111827;" data-i18n="startingPurchase">Начинаем покупку...</span>
                             </div>
                             <div class="d-flex align-items-center gap-1 px-3 py-1" style="background: #f3e8ff; border-radius: 20px; border: 1px solid #e9d5ff;">
                                 <i class="bi bi-graph-up-arrow" style="color: #9333ea; font-size: 12px;"></i>
@@ -1358,7 +1358,7 @@
                                     <i class="bi bi-globe2 text-white" style="font-size: 20px;"></i>
                                 </div>
                                 <div id="progressTotal" class="fw-bold" style="font-size: 28px; color: #111827;">0</div>
-                                <div class="text-uppercase fw-semibold" style="font-size: 10px; color: #6b7280; letter-spacing: 0.5px;">ВСЕГО</div>
+                                <div class="text-uppercase fw-semibold" style="font-size: 10px; color: #6b7280; letter-spacing: 0.5px;" data-i18n="total">ВСЕГО</div>
                             </div>
                         </div>
                         <div class="col-4">
@@ -1367,7 +1367,7 @@
                                     <i class="bi bi-check-circle text-white" style="font-size: 20px;"></i>
                                 </div>
                                 <div id="progressSuccessful" class="fw-bold" style="font-size: 28px; color: #16a34a;">0</div>
-                                <div class="text-uppercase fw-semibold" style="font-size: 10px; color: #6b7280; letter-spacing: 0.5px;">УСПЕШНО</div>
+                                <div class="text-uppercase fw-semibold" style="font-size: 10px; color: #6b7280; letter-spacing: 0.5px;" data-i18n="successful">УСПЕШНО</div>
                             </div>
                         </div>
                         <div class="col-4">
@@ -1376,7 +1376,7 @@
                                     <i class="bi bi-exclamation-circle text-white" style="font-size: 20px;"></i>
                                 </div>
                                 <div id="progressFailed" class="fw-bold" style="font-size: 28px; color: #dc2626;">0</div>
-                                <div class="text-uppercase fw-semibold" style="font-size: 10px; color: #6b7280; letter-spacing: 0.5px;">ОШИБКИ</div>
+                                <div class="text-uppercase fw-semibold" style="font-size: 10px; color: #6b7280; letter-spacing: 0.5px;" data-i18n="errors">ОШИБКИ</div>
                             </div>
                         </div>
                     </div>
@@ -1386,7 +1386,7 @@
                         <div class="d-flex align-items-start gap-2">
                             <i class="bi bi-check-circle-fill" style="color: #22c55e; font-size: 18px; margin-top: 2px;"></i>
                             <div>
-                                <div class="fw-semibold" style="color: #166534;">Все размещения обработаны!</div>
+                                <div class="fw-semibold" data-i18n="allPlacementsProcessed" style="color: #166534;">Все размещения обработаны!</div>
                                 <div id="progressResultsList" style="color: #15803d; font-size: 14px;"></div>
                             </div>
                         </div>
@@ -1397,7 +1397,7 @@
                         <div class="d-flex align-items-start gap-2">
                             <i class="bi bi-exclamation-triangle-fill" style="color: #dc2626; font-size: 18px; margin-top: 2px;"></i>
                             <div style="flex: 1;">
-                                <div class="fw-semibold" style="color: #991b1b;">Ошибки:</div>
+                                <div class="fw-semibold" data-i18n="errorsLabel" style="color: #991b1b;">Ошибки:</div>
                                 <ul id="progressErrorsList" class="mb-0 ps-3" style="color: #b91c1c; font-size: 14px;"></ul>
                             </div>
                         </div>
@@ -1407,10 +1407,10 @@
                 <!-- Footer with centered button -->
                 <div class="modal-footer border-0 justify-content-center py-4" style="background: #f9fafb;">
                     <button type="button" class="btn px-5 py-2" id="cancelJobBtn" onclick="cancelCurrentJob()" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; border-radius: 12px; font-weight: 600; font-size: 15px;">
-                        <i class="bi bi-x-lg me-2"></i>Отменить покупку
+                        <i class="bi bi-x-lg me-2"></i><span data-i18n="cancelPurchase">Отменить покупку</span>
                     </button>
                     <button type="button" class="btn px-5 py-2" id="closeProgressBtn" onclick="closeProgressModal()" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; border: none; border-radius: 12px; font-weight: 600; font-size: 15px; display: none;">
-                        <i class="bi bi-check-lg me-2"></i>Готово
+                        <i class="bi bi-check-lg me-2"></i><span data-i18n="done">Готово</span>
                     </button>
                 </div>
             </div>
@@ -1418,19 +1418,26 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/translations.js"></script>
     <script src="/js/security.js"></script>
     <script src="/js/auth.js"></script>
     <script src="/js/api.js"></script>
     <script src="/js/sidebar.js"></script>
     <script>
-        // Initialize sidebar navigation
+        // Initialize sidebar navigation with i18n
+        const lang = getLang();
         SidebarNav.init({
             activePage: 'purchase',
-            pageTitle: 'Покупка ссылок',
-            pageSubtitle: 'Выберите сайты для размещения',
+            pageTitle: lang === 'en' ? 'Buy Links' : 'Покупка ссылок',
+            pageSubtitle: lang === 'en' ? 'Select sites for placement' : 'Выберите сайты для размещения',
             pageIcon: 'cart-check-fill',
             pageIconGradient: 'gradient-purple-pink'
         });
+
+        // Apply translations
+        if (typeof applyTranslations === 'function') {
+            applyTranslations();
+        }
 
         let projects = [];
         let sites = [];
@@ -1998,8 +2005,8 @@
 
                 // Visibility badge
                 const visibilityBadge = site.is_public
-                    ? '<span class="badge bg-info ms-1"><i class="bi bi-globe"></i> Публичный</span>'
-                    : '<span class="badge bg-secondary ms-1"><i class="bi bi-lock-fill"></i> Личный сайт</span>';
+                    ? `<span class="badge bg-info ms-1"><i class="bi bi-globe"></i> ${t('publicSite')}</span>`
+                    : `<span class="badge bg-secondary ms-1"><i class="bi bi-lock-fill"></i> ${t('privateSite')}</span>`;
 
                 // Disable reason tooltip
                 const tooltipAttr = site.disableReason

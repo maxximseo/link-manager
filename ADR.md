@@ -2223,6 +2223,147 @@ WHERE id = $2
 
 ---
 
+## ADR-030: Database Migration from DigitalOcean to Supabase
+
+**Status**: ✅ ACTIVE
+**Date**: December 2025
+**Context**: Optimize infrastructure costs and improve database capabilities
+
+### Decision
+
+Migrate PostgreSQL database from **DigitalOcean Managed Database** to **Supabase** while keeping Redis on DigitalOcean.
+
+### Rationale
+
+**Cost Savings**:
+- DigitalOcean PostgreSQL: ~$20/month
+- Supabase Pro: $25/month (includes more features)
+- Net savings when combining other services
+
+**Technical Benefits**:
+- PostgreSQL 15 (vs DO's 17.6 - minor difference)
+- Built-in connection pooling (Supavisor)
+- Row Level Security capability
+- Realtime subscriptions (future use)
+- Better dashboard and SQL editor
+
+**Architecture Change**:
+| Component | Before | After |
+|-----------|--------|-------|
+| PostgreSQL | DigitalOcean | Supabase |
+| Redis | DigitalOcean | DigitalOcean (unchanged) |
+| App Hosting | DigitalOcean | DigitalOcean (unchanged) |
+
+### Migration Process
+
+1. **Export from DigitalOcean**:
+   ```bash
+   node scripts/export-from-digitalocean.js
+   ```
+
+2. **Import to Supabase**:
+   ```bash
+   node scripts/import-to-supabase.js migration-data/export-*.json
+   ```
+
+3. **Update database.js** for Supabase SSL:
+   ```javascript
+   if (process.env.DB_HOST?.includes('supabase.com')) {
+     sslConfig = { rejectUnauthorized: false };
+   }
+   ```
+
+4. **Update Environment Variables**:
+   ```
+   DATABASE_URL="postgresql://postgres.xxx:password@aws-1-eu-west-1.pooler.supabase.com:5432/postgres?sslmode=require"
+   ```
+
+### Connection String Format
+
+**URL Encoding Required**: Password with `&` must use `%26`:
+```
+postgresql://user:*b1h%26XNcpDoBtSHD@host:5432/postgres
+```
+
+### Verification
+
+- ✅ 15 tables migrated
+- ✅ 2,264 records transferred
+- ✅ User data intact (balance: $6746.55)
+- ✅ Foreign key constraints working
+- ✅ Sequences reset correctly
+
+### Consequences
+- ✅ Reduced infrastructure costs
+- ✅ Better database dashboard
+- ✅ Connection pooling built-in
+- ⚠️ Redis remains on DigitalOcean (Supabase doesn't offer Redis)
+- ⚠️ Password with special characters needs URL encoding
+
+---
+
+## ADR-031: Project Cleanup - Remove Unused Files
+
+**Status**: ✅ COMPLETED
+**Date**: December 2025
+**Context**: Remove accumulated test files, old documentation, and historical migrations
+
+### Decision
+
+Delete unused files to reduce project clutter and improve maintainability.
+
+### Files Removed
+
+**Root test files** (6 files):
+- `test-custom-pricing.js`
+- `test-real-custom-pricing.js`
+- `test-browser-price-edit.js`
+- `test-notifications-ui.js`
+- `test-notifications-ui 2.js`
+- `verify-custom-pricing.js`
+
+**Documentation** (7 files):
+- `VERIFICATION_REPORT.md`
+- `PRICE_INTEGER_MIGRATION.md`
+- `CUSTOM_PRICING_IMPLEMENTATION.md`
+- `CLAUDE_IMPORT_GUIDE.md`
+- `DO_IMPORT.md`
+- `QUICK_IMPORT.md`
+- `MIGRATION_GUIDE.md`
+
+**Directories**:
+- `coverage/` - old test coverage reports
+- `link-manager/` - empty folder with only node_modules
+- `migration-data/` - temporary migration export files
+- `backend/build/placements-manager.html.backup`
+
+**Historical migrations** (11 files):
+- `run_comprehensive_fixes.js` + SQL
+- `run_optimize_queries.js` + SQL
+- `run_placement_index.js` + SQL
+- `run_unique_constraints.js` + SQL
+- `run_usage_indexes.js` + SQL
+- `run_placement_content_constraint.js` + SQL
+- `run_backfill_site_types.js` + SQL
+- `verify_discount_tiers.js`
+- `run_sync_discounts_migration.js`
+- `run_site_moderation_migration.js` + SQL
+- `run_allow_articles_migration.js` + SQL
+
+### Documentation Error Fixed
+
+Fixed incorrect file reference in CLAUDE.md:
+- ❌ `run_remove_anchor_constraint.js` (doesn't exist)
+- ✅ `run_remove_anchor_unique.js` (correct file)
+
+### Consequences
+- ✅ Cleaner project structure
+- ✅ Reduced confusion about which files are used
+- ✅ Documentation matches actual file names
+- ⚠️ Historical migration files deleted (already applied to database)
+
+---
+
 ## Decision Review Process
 
 ADRs should be reviewed when:

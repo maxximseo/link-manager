@@ -915,3 +915,49 @@ body.has-sidebar {
     opacity: 1;
     visibility: visible;
 }
+
+/* ========================================
+   LANGUAGE SWITCHER
+   ======================================== */
+
+/* Language Switcher - Minimalist */
+.lang-switcher {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+    font-weight: 600;
+    font-size: 13px;
+    color: #475569;
+}
+
+.lang-switcher:hover {
+    opacity: 0.7;
+}
+
+.lang-switcher:active {
+    transform: scale(0.98);
+}
+
+.lang-icon {
+    width: 16px;
+    height: 16px;
+    color: #64748b;
+}
+
+.lang-code {
+    color: #475569;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+/* Responsive adjustments for language switcher */
+@media (max-width: 768px) {
+    .lang-switcher .lang-code {
+        display: none;
+    }
+}

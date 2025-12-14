@@ -170,18 +170,17 @@ function getCfColorClass(cf) {
 // Discount Tier Names
 // ============================================
 
-const DISCOUNT_TIER_NAMES = {
-    0: 'Стандарт',
-    10: 'Bronze',
-    15: 'Silver',
-    20: 'Gold',
-    25: 'Platinum',
-    30: 'Diamond'
-};
-
 function getDiscountTierName(discount) {
     const discountInt = parseInt(discount) || 0;
-    return DISCOUNT_TIER_NAMES[discountInt] || 'Стандарт';
+    const tierNames = {
+        0: typeof t === 'function' ? t('tierStandard') : 'Standard',
+        10: 'Bronze',
+        15: 'Silver',
+        20: 'Gold',
+        25: 'Platinum',
+        30: 'Diamond'
+    };
+    return tierNames[discountInt] || (typeof t === 'function' ? t('tierStandard') : 'Standard');
 }
 
 // ============================================
@@ -317,7 +316,6 @@ if (typeof window !== 'undefined') {
     window.getCfColorClass = getCfColorClass;
 
     // Tier status
-    window.DISCOUNT_TIER_NAMES = DISCOUNT_TIER_NAMES;
     window.getDiscountTierName = getDiscountTierName;
     window.getTierStatusHtml = getTierStatusHtml;
 

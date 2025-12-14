@@ -7,6 +7,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.6.8] - 2025-12-13
+
+### 🔄 Infrastructure: Database Migration to Supabase
+
+#### Database Provider Change
+- **MIGRATED** PostgreSQL from DigitalOcean to Supabase
+- **PRESERVED** All data: 15 tables, 2,264 records
+- **UNCHANGED** Redis/Valkey remains on DigitalOcean
+
+#### Technical Changes
+- **UPDATED** `backend/config/database.js` - Added Supabase SSL support:
+  ```javascript
+  if (process.env.DB_HOST?.includes('supabase.com')) {
+    sslConfig = { rejectUnauthorized: false };
+  }
+  ```
+- **UPDATED** Environment variables for both production and local development
+- **ADDED** Migration scripts:
+  - `scripts/export-from-digitalocean.js`
+  - `scripts/import-to-supabase.js`
+
+#### Connection Details
+- Host: `aws-1-eu-west-1.pooler.supabase.com`
+- Port: 5432
+- Database: `postgres`
+- Note: Password with `&` requires URL encoding (`%26`)
+
+### 🧹 Project Cleanup
+
+#### Removed Unused Files
+- **DELETED** 6 root test files (test-custom-pricing.js, etc.)
+- **DELETED** 7 documentation files (VERIFICATION_REPORT.md, etc.)
+- **DELETED** 11 historical migration files (run_comprehensive_fixes.js, etc.)
+- **DELETED** Directories: `coverage/`, `link-manager/`, `migration-data/`
+- **DELETED** `backend/build/placements-manager.html.backup`
+
+#### Documentation Fixed
+- **FIXED** CLAUDE.md: Corrected `run_remove_anchor_constraint.js` → `run_remove_anchor_unique.js`
+- **ADDED** ADR-030: Database Migration from DigitalOcean to Supabase
+- **ADDED** ADR-031: Project Cleanup - Remove Unused Files
+
+### Files Changed
+- `backend/config/database.js` - Supabase SSL support
+- `backend/.env` - Supabase credentials
+- `.env` - Supabase credentials
+- `CLAUDE.md` - Fixed migration file reference
+- `ADR.md` - Added ADR-030, ADR-031
+- `CHANGELOG.md` - This entry
+
+---
+
 ## [2.6.7] - 2025-12-11
 
 ### 🐛 Bug Fixes: Link Edit + Bulk Import Redesign

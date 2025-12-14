@@ -13,6 +13,24 @@ let itemsPerPage = 100;
 let totalTransactions = 0;
 let totalPages = 1;
 
+/**
+ * Get translated tier name based on discount percentage
+ */
+function getTranslatedTierName(discount) {
+    const discountInt = parseInt(discount) || 0;
+    // Standard tier (0%) should use translation, others keep English names
+    if (discountInt === 0) return t('tierStandard');
+    // Other tiers: Bronze(10%), Silver(15%), Gold(20%), Platinum(25%), Diamond(30%)
+    const tierNames = {
+        10: 'Bronze',
+        15: 'Silver',
+        20: 'Gold',
+        25: 'Platinum',
+        30: 'Diamond'
+    };
+    return tierNames[discountInt] || t('tierStandard');
+}
+
 // Initialize page
 document.addEventListener('DOMContentLoaded', async () => {
     await loadBalanceData();
@@ -48,7 +66,8 @@ async function loadBalanceData() {
         document.getElementById('currentBalance').textContent = currentBalance.toFixed(2);
         document.getElementById('totalSpent').textContent = totalSpent.toFixed(2);
         document.getElementById('currentDiscount').textContent = currentDiscount;
-        document.getElementById('discountTier').textContent = data.discountTier || 'Стандарт';
+        // Translate tier name based on discount percentage
+        document.getElementById('discountTier').textContent = getTranslatedTierName(currentDiscount);
 
         // Update navbar balance
         const navBalance = document.getElementById('navBalance');
@@ -58,7 +77,7 @@ async function loadBalanceData() {
 
     } catch (error) {
         console.error('Failed to load balance:', error);
-        showAlert('Ошибка загрузки баланса', 'danger');
+        showAlert(t('balanceLoadError'), 'danger');
     }
 }
 
@@ -137,12 +156,12 @@ function renderDiscountTiers() {
     const tbody = document.getElementById('discountTiersTable');
     tbody.innerHTML = '';
 
-    // Add "Стандарт" tier at the beginning if not exists
+    // Add "Standard" tier at the beginning if not exists
     const allTiers = [...discountTiers];
-    const hasStandardTier = allTiers.some(t => parseFloat(t.min_spent) === 0);
+    const hasStandardTier = allTiers.some(tier => parseFloat(tier.min_spent) === 0);
     if (!hasStandardTier) {
         allTiers.unshift({
-            tier_name: 'Стандарт',
+            tier_name: t('tierStandard'),
             min_spent: '0',
             discount_percentage: 0
         });
@@ -178,20 +197,20 @@ function renderDiscountTiers() {
         else if (isNext) badgeClass = 'badge-blue';
 
         // Status text
-        let statusText = 'Заблокирован';
+        let statusText = t('tierStatusLocked');
         let statusClass = 'status-locked';
         if (isCurrent) {
-            statusText = 'Текущий';
+            statusText = t('tierStatusCurrent');
             statusClass = 'status-current';
         } else if (isNext) {
-            statusText = 'Следующий';
+            statusText = t('tierStatusNext');
             statusClass = 'status-next';
         }
 
         // Gold tier extra info
         let extraInfo = '';
         if (isGoldTier && !tierReached) {
-            extraInfo = '<br><small class="text-info"><i class="bi bi-eye-fill"></i> Будут видны адреса площадок</small>';
+            extraInfo = `<br><small class="text-info"><i class="bi bi-eye-fill"></i> ${t('tierGoldInfo')}</small>`;
         }
 
         row.innerHTML = `
@@ -225,7 +244,7 @@ function updateDiscountProgress() {
         document.getElementById('discountProgress').style.width = '100%';
         document.getElementById('discountProgressText').textContent = '100';
         document.getElementById('discountProgressMessage').innerHTML =
-            '<i class="bi bi-trophy-fill text-warning"></i> Поздравляем! Вы достигли максимального уровня скидки!';
+            `<i class="bi bi-trophy-fill text-warning"></i> ${t('maxTierReached')}`;
 
         // Update new progress bar elements for max tier
         const progressIndicator = document.getElementById('progressIndicator');
@@ -237,7 +256,7 @@ function updateDiscountProgress() {
         if (progressIndicator) progressIndicator.style.left = '100%';
         if (progressTooltip) progressTooltip.textContent = `$${totalSpent.toFixed(0)}`;
         if (progressSpentValue) progressSpentValue.textContent = `$${totalSpent.toFixed(2)}`;
-        if (progressGoalValue) progressGoalValue.textContent = 'Максимум';
+        if (progressGoalValue) progressGoalValue.textContent = t('maxTierLabel');
         if (progressRemainingValue) progressRemainingValue.textContent = '$0';
         return;
     }
@@ -301,7 +320,7 @@ async function loadTransactions(page = 1) {
     } catch (error) {
         console.error('Failed to load transactions:', error);
         document.getElementById('transactionsTable').innerHTML =
-            '<tr><td colspan="6" class="text-center text-danger">Ошибка загрузки транзакций</td></tr>';
+            `<tr><td colspan="6" class="text-center text-danger">${t('txLoadError')}</td></tr>`;
     }
 }
 
@@ -354,7 +373,7 @@ function renderTransactions(transactions) {
                 <td colspan="6" class="text-center py-5">
                     <div class="notification-empty">
                         <i class="bi bi-receipt"></i>
-                        <p>Транзакций пока нет</p>
+                        <p>${t('noTransactions')}</p>
                     </div>
                 </td>
             </tr>
@@ -373,27 +392,27 @@ function renderTransactions(transactions) {
         let amountColor = '';
         switch(tx.type) {
             case 'deposit':
-                typeBadge = '<span class="status-badge status-live"><i class="bi bi-arrow-down-circle-fill"></i> Пополнение</span>';
+                typeBadge = `<span class="status-badge status-live"><i class="bi bi-arrow-down-circle-fill"></i> ${t('txDeposit')}</span>`;
                 amountColor = 'color: #16a34a; font-weight: 600;';
                 break;
             case 'withdrawal':
-                typeBadge = '<span class="status-badge status-failed"><i class="bi bi-arrow-up-circle-fill"></i> Вывод</span>';
+                typeBadge = `<span class="status-badge status-failed"><i class="bi bi-arrow-up-circle-fill"></i> ${t('txWithdrawal')}</span>`;
                 amountColor = 'color: #dc2626; font-weight: 600;';
                 break;
             case 'purchase':
-                typeBadge = '<span class="status-badge status-scheduled"><i class="bi bi-cart-fill"></i> Покупка</span>';
+                typeBadge = `<span class="status-badge status-scheduled"><i class="bi bi-cart-fill"></i> ${t('txPurchase')}</span>`;
                 amountColor = 'color: #4f46e5; font-weight: 600;';
                 break;
             case 'refund':
-                typeBadge = '<span class="status-badge status-pending"><i class="bi bi-arrow-counterclockwise"></i> Возврат</span>';
+                typeBadge = `<span class="status-badge status-pending"><i class="bi bi-arrow-counterclockwise"></i> ${t('txRefund')}</span>`;
                 amountColor = 'color: #d97706; font-weight: 600;';
                 break;
             case 'renewal':
-                typeBadge = '<span class="status-badge" style="background: #ede9fe; color: #7c3aed;"><i class="bi bi-arrow-repeat"></i> Продление</span>';
+                typeBadge = `<span class="status-badge" style="background: #ede9fe; color: #7c3aed;"><i class="bi bi-arrow-repeat"></i> ${t('txRenewal')}</span>`;
                 amountColor = 'color: #7c3aed; font-weight: 600;';
                 break;
             case 'referral':
-                typeBadge = '<span class="status-badge" style="background: #fce7f3; color: #db2777;"><i class="bi bi-people-fill"></i> Реферал</span>';
+                typeBadge = `<span class="status-badge" style="background: #fce7f3; color: #db2777;"><i class="bi bi-people-fill"></i> ${t('txReferral')}</span>`;
                 amountColor = 'color: #db2777; font-weight: 600;';
                 break;
             default:
@@ -427,7 +446,7 @@ function renderTransactionsPagination(pagination) {
 
     const paginationInfo = document.getElementById('paginationInfo');
     if (paginationInfo) {
-        paginationInfo.textContent = `Показано ${start}–${end} из ${total}`;
+        paginationInfo.textContent = `${t('paginationShowing')} ${start}–${end} ${t('paginationOf')} ${total}`;
     }
 
     // Update prev/next buttons
@@ -544,14 +563,14 @@ async function createPaymentInvoice() {
     const amount = parseFloat(document.getElementById('depositAmount').value);
 
     if (isNaN(amount) || amount < paymentConfig.minAmount || amount > paymentConfig.maxAmount) {
-        showAlert(`Сумма должна быть от $${paymentConfig.minAmount} до $${paymentConfig.maxAmount.toLocaleString()}`, 'danger');
+        showAlert(`${t('depositAmountError')} $${paymentConfig.minAmount} ${t('depositTo')} $${paymentConfig.maxAmount.toLocaleString()}`, 'danger');
         return;
     }
 
     const btn = document.getElementById('createInvoiceBtn');
     const originalText = btn.innerHTML;
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Создание счёта...';
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> ${t('creatingInvoice')}`;
 
     try {
         const response = await fetch('/api/payments/create-invoice', {
@@ -566,7 +585,7 @@ async function createPaymentInvoice() {
         const result = await response.json();
 
         if (!response.ok) {
-            throw new Error(result.error || 'Ошибка создания счёта');
+            throw new Error(result.error || t('invoiceError'));
         }
 
         // Show step 2 (invoice created)
@@ -580,17 +599,17 @@ async function createPaymentInvoice() {
             const expiryDate = new Date(result.invoice.expiresAt);
             document.getElementById('invoiceExpiry').textContent = expiryDate.toLocaleString('ru-RU');
         } else {
-            document.getElementById('invoiceExpiry').textContent = '24 часа';
+            document.getElementById('invoiceExpiry').textContent = t('hours24');
         }
 
         // Set payment link
         document.getElementById('paymentLink').href = result.invoice.paymentLink;
 
-        showAlert('Счёт создан! Нажмите "Перейти к оплате" для оплаты криптовалютой.', 'success');
+        showAlert(t('invoiceCreated'), 'success');
 
     } catch (error) {
         console.error('Failed to create invoice:', error);
-        showAlert(error.message || 'Ошибка создания счёта', 'danger');
+        showAlert(error.message || t('invoiceError'), 'danger');
     } finally {
         btn.disabled = false;
         btn.innerHTML = originalText;
@@ -632,7 +651,7 @@ async function loadPendingInvoices() {
                         <small class="text-muted ms-2">${new Date(inv.createdAt).toLocaleString('ru-RU')}</small>
                     </div>
                     <a href="${inv.paymentLink}" target="_blank" class="btn btn-sm btn-primary">
-                        <i class="bi bi-box-arrow-up-right"></i> Оплатить
+                        <i class="bi bi-box-arrow-up-right"></i> ${t('payBtn')}
                     </a>
                 </div>
             `;
@@ -673,7 +692,7 @@ async function processDeposit() {
     const description = document.getElementById('depositDescription')?.value || 'Пополнение баланса';
 
     if (isNaN(amount) || amount < 1 || amount > 10000) {
-        showAlert('Сумма должна быть от $1 до $10,000', 'danger');
+        showAlert(`${t('depositAmountError')} $1 ${t('depositTo')} $10,000`, 'danger');
         return;
     }
 
@@ -703,14 +722,14 @@ async function processDeposit() {
         await loadTransactions();
         updateDiscountProgress();
 
-        showAlert(`Баланс успешно пополнен на $${amount.toFixed(2)}. Новый баланс: $${result.data.newBalance.toFixed(2)}`, 'success');
+        showAlert(`${t('depositSuccess')} $${amount.toFixed(2)}. ${t('newBalanceLabel')}: $${result.data.newBalance.toFixed(2)}`, 'success');
 
         // Reset form
         document.getElementById('depositAmount').value = '100';
 
     } catch (error) {
         console.error('Failed to deposit:', error);
-        showAlert(error.message || 'Ошибка пополнения баланса', 'danger');
+        showAlert(error.message || t('depositError'), 'danger');
     }
 }
 
@@ -740,11 +759,11 @@ async function exportTransactions(format = 'csv') {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
 
-        showAlert(`Транзакции экспортированы в формате ${format.toUpperCase()}`, 'success');
+        showAlert(`${t('exportSuccess')} ${format.toUpperCase()}`, 'success');
 
     } catch (error) {
         console.error('Failed to export:', error);
-        showAlert('Ошибка экспорта транзакций', 'danger');
+        showAlert(t('exportError'), 'danger');
     }
 }
 

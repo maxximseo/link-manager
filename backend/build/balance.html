@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Баланс - Link Manager</title>
+    <title data-i18n="balancePageTitle">Баланс - Link Manager</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="/css/styles.css">
@@ -23,14 +23,14 @@
                     <div class="card-circle card-circle-sm"></div>
                     <div class="card-content">
                         <div class="card-header-row">
-                            <span class="card-label">Текущий баланс</span>
+                            <span class="card-label" data-i18n="currentBalanceLabel">Текущий баланс</span>
                             <div class="card-icon">
                                 <i class="bi bi-wallet2"></i>
                             </div>
                         </div>
                         <p class="card-value">$<span id="currentBalance">0.00</span></p>
                         <button class="btn-deposit" data-bs-toggle="modal" data-bs-target="#depositModal">
-                            <i class="bi bi-plus"></i> Пополнить
+                            <i class="bi bi-plus"></i> <span data-i18n="depositBtn">Пополнить</span>
                         </button>
                     </div>
                 </div>
@@ -41,13 +41,13 @@
                 <div class="balance-stat-card card-white">
                     <div class="card-content">
                         <div class="card-header-row">
-                            <span class="card-label">Потрачено всего</span>
+                            <span class="card-label" data-i18n="totalSpentLabel">Потрачено всего</span>
                             <div class="card-icon">
                                 <i class="bi bi-graph-up-arrow"></i>
                             </div>
                         </div>
                         <p class="card-value">$<span id="totalSpent">0.00</span></p>
-                        <span class="card-subtitle">За все время</span>
+                        <span class="card-subtitle" data-i18n="allTimeSubtitle">За все время</span>
                     </div>
                 </div>
             </div>
@@ -57,16 +57,16 @@
                 <div class="balance-stat-card card-amber">
                     <div class="card-content">
                         <div class="card-header-row">
-                            <span class="card-label">Скидка на продление</span>
+                            <span class="card-label" data-i18n="renewalDiscountLabel">Скидка на продление</span>
                             <div class="card-icon">
                                 <i class="bi bi-gift"></i>
                             </div>
                         </div>
                         <p class="card-value"><span id="renewalTotalDiscount">40</span>%</p>
                         <div class="card-subtitle">
-                            <span>30% базовая + <span id="renewalPersonalDiscount">10</span>%</span>
+                            <span><span data-i18n="baseDiscount">30% базовая</span> + <span id="renewalPersonalDiscount">10</span>%</span>
                             <span class="info-badge"><i class="bi bi-info"></i></span>
-                            <span>Макс 60%</span>
+                            <span data-i18n="maxDiscount">Макс 60%</span>
                         </div>
                     </div>
                 </div>
@@ -75,16 +75,16 @@
 
         <!-- Discount Progress -->
         <div class="discount-progress-card">
-            <h5 class="card-title">Ваша скидка: <span id="currentDiscount">0</span>% <span id="discountTier">Стандарт</span></h5>
+            <h5 class="card-title"><span data-i18n="yourDiscount">Ваша скидка:</span> <span id="currentDiscount">0</span>% <span id="discountTier" data-i18n="tierStandard">Стандарт</span></h5>
             <p class="card-subtitle" id="discountProgressMessage">
-                Прогресс до следующего уровня •
-                <span class="highlight-text">Потратьте еще $<span id="amountToNextTier">800</span> для получения скидки <span id="nextTierDiscount">10</span>% (<span id="nextTierName">Bronze</span>)</span>
+                <span data-i18n="progressToNextTier">Прогресс до следующего уровня</span> •
+                <span class="highlight-text"><span data-i18n="spendMore">Потратьте еще</span> $<span id="amountToNextTier">800</span> <span data-i18n="toGetDiscount">для получения скидки</span> <span id="nextTierDiscount">10</span>% (<span id="nextTierName">Bronze</span>)</span>
             </p>
 
             <!-- Enhanced Progress Bar -->
             <div class="progress-stats mb-2">
-                <span class="progress-spent"><span class="fw-semibold text-dark" id="progressSpentValue">$0.00</span> потрачено</span>
-                <span class="progress-goal">Цель: <span class="fw-semibold text-amber" id="progressGoalValue">$1,000</span></span>
+                <span class="progress-spent"><span class="fw-semibold text-dark" id="progressSpentValue">$0.00</span> <span data-i18n="spent">потрачено</span></span>
+                <span class="progress-goal"><span data-i18n="goal">Цель:</span> <span class="fw-semibold text-amber" id="progressGoalValue">$1,000</span></span>
             </div>
             <div class="progress-modern-wrapper">
                 <div class="progress-modern">
@@ -97,31 +97,31 @@
                 </div>
             </div>
             <div class="progress-footer">
-                <span class="progress-percent"><span id="discountProgressText">0</span>% выполнено</span>
-                <span class="progress-remaining">Осталось: <span class="fw-semibold text-amber" id="progressRemainingValue">$1,000</span></span>
+                <span class="progress-percent"><span id="discountProgressText">0</span>% <span data-i18n="completed">выполнено</span></span>
+                <span class="progress-remaining"><span data-i18n="remaining">Осталось:</span> <span class="fw-semibold text-amber" id="progressRemainingValue">$1,000</span></span>
             </div>
         </div>
 
         <!-- Discount Tiers Table -->
         <div class="discount-tiers-table mb-4">
             <div class="table-header">
-                <h5>Уровни скидок</h5>
+                <h5 data-i18n="discountTiersTitle">Уровни скидок</h5>
             </div>
             <div class="table-responsive">
                 <table class="table mb-0">
                     <thead>
                         <tr>
-                            <th>Уровень</th>
-                            <th>Минимальная сумма</th>
-                            <th>Скидка</th>
-                            <th>Статус</th>
+                            <th data-i18n="tierLevel">Уровень</th>
+                            <th data-i18n="tierMinAmount">Минимальная сумма</th>
+                            <th data-i18n="tierDiscount">Скидка</th>
+                            <th data-i18n="tierStatus">Статус</th>
                         </tr>
                     </thead>
                     <tbody id="discountTiersTable">
                         <tr>
                             <td colspan="4" class="text-center text-muted py-4">
                                 <div class="spinner-border spinner-border-sm text-primary me-2"></div>
-                                Загрузка...
+                                <span data-i18n="loading">Загрузка...</span>
                             </td>
                         </tr>
                     </tbody>
@@ -133,8 +133,8 @@
         <div class="modern-card mb-4">
             <div class="modern-card-header d-flex justify-content-between align-items-center flex-wrap gap-3">
                 <div>
-                    <h2>История транзакций</h2>
-                    <p>Все операции с вашим балансом</p>
+                    <h2 data-i18n="transactionsHistory">История транзакций</h2>
+                    <p data-i18n="allBalanceOperations">Все операции с вашим балансом</p>
                 </div>
                 <div class="d-flex gap-2">
                     <button class="btn-export btn-csv" onclick="exportTransactions('csv')">
@@ -150,18 +150,18 @@
                     <thead>
                         <tr>
                             <th class="col-id">ID</th>
-                            <th class="col-date">Дата</th>
-                            <th>Тип</th>
-                            <th class="col-money">Сумма</th>
-                            <th class="col-money">Баланс</th>
-                            <th>Описание</th>
+                            <th class="col-date" data-i18n="thDate">Дата</th>
+                            <th data-i18n="thType">Тип</th>
+                            <th class="col-money" data-i18n="thAmount">Сумма</th>
+                            <th class="col-money" data-i18n="thBalance">Баланс</th>
+                            <th data-i18n="thDescription">Описание</th>
                         </tr>
                     </thead>
                     <tbody id="transactionsTable">
                         <tr>
                             <td colspan="6" class="text-center text-muted py-4">
                                 <div class="spinner-border spinner-border-sm text-primary me-2"></div>
-                                Загрузка...
+                                <span data-i18n="loading">Загрузка...</span>
                             </td>
                         </tr>
                     </tbody>
@@ -170,14 +170,14 @@
             <!-- Pagination -->
             <div class="pagination-wrapper" id="transactionsPagination">
                 <div class="pagination-left">
-                    <span>Показать:</span>
+                    <span data-i18n="showLabel">Показать:</span>
                     <select id="itemsPerPage" onchange="changeItemsPerPage(this.value)">
                         <option value="50">50</option>
                         <option value="100" selected>100</option>
                         <option value="200">200</option>
                         <option value="500">500</option>
                     </select>
-                    <span>записей на странице</span>
+                    <span data-i18n="recordsPerPage">записей на странице</span>
                 </div>
                 <div class="pagination-right">
                     <span class="pagination-info" id="paginationInfo">Показано 1–100 из 100</span>
@@ -206,8 +206,8 @@
                             <i class="bi bi-wallet2"></i>
                         </div>
                         <div class="deposit-header-text">
-                            <h5 class="deposit-title">Пополнение баланса</h5>
-                            <p class="deposit-subtitle">Выберите сумму пополнения</p>
+                            <h5 class="deposit-title" data-i18n="depositModalTitle">Пополнение баланса</h5>
+                            <p class="deposit-subtitle" data-i18n="depositModalSubtitle">Выберите сумму пополнения</p>
                         </div>
                     </div>
                     <button type="button" class="deposit-close-btn" data-bs-dismiss="modal">
@@ -224,8 +224,8 @@
                                 <i class="bi bi-info-circle-fill"></i>
                             </div>
                             <div class="deposit-info-content">
-                                <h6>Оплата криптовалютой</h6>
-                                <p>USDT, BTC, ETH, LTC, TRX и другие</p>
+                                <h6 data-i18n="cryptoPayment">Оплата криптовалютой</h6>
+                                <p data-i18n="cryptoList">USDT, BTC, ETH, LTC, TRX и другие</p>
                             </div>
                         </div>
 
@@ -233,14 +233,14 @@
                         <div class="deposit-amount-section">
                             <label class="deposit-amount-label">
                                 <i class="bi bi-currency-dollar"></i>
-                                Сумма пополнения
+                                <span data-i18n="depositAmountLabel">Сумма пополнения</span>
                             </label>
                             <div class="deposit-amount-input-wrapper">
                                 <span class="deposit-currency-symbol">$</span>
                                 <input type="number" class="deposit-amount-input" id="depositAmount" min="10" max="10000" step="1" value="100" placeholder="100">
                             </div>
                             <p class="deposit-amount-hint">
-                                Минимум: $<span id="minDepositAmount">10</span>, Максимум: $<span id="maxDepositAmount">10 000</span>
+                                <span data-i18n="minLabel">Минимум:</span> $<span id="minDepositAmount">10</span>, <span data-i18n="maxLabel">Максимум:</span> $<span id="maxDepositAmount">10 000</span>
                             </p>
                         </div>
                     </div>
@@ -251,18 +251,18 @@
                             <div class="deposit-success-icon">
                                 <i class="bi bi-check-circle-fill"></i>
                             </div>
-                            <h6>Счёт создан!</h6>
+                            <h6 data-i18n="invoiceCreated">Счёт создан!</h6>
                         </div>
                         <div class="deposit-invoice-info">
                             <h3 class="deposit-invoice-amount">$<span id="invoiceAmount">0</span></h3>
-                            <p class="deposit-invoice-expiry">Действителен до: <span id="invoiceExpiry">-</span></p>
+                            <p class="deposit-invoice-expiry"><span data-i18n="validUntil">Действителен до:</span> <span id="invoiceExpiry">-</span></p>
                         </div>
                         <a href="#" target="_blank" class="deposit-pay-btn" id="paymentLink">
-                            <i class="bi bi-box-arrow-up-right"></i> Перейти к оплате
+                            <i class="bi bi-box-arrow-up-right"></i> <span data-i18n="goToPayment">Перейти к оплате</span>
                         </a>
                         <div class="deposit-warning-block">
                             <i class="bi bi-clock"></i>
-                            <span>После оплаты баланс пополнится автоматически в течение 1-5 минут.</span>
+                            <span data-i18n="paymentProcessingNote">После оплаты баланс пополнится автоматически в течение 1-5 минут.</span>
                         </div>
                     </div>
 
@@ -270,7 +270,7 @@
                     <div id="pendingInvoicesSection" class="mt-4" style="display: none;">
                         <div class="deposit-pending-header">
                             <i class="bi bi-hourglass-split"></i>
-                            <span>Ожидающие оплаты</span>
+                            <span data-i18n="pendingPayments">Ожидающие оплаты</span>
                         </div>
                         <div id="pendingInvoicesList"></div>
                     </div>
@@ -278,12 +278,12 @@
 
                 <!-- Footer -->
                 <div class="deposit-modal-footer">
-                    <button type="button" class="deposit-btn-secondary" data-bs-dismiss="modal" id="closeDepositModal">
+                    <button type="button" class="deposit-btn-secondary" data-bs-dismiss="modal" id="closeDepositModal" data-i18n="closeBtn">
                         Закрыть
                     </button>
                     <button type="button" class="deposit-btn-primary" onclick="createPaymentInvoice()" id="createInvoiceBtn">
                         <i class="bi bi-credit-card"></i>
-                        Создать счёт на оплату
+                        <span data-i18n="createInvoiceBtn">Создать счёт на оплату</span>
                     </button>
                 </div>
             </div>
@@ -296,15 +296,21 @@
     <script src="/js/badge-utils.js"></script>
     <script src="/js/api.js"></script>
     <script src="/js/sidebar.js"></script>
+    <script src="/js/translations.js"></script>
     <script>
-        // Initialize sidebar navigation
+        // Initialize sidebar navigation with i18n support
+        const lang = getLang();
         SidebarNav.init({
             activePage: 'balance',
-            pageTitle: 'Баланс и платежи',
-            pageSubtitle: 'Управление финансами и история транзакций',
+            pageTitle: lang === 'en' ? 'Balance & Payments' : 'Баланс и платежи',
+            pageSubtitle: lang === 'en' ? 'Financial management and transaction history' : 'Управление финансами и история транзакций',
             pageIcon: 'wallet2',
             pageIconGradient: 'gradient-yellow-orange'
         });
+        // Apply translations after DOM is ready
+        if (typeof applyTranslations === 'function') {
+            applyTranslations();
+        }
     </script>
     <script src="/js/balance.js"></script>
 </body>
