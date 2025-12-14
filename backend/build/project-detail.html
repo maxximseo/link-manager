@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Управление проектом - Link Manager</title>
+    <title data-i18n="projectDetailPageTitle">Управление проектом - Link Manager</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="/css/styles.css">
@@ -686,7 +686,7 @@
         <!-- Кнопка назад -->
         <a href="/dashboard.html" class="back-btn">
             <i class="bi bi-arrow-left"></i>
-            <span>Назад к проектам</span>
+            <span data-i18n="backToProjects">Назад к проектам</span>
         </a>
 
         <!-- Компактный хедер проекта -->
@@ -704,7 +704,7 @@
                             <i class="bi bi-link-45deg"></i>
                         </div>
                         <div>
-                            <div class="stat-label">Ссылки</div>
+                            <div class="stat-label" data-i18n="linksLabel">Ссылки</div>
                             <div class="stat-value blue" id="statLinksTotal">0</div>
                         </div>
                     </div>
@@ -717,7 +717,7 @@
                             <i class="bi bi-file-text"></i>
                         </div>
                         <div>
-                            <div class="stat-label">Гест-посты</div>
+                            <div class="stat-label" data-i18n="guestPostsLabel">Гест-посты</div>
                             <div class="stat-value purple" id="statArticlesTotal">0</div>
                         </div>
                     </div>
@@ -730,7 +730,7 @@
                             <i class="bi bi-check-circle"></i>
                         </div>
                         <div>
-                            <div class="stat-label">Активные</div>
+                            <div class="stat-label" data-i18n="activeLabel">Активные</div>
                             <div class="stat-value green" id="statActiveTotal">0</div>
                         </div>
                     </div>
@@ -745,8 +745,8 @@
                     <i class="bi bi-link-45deg"></i>
                 </div>
                 <div>
-                    <h5 class="mb-0" style="font-weight: 600; color: #111827;">Типы ссылок</h5>
-                    <p class="mb-0 small text-muted">Распределение ссылок по размещению</p>
+                    <h5 class="mb-0" style="font-weight: 600; color: #111827;" data-i18n="linkTypesTitle">Типы ссылок</h5>
+                    <p class="mb-0 small text-muted" data-i18n="linkTypesSubtitle">Распределение ссылок по размещению</p>
                 </div>
             </div>
             <div class="row g-3">
@@ -758,13 +758,13 @@
                                     <i class="bi bi-house-door"></i>
                                 </div>
                                 <div>
-                                    <h6 class="mb-0 fw-bold" style="color: #111827;">Главная</h6>
-                                    <small class="text-muted">Главная страница</small>
+                                    <h6 class="mb-0 fw-bold" style="color: #111827;" data-i18n="homepageTitle">Главная</h6>
+                                    <small class="text-muted" data-i18n="homepageSubtitle">Главная страница</small>
                                 </div>
                             </div>
                         </div>
                         <div class="d-flex align-items-center justify-content-between pt-3" style="border-top: 2px solid #86efac;">
-                            <span class="text-muted small">Размещено:</span>
+                            <span class="text-muted small" data-i18n="placedLabel">Размещено:</span>
                             <span class="link-type-value" id="homepageCount">0</span>
                         </div>
                     </div>
@@ -777,8 +777,8 @@
                                     <i class="bi bi-journal-text"></i>
                                 </div>
                                 <div>
-                                    <h6 class="mb-0 fw-bold" style="color: #111827;">Статья</h6>
-                                    <small class="text-muted">Отдельная статья</small>
+                                    <h6 class="mb-0 fw-bold" style="color: #111827;" data-i18n="articleTitle">Статья</h6>
+                                    <small class="text-muted" data-i18n="articleSubtitle">Отдельная статья</small>
                                 </div>
                             </div>
                         </div>
@@ -798,10 +798,10 @@
                 <!-- Pill tabs -->
                 <div class="pill-tabs">
                     <button class="pill-tab active" data-tab="linksTab" onclick="switchTab('linksTab', this)" id="linksTabBtn">
-                        Ссылки проекта (<span id="linksCount">0</span>)
+                        <span data-i18n="projectLinks">Ссылки проекта</span> (<span id="linksCount">0</span>)
                     </button>
                     <button class="pill-tab" data-tab="articlesTab" onclick="switchTab('articlesTab', this)" id="articlesTabBtn">
-                        Статьи проекта (<span id="articlesCount">0</span>)
+                        <span data-i18n="projectArticles">Статьи проекта</span> (<span id="articlesCount">0</span>)
                     </button>
                 </div>
 
@@ -811,13 +811,13 @@
                 <!-- Bulk import button -->
                 <button class="toolbar-btn secondary" onclick="showBulkImportModal()">
                     <i class="bi bi-upload"></i>
-                    Массовое добавление
+                    <span data-i18n="bulkImport">Массовое добавление</span>
                 </button>
 
                 <!-- Add button -->
                 <button class="toolbar-btn primary" id="addContentBtn" onclick="showAddLinkModal()">
                     <i class="bi bi-plus-lg"></i>
-                    Добавить ссылку
+                    <span data-i18n="addLink">Добавить ссылку</span>
                 </button>
             </div>
 
@@ -858,8 +858,8 @@
                             <i class="bi bi-plus-lg"></i>
                         </div>
                         <div>
-                            <h5 class="modal-title" id="linkModalTitle">Добавить ссылку</h5>
-                            <p class="modal-subtitle mb-0">Создайте новую ссылку для проекта</p>
+                            <h5 class="modal-title" id="linkModalTitle" data-i18n="addLinkTitle">Добавить ссылку</h5>
+                            <p class="modal-subtitle mb-0" data-i18n="addLinkSubtitle">Создайте новую ссылку для проекта</p>
                         </div>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -872,37 +872,37 @@
                         <div class="mb-4">
                             <label class="form-label-icon">
                                 <i class="bi bi-link-45deg text-primary"></i>
-                                URL ссылки
+                                <span data-i18n="linkUrlLabel">URL ссылки</span>
                                 <span class="required">*</span>
                             </label>
-                            <input type="url" class="form-control" id="linkUrl" required placeholder="https://example.com/page">
+                            <input type="url" class="form-control" id="linkUrl" required data-i18n-placeholder="linkUrlPlaceholder" placeholder="https://example.com/page">
                         </div>
 
                         <!-- Анкор -->
                         <div class="mb-4">
                             <label class="form-label-icon">
                                 <i class="bi bi-cursor-text" style="color: #8b5cf6;"></i>
-                                Анкор (текст ссылки)
+                                <span data-i18n="linkAnchorLabel">Анкор (текст ссылки)</span>
                                 <span class="required">*</span>
                             </label>
-                            <input type="text" class="form-control" id="linkAnchor" required placeholder="Купить продукт">
+                            <input type="text" class="form-control" id="linkAnchor" required data-i18n-placeholder="linkAnchorPlaceholder" placeholder="Купить продукт">
                         </div>
 
                         <!-- HTML контекст -->
                         <div class="mb-4">
                             <label class="form-label-icon">
                                 <i class="bi bi-code-slash" style="color: #ec4899;"></i>
-                                HTML с окружающим текстом
-                                <span class="optional">опционально</span>
+                                <span data-i18n="linkHtmlContextLabel">HTML с окружающим текстом</span>
+                                <span class="optional" data-i18n="optionalLabel">опционально</span>
                             </label>
                             <div class="hint-box mb-2">
                                 <i class="bi bi-lightbulb me-1"></i>
-                                Вы можете &lt;a href="..."&gt;купить ссылки&lt;/a&gt; на нашем сайте
+                                <span data-i18n="linkHtmlContextHint">Вы можете &lt;a href="..."&gt;купить ссылки&lt;/a&gt; на нашем сайте</span>
                             </div>
-                            <textarea class="form-control font-monospace" id="linkHtmlContext" rows="3" placeholder="Введите полный HTML код с окружающим текстом или оставьте пустым" style="font-size: 12px;"></textarea>
+                            <textarea class="form-control font-monospace" id="linkHtmlContext" rows="3" data-i18n-placeholder="linkHtmlContextPlaceholder" placeholder="Введите полный HTML код с окружающим текстом или оставьте пустым" style="font-size: 12px;"></textarea>
                             <small class="text-muted d-flex align-items-center gap-1 mt-1">
                                 <i class="bi bi-info-circle"></i>
-                                Если заполнено, будет использован этот HTML. URL и анкор выше будут проигнорированы
+                                <span data-i18n="linkHtmlContextNote">Если заполнено, будет использован этот HTML. URL и анкор выше будут проигнорированы</span>
                             </small>
                         </div>
 
@@ -910,7 +910,7 @@
                         <div class="mb-3">
                             <label class="form-label-icon">
                                 <i class="bi bi-clock" style="color: #22c55e;"></i>
-                                Лимит использования
+                                <span data-i18n="usageLimitLabel">Лимит использования</span>
                                 <span class="required">*</span>
                             </label>
                             <div class="d-flex align-items-center gap-3">
@@ -921,14 +921,14 @@
                                     <button type="button" class="quick-limit-btn active" onclick="setQuickLimit(999)">∞</button>
                                 </div>
                             </div>
-                            <small class="text-muted">Сколько раз можно использовать эту ссылку в статьях</small>
+                            <small class="text-muted" data-i18n="usageLimitHint">Сколько раз можно использовать эту ссылку в статьях</small>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer d-flex gap-2">
-                    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal" data-i18n="cancelBtn">Отмена</button>
                     <button type="button" class="btn btn-gradient flex-grow-1" onclick="saveLink()">
-                        <i class="bi bi-check-circle me-1"></i> Сохранить ссылку
+                        <i class="bi bi-check-circle me-1"></i> <span data-i18n="saveLinkBtn">Сохранить ссылку</span>
                     </button>
                 </div>
             </div>
@@ -940,27 +940,27 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="articleModalTitle">Добавить статью</h5>
+                    <h5 class="modal-title" id="articleModalTitle" data-i18n="addArticleTitle">Добавить статью</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form id="articleForm">
                         <input type="hidden" id="articleId">
                         <div class="mb-3">
-                            <label for="articleTitle" class="form-label">Заголовок гест-поста *</label>
-                            <input type="text" class="form-control" id="articleTitle" required placeholder="Введите заголовок">
+                            <label for="articleTitle" class="form-label"><span data-i18n="articleTitleLabel">Заголовок гест-поста</span> *</label>
+                            <input type="text" class="form-control" id="articleTitle" required data-i18n-placeholder="articleTitlePlaceholder" placeholder="Введите заголовок">
                         </div>
                         <div class="mb-3">
-                            <label for="articleContent" class="form-label">Содержание гест-поста *</label>
-                            <textarea class="form-control" id="articleContent" rows="10" required placeholder="Введите текст гест-поста..."></textarea>
-                            <small class="text-muted">Каждый гест-пост может быть использован только 1 раз</small>
+                            <label for="articleContent" class="form-label"><span data-i18n="articleContentLabel">Содержание гест-поста</span> *</label>
+                            <textarea class="form-control" id="articleContent" rows="10" required data-i18n-placeholder="articleContentPlaceholder" placeholder="Введите текст гест-поста..."></textarea>
+                            <small class="text-muted" data-i18n="articleUsageNote">Каждый гест-пост может быть использован только 1 раз</small>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal" data-i18n="cancelBtn">Отмена</button>
                     <button type="button" class="btn btn-gradient" onclick="saveArticle()">
-                        <i class="bi bi-check-lg me-1"></i> Сохранить
+                        <i class="bi bi-check-lg me-1"></i> <span data-i18n="saveBtn">Сохранить</span>
                     </button>
                 </div>
             </div>
@@ -972,14 +972,14 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="viewArticleTitle">Просмотр гест-поста</h5>
+                    <h5 class="modal-title" id="viewArticleTitle" data-i18n="viewArticleModalTitle">Просмотр гест-поста</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div id="viewArticleContent" style="white-space: pre-wrap;"></div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="closeBtn">Закрыть</button>
                 </div>
             </div>
         </div>
@@ -995,8 +995,8 @@
                             <i class="bi bi-cloud-upload"></i>
                         </div>
                         <div>
-                            <h5 class="modal-title">Массовое добавление ссылок</h5>
-                            <p class="modal-subtitle mb-0">Импортируйте несколько ссылок одновременно</p>
+                            <h5 class="modal-title" data-i18n="bulkImportTitle">Массовое добавление ссылок</h5>
+                            <p class="modal-subtitle mb-0" data-i18n="bulkImportSubtitle">Импортируйте несколько ссылок одновременно</p>
                         </div>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -1009,39 +1009,39 @@
                                 <i class="bi bi-file-text"></i>
                             </div>
                             <div class="flex-grow-1">
-                                <h6 class="fw-bold mb-2" style="font-size: 13px;">📝 Формат ввода</h6>
-                                <p class="mb-3" style="font-size: 12px; color: #374151;">
+                                <h6 class="fw-bold mb-2" style="font-size: 13px;" data-i18n="bulkImportFormat">📝 Формат ввода</h6>
+                                <p class="mb-3" style="font-size: 12px; color: #374151;" data-i18n="bulkImportDescription">
                                     Вставьте текстовые блоки с HTML ссылками. Каждый блок должен быть с новой строки.
                                 </p>
 
                                 <div class="requirements-box mb-3">
                                     <h6 class="fw-bold mb-2 d-flex align-items-center gap-1" style="font-size: 11px;">
-                                        <i class="bi bi-check-circle text-success"></i> Требования к тексту
+                                        <i class="bi bi-check-circle text-success"></i> <span data-i18n="bulkImportRequirements">Требования к тексту</span>
                                     </h6>
                                     <div class="row" style="font-size: 10px;">
                                         <div class="col-6 mb-1">
-                                            <span class="text-success">✓</span> Содержит тег <code>&lt;a href&gt;</code>
+                                            <span class="text-success">✓</span> <span data-i18n="bulkReqTag">Содержит тег</span> <code>&lt;a href&gt;</code>
                                         </div>
                                         <div class="col-6 mb-1">
-                                            <span class="text-success">✓</span> Длина: 30-250 символов
+                                            <span class="text-success">✓</span> <span data-i18n="bulkReqLength">Длина: 30-250 символов</span>
                                         </div>
                                         <div class="col-6">
-                                            <span class="text-success">✓</span> Одна строка = одна ссылка
+                                            <span class="text-success">✓</span> <span data-i18n="bulkReqLine">Одна строка = одна ссылка</span>
                                         </div>
                                         <div class="col-6">
-                                            <span class="text-success">✓</span> Без дублей анкоров
+                                            <span class="text-success">✓</span> <span data-i18n="bulkReqNoDupes">Без дублей анкоров</span>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div class="example-box">
-                                    <p class="fw-bold mb-2" style="font-size: 11px;">💡 Пример правильного формата:</p>
+                                    <p class="fw-bold mb-2" style="font-size: 11px;" data-i18n="bulkImportExample">💡 Пример правильного формата:</p>
                                     <div class="example-code">
                                         <p class="mb-1">Discover everything about gaming when you &lt;a href="https://example.com/"&gt;go to website&lt;/a&gt; and explore.</p>
                                         <hr class="my-1" style="border-color: #c7d2fe;">
                                         <p class="mb-0">If you want reliable platforms, check out &lt;a href="https://example.com/"&gt;casino sites&lt;/a&gt; to see options.</p>
                                     </div>
-                                    <small class="text-primary" style="font-size: 10px;">↑ Каждая строка — отдельная ссылка с HTML контекстом</small>
+                                    <small class="text-primary" style="font-size: 10px;" data-i18n="bulkImportExampleNote">↑ Каждая строка — отдельная ссылка с HTML контекстом</small>
                                 </div>
                             </div>
                         </div>
@@ -1052,17 +1052,17 @@
                         <div class="d-flex align-items-center justify-content-between mb-2">
                             <label class="form-label-icon mb-0">
                                 <i class="bi bi-file-text text-primary"></i>
-                                Вставьте ваши ссылки
+                                <span data-i18n="bulkImportPasteLabel">Вставьте ваши ссылки</span>
                             </label>
                             <span class="badge bg-primary" id="bulkLinesCount">0 строк</span>
                         </div>
-                        <textarea class="form-control font-monospace" id="bulkImportText" rows="10" placeholder="Вставьте текстовые блоки с HTML ссылками (каждый блок с новой строки)..." style="font-size: 11px;" oninput="updateBulkLinesCount()"></textarea>
+                        <textarea class="form-control font-monospace" id="bulkImportText" rows="10" data-i18n-placeholder="bulkImportPlaceholder" placeholder="Вставьте текстовые блоки с HTML ссылками (каждый блок с новой строки)..." style="font-size: 11px;" oninput="updateBulkLinesCount()"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer d-flex gap-2" style="background: linear-gradient(135deg, #f9fafb 0%, #ecfeff 100%);">
-                    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal" data-i18n="cancelBtn">Отмена</button>
                     <button type="button" class="btn btn-gradient-cyan flex-grow-1" onclick="parseBulkLinks()">
-                        <i class="bi bi-cloud-upload me-1"></i> Импортировать ссылки
+                        <i class="bi bi-cloud-upload me-1"></i> <span data-i18n="importLinksBtn">Импортировать ссылки</span>
                         <i class="bi bi-arrow-right ms-1"></i>
                     </button>
                 </div>
@@ -1076,7 +1076,7 @@
             <div class="modal-content" style="border-radius: 1rem; overflow: hidden; max-height: 90vh; display: flex; flex-direction: column;">
                 <!-- Header - White with border -->
                 <div class="modal-header px-4 py-3 border-bottom bg-white" style="flex-shrink: 0;">
-                    <h5 class="modal-title fw-semibold" style="color: #111827;">Предпросмотр импорта ссылок</h5>
+                    <h5 class="modal-title fw-semibold" style="color: #111827;" data-i18n="bulkPreviewTitle">Предпросмотр импорта ссылок</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
 
@@ -1084,7 +1084,7 @@
                 <div class="px-4 py-3 d-flex align-items-center gap-2" style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border-bottom: 2px solid #bbf7d0; flex-shrink: 0;">
                     <i class="bi bi-check-circle-fill" style="color: #16a34a; font-size: 1.25rem;"></i>
                     <span class="fw-semibold" style="color: #111827;">
-                        Валидные ссылки (<span id="validLinksCountHeader">0</span>):
+                        <span data-i18n="validLinksLabel">Валидные ссылки</span> (<span id="validLinksCountHeader">0</span>):
                     </span>
                 </div>
 
@@ -1097,11 +1097,11 @@
                 <div class="modal-footer px-4 py-3 d-flex gap-3" style="background: #f9fafb; border-top: 1px solid #e5e7eb; flex-shrink: 0;">
                     <button type="button" class="btn d-flex align-items-center gap-2 px-4 py-2" style="background: white; border: 2px solid #d1d5db; border-radius: 0.75rem; font-weight: 500; color: #374151;" onclick="backToBulkInput()">
                         <i class="bi bi-arrow-left"></i>
-                        Назад
+                        <span data-i18n="backBtn">Назад</span>
                     </button>
                     <button type="button" class="btn flex-grow-1 d-flex align-items-center justify-content-center gap-2 py-2" id="importLinksBtn" onclick="importBulkLinks()" disabled style="background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%); color: white; border: none; border-radius: 0.75rem; font-weight: 600;">
                         <i class="bi bi-check-circle"></i>
-                        Импортировать (<span id="validLinksCount">0</span>)
+                        <span data-i18n="importBtn">Импортировать</span> (<span id="validLinksCount">0</span>)
                     </button>
                 </div>
             </div>
@@ -1110,10 +1110,10 @@
 
     <!-- Sticky Delete Buttons (positioned fixed at bottom-right) -->
     <button id="deleteSelectedBtn" class="btn btn-danger delete-selected-btn" style="display: none;" onclick="deleteSelectedLinks()">
-        <i class="bi bi-trash"></i> Удалить выбранные (<span class="count">0</span>)
+        <i class="bi bi-trash"></i> <span data-i18n="deleteSelectedBtn">Удалить выбранные</span> (<span class="count">0</span>)
     </button>
     <button id="deleteSelectedArticlesBtn" class="btn btn-danger delete-selected-btn" style="display: none;" onclick="deleteSelectedArticles()">
-        <i class="bi bi-trash"></i> Удалить выбранные (<span class="count">0</span>)
+        <i class="bi bi-trash"></i> <span data-i18n="deleteSelectedBtn">Удалить выбранные</span> (<span class="count">0</span>)
     </button>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -1121,15 +1121,21 @@
     <script src="/js/auth.js"></script>
     <script src="/js/api.js"></script>
     <script src="/js/sidebar.js"></script>
+    <script src="/js/translations.js"></script>
     <script>
-        // Initialize sidebar navigation
+        // Initialize sidebar navigation with i18n support
+        const lang = getLang();
         SidebarNav.init({
             activePage: 'projects',
-            pageTitle: 'Детали проекта',
-            pageSubtitle: 'Управление контентом проекта',
+            pageTitle: lang === 'en' ? 'Project Details' : 'Детали проекта',
+            pageSubtitle: lang === 'en' ? 'Manage project content' : 'Управление контентом проекта',
             pageIcon: 'folder2-open',
             pageIconGradient: 'gradient-blue-indigo'
         });
+        // Apply translations after DOM is ready
+        if (typeof applyTranslations === 'function') {
+            applyTranslations();
+        }
 
         requireAuth();
 

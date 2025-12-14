@@ -5,7 +5,7 @@ const createLimiter = config =>
   rateLimit({
     windowMs: config.windowMs,
     max: config.max,
-    message: 'Too many requests, please try again later.',
+    message: { error: 'Too many requests, please try again later.' },
     standardHeaders: true,
     legacyHeaders: false
   });

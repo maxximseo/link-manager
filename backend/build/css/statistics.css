@@ -1,0 +1,775 @@
+/* Statistics Page Modern Design */
+
+/* ========================================
+   Header & Period Selector
+   ======================================== */
+
+.stats-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-bottom: 24px;
+    padding: 20px 0;
+}
+
+.stats-header-left h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0 0 4px 0;
+}
+
+.stats-header-left p {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0;
+}
+
+.stats-period-selector {
+    display: flex;
+    gap: 8px;
+    background: #f3f4f6;
+    padding: 4px;
+    border-radius: 12px;
+}
+
+.stats-period-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.stats-period-btn:hover {
+    background: rgba(255, 255, 255, 0.7);
+    color: #374151;
+}
+
+.stats-period-btn.active {
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    color: white;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.stats-period-btn i {
+    font-size: 16px;
+}
+
+/* ========================================
+   Spending Cards Grid
+   ======================================== */
+
+.stats-spending-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+@media (max-width: 1200px) {
+    .stats-spending-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .stats-spending-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.stats-spending-card {
+    position: relative;
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 24px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.stats-spending-card:hover {
+    border-color: #d1d5db;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+.stats-spending-card.active {
+    border-color: transparent;
+    transform: scale(1.02);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* Gradient backgrounds for active cards */
+.stats-spending-card.active[data-gradient="green"] {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+}
+
+.stats-spending-card.active[data-gradient="blue"] {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+}
+
+.stats-spending-card.active[data-gradient="orange"] {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+}
+
+.stats-spending-card.active[data-gradient="purple"] {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    color: white;
+}
+
+.stats-card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    transition: all 0.3s ease;
+}
+
+.stats-spending-card:not(.active) .stats-card-icon {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.stats-spending-card.active .stats-card-icon {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.stats-card-icon i {
+    font-size: 24px;
+}
+
+.stats-card-active-dot {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 10px;
+    height: 10px;
+    background: #10b981;
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.stats-spending-card.active .stats-card-active-dot {
+    opacity: 1;
+    background: white;
+}
+
+.stats-card-label {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 8px;
+    transition: color 0.3s ease;
+}
+
+.stats-spending-card:not(.active) .stats-card-label {
+    color: #6b7280;
+}
+
+.stats-spending-card.active .stats-card-label {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.stats-card-value {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    transition: color 0.3s ease;
+}
+
+.stats-spending-card:not(.active) .stats-card-value {
+    color: #1f2937;
+}
+
+.stats-spending-card.active .stats-card-value {
+    color: white;
+}
+
+.stats-card-sub {
+    font-size: 13px;
+    transition: color 0.3s ease;
+}
+
+.stats-spending-card:not(.active) .stats-card-sub {
+    color: #9ca3af;
+}
+
+.stats-spending-card.active .stats-card-sub {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* ========================================
+   Charts Grid
+   ======================================== */
+
+.stats-charts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+@media (max-width: 992px) {
+    .stats-charts-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.stats-chart-card {
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 24px;
+    transition: all 0.2s ease;
+}
+
+.stats-chart-card:hover {
+    border-color: #d1d5db;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.stats-chart-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.stats-chart-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stats-chart-icon.purple {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    color: white;
+}
+
+.stats-chart-icon.blue {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+}
+
+.stats-chart-icon.green {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+}
+
+.stats-chart-icon.indigo {
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: white;
+}
+
+.stats-chart-icon i {
+    font-size: 22px;
+}
+
+.stats-chart-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0 0 4px 0;
+}
+
+.stats-chart-header p {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0;
+}
+
+.stats-chart-body {
+    min-height: 280px;
+}
+
+.stats-chart-legend {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #f3f4f6;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+/* ========================================
+   Placements Statistics Card
+   ======================================== */
+
+.stats-placements-card {
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    transition: all 0.2s ease;
+}
+
+.stats-placements-card:hover {
+    border-color: #d1d5db;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.stats-placements-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.stats-placements-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0 0 4px 0;
+}
+
+.stats-placements-header p {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0;
+}
+
+.stats-placements-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+
+@media (max-width: 992px) {
+    .stats-placements-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 576px) {
+    .stats-placements-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.stats-placement-item {
+    text-align: center;
+    padding: 20px;
+    background: #f9fafb;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+}
+
+.stats-placement-item:hover {
+    background: #f3f4f6;
+}
+
+.stats-placement-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 12px;
+}
+
+.stats-placement-icon.blue {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+}
+
+.stats-placement-icon.green {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+}
+
+.stats-placement-icon.purple {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    color: white;
+}
+
+.stats-placement-icon.orange {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+}
+
+.stats-placement-icon i {
+    font-size: 22px;
+}
+
+.stats-placement-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 4px;
+}
+
+.stats-placement-label {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+/* ========================================
+   Recent Purchases Table
+   ======================================== */
+
+.stats-table-card {
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    transition: all 0.2s ease;
+}
+
+.stats-table-card:hover {
+    border-color: #d1d5db;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.stats-table-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.stats-table-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0 0 4px 0;
+}
+
+.stats-table-header p {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0;
+}
+
+.stats-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.stats-table thead th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.stats-table thead th:first-child {
+    border-radius: 8px 0 0 0;
+}
+
+.stats-table thead th:last-child {
+    border-radius: 0 8px 0 0;
+}
+
+.stats-table tbody td {
+    padding: 14px 16px;
+    font-size: 14px;
+    color: #374151;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.stats-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.stats-table tbody tr:hover {
+    background: #f9fafb;
+}
+
+/* Table badges */
+.stats-table .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.stats-table .badge-link {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.stats-table .badge-article {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.stats-table .badge-placed {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.stats-table .badge-pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.stats-table .badge-failed {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.stats-table .site-link {
+    color: #3b82f6;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.stats-table .site-link:hover {
+    text-decoration: underline;
+}
+
+.stats-table .site-link i {
+    font-size: 12px;
+}
+
+.stats-table .btn-action {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: #f3f4f6;
+    border-radius: 8px;
+    color: #6b7280;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.stats-table .btn-action:hover {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+/* ========================================
+   Balance Summary Grid
+   ======================================== */
+
+.stats-balance-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+@media (max-width: 992px) {
+    .stats-balance-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.stats-balance-card {
+    position: relative;
+    border-radius: 16px;
+    padding: 24px;
+    overflow: hidden;
+}
+
+/* Blue Gradient Card */
+.stats-balance-card.balance-blue {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+}
+
+.stats-balance-card.balance-blue .stats-balance-icon {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.stats-balance-card.balance-blue .stats-balance-label {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.stats-balance-card.balance-blue .stats-balance-value {
+    color: white;
+}
+
+.stats-balance-card.balance-blue .stats-balance-sub {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* White Card */
+.stats-balance-card.balance-white {
+    background: white;
+    border: 2px solid #e5e7eb;
+}
+
+.stats-balance-card.balance-white .stats-balance-icon {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    color: white;
+}
+
+.stats-balance-card.balance-white .stats-balance-icon.purple-bg {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+}
+
+.stats-balance-card.balance-white .stats-balance-label {
+    color: #6b7280;
+}
+
+.stats-balance-card.balance-white .stats-balance-value {
+    color: #1f2937;
+}
+
+.stats-balance-card.balance-white .stats-balance-sub {
+    color: #9ca3af;
+}
+
+/* Amber Gradient Card */
+.stats-balance-card.balance-amber {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+}
+
+.stats-balance-card.balance-amber .stats-balance-icon {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.stats-balance-card.balance-amber .stats-balance-label {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.stats-balance-card.balance-amber .stats-balance-value {
+    color: white;
+}
+
+.stats-balance-card.balance-amber .stats-balance-sub {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.stats-balance-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+}
+
+.stats-balance-icon i {
+    font-size: 22px;
+}
+
+.stats-balance-label {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.stats-balance-value {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.stats-balance-sub {
+    font-size: 13px;
+}
+
+/* ========================================
+   Responsive Adjustments
+   ======================================== */
+
+@media (max-width: 768px) {
+    .stats-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .stats-period-selector {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .stats-period-btn {
+        flex-shrink: 0;
+    }
+
+    .stats-card-value,
+    .stats-placement-value {
+        font-size: 24px;
+    }
+
+    .stats-balance-value {
+        font-size: 28px;
+    }
+}
+
+/* ========================================
+   Empty State
+   ======================================== */
+
+.stats-empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: #6b7280;
+}
+
+.stats-empty-state i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.stats-empty-state h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #374151;
+    margin: 0 0 8px 0;
+}
+
+.stats-empty-state p {
+    font-size: 14px;
+    margin: 0;
+}

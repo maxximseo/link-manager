@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkBuilder Pro - Управляйте ссылками системно</title>
+    <meta name="description" content="Платформа нового поколения для управления SEO-ссылками. Отложенная публикация, собственная база доноров, массовая регистрация WordPress сайтов.">
+    <link rel="stylesheet" href="/css/landing.css">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body class="landing-page">
+    <!-- Navigation -->
+    <nav class="landing-nav slide-in-nav" id="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">
+                <div class="logo-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                </div>
+                <span class="logo-text">LinkBuilder Pro</span>
+            </a>
+            <div class="nav-actions">
+                <button class="lang-btn" onclick="switchLanguage()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+                    <span id="langLabel">RU</span>
+                </button>
+                <a href="/login" class="btn btn-primary" id="loginBtn" data-i18n="login">Войти</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <!-- Blob animations -->
+        <div class="blob blob-blue"></div>
+        <div class="blob blob-purple"></div>
+        <div class="blob blob-pink"></div>
+
+        <div class="container">
+            <div class="hero-content fade-in">
+                <div class="hero-badge">
+                    <span data-i18n="badge">Новая эра линкбилдинга благодаря AI</span>
+                </div>
+
+                <h1 class="hero-title">
+                    <span class="title-dark" data-i18n="heroTitle1">Управляйте ссылками</span>
+                    <span class="title-gradient" data-i18n="heroTitle2">системно</span>
+                </h1>
+
+                <p class="hero-description" data-i18n="heroDescription">
+                    Платформа нового поколения, где можно добавить свои сайты WP через плагин, создать проект и закупиться с отложенным размещением на своих сайтах. Также можно купить ссылок напрямую у биржи или продавцов, кто решит выставить свой сайт для продажи.
+                </p>
+
+                <div class="hero-buttons">
+                    <a href="/login" class="btn btn-primary btn-lg">
+                        <span data-i18n="startFree">Начать бесплатно</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                    </a>
+                    <a href="#delayed-publication" class="btn btn-outline btn-lg">
+                        <span data-i18n="watchDemo">Смотреть демо</span>
+                    </a>
+                </div>
+
+                <div class="hero-features">
+                    <div class="hero-feature">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+                        <span data-i18n="noCard">Без кредитной карты</span>
+                    </div>
+                    <div class="hero-feature">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+                        <span data-i18n="freeTrial">14 дней бесплатно</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Preview -->
+            <div class="dashboard-preview fade-in">
+                <div class="preview-glow"></div>
+                <div class="preview-image-wrapper">
+                    <img src="/images/dashboard-preview.png" alt="LinkBuilder Pro Dashboard" onerror="this.style.display='none'">
+                </div>
+            </div>
+
+            <!-- Scroll Indicator -->
+            <div class="scroll-indicator">
+                <span data-i18n="learnMore">Узнать больше</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </div>
+        </div>
+    </section>
+
+    <!-- Delayed Publication Section -->
+    <section class="feature-section bg-white" id="delayed-publication">
+        <div class="feature-content fade-in">
+            <h2 class="feature-title">
+                <span data-i18n="delayedPublication">Отложенная публикация ссылок</span>
+            </h2>
+            <div class="feature-image-wrapper">
+                <div class="feature-glow glow-orange"></div>
+                <img src="/images/delayed-publication.png" alt="Отложенная публикация" onerror="this.parentElement.style.display='none'">
+            </div>
+        </div>
+    </section>
+
+    <!-- Donor Base Section -->
+    <section class="feature-section bg-gray">
+        <div class="feature-content fade-in">
+            <h2 class="feature-title">
+                <span data-i18n="donorBase">Собственная база доноров с ограниченным числом исходящих ссылок</span>
+            </h2>
+            <div class="feature-image-wrapper">
+                <div class="feature-glow glow-green"></div>
+                <img src="/images/donor-base.png" alt="База доноров" onerror="this.parentElement.style.display='none'">
+            </div>
+        </div>
+    </section>
+
+    <!-- WP Registration Section -->
+    <section class="feature-section bg-white">
+        <div class="feature-content fade-in">
+            <h2 class="feature-title">
+                <span data-i18n="wpRegistration">Массовая регистрация WP сайтов</span>
+            </h2>
+            <p class="feature-description" data-i18n="wpDescription">
+                Можно очень быстро добавить свои сайты через плагин и начать размещать на них ссылки в сайдбаре или публиковать статьи.
+            </p>
+            <div class="feature-image-wrapper">
+                <div class="feature-glow glow-purple"></div>
+                <img src="/images/wp-registration.png" alt="Массовая регистрация WordPress" onerror="this.parentElement.style.display='none'">
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <div class="cta-box fade-in">
+                <div class="cta-decoration top-right"></div>
+                <div class="cta-decoration bottom-left"></div>
+                <div class="cta-content">
+                    <h2 class="cta-title" data-i18n="ctaTitle">Готовы начать?</h2>
+                    <p class="cta-description" data-i18n="ctaDescription">
+                        Присоединяйтесь к тысячам SEO-специалистов, которые уже используют LinkBuilder Pro
+                    </p>
+                    <a href="/login" class="btn btn-white btn-lg">
+                        <span data-i18n="startFree">Начать бесплатно</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <div class="footer-container">
+            <div class="footer-logo">
+                <div class="footer-logo-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                </div>
+                <span>LinkBuilder Pro</span>
+            </div>
+            <div class="footer-links">
+                <a href="#" data-i18n="aboutUs">О нас</a>
+                <a href="#" data-i18n="documentation">Документация</a>
+                <a href="#" data-i18n="support">Поддержка</a>
+                <a href="#" data-i18n="policy">Политика</a>
+            </div>
+            <div class="footer-copyright">
+                <span data-i18n="copyright">2026 LinkBuilder Pro. Все права защищены.</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="/js/translations.js"></script>
+    <script src="/js/landing.js"></script>
+</body>
+</html>

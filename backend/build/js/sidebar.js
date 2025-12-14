@@ -19,26 +19,35 @@ const SidebarNav = {
   balance: 0,
   unreadCount: 0,
 
-  // Menu configuration
-  menuItems: [
-    { id: 'projects', label: 'Проекты', icon: 'bi-bullseye', href: '/dashboard.html' },
-    { id: 'links', label: 'Ссылки', icon: 'bi-link-45deg', href: '/placements-manager.html' },
-    { id: 'sites', label: 'Сайты', icon: 'bi-globe', href: '/sites.html' },
-    { id: 'purchase', label: 'Покупка', icon: 'bi-cart', href: '/placements.html' },
-    { id: 'balance', label: 'Баланс', icon: 'bi-wallet2', href: '/balance.html' },
-    { id: 'analytics', label: 'Статистика', icon: 'bi-pie-chart', href: '/statistics.html' },
-    { id: 'partners', label: 'Партнёрка', icon: 'bi-people', href: '/referrals.html' }
-  ],
+  /**
+   * Get menu items with i18n support
+   */
+  getMenuItems() {
+    return [
+      { id: 'projects', label: t('sidebarProjects'), icon: 'bi-bullseye', href: '/dashboard.html' },
+      { id: 'links', label: t('sidebarLinks'), icon: 'bi-link-45deg', href: '/placements-manager.html' },
+      { id: 'sites', label: t('sidebarSites'), icon: 'bi-globe', href: '/sites.html' },
+      { id: 'purchase', label: t('sidebarPurchase'), icon: 'bi-cart', href: '/placements.html' },
+      { id: 'balance', label: t('sidebarBalance'), icon: 'bi-wallet2', href: '/balance.html' },
+      { id: 'analytics', label: t('sidebarAnalytics'), icon: 'bi-pie-chart', href: '/statistics.html' },
+      { id: 'partners', label: t('sidebarPartners'), icon: 'bi-people', href: '/referrals.html' }
+    ];
+  },
 
-  adminItems: [
-    { id: 'admin-dashboard', label: 'Статистика', icon: 'bi-graph-up', href: '/admin-dashboard.html' },
-    { id: 'admin-users', label: 'Пользователи', icon: 'bi-people', href: '/admin-users.html' },
-    { id: 'admin-sites', label: 'Сайты', icon: 'bi-globe2', href: '/admin-site-params.html' },
-    { id: 'admin-placements', label: 'Размещения', icon: 'bi-bookmark-star', href: '/admin-placements.html' },
-    { id: 'admin-moderation', label: 'Модерация', icon: 'bi-check2-square', href: '/admin-moderation.html', badge: true },
-    { id: 'admin-sites-moderation', label: 'Модерация сайтов', icon: 'bi-shield-check', href: '/admin-sites-moderation.html' },
-    { id: 'admin-withdrawals', label: 'Выводы', icon: 'bi-cash-stack', href: '/admin-referral-withdrawals.html' }
-  ],
+  /**
+   * Get admin menu items with i18n support
+   */
+  getAdminItems() {
+    return [
+      { id: 'admin-dashboard', label: t('sidebarAdminStats'), icon: 'bi-graph-up', href: '/admin-dashboard.html' },
+      { id: 'admin-users', label: t('sidebarAdminUsers'), icon: 'bi-people', href: '/admin-users.html' },
+      { id: 'admin-sites', label: t('sidebarAdminSites'), icon: 'bi-globe2', href: '/admin-site-params.html' },
+      { id: 'admin-placements', label: t('sidebarAdminPlacements'), icon: 'bi-bookmark-star', href: '/admin-placements.html' },
+      { id: 'admin-moderation', label: t('sidebarAdminModeration'), icon: 'bi-check2-square', href: '/admin-moderation.html', badge: true },
+      { id: 'admin-sites-moderation', label: t('sidebarAdminSitesModeration'), icon: 'bi-shield-check', href: '/admin-sites-moderation.html' },
+      { id: 'admin-withdrawals', label: t('sidebarAdminWithdrawals'), icon: 'bi-cash-stack', href: '/admin-referral-withdrawals.html' }
+    ];
+  },
 
   /**
    * Initialize the sidebar
@@ -57,7 +66,7 @@ const SidebarNav = {
     this.adminExpanded = localStorage.getItem('adminExpanded') === 'true';
 
     // Auto-expand if we're on an admin page
-    if (this.adminItems.some((item) => item.id === config.activePage)) {
+    if (this.getAdminItems().some((item) => item.id === config.activePage)) {
       this.adminExpanded = true;
     }
 
@@ -194,9 +203,11 @@ const SidebarNav = {
    */
   renderSidebarNav() {
     const activePage = this.config.activePage;
+    const menuItems = this.getMenuItems();
+    const adminItems = this.getAdminItems();
 
     // Regular menu items
-    let navHTML = this.menuItems
+    let navHTML = menuItems
       .map((item) => {
         const isActive = item.id === activePage;
         const activeClass = isActive ? 'active' : '';
@@ -215,16 +226,16 @@ const SidebarNav = {
       navHTML += '<div class="nav-divider"></div>';
 
       // Check if any admin item is active
-      const isAdminActive = this.adminItems.some((item) => item.id === activePage);
+      const isAdminActive = adminItems.some((item) => item.id === activePage);
       const adminActiveClass = isAdminActive ? 'active' : '';
       const expandedClass = this.adminExpanded ? 'expanded' : '';
       const chevronClass = this.adminExpanded ? 'bi-chevron-down' : 'bi-chevron-right';
 
       // Admin toggle button
       navHTML += `
-        <button class="nav-item admin-toggle ${adminActiveClass} ${expandedClass}" onclick="SidebarNav.toggleAdmin()" title="Админка">
+        <button class="nav-item admin-toggle ${adminActiveClass} ${expandedClass}" onclick="SidebarNav.toggleAdmin()" title="${t('sidebarAdmin')}">
           <i class="bi bi-person-gear"></i>
-          <span>Админка</span>
+          <span>${t('sidebarAdmin')}</span>
           <i class="bi ${chevronClass} admin-chevron"></i>
         </button>
       `;
@@ -233,7 +244,7 @@ const SidebarNav = {
       const submenuStyle = this.adminExpanded ? '' : 'style="display: none;"';
       navHTML += `<div class="admin-submenu" id="adminSubmenu" ${submenuStyle}>`;
 
-      navHTML += this.adminItems
+      navHTML += adminItems
         .map((item) => {
           const isActive = activePage === item.id;
           const activeClass = isActive ? 'active' : '';
@@ -292,7 +303,7 @@ const SidebarNav = {
    */
   renderSidebarFooter() {
     const collapseIcon = this.collapsed ? 'bi-chevron-right' : 'bi-chevron-left';
-    const collapseText = this.collapsed ? 'Развернуть' : 'Свернуть';
+    const collapseText = this.collapsed ? t('sidebarExpand') : t('sidebarCollapse');
 
     return `
       <div class="sidebar-footer">
@@ -300,9 +311,9 @@ const SidebarNav = {
           <i class="bi ${collapseIcon}" id="collapseIcon"></i>
           <span id="collapseText">${collapseText}</span>
         </button>
-        <a href="/settings.html" class="nav-item" title="Настройки">
+        <a href="/settings.html" class="nav-item" title="${t('sidebarSettings')}">
           <i class="bi bi-gear"></i>
-          <span>Настройки</span>
+          <span>${t('sidebarSettings')}</span>
         </a>
       </div>
     `;
@@ -340,6 +351,7 @@ const SidebarNav = {
           <div class="header-right">
             ${this.renderBalanceBox()}
             ${this.renderAddLinkButton()}
+            ${this.renderLanguageSwitcher()}
             ${this.renderNotificationButton()}
             ${this.renderUserProfile()}
           </div>
@@ -359,7 +371,7 @@ const SidebarNav = {
       <div class="balance-box">
         <i class="bi bi-wallet2"></i>
         <div class="balance-box-content">
-          <span class="balance-label">Баланс</span>
+          <span class="balance-label">${t('sidebarBalanceLabel')}</span>
           <span class="balance-amount">$<span id="navBalance">0.00</span></span>
         </div>
       </div>
@@ -373,7 +385,7 @@ const SidebarNav = {
     return `
       <a href="/placements.html" class="btn-add-link">
         <i class="bi bi-plus-lg"></i>
-        <span>Добавить ссылку</span>
+        <span>${t('sidebarAddLink')}</span>
       </a>
     `;
   },
@@ -392,28 +404,48 @@ const SidebarNav = {
           <div class="notification-header-gradient">
             <div class="notification-header-content">
               <div class="notification-header-title">
-                <h6>Уведомления</h6>
-                <span class="notification-header-count" id="notificationHeaderCount">0 непрочитанных</span>
+                <h6>${t('sidebarNotifications')}</h6>
+                <span class="notification-header-count" id="notificationHeaderCount">0 ${t('unreadCount')}</span>
               </div>
               <button class="notification-mark-all-btn" onclick="SidebarNav.markAllAsRead(event)">
                 <i class="bi bi-check2-all"></i>
-                <span>Отметить все как прочитанные</span>
+                <span>${t('sidebarMarkAllRead')}</span>
               </button>
             </div>
           </div>
           <div class="notification-list" id="notificationList">
             <div class="notification-empty">
               <i class="bi bi-bell-slash"></i>
-              <p>Нет новых уведомлений</p>
+              <p>${t('sidebarNoNotifications')}</p>
             </div>
           </div>
           <div class="notification-footer">
             <a href="#" onclick="SidebarNav.deleteAllNotifications(event)" class="notification-delete-all-btn">
-              <i class="bi bi-trash3"></i> Удалить все
+              <i class="bi bi-trash3"></i> ${t('sidebarDeleteAll')}
             </a>
           </div>
         </div>
       </div>
+    `;
+  },
+
+  /**
+   * Render language switcher button
+   */
+  renderLanguageSwitcher() {
+    const lang = typeof getLang === 'function' ? getLang() : 'ru';
+    const isRu = lang === 'ru';
+    const title = isRu ? 'Switch to English' : 'Переключить на русский';
+
+    return `
+      <button class="lang-switcher" onclick="toggleLanguage()" title="${title}">
+        <svg class="lang-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="2" y1="12" x2="22" y2="12"></line>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+        </svg>
+        <span class="lang-code">${isRu ? 'RU' : 'EN'}</span>
+      </button>
     `;
   },
 
@@ -452,18 +484,18 @@ const SidebarNav = {
       sidebar.classList.add('collapsed');
       document.body.classList.add('sidebar-collapsed');
       collapseIcon.className = 'bi bi-chevron-right';
-      collapseText.textContent = 'Развернуть';
+      collapseText.textContent = t('sidebarExpand');
     } else {
       sidebar.classList.remove('collapsed');
       document.body.classList.remove('sidebar-collapsed');
       collapseIcon.className = 'bi bi-chevron-left';
-      collapseText.textContent = 'Свернуть';
+      collapseText.textContent = t('sidebarCollapse');
     }
 
     // Update collapse button title
     const collapseBtn = collapseIcon.closest('.nav-item');
     if (collapseBtn) {
-      collapseBtn.title = this.collapsed ? 'Развернуть' : 'Свернуть';
+      collapseBtn.title = this.collapsed ? t('sidebarExpand') : t('sidebarCollapse');
     }
   },
 
@@ -598,8 +630,8 @@ const SidebarNav = {
     // Update header count text
     if (headerCount) {
       headerCount.textContent = this.unreadCount > 0
-        ? `${this.unreadCount} непрочитанных`
-        : 'Все прочитано';
+        ? `${this.unreadCount} ${t('unreadCount')}`
+        : t('allRead');
     }
 
     // Render notification list
@@ -608,7 +640,7 @@ const SidebarNav = {
         list.innerHTML = `
           <div class="notification-empty">
             <i class="bi bi-bell-slash"></i>
-            <p>Нет новых уведомлений</p>
+            <p>${t('sidebarNoNotifications')}</p>
           </div>
         `;
       } else {
@@ -792,7 +824,7 @@ const SidebarNav = {
         // Update header count text
         const headerCount = document.getElementById('notificationHeaderCount');
         if (headerCount) {
-          headerCount.textContent = 'Все прочитано';
+          headerCount.textContent = t('allRead');
         }
       }
     } catch (error) {
@@ -847,13 +879,14 @@ const SidebarNav = {
     const date = new Date(dateString);
     const now = new Date();
     const seconds = Math.floor((now - date) / 1000);
+    const lang = typeof getLang === 'function' ? getLang() : 'ru';
 
-    if (seconds < 60) return 'только что';
-    if (seconds < 3600) return `${Math.floor(seconds / 60)} мин назад`;
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)} ч назад`;
-    if (seconds < 2592000) return `${Math.floor(seconds / 86400)} дн назад`;
+    if (seconds < 60) return t('timeJustNow');
+    if (seconds < 3600) return `${Math.floor(seconds / 60)} ${t('timeMinutesAgo')}`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)} ${t('timeHoursAgo')}`;
+    if (seconds < 2592000) return `${Math.floor(seconds / 86400)} ${t('timeDaysAgo')}`;
 
-    return date.toLocaleDateString('ru-RU');
+    return date.toLocaleDateString(lang === 'en' ? 'en-US' : 'ru-RU');
   },
 
   /**

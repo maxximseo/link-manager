@@ -29,7 +29,7 @@ const helmetConfig = {
       ? {
           directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'", 'cdn.jsdelivr.net', 'cdnjs.cloudflare.com'], // Allow Bootstrap & other CDN scripts
+            scriptSrc: ["'self'", "'unsafe-inline'", 'cdn.jsdelivr.net', 'cdnjs.cloudflare.com', 'unpkg.com'], // Allow Bootstrap & other CDN scripts
             scriptSrcAttr: ["'unsafe-inline'"], // Allow inline event handlers (onclick, onchange, etc.)
             styleSrc: ["'self'", "'unsafe-inline'", 'cdn.jsdelivr.net', 'cdnjs.cloudflare.com'], // Allow inline styles for Bootstrap
             imgSrc: ["'self'", 'data:', 'https:'], // Allow images from any HTTPS source
@@ -84,7 +84,35 @@ app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Static files
+// ============================================
+// Landing & Login Routes (BEFORE static middleware)
+// Must be defined before static middleware to take priority over index.html
+// ============================================
+
+// Landing page - Russian (default)
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'build', 'landing.html'));
+});
+
+// Landing page - English
+app.get('/en', (req, res) => {
+  res.sendFile(path.join(__dirname, 'build', 'landing.html'));
+});
+app.get('/en/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'build', 'landing.html'));
+});
+
+// Login page - Russian
+app.get('/login', (req, res) => {
+  res.sendFile(path.join(__dirname, 'build', 'login-new.html'));
+});
+
+// Login page - English
+app.get('/en/login', (req, res) => {
+  res.sendFile(path.join(__dirname, 'build', 'login-new.html'));
+});
+
+// Static files (CSS, JS, images, etc.)
 app.use(express.static(path.join(__dirname, 'build')));
 
 // Comprehensive health check endpoint (monitoring)
@@ -113,13 +141,15 @@ if (process.env.SENTRY_DSN) {
 // Error handling for API routes
 app.use('/api', errorHandler);
 
-// Serve frontend for all non-API routes (but not static assets)
+// Catch-all for unmatched routes - serve dashboard for authenticated pages
 app.get('*', (req, res) => {
-  // Let static middleware handle assets first
+  // Let static middleware handle assets first (already handled above)
   if (req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg)$/)) {
     return res.status(404).json({ error: 'Static asset not found' });
   }
-  res.sendFile(path.join(__dirname, 'build', 'index.html'));
+  // For any other route (e.g., /dashboard.html, /sites.html) serve that file
+  // If file doesn't exist, Express static already returned 404
+  res.sendFile(path.join(__dirname, 'build', 'dashboard.html'));
 });
 
 module.exports = app;

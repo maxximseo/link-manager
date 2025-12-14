@@ -3,74 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WordPress Link Manager - Login</title>
-    <link rel="stylesheet" href="/css/styles.css">
+    <title>LinkBuilder Pro - Redirecting...</title>
+    <script>
+        // Redirect logic for legacy index.html
+        // Check if user is authenticated and redirect appropriately
+        (function() {
+            var token = localStorage.getItem('token');
+            if (token) {
+                // User is logged in, go to dashboard
+                window.location.replace('/dashboard.html');
+            } else {
+                // Not logged in, go to new landing page
+                window.location.replace('/');
+            }
+        })();
+    </script>
 </head>
 <body>
-    <div class="login-container">
-        <div class="login-box">
-            <h1>🔗 Link Manager</h1>
-            <form id="loginForm">
-                <div class="form-group">
-                    <label for="username">Username</label>
-                    <input type="text" id="username" name="username" required autocomplete="username">
-                </div>
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" name="password" required autocomplete="current-password">
-                </div>
-                <button type="submit" class="btn" id="loginBtn">
-                    <span id="loginText">Login</span>
-                    <span id="loginSpinner" class="loading hidden"></span>
-                </button>
-                <div id="loginError" class="hidden" style="color: #ef4444; margin-top: 15px; text-align: center;"></div>
-            </form>
-
-            <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-                <p style="color: #64748b; margin-bottom: 10px;">Don't have an account?</p>
-                <a href="/register.html" class="btn btn-success" style="text-decoration: none; display: inline-block; padding: 10px 20px;">
-                    Create Account
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <script src="/js/security.js"></script>
-    <script src="/js/auth.js"></script>
-    <script>
-        // Check if already logged in
-        if (isAuthenticated()) {
-            window.location.href = '/dashboard.html';
-        }
-
-        // Login form handler
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            const loginBtn = document.getElementById('loginBtn');
-            const loginText = document.getElementById('loginText');
-            const loginSpinner = document.getElementById('loginSpinner');
-            const loginError = document.getElementById('loginError');
-            
-            // Show loading
-            loginBtn.disabled = true;
-            loginText.classList.add('hidden');
-            loginSpinner.classList.remove('hidden');
-            loginError.classList.add('hidden');
-            
-            try {
-                await login(username, password);
-                window.location.href = '/dashboard.html';
-            } catch (error) {
-                loginError.textContent = error.message;
-                loginError.classList.remove('hidden');
-                loginBtn.disabled = false;
-                loginText.classList.remove('hidden');
-                loginSpinner.classList.add('hidden');
-            }
-        });
-    </script>
+    <p style="text-align: center; margin-top: 50px; font-family: sans-serif; color: #666;">
+        Redirecting...
+    </p>
 </body>
 </html>

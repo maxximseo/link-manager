@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkBuilder Pro - Вход</title>
+    <link rel="stylesheet" href="/css/landing.css">
+</head>
+<body class="login-page">
+    <!-- Animated background blobs -->
+    <div class="login-blob login-blob-1"></div>
+    <div class="login-blob login-blob-2"></div>
+    <div class="login-blob login-blob-3"></div>
+
+    <!-- Back to home button -->
+    <a href="/" class="back-btn" id="backBtn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+        <span data-i18n="backToHome">На главную</span>
+    </a>
+
+    <!-- Language switcher -->
+    <button class="lang-switcher-login" id="langSwitcher" onclick="toggleLanguage()">
+        <svg class="lang-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+        </svg>
+        <span class="lang-code" id="langCode"></span>
+    </button>
+    <style>
+        .lang-switcher-login {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+            font-weight: 600;
+            font-size: 13px;
+            color: #475569;
+            z-index: 1000;
+        }
+        .lang-switcher-login:hover {
+            opacity: 0.7;
+        }
+        .lang-icon { width: 16px; height: 16px; color: #64748b; }
+        .lang-code { color: #475569; font-weight: 600; text-transform: uppercase; }
+    </style>
+
+    <div class="login-container">
+        <!-- Header with logo -->
+        <div class="login-header">
+            <div class="login-logo">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            </div>
+            <h1 class="login-title">
+                <span id="titleText" data-i18n="welcomeBack">С возвращением!</span>
+            </h1>
+            <p class="login-subtitle" id="subtitleText" data-i18n="loginToAccount">Войдите в свой аккаунт</p>
+        </div>
+
+        <!-- Login card -->
+        <div class="login-card">
+            <form class="login-form" id="loginForm">
+                <!-- Name field (only for register) -->
+                <div class="form-group" id="nameGroup" style="display: none;">
+                    <label data-i18n="name">Имя</label>
+                    <div class="input-wrapper">
+                        <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <input type="text" class="form-input" id="name" data-i18n-placeholder="yourName" placeholder="Ваше имя" autocomplete="name">
+                    </div>
+                </div>
+
+                <!-- Email/Username field -->
+                <div class="form-group">
+                    <label data-i18n="email">Email</label>
+                    <div class="input-wrapper">
+                        <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                        <input type="text" class="form-input" id="username" placeholder="your@email.com" required autocomplete="username">
+                    </div>
+                </div>
+
+                <!-- Password field -->
+                <div class="form-group">
+                    <label data-i18n="password">Пароль</label>
+                    <div class="input-wrapper">
+                        <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <input type="password" class="form-input" id="password" placeholder="••••••••" required autocomplete="current-password" style="padding-right: 44px;">
+                        <button type="button" class="password-toggle" id="togglePassword">
+                            <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                            <svg id="eyeOffIcon" style="display: none;" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Remember me / Forgot password (only for login) -->
+                <div class="form-options" id="loginOptions">
+                    <label class="remember-me">
+                        <input type="checkbox" id="rememberMe">
+                        <span data-i18n="rememberMe">Запомнить меня</span>
+                    </label>
+                    <a href="#" class="forgot-link" data-i18n="forgotPassword">Забыли пароль?</a>
+                </div>
+
+                <!-- Error message -->
+                <div id="loginError" style="display: none; color: #ef4444; font-size: 0.875rem; text-align: center; margin-bottom: 0.5rem;"></div>
+
+                <!-- Submit button -->
+                <button type="submit" class="login-btn" id="submitBtn">
+                    <span id="submitText" data-i18n="login">Войти</span>
+                </button>
+            </form>
+
+            <!-- Toggle login/register -->
+            <div class="login-divider">
+                <span id="toggleQuestion" data-i18n="noAccount">Нет аккаунта?</span>
+                <button type="button" id="toggleMode">
+                    <span id="toggleText" data-i18n="register">Регистрация</span>
+                </button>
+            </div>
+
+            <!-- Terms (only for register) -->
+            <p class="terms-text" id="termsText" style="display: none;">
+                <span data-i18n="termsAccept">Регистрируясь, вы принимаете наши</span>
+                <a href="#" data-i18n="termsOfUse">Условия использования</a>
+                <span data-i18n="and">и</span>
+                <a href="#" data-i18n="privacyPolicy">Политику конфиденциальности</a>
+            </p>
+        </div>
+
+        <!-- Trust badges -->
+        <div class="trust-badges">
+            <div class="trust-badge">
+                <span class="dot dot-green"></span>
+                <span data-i18n="sslProtection">SSL защита</span>
+            </div>
+            <div class="trust-badge">
+                <span class="dot dot-blue"></span>
+                <span>GDPR</span>
+            </div>
+            <div class="trust-badge">
+                <span class="dot dot-purple"></span>
+                <span>2FA</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/js/translations.js"></script>
+    <script src="/js/security.js"></script>
+    <script src="/js/auth.js"></script>
+    <script>
+        (function() {
+            'use strict';
+
+            // Check if already logged in
+            if (typeof isAuthenticated === 'function' && isAuthenticated()) {
+                window.location.href = '/dashboard.html';
+                return;
+            }
+
+            // State
+            let isLoginMode = true;
+            let showPassword = false;
+
+            // Elements
+            const form = document.getElementById('loginForm');
+            const nameGroup = document.getElementById('nameGroup');
+            const loginOptions = document.getElementById('loginOptions');
+            const termsText = document.getElementById('termsText');
+            const titleText = document.getElementById('titleText');
+            const subtitleText = document.getElementById('subtitleText');
+            const submitText = document.getElementById('submitText');
+            const toggleQuestion = document.getElementById('toggleQuestion');
+            const toggleText = document.getElementById('toggleText');
+            const toggleBtn = document.getElementById('toggleMode');
+            const togglePassword = document.getElementById('togglePassword');
+            const passwordInput = document.getElementById('password');
+            const eyeIcon = document.getElementById('eyeIcon');
+            const eyeOffIcon = document.getElementById('eyeOffIcon');
+            const loginError = document.getElementById('loginError');
+            const backBtn = document.getElementById('backBtn');
+
+            // Update back button href based on language
+            function updateBackButton() {
+                if (backBtn) {
+                    backBtn.href = getLandingUrl();
+                }
+            }
+
+            // Toggle between login and register mode
+            function toggleMode() {
+                isLoginMode = !isLoginMode;
+                updateUI();
+            }
+
+            // Update UI based on mode
+            function updateUI() {
+                if (isLoginMode) {
+                    nameGroup.style.display = 'none';
+                    loginOptions.style.display = 'flex';
+                    termsText.style.display = 'none';
+                    titleText.setAttribute('data-i18n', 'welcomeBack');
+                    subtitleText.setAttribute('data-i18n', 'loginToAccount');
+                    submitText.setAttribute('data-i18n', 'login');
+                    toggleQuestion.setAttribute('data-i18n', 'noAccount');
+                    toggleText.setAttribute('data-i18n', 'register');
+                    document.title = getLang() === 'en' ? 'LinkBuilder Pro - Login' : 'LinkBuilder Pro - Вход';
+                } else {
+                    nameGroup.style.display = 'block';
+                    loginOptions.style.display = 'none';
+                    termsText.style.display = 'block';
+                    titleText.setAttribute('data-i18n', 'createAccount');
+                    subtitleText.setAttribute('data-i18n', 'startWithLinkBuilder');
+                    submitText.setAttribute('data-i18n', 'register');
+                    toggleQuestion.setAttribute('data-i18n', 'alreadyHaveAccount');
+                    toggleText.setAttribute('data-i18n', 'login');
+                    document.title = getLang() === 'en' ? 'LinkBuilder Pro - Register' : 'LinkBuilder Pro - Регистрация';
+                }
+
+                // Re-apply translations
+                if (typeof applyTranslations === 'function') {
+                    applyTranslations();
+                }
+
+                // Clear error
+                loginError.style.display = 'none';
+            }
+
+            // Toggle password visibility
+            function togglePasswordVisibility() {
+                showPassword = !showPassword;
+                passwordInput.type = showPassword ? 'text' : 'password';
+                eyeIcon.style.display = showPassword ? 'none' : 'block';
+                eyeOffIcon.style.display = showPassword ? 'block' : 'none';
+            }
+
+            // Handle form submit
+            async function handleSubmit(e) {
+                e.preventDefault();
+
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                const submitBtn = document.getElementById('submitBtn');
+
+                // Disable button
+                submitBtn.disabled = true;
+                submitText.textContent = '...';
+                loginError.style.display = 'none';
+
+                try {
+                    if (isLoginMode) {
+                        // Login
+                        await login(username, password);
+                        window.location.href = '/dashboard.html';
+                    } else {
+                        // Register - redirect to register page for now
+                        window.location.href = '/register.html';
+                    }
+                } catch (error) {
+                    loginError.textContent = error.message;
+                    loginError.style.display = 'block';
+                    submitBtn.disabled = false;
+                    submitText.textContent = t(isLoginMode ? 'login' : 'register');
+                }
+            }
+
+            // Event listeners
+            toggleBtn.addEventListener('click', toggleMode);
+            togglePassword.addEventListener('click', togglePasswordVisibility);
+            form.addEventListener('submit', handleSubmit);
+
+            // Update HTML lang attribute based on URL
+            function updateLanguage() {
+                const lang = getLang();
+                document.documentElement.lang = lang === 'en' ? 'en' : 'ru';
+                document.title = lang === 'en' ? 'LinkBuilder Pro - Login' : 'LinkBuilder Pro - Вход';
+            }
+
+            // Update language switcher display
+            function updateLangSwitcher() {
+                const lang = getLang();
+                const isRu = lang === 'ru';
+                const langCode = document.getElementById('langCode');
+                if (langCode) langCode.textContent = isRu ? 'RU' : 'EN';
+            }
+
+            // Initialize
+            updateLanguage();
+            updateLangSwitcher();
+            updateBackButton();
+            if (typeof applyTranslations === 'function') {
+                applyTranslations();
+            }
+            updateUI();
+        })();
+    </script>
+</body>
+</html>

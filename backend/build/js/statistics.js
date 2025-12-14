@@ -3,8 +3,23 @@
  * Shows user-specific spending and placement statistics
  */
 
-// Initialize navbar
-initNavbar('user', 'statistics');
+/**
+ * Get translated tier name based on discount percentage
+ */
+function getTranslatedTierName(discount) {
+    const discountInt = parseInt(discount) || 0;
+    // Standard tier (0%) should use translation, others keep English names
+    if (discountInt === 0) return t('tierStandard');
+    // Other tiers: Bronze(10%), Silver(15%), Gold(20%), Platinum(25%), Diamond(30%)
+    const tierNames = {
+        10: 'Bronze',
+        15: 'Silver',
+        20: 'Gold',
+        25: 'Platinum',
+        30: 'Diamond'
+    };
+    return tierNames[discountInt] || t('tierStandard');
+}
 
 // Check authentication
 if (!isAuthenticated()) {
@@ -21,13 +36,39 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadUserStats('week');
     await loadRecentPurchases();
 
-    // Period change listeners
-    document.querySelectorAll('input[name="period"]').forEach(radio => {
-        radio.addEventListener('change', async (e) => {
-            await loadUserStats(e.target.value);
+    // Period selector button listeners
+    document.querySelectorAll('.stats-period-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const period = btn.dataset.period;
+            updateActivePeriod(period);
+            await loadUserStats(period);
+        });
+    });
+
+    // Spending card click listeners
+    document.querySelectorAll('.stats-spending-card').forEach(card => {
+        card.addEventListener('click', async () => {
+            const period = card.dataset.period;
+            updateActivePeriod(period);
+            await loadUserStats(period);
         });
     });
 });
+
+/**
+ * Update active period (both buttons and cards)
+ */
+function updateActivePeriod(period) {
+    // Update period buttons
+    document.querySelectorAll('.stats-period-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.period === period);
+    });
+
+    // Update spending cards
+    document.querySelectorAll('.stats-spending-card').forEach(card => {
+        card.classList.toggle('active', card.dataset.period === period);
+    });
+}
 
 /**
  * Load user balance info
@@ -45,7 +86,8 @@ async function loadUserBalance() {
 
         document.getElementById('currentBalance').textContent = parseFloat(data.balance || 0).toFixed(2);
         document.getElementById('totalSpent').textContent = parseFloat(data.totalSpent || 0).toFixed(2);
-        document.getElementById('discountTier').textContent = data.discountTier || 'Стандарт';
+        // Translate tier name based on discount percentage
+        document.getElementById('discountTier').textContent = getTranslatedTierName(data.currentDiscount);
 
     } catch (error) {
         console.error('Failed to load balance:', error);
@@ -325,32 +367,62 @@ function renderRecentPurchases(purchases) {
     tbody.innerHTML = '';
 
     if (purchases.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Нет покупок</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">' + t('noPurchases') + '</td></tr>';
         return;
     }
 
     purchases.forEach(p => {
         const row = document.createElement('tr');
 
-        // Use shared badge-utils functions
-        const typeBadge = getPlacementTypeBadge(p.type);
+        // Type badge with new CSS classes
+        const typeBadgeClass = p.type === 'link' ? 'badge-link' : 'badge-article';
+        const typeIcon = p.type === 'link' ? 'bi-link-45deg' : 'bi-file-earmark-text';
+        const typeText = p.type === 'link' ? t('typeHomepage') : t('typeArticle');
+
+        // Status badge with new CSS classes
+        let statusBadgeClass = 'badge-pending';
+        let statusIcon = 'bi-clock';
+        if (p.status === 'placed') {
+            statusBadgeClass = 'badge-placed';
+            statusIcon = 'bi-check-circle';
+        } else if (p.status === 'failed') {
+            statusBadgeClass = 'badge-failed';
+            statusIcon = 'bi-x-circle';
+        }
 
         row.innerHTML = `
             <td>${formatDateTime(p.purchased_at)}</td>
             <td>${escapeHtml(p.project_name || '—')}</td>
-            <td>${typeBadge}</td>
-            <td><a href="${escapeHtml(p.site_url)}" target="_blank">${escapeHtml(p.site_name)}</a></td>
+            <td><span class="badge ${typeBadgeClass}"><i class="bi ${typeIcon}"></i> ${typeText}</span></td>
+            <td><a href="${escapeHtml(p.site_url)}" target="_blank" class="site-link">${escapeHtml(p.site_name)} <i class="bi bi-box-arrow-up-right"></i></a></td>
             <td class="fw-bold text-success">$${parseFloat(p.final_price || 0).toFixed(2)}</td>
             <td>
                 ${p.discount_applied > 0
-                    ? `<span class="badge bg-warning">${p.discount_applied}%</span>`
+                    ? `<span class="badge bg-warning text-dark">${p.discount_applied}%</span>`
                     : '—'}
             </td>
-            <td>${getPlacementStatusBadge(p.status)}</td>
+            <td><span class="badge ${statusBadgeClass}"><i class="bi ${statusIcon}"></i> ${getStatusText(p.status)}</span></td>
+            <td>
+                ${p.placement_id
+                    ? `<a href="/placements-manager.html?id=${p.placement_id}" class="btn-action" title="${t('viewDetails')}"><i class="bi bi-arrow-right"></i></a>`
+                    : '—'}
+            </td>
         `;
 
         tbody.appendChild(row);
     });
+}
+
+/**
+ * Get translated status text
+ */
+function getStatusText(status) {
+    const statusTexts = {
+        placed: t('statusPlaced'),
+        pending: t('statusPending'),
+        failed: t('statusFailed')
+    };
+    return statusTexts[status] || status;
 }
 
 // Utility functions provided by shared modules:

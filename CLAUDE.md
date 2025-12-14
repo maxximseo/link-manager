@@ -459,7 +459,7 @@ POST /api/projects/:id/articles/:articleId/duplicate
 
 **Migration Required**:
 ```bash
-node database/run_remove_anchor_constraint.js
+node database/run_remove_anchor_unique.js
 ```
 
 **SQL executed**:
@@ -1594,7 +1594,7 @@ node database/run_billing_migration.js
 node database/run_registration_tokens_migration.js
 
 # 8. Remove anchor_text uniqueness constraint (REQUIRED for v2.5.0+)
-node database/run_remove_anchor_constraint.js
+node database/run_remove_anchor_unique.js
 
 # 9. Add extended fields to project_links (REQUIRED for v2.5.0+)
 node database/run_extended_fields_migration.js

@@ -7,6 +7,40 @@
     <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
+    <!-- Language switcher -->
+    <button class="lang-switcher-login" id="langSwitcher" onclick="toggleLanguage()">
+        <svg class="lang-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+        </svg>
+        <span class="lang-code" id="langCode"></span>
+    </button>
+    <style>
+        .lang-switcher-login {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+            font-weight: 600;
+            font-size: 13px;
+            color: #475569;
+            z-index: 1000;
+        }
+        .lang-switcher-login:hover {
+            opacity: 0.7;
+        }
+        .lang-icon { width: 16px; height: 16px; color: #64748b; }
+        .lang-code { color: #475569; font-weight: 600; text-transform: uppercase; }
+    </style>
+
     <div class="login-container">
         <div class="login-box">
             <h1>🔗 Link Manager</h1>
@@ -68,6 +102,17 @@
         </div>
     </div>
 
+    <script src="/js/translations.js"></script>
     <script src="/js/register.js"></script>
+    <script>
+        // Initialize language switcher
+        function updateLangSwitcher() {
+            const lang = typeof getLang === 'function' ? getLang() : 'ru';
+            const isRu = lang === 'ru';
+            const langCode = document.getElementById('langCode');
+            if (langCode) langCode.textContent = isRu ? 'RU' : 'EN';
+        }
+        updateLangSwitcher();
+    </script>
 </body>
 </html>

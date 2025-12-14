@@ -3,201 +3,247 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Статистика - Link Manager</title>
+    <title data-i18n="statisticsPageTitle">Статистика - Link Manager</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/modern-table.css">
     <link rel="stylesheet" href="/css/sidebar.css">
+    <link rel="stylesheet" href="/css/statistics.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
     <!-- Content will be wrapped by sidebar.js -->
 
-    <div class="container mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>📊 Статистика</h1>
-            <div class="btn-group" role="group">
-                <input type="radio" class="btn-check" name="period" id="periodDay" value="day">
-                <label class="btn btn-primary" for="periodDay">День</label>
-
-                <input type="radio" class="btn-check" name="period" id="periodWeek" value="week" checked>
-                <label class="btn btn-primary" for="periodWeek">Неделя</label>
-
-                <input type="radio" class="btn-check" name="period" id="periodMonth" value="month">
-                <label class="btn btn-primary" for="periodMonth">Месяц</label>
-
-                <input type="radio" class="btn-check" name="period" id="periodYear" value="year">
-                <label class="btn btn-primary" for="periodYear">Год</label>
+    <div class="container-fluid">
+        <!-- Period Selector Header -->
+        <div class="stats-header">
+            <div class="stats-header-left">
+                <h2 data-i18n="statisticsOverview">Обзор статистики</h2>
+                <p data-i18n="selectPeriod">Выберите период для анализа</p>
+            </div>
+            <div class="stats-period-selector">
+                <button class="stats-period-btn" data-period="day">
+                    <i class="bi bi-calendar-day"></i>
+                    <span data-i18n="periodDay">День</span>
+                </button>
+                <button class="stats-period-btn active" data-period="week">
+                    <i class="bi bi-calendar-week"></i>
+                    <span data-i18n="periodWeek">Неделя</span>
+                </button>
+                <button class="stats-period-btn" data-period="month">
+                    <i class="bi bi-calendar-month"></i>
+                    <span data-i18n="periodMonth">Месяц</span>
+                </button>
+                <button class="stats-period-btn" data-period="year">
+                    <i class="bi bi-calendar"></i>
+                    <span data-i18n="periodYear">Год</span>
+                </button>
             </div>
         </div>
 
-        <!-- Spending Stats -->
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card border-success">
-                    <div class="card-body text-center">
-                        <h6 class="card-subtitle mb-2 text-muted">Расходы за день</h6>
-                        <h2 class="text-success mb-0">$<span id="spendingDay">0.00</span></h2>
-                        <small class="text-muted">Транзакций: <span id="transactionsDay">0</span></small>
+        <!-- Spending Cards -->
+        <div class="stats-spending-grid">
+            <!-- Daily Spending -->
+            <div class="stats-spending-card" data-period="day" data-gradient="green">
+                <div class="stats-card-icon">
+                    <i class="bi bi-calendar-day"></i>
+                </div>
+                <div class="stats-card-active-dot"></div>
+                <div class="stats-card-label" data-i18n="dailySpending">Расходы за день</div>
+                <div class="stats-card-value">$<span id="spendingDay">0.00</span></div>
+                <div class="stats-card-sub"><span id="transactionsDay">0</span> <span data-i18n="transactionsCount">транзакций</span></div>
+            </div>
+
+            <!-- Weekly Spending -->
+            <div class="stats-spending-card active" data-period="week" data-gradient="blue">
+                <div class="stats-card-icon">
+                    <i class="bi bi-calendar-week"></i>
+                </div>
+                <div class="stats-card-active-dot"></div>
+                <div class="stats-card-label" data-i18n="weeklySpending">Расходы за неделю</div>
+                <div class="stats-card-value">$<span id="spendingWeek">0.00</span></div>
+                <div class="stats-card-sub"><span id="transactionsWeek">0</span> <span data-i18n="transactionsCount">транзакций</span></div>
+            </div>
+
+            <!-- Monthly Spending -->
+            <div class="stats-spending-card" data-period="month" data-gradient="orange">
+                <div class="stats-card-icon">
+                    <i class="bi bi-graph-up"></i>
+                </div>
+                <div class="stats-card-active-dot"></div>
+                <div class="stats-card-label" data-i18n="monthlySpending">Расходы за месяц</div>
+                <div class="stats-card-value">$<span id="spendingMonth">0.00</span></div>
+                <div class="stats-card-sub"><span id="transactionsMonth">0</span> <span data-i18n="transactionsCount">транзакций</span></div>
+            </div>
+
+            <!-- Yearly Spending -->
+            <div class="stats-spending-card" data-period="year" data-gradient="purple">
+                <div class="stats-card-icon">
+                    <i class="bi bi-bar-chart-line"></i>
+                </div>
+                <div class="stats-card-active-dot"></div>
+                <div class="stats-card-label" data-i18n="yearlySpending">Расходы за год</div>
+                <div class="stats-card-value">$<span id="spendingYear">0.00</span></div>
+                <div class="stats-card-sub"><span id="transactionsYear">0</span> <span data-i18n="transactionsCount">транзакций</span></div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="stats-charts-grid">
+            <!-- Pie Chart - Spending by Type -->
+            <div class="stats-chart-card">
+                <div class="stats-chart-header">
+                    <div class="stats-chart-icon purple">
+                        <i class="bi bi-pie-chart-fill"></i>
+                    </div>
+                    <div>
+                        <h3 data-i18n="spendingByTypeChart">Расходы по типам</h3>
+                        <p data-i18n="spendingDistribution">Распределение расходов</p>
+                    </div>
+                </div>
+                <div class="stats-chart-body">
+                    <canvas id="spendingByTypeChart" height="280"></canvas>
+                </div>
+                <div class="stats-chart-legend" id="chartLegend">
+                    <div class="legend-item">
+                        <span class="legend-dot" style="background: #3b82f6;"></span>
+                        <span data-i18n="chartPurchases">Покупки</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot" style="background: #10b981;"></span>
+                        <span data-i18n="chartRenewals">Продления</span>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card border-primary">
-                    <div class="card-body text-center">
-                        <h6 class="card-subtitle mb-2 text-muted">Расходы за неделю</h6>
-                        <h2 class="text-primary mb-0">$<span id="spendingWeek">0.00</span></h2>
-                        <small class="text-muted">Транзакций: <span id="transactionsWeek">0</span></small>
+
+            <!-- Line Chart - Timeline -->
+            <div class="stats-chart-card">
+                <div class="stats-chart-header">
+                    <div class="stats-chart-icon blue">
+                        <i class="bi bi-graph-up"></i>
+                    </div>
+                    <div>
+                        <h3 data-i18n="spendingTimelineChart">Динамика расходов</h3>
+                        <p data-i18n="last7Days">Последние 7 дней</p>
                     </div>
                 </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card border-warning">
-                    <div class="card-body text-center">
-                        <h6 class="card-subtitle mb-2 text-muted">Расходы за месяц</h6>
-                        <h2 class="text-warning mb-0">$<span id="spendingMonth">0.00</span></h2>
-                        <small class="text-muted">Транзакций: <span id="transactionsMonth">0</span></small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card border-info">
-                    <div class="card-body text-center">
-                        <h6 class="card-subtitle mb-2 text-muted">Расходы за год</h6>
-                        <h2 class="text-info mb-0">$<span id="spendingYear">0.00</span></h2>
-                        <small class="text-muted">Транзакций: <span id="transactionsYear">0</span></small>
-                    </div>
+                <div class="stats-chart-body">
+                    <canvas id="spendingTimelineChart" height="280"></canvas>
                 </div>
             </div>
         </div>
 
-        <!-- Charts Row -->
-        <div class="row mb-4">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">Расходы по типам</h5>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="spendingByTypeChart" height="200"></canvas>
-                    </div>
+        <!-- Placement Statistics -->
+        <div class="stats-placements-card">
+            <div class="stats-placements-header">
+                <div class="stats-chart-icon green">
+                    <i class="bi bi-bar-chart-line-fill"></i>
+                </div>
+                <div>
+                    <h3 data-i18n="placementsStatsTitle">Статистика размещений</h3>
+                    <p data-i18n="placementsOverview">Обзор всех ваших размещений</p>
                 </div>
             </div>
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">Динамика расходов (7 дней)</h5>
+            <div class="stats-placements-grid">
+                <div class="stats-placement-item">
+                    <div class="stats-placement-icon blue">
+                        <i class="bi bi-bar-chart-line"></i>
                     </div>
-                    <div class="card-body">
-                        <canvas id="spendingTimelineChart" height="200"></canvas>
-                    </div>
+                    <div class="stats-placement-value" id="totalPlacements">0</div>
+                    <div class="stats-placement-label" data-i18n="totalPlacementsStat">Всего размещений</div>
                 </div>
-            </div>
-        </div>
-
-        <!-- Placements Stats -->
-        <div class="row mb-4">
-            <div class="col-md-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">Статистика размещений</h5>
+                <div class="stats-placement-item">
+                    <div class="stats-placement-icon green">
+                        <i class="bi bi-link-45deg"></i>
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <div class="stat-card">
-                                    <h3 id="totalPlacements">0</h3>
-                                    <p>Всего размещений</p>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="stat-card primary">
-                                    <h3 id="linkPlacements">0</h3>
-                                    <p>Ссылок на главной</p>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="stat-card success">
-                                    <h3 id="articlePlacements">0</h3>
-                                    <p>Гест-постов</p>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="stat-card warning">
-                                    <h3 id="scheduledPlacements">0</h3>
-                                    <p>Запланированных</p>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="stats-placement-value" id="linkPlacements">0</div>
+                    <div class="stats-placement-label" data-i18n="linkPlacementsStat">Ссылок на главной</div>
+                </div>
+                <div class="stats-placement-item">
+                    <div class="stats-placement-icon purple">
+                        <i class="bi bi-file-earmark-text"></i>
                     </div>
+                    <div class="stats-placement-value" id="articlePlacements">0</div>
+                    <div class="stats-placement-label" data-i18n="articlePlacementsStat">Гест-постов</div>
+                </div>
+                <div class="stats-placement-item">
+                    <div class="stats-placement-icon orange">
+                        <i class="bi bi-clock-history"></i>
+                    </div>
+                    <div class="stats-placement-value" id="scheduledPlacements">0</div>
+                    <div class="stats-placement-label" data-i18n="scheduledPlacementsStat">Запланированных</div>
                 </div>
             </div>
         </div>
 
-        <!-- Recent Purchases -->
-        <div class="row mb-4">
-            <div class="col-md-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">Мои последние покупки</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Дата</th>
-                                        <th>Проект</th>
-                                        <th>Тип</th>
-                                        <th>Сайт</th>
-                                        <th>Цена</th>
-                                        <th>Скидка</th>
-                                        <th>Статус</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="recentPurchasesTable">
-                                    <tr>
-                                        <td colspan="7" class="text-center text-muted">Загрузка...</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+        <!-- Recent Purchases Table -->
+        <div class="stats-table-card">
+            <div class="stats-table-header">
+                <div class="stats-chart-icon indigo">
+                    <i class="bi bi-cart-fill"></i>
                 </div>
+                <div>
+                    <h3 data-i18n="recentPurchasesTitle">Мои последние покупки</h3>
+                    <p data-i18n="purchaseHistory">История последних покупок</p>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th data-i18n="thDate">Дата</th>
+                            <th data-i18n="thProject">Проект</th>
+                            <th data-i18n="thType">Тип</th>
+                            <th data-i18n="thSite">Сайт</th>
+                            <th data-i18n="thPrice">Цена</th>
+                            <th data-i18n="thDiscount">Скидка</th>
+                            <th data-i18n="thStatus">Статус</th>
+                            <th data-i18n="thActions">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentPurchasesTable">
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-4">
+                                <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                                <span data-i18n="loading">Загрузка...</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
         <!-- Balance Summary -->
-        <div class="row mb-4">
-            <div class="col-md-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">Сводка по балансу</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="stat-card info">
-                                    <h3>$<span id="currentBalance">0.00</span></h3>
-                                    <p>Текущий баланс</p>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="stat-card success">
-                                    <h3>$<span id="totalSpent">0.00</span></h3>
-                                    <p>Всего потрачено</p>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="stat-card warning">
-                                    <h3><span id="discountTier">—</span></h3>
-                                    <p>Текущий уровень скидки</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+        <div class="stats-balance-grid">
+            <!-- Current Balance - Blue Gradient -->
+            <div class="stats-balance-card balance-blue">
+                <div class="stats-balance-icon">
+                    <i class="bi bi-currency-dollar"></i>
                 </div>
+                <div class="stats-balance-label" data-i18n="currentBalanceStat">Текущий баланс</div>
+                <div class="stats-balance-value">$<span id="currentBalance">0.00</span></div>
+                <div class="stats-balance-sub" data-i18n="availableForPurchases">Доступно для покупок</div>
+            </div>
+
+            <!-- Total Spent - White Card -->
+            <div class="stats-balance-card balance-white">
+                <div class="stats-balance-icon purple-bg">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </div>
+                <div class="stats-balance-label" data-i18n="totalSpentStat">Всего потрачено</div>
+                <div class="stats-balance-value">$<span id="totalSpent">0.00</span></div>
+                <div class="stats-balance-sub" data-i18n="spentAllTime">За всё время</div>
+            </div>
+
+            <!-- Current Discount - Amber Gradient -->
+            <div class="stats-balance-card balance-amber">
+                <div class="stats-balance-icon">
+                    <i class="bi bi-arrow-up-right"></i>
+                </div>
+                <div class="stats-balance-label" data-i18n="currentDiscountTier">Текущий уровень скидки</div>
+                <div class="stats-balance-value"><span id="discountTier">—</span></div>
+                <div class="stats-balance-sub" data-i18n="discountLevel">Уровень скидки</div>
             </div>
         </div>
     </div>
@@ -208,15 +254,21 @@
     <script src="/js/badge-utils.js"></script>
     <script src="/js/api.js"></script>
     <script src="/js/sidebar.js"></script>
+    <script src="/js/translations.js"></script>
     <script>
-        // Initialize sidebar navigation
+        // Initialize sidebar navigation with i18n support
+        const lang = getLang();
         SidebarNav.init({
             activePage: 'analytics',
-            pageTitle: 'Статистика',
-            pageSubtitle: 'Аналитика расходов и размещений',
+            pageTitle: lang === 'en' ? 'Statistics' : 'Статистика',
+            pageSubtitle: lang === 'en' ? 'Spending and placement analytics' : 'Аналитика расходов и размещений',
             pageIcon: 'bar-chart-line',
             pageIconGradient: 'gradient-green-teal'
         });
+        // Apply translations after DOM is ready
+        if (typeof applyTranslations === 'function') {
+            applyTranslations();
+        }
     </script>
     <script src="/js/statistics.js"></script>
 </body>
