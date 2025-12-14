@@ -162,8 +162,8 @@ async function loadTransactions() {
     if (!transactions || transactions.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="6" class="text-center text-muted">
-            <i class="bi bi-clock-history"></i> Пока нет начислений
+          <td colspan="6" class="text-center text-muted py-4">
+            <i class="bi bi-clock-history"></i> ${t('noCommissionsYet') || 'Пока нет начислений'}
           </td>
         </tr>
       `;
