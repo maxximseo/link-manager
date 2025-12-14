@@ -1924,6 +1924,7 @@ const deleteAndRefundPlacement = async (placementId, userId, userRole = 'user') 
         p.placed_at,
         p.status,
         s.site_name,
+        s.api_key,
         proj.name as project_name
       FROM placements p
       LEFT JOIN sites s ON p.site_id = s.id
