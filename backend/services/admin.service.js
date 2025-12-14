@@ -638,7 +638,10 @@ const refundPlacement = async (placementId, reason, adminId, deleteWordPressPost
     const cache = require('./cache.service');
     await cache.delPattern(`placements:user:${placement.user_id}:*`);
     await cache.delPattern(`projects:user:${placement.user_id}:*`);
-    await cache.delPattern(`wp:content:*`);
+    // Targeted cache invalidation - only this site
+    if (placement.api_key) {
+      await cache.del(`wp:content:${placement.api_key}`);
+    }
 
     logger.info('Admin manual refund completed', {
       adminId,
