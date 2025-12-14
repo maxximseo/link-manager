@@ -66,7 +66,9 @@ router.get('/balance', authMiddleware, async (req, res) => {
         balance: parseFloat(user.balance),
         totalSpent: parseFloat(user.total_spent),
         currentDiscount: user.current_discount,
-        discountTier: user.tier_name
+        discountTier: user.tier_name,
+        lockedBonus: parseFloat(user.locked_bonus) || 0,
+        unlockAmount: parseFloat(user.locked_bonus_unlock_amount) || 100
       }
     });
   } catch (error) {
@@ -79,6 +81,11 @@ router.get('/balance', authMiddleware, async (req, res) => {
  * POST /api/billing/deposit
  * Add balance to user account
  * Note: In production, this should be called by payment gateway webhook
+ *
+ * NEW: Supports promo code for first-deposit bonus
+ * - If promoCode is valid and deposit >= $100 and user hasn't received bonus yet:
+ *   - User gets +$100 bonus
+ *   - Promo code owner gets +$50 to referral_balance
  */
 router.post(
   '/deposit',
@@ -88,24 +95,35 @@ router.post(
     body('amount')
       .isFloat({ min: 0.01, max: 10000 })
       .withMessage('Amount must be between $0.01 and $10,000'),
-    body('description').optional().isString().trim()
+    body('description').optional().isString().trim(),
+    body('promoCode')
+      .optional()
+      .isString()
+      .trim()
+      .isLength({ max: 50 })
+      .withMessage('Promo code must be max 50 characters')
   ],
   validateRequest,
   async (req, res) => {
     try {
-      const { amount, description } = req.body;
+      const { amount, description, promoCode } = req.body;
 
       const result = await billingService.addBalance(
         req.user.id,
         amount,
-        description || 'Balance deposit'
+        description || 'Balance deposit',
+        null, // adminId
+        promoCode || null
       );
 
       res.json({
         success: true,
         data: {
           newBalance: result.newBalance,
-          amount: result.amount
+          amount: result.amount,
+          bonusAmount: result.bonusAmount || 0,
+          totalAdded: result.totalAdded || result.amount,
+          bonusApplied: result.bonusApplied || false
         }
       });
     } catch (error) {

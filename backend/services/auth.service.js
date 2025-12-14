@@ -8,6 +8,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { query } = require('../config/database');
 const logger = require('../config/logger');
+const emailService = require('./email.service');
 
 // Validate JWT secret is provided and strong enough
 if (!process.env.JWT_SECRET) {
@@ -207,32 +208,34 @@ const registerUser = async (username, email, password, referralCode = null) => {
     const bcryptRounds = parseInt(process.env.BCRYPT_ROUNDS, 10) || 10;
     const hashedPassword = await bcrypt.hash(password, bcryptRounds);
 
-    // Generate email verification token
+    // Generate email verification token with expiration (24 hours)
     const verificationToken = crypto.randomBytes(32).toString('hex');
+    const tokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
     // Insert new user with referral_code = username and optional referred_by_user_id
     const result = await query(
-      `INSERT INTO users (username, email, password, role, email_verified, verification_token, balance, total_spent, current_discount, referral_code, referred_by_user_id, referral_balance, total_referral_earnings)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      `INSERT INTO users (username, email, password, role, email_verified, verification_token, verification_token_expires_at, balance, total_spent, current_discount, referral_code, referred_by_user_id, referral_balance, total_referral_earnings)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
        RETURNING id, username, email, role, referral_code`,
-      [username, email, hashedPassword, 'user', false, verificationToken, 0.0, 0.0, 0, username, referredByUserId, 0.0, 0.0]
+      [username, email, hashedPassword, 'user', false, verificationToken, tokenExpiresAt, 0.0, 0.0, 0, username, referredByUserId, 0.0, 0.0]
     );
 
     const newUser = result.rows[0];
 
-    // If user registered via referral code, add $50 locked bonus
-    if (referredByUserId) {
-      await query(
-        'UPDATE users SET locked_bonus = 50.00, locked_bonus_unlock_amount = 100.00, locked_bonus_unlocked = false WHERE id = $1',
-        [newUser.id]
-      );
-      logger.info(`Locked bonus $50 added for user ${username} (referred by user ID ${referredByUserId})`);
-    }
+    // NOTE: Referral bonus is now handled at first deposit time via billing.service.js
+    // - User gets $100 bonus on first deposit >= $100
+    // - Referrer (partner) gets $50 to referral_balance
+    // - This new logic supports both referral links and promo codes
 
     logger.info(`New user registered: ${username}${referredByUserId ? ` (referred by user ID ${referredByUserId})` : ''}`);
 
-    // In production, you would send verification email here
-    // For now, we return the token for manual verification
+    // Send verification email
+    if (email) {
+      const emailResult = await emailService.sendVerificationEmail(email, verificationToken, username);
+      if (!emailResult.success) {
+        logger.warn(`Failed to send verification email to ${email}: ${emailResult.error}`);
+      }
+    }
 
     return {
       success: true,
@@ -243,8 +246,9 @@ const registerUser = async (username, email, password, referralCode = null) => {
         role: newUser.role,
         referralCode: newUser.referral_code
       },
-      verificationToken: verificationToken, // Remove this in production, send via email instead
-      message: 'User registered successfully. Please verify your email.'
+      message: email
+        ? 'Регистрация успешна! Проверьте email для подтверждения аккаунта.'
+        : 'Регистрация успешна!'
     };
   } catch (error) {
     logger.error('Registration service error:', error);
@@ -258,14 +262,18 @@ const registerUser = async (username, email, password, referralCode = null) => {
 // Verify email with token
 const verifyEmail = async token => {
   try {
-    const result = await query('SELECT id, username FROM users WHERE verification_token = $1', [
-      token
-    ]);
+    // Check token is valid and not expired
+    const result = await query(
+      `SELECT id, username FROM users
+       WHERE verification_token = $1
+       AND (verification_token_expires_at IS NULL OR verification_token_expires_at > NOW())`,
+      [token]
+    );
 
     if (result.rows.length === 0) {
       return {
         success: false,
-        error: 'Invalid or expired verification token'
+        error: 'Недействительная или просроченная ссылка. Запросите новое письмо для подтверждения.'
       };
     }
 

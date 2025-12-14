@@ -112,6 +112,16 @@ app.get('/en/login', (req, res) => {
   res.sendFile(path.join(__dirname, 'build', 'login.html'));
 });
 
+// Email verification page - Russian
+app.get('/verify-email', (req, res) => {
+  res.sendFile(path.join(__dirname, 'build', 'verify-email.html'));
+});
+
+// Email verification page - English
+app.get('/en/verify-email', (req, res) => {
+  res.sendFile(path.join(__dirname, 'build', 'verify-email.html'));
+});
+
 // Static files (CSS, JS, images, etc.)
 app.use(express.static(path.join(__dirname, 'build')));
 

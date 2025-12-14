@@ -45,6 +45,7 @@ const SidebarNav = {
       { id: 'admin-placements', label: t('sidebarAdminPlacements'), icon: 'bi-bookmark-star', href: '/admin-placements.html' },
       { id: 'admin-moderation', label: t('sidebarAdminModeration'), icon: 'bi-check2-square', href: '/admin-moderation.html', badge: true },
       { id: 'admin-sites-moderation', label: t('sidebarAdminSitesModeration'), icon: 'bi-shield-check', href: '/admin-sites-moderation.html' },
+      { id: 'admin-promo', label: t('sidebarAdminPromo'), icon: 'bi-tags', href: '/admin-promo.html' },
       { id: 'admin-withdrawals', label: t('sidebarAdminWithdrawals'), icon: 'bi-cash-stack', href: '/admin-referral-withdrawals.html' }
     ];
   },

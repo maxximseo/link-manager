@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="verifyEmailTitle">Подтверждение Email - Link Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        body {
+            background: #f8fafc;
+            min-height: 100vh;
+        }
+
+        .verify-page {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header matching dashboard style */
+        .verify-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .verify-header h1 {
+            color: white;
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0 0 8px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .verify-header h1 i {
+            font-size: 32px;
+        }
+
+        .verify-header p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 16px;
+            margin: 0;
+        }
+
+        /* Main content */
+        .verify-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .verify-card {
+            background: white;
+            border-radius: 16px;
+            padding: 48px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        .verify-icon {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .verify-icon.loading {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .verify-icon.success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .verify-icon.error {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        .verify-icon i {
+            font-size: 48px;
+            color: white;
+        }
+
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .verify-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin: 0 0 12px 0;
+        }
+
+        .verify-message {
+            font-size: 16px;
+            color: #64748b;
+            margin: 0 0 32px 0;
+            line-height: 1.6;
+        }
+
+        .verify-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 32px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .verify-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 14px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+        .verify-footer {
+            margin-top: 24px;
+            font-size: 14px;
+            color: #94a3b8;
+        }
+
+        .verify-footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .verify-footer a:hover {
+            text-decoration: underline;
+        }
+
+        .countdown {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        /* Logo */
+        .logo {
+            margin-bottom: 20px;
+        }
+
+        .logo a {
+            color: white;
+            text-decoration: none;
+            font-size: 24px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .logo i {
+            font-size: 28px;
+        }
+
+        /* Footer */
+        .page-footer {
+            text-align: center;
+            padding: 20px;
+            color: #94a3b8;
+            font-size: 14px;
+        }
+
+        .page-footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .page-footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Language selector */
+        .lang-selector {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .lang-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+
+        .lang-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="verify-page">
+        <!-- Header -->
+        <header class="verify-header position-relative">
+            <button class="lang-btn lang-selector" onclick="toggleLanguage()">
+                <i class="bi bi-globe"></i>
+                <span id="langLabel">EN</span>
+            </button>
+            <div class="logo">
+                <a href="/">
+                    <i class="bi bi-link-45deg"></i>
+                    LinkBuilder Pro
+                </a>
+            </div>
+            <h1>
+                <i class="bi bi-envelope-check"></i>
+                <span data-i18n="verifyEmailHeader">Подтверждение Email</span>
+            </h1>
+            <p data-i18n="verifyEmailSubheader">Верификация вашего аккаунта</p>
+        </header>
+
+        <!-- Content -->
+        <main class="verify-content">
+            <div class="verify-card">
+                <div class="verify-icon loading" id="iconContainer">
+                    <i class="bi bi-arrow-repeat spinner"></i>
+                </div>
+                <h2 class="verify-title" id="title" data-i18n="verifyingEmail">Подтверждаем email...</h2>
+                <p class="verify-message" id="message" data-i18n="verifyingMessage">Пожалуйста, подождите. Мы проверяем вашу ссылку.</p>
+                <div id="actionContainer" style="display: none;">
+                    <a href="/login" class="verify-btn" id="actionBtn">
+                        <span id="actionText" data-i18n="loginToAccount">Войти в аккаунт</span>
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+                <p class="verify-footer" id="footer"></p>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="page-footer">
+            <p>© 2025 LinkBuilder Pro. <span data-i18n="allRightsReserved">Все права защищены.</span></p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Language handling
+        let currentLang = localStorage.getItem('language') || 'ru';
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'ru' ? 'en' : 'ru';
+            localStorage.setItem('language', currentLang);
+            updatePageLanguage();
+        }
+
+        function updatePageLanguage() {
+            const langLabel = document.getElementById('langLabel');
+            // Show target language (opposite of current)
+            langLabel.textContent = currentLang === 'ru' ? 'EN' : 'RU';
+            document.documentElement.lang = currentLang;
+
+            // Update static translations
+            const staticTranslations = {
+                ru: {
+                    verifyEmailHeader: 'Подтверждение Email',
+                    verifyEmailSubheader: 'Верификация вашего аккаунта',
+                    allRightsReserved: 'Все права защищены.'
+                },
+                en: {
+                    verifyEmailHeader: 'Email Verification',
+                    verifyEmailSubheader: 'Verify your account',
+                    allRightsReserved: 'All rights reserved.'
+                }
+            };
+
+            const t = staticTranslations[currentLang];
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (t[key]) {
+                    el.textContent = t[key];
+                }
+            });
+        }
+
+        // Initialize language on load
+        updatePageLanguage();
+
+        // Translations for dynamic content
+        const translations = {
+            ru: {
+                invalidLink: 'Недействительная ссылка',
+                noToken: 'Ссылка для подтверждения email не содержит токен.',
+                emailVerified: 'Email подтвержден!',
+                accountActivated: 'Ваш аккаунт активирован. Теперь вы можете войти в систему и начать пользоваться сервисом.',
+                loginToAccount: 'Войти в аккаунт',
+                autoRedirect: 'Автоматический переход через',
+                seconds: 'сек...',
+                verificationError: 'Ошибка подтверждения',
+                verificationFailed: 'Не удалось подтвердить email',
+                connectionError: 'Ошибка соединения',
+                serverError: 'Не удалось связаться с сервером. Попробуйте позже.',
+                registerAgain: 'Зарегистрироваться снова',
+                orLogin: 'Или <a href="/login">войдите</a>, если у вас уже есть аккаунт',
+                verifyingEmail: 'Подтверждаем email...',
+                verifyingMessage: 'Пожалуйста, подождите. Мы проверяем вашу ссылку.'
+            },
+            en: {
+                invalidLink: 'Invalid link',
+                noToken: 'The email verification link does not contain a token.',
+                emailVerified: 'Email verified!',
+                accountActivated: 'Your account is activated. You can now log in and start using the service.',
+                loginToAccount: 'Log in to account',
+                autoRedirect: 'Auto redirect in',
+                seconds: 'sec...',
+                verificationError: 'Verification error',
+                verificationFailed: 'Failed to verify email',
+                connectionError: 'Connection error',
+                serverError: 'Could not connect to server. Please try again later.',
+                registerAgain: 'Register again',
+                orLogin: 'Or <a href="/login">log in</a> if you already have an account',
+                verifyingEmail: 'Verifying email...',
+                verifyingMessage: 'Please wait. We are checking your link.'
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+
+            const iconContainer = document.getElementById('iconContainer');
+            const title = document.getElementById('title');
+            const message = document.getElementById('message');
+            const actionContainer = document.getElementById('actionContainer');
+            const actionBtn = document.getElementById('actionBtn');
+            const actionText = document.getElementById('actionText');
+            const footer = document.getElementById('footer');
+
+            const t = translations[currentLang] || translations.ru;
+
+            // Update initial text
+            title.textContent = t.verifyingEmail;
+            message.textContent = t.verifyingMessage;
+
+            if (!token) {
+                showError(t.invalidLink, t.noToken);
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/auth/verify/${token}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    showSuccess();
+                } else {
+                    showError(t.verificationError, result.error || t.verificationFailed);
+                }
+            } catch (error) {
+                showError(t.connectionError, t.serverError);
+            }
+
+            function showSuccess() {
+                const t = translations[currentLang] || translations.ru;
+                iconContainer.className = 'verify-icon success';
+                iconContainer.innerHTML = '<i class="bi bi-check-lg"></i>';
+                title.textContent = t.emailVerified;
+                message.textContent = t.accountActivated;
+
+                actionContainer.style.display = 'block';
+                actionBtn.href = '/login';
+                actionText.textContent = t.loginToAccount;
+
+                // Auto redirect after 5 seconds
+                let countdown = 5;
+                footer.innerHTML = `${t.autoRedirect} <span class="countdown">${countdown}</span> ${t.seconds}`;
+
+                const timer = setInterval(() => {
+                    countdown--;
+                    const countdownEl = document.querySelector('.countdown');
+                    if (countdownEl) {
+                        countdownEl.textContent = countdown;
+                    }
+                    if (countdown <= 0) {
+                        clearInterval(timer);
+                        window.location.href = '/login';
+                    }
+                }, 1000);
+            }
+
+            function showError(errorTitle, errorMessage) {
+                const t = translations[currentLang] || translations.ru;
+                iconContainer.className = 'verify-icon error';
+                iconContainer.innerHTML = '<i class="bi bi-x-lg"></i>';
+                title.textContent = errorTitle;
+                message.textContent = errorMessage;
+
+                actionContainer.style.display = 'block';
+                actionBtn.href = '/register';
+                actionText.textContent = t.registerAgain;
+
+                footer.innerHTML = t.orLogin;
+            }
+        });
+    </script>
+</body>
+</html>
