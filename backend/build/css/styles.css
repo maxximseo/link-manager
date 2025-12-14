@@ -1559,6 +1559,73 @@ p {
     transform: translateY(0);
 }
 
+/* Locked Bonus Card */
+.locked-bonus-card {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border: 2px dashed #f59e0b;
+    border-radius: 1rem;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.locked-bonus-icon {
+    width: 3.5rem;
+    height: 3.5rem;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border-radius: 0.875rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.locked-bonus-icon i {
+    font-size: 1.5rem;
+    color: white;
+}
+
+.locked-bonus-info {
+    flex: 1;
+    min-width: 150px;
+}
+
+.locked-bonus-info h5 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #92400e;
+    margin: 0 0 0.25rem 0;
+}
+
+.locked-bonus-amount {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #b45309;
+    margin: 0;
+}
+
+.locked-bonus-hint {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.6);
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    color: #92400e;
+}
+
+.locked-bonus-hint i {
+    font-size: 1rem;
+    color: #f59e0b;
+}
+
+.locked-bonus-hint strong {
+    color: #b45309;
+}
+
 /* Discount Progress Section */
 .discount-progress-card {
     background: white;
