@@ -2356,7 +2356,17 @@ const batchPurchasePlacements = async (userId, purchases) => {
   // Clear cache after batch
   await cache.delPattern(`placements:user:${userId}:*`);
   await cache.delPattern(`projects:user:${userId}:*`);
-  await cache.delPattern('wp:content:*');
+  // Targeted cache invalidation - only affected sites
+  const siteIds = [...new Set(purchases.map(p => p.siteId))];
+  if (siteIds.length > 0) {
+    const sitesResult = await query(
+      'SELECT api_key FROM sites WHERE id = ANY($1::int[]) AND api_key IS NOT NULL',
+      [siteIds]
+    );
+    for (const site of sitesResult.rows) {
+      await cache.del(`wp:content:${site.api_key}`);
+    }
+  }
 
   return {
     successful: successful.length,
