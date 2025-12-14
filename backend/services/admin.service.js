@@ -995,7 +995,10 @@ const rejectPlacement = async (placementId, adminId, reason = 'Rejected by admin
     const cache = require('./cache.service');
     await cache.delPattern(`placements:user:${placement.user_id}:*`);
     await cache.delPattern(`projects:user:${placement.user_id}:*`);
-    await cache.delPattern('wp:content:*');
+    // Targeted cache invalidation - only this site
+    if (placement.api_key) {
+      await cache.del(`wp:content:${placement.api_key}`);
+    }
 
     logger.info('Placement rejected by admin', {
       placementId,
