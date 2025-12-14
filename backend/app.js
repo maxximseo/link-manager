@@ -104,12 +104,12 @@ app.get('/en/', (req, res) => {
 
 // Login page - Russian
 app.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname, 'build', 'login.html'));
+  res.sendFile(path.join(__dirname, 'build', 'login-new.html'));
 });
 
 // Login page - English
 app.get('/en/login', (req, res) => {
-  res.sendFile(path.join(__dirname, 'build', 'login.html'));
+  res.sendFile(path.join(__dirname, 'build', 'login-new.html'));
 });
 
 // Static files (CSS, JS, images, etc.)
