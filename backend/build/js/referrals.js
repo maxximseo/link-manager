@@ -18,8 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // Initialize navbar
-  initNavbar('user', 'referrals');
+  // SidebarNav.init() is called in HTML, no need for initNavbar
 
   await Promise.all([
     loadReferralStats(),
