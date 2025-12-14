@@ -8,6 +8,7 @@ const logger = require('../config/logger');
 const cache = require('./cache.service');
 const wordpressService = require('./wordpress.service');
 const { checkAnomalousTransaction } = require('./security-alerts.service');
+const promoService = require('./promo.service');
 
 // Pricing constants
 const PRICING = {
@@ -25,40 +26,70 @@ const PRICING = {
  */
 const getUserBalance = async userId => {
   try {
-    const result = await query(
-      `
-      SELECT
-        u.id,
-        u.username,
-        u.email,
-        u.balance,
-        u.current_discount,
-        u.locked_bonus,
-        u.locked_bonus_unlock_amount,
-        u.locked_bonus_unlocked,
-        dt.tier_name,
-        dt.discount_percentage,
-        GREATEST(0, COALESCE(ABS((
-          SELECT SUM(amount)
-          FROM transactions t
-          WHERE t.user_id = u.id AND t.type IN ('purchase', 'renewal')
-        )), 0) - COALESCE((
-          SELECT SUM(amount)
-          FROM transactions t
-          WHERE t.user_id = u.id AND t.type = 'refund'
-        ), 0)) as total_spent
-      FROM users u
-      LEFT JOIN discount_tiers dt ON u.current_discount = dt.discount_percentage
-      WHERE u.id = $1
-    `,
+    // First, get user data including locked bonus columns
+    // Using separate queries to avoid Supabase pooler cache issues with schema changes
+    const userResult = await query(
+      `SELECT id, username, email, balance, current_discount FROM users WHERE id = $1`,
       [userId]
     );
 
-    if (result.rows.length === 0) {
+    if (userResult.rows.length === 0) {
       throw new Error('User not found');
     }
 
-    return result.rows[0];
+    const user = userResult.rows[0];
+
+    // Get locked bonus fields separately (may be newly added columns)
+    let lockedBonus = 0;
+    let lockedBonusUnlockAmount = 100;
+    let lockedBonusUnlocked = false;
+    try {
+      const lockedResult = await query(
+        `SELECT locked_bonus, locked_bonus_unlock_amount, locked_bonus_unlocked FROM users WHERE id = $1`,
+        [userId]
+      );
+      if (lockedResult.rows.length > 0) {
+        lockedBonus = parseFloat(lockedResult.rows[0].locked_bonus) || 0;
+        lockedBonusUnlockAmount = parseFloat(lockedResult.rows[0].locked_bonus_unlock_amount) || 100;
+        lockedBonusUnlocked = lockedResult.rows[0].locked_bonus_unlocked || false;
+      }
+    } catch (lockedErr) {
+      // Columns may not exist yet - use defaults
+      logger.warn('Locked bonus columns not found, using defaults', { userId });
+    }
+
+    // Get discount tier
+    const tierResult = await query(
+      `SELECT tier_name, discount_percentage FROM discount_tiers WHERE discount_percentage = $1`,
+      [user.current_discount]
+    );
+    const tier = tierResult.rows[0] || { tier_name: 'Стандарт', discount_percentage: 0 };
+
+    // Get total spent
+    const spentResult = await query(
+      `SELECT
+        GREATEST(0, COALESCE(ABS((
+          SELECT SUM(amount) FROM transactions WHERE user_id = $1 AND type IN ('purchase', 'renewal')
+        )), 0) - COALESCE((
+          SELECT SUM(amount) FROM transactions WHERE user_id = $1 AND type = 'refund'
+        ), 0)) as total_spent`,
+      [userId]
+    );
+    const totalSpent = spentResult.rows[0]?.total_spent || 0;
+
+    return {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      balance: user.balance,
+      current_discount: user.current_discount,
+      locked_bonus: lockedBonus.toFixed(2),
+      locked_bonus_unlock_amount: lockedBonusUnlockAmount.toFixed(2),
+      locked_bonus_unlocked: lockedBonusUnlocked,
+      tier_name: tier.tier_name,
+      discount_percentage: tier.discount_percentage,
+      total_spent: totalSpent
+    };
   } catch (error) {
     logger.error('Failed to get user balance', { userId, error: error.message });
     throw error;
@@ -115,111 +146,225 @@ const getDiscountTiers = async () => {
 
 /**
  * Add balance to user account (deposit)
+ *
+ * NEW REFERRAL/PROMO CODE BONUS LOGIC (v2.7.0):
+ * - On FIRST deposit >= $100:
+ *   - If user has referrer (referred_by_user_id) OR valid promo code:
+ *     - User gets +$100 bonus
+ *     - Partner (referrer or promo code owner) gets +$50 to referral_balance
+ *   - referral_bonus_received = true (prevents duplicate bonuses)
+ *
+ * @param {number} userId - User ID
+ * @param {number} amount - Deposit amount
+ * @param {string} description - Transaction description
+ * @param {number|null} adminId - Admin ID if deposit is made by admin
+ * @param {string|null} promoCode - Optional promo code for bonus activation
  */
-const addBalance = async (userId, amount, description = 'Balance deposit', adminId = null) => {
+const addBalance = async (userId, amount, description = 'Balance deposit', adminId = null, promoCode = null) => {
   const client = await pool.connect();
 
   try {
     await client.query('BEGIN');
 
-    // Get user with lock
-    const userResult = await client.query('SELECT * FROM users WHERE id = $1 FOR UPDATE', [userId]);
+    // Get user with lock (including referral bonus fields)
+    const userResult = await client.query(
+      `SELECT id, username, balance, referred_by_user_id, referral_bonus_received, activated_promo_code_id
+       FROM users WHERE id = $1 FOR UPDATE`,
+      [userId]
+    );
 
     const user = userResult.rows[0];
     if (!user) {
       throw new Error('User not found');
     }
 
-    // Update balance
-    const newBalance = parseFloat(user.balance) + parseFloat(amount);
-    await client.query('UPDATE users SET balance = $1 WHERE id = $2', [newBalance, userId]);
+    const depositAmount = parseFloat(amount);
+    let bonusAmount = 0;
+    let partnerReward = 0;
+    let partnerId = null;
+    let promoId = null;
+    let bonusApplied = false;
 
-    // Create transaction record
+    // Check if user is eligible for first-deposit bonus
+    // Conditions: deposit >= $100 AND bonus not yet received AND (has referrer OR valid promo code)
+    const MIN_DEPOSIT_FOR_BONUS = 100;
+    const USER_BONUS = 100; // Бонус пользователю
+    const PARTNER_REWARD = 50; // Награда партнёру
+
+    if (!user.referral_bonus_received && depositAmount >= MIN_DEPOSIT_FOR_BONUS) {
+      // Option 1: Promo code provided
+      if (promoCode && promoCode.trim()) {
+        const promoValidation = await promoService.validatePromoCode(promoCode, userId);
+
+        if (promoValidation.valid) {
+          const promo = promoValidation.promo;
+          bonusAmount = promo.bonusAmount || USER_BONUS;
+          partnerReward = promo.partnerReward || PARTNER_REWARD;
+          partnerId = promo.ownerUserId;
+          promoId = promo.id;
+          bonusApplied = true;
+
+          logger.info('Promo code bonus applied', {
+            userId,
+            promoCode,
+            promoId,
+            bonusAmount,
+            partnerReward,
+            partnerId
+          });
+        } else {
+          // Invalid promo code - log but continue with deposit (no bonus)
+          logger.warn('Invalid promo code provided during deposit', {
+            userId,
+            promoCode,
+            error: promoValidation.error
+          });
+        }
+      }
+      // Option 2: User was referred (has referred_by_user_id)
+      else if (user.referred_by_user_id) {
+        bonusAmount = USER_BONUS;
+        partnerReward = PARTNER_REWARD;
+        partnerId = user.referred_by_user_id;
+        bonusApplied = true;
+
+        logger.info('Referral bonus applied', {
+          userId,
+          referrerId: partnerId,
+          bonusAmount,
+          partnerReward
+        });
+      }
+    }
+
+    // Calculate new balance (deposit + optional bonus)
+    const newBalance = parseFloat(user.balance) + depositAmount + bonusAmount;
+
+    // Update user balance and referral bonus status
+    if (bonusApplied) {
+      await client.query(
+        `UPDATE users
+         SET balance = $1,
+             referral_bonus_received = true,
+             referral_activated_at = NOW(),
+             activated_promo_code_id = $2
+         WHERE id = $3`,
+        [newBalance, promoId, userId]
+      );
+    } else {
+      await client.query('UPDATE users SET balance = $1 WHERE id = $2', [newBalance, userId]);
+    }
+
+    // Create transaction record (deposit amount only, bonus is separate)
     const metadata = adminId ? { added_by_admin: adminId } : {};
+    if (bonusApplied) {
+      metadata.bonus_amount = bonusAmount;
+      metadata.promo_code_id = promoId;
+      metadata.partner_id = partnerId;
+    }
+
     await client.query(
-      `
-      INSERT INTO transactions (
+      `INSERT INTO transactions (
         user_id, type, amount, balance_before, balance_after, description, metadata
       )
-      VALUES ($1, 'deposit', $2, $3, $4, $5, $6)
-    `,
-      [userId, amount, user.balance, newBalance, description, JSON.stringify(metadata)]
+      VALUES ($1, 'deposit', $2, $3, $4, $5, $6)`,
+      [userId, depositAmount, user.balance, newBalance, description, JSON.stringify(metadata)]
     );
 
-    // Create notification
-    await client.query(
-      `
-      INSERT INTO notifications (user_id, type, title, message)
-      VALUES ($1, 'balance_deposited', $2, $3)
-    `,
-      [
+    // If bonus was applied, credit partner and create notifications
+    if (bonusApplied && partnerId && partnerReward > 0) {
+      // Credit partner's referral_balance
+      await client.query(
+        `UPDATE users
+         SET referral_balance = referral_balance + $1,
+             total_referral_earnings = total_referral_earnings + $1
+         WHERE id = $2`,
+        [partnerReward, partnerId]
+      );
+
+      // Record referral transaction
+      await client.query(
+        `INSERT INTO referral_transactions (
+          referrer_id, referee_id, transaction_amount, commission_rate, commission_amount, status
+        ) VALUES ($1, $2, $3, $4, $5, 'credited')`,
+        [partnerId, userId, depositAmount, 0, partnerReward]
+      );
+
+      // Increment promo code usage if used
+      if (promoId) {
+        await promoService.incrementPromoUsage(promoId);
+      }
+
+      // Notification for user about bonus
+      await client.query(
+        `INSERT INTO notifications (user_id, type, title, message, metadata)
+         VALUES ($1, 'referral_bonus_received', $2, $3, $4)`,
+        [
+          userId,
+          'Бонус получен! 🎁',
+          `Поздравляем! Вы получили бонус +$${bonusAmount} за первое пополнение! Ваш новый баланс: $${newBalance.toFixed(2)}`,
+          JSON.stringify({ bonusAmount, depositAmount, promoCodeId: promoId })
+        ]
+      );
+
+      // Notification for partner about reward
+      await client.query(
+        `INSERT INTO notifications (user_id, type, title, message, metadata)
+         VALUES ($1, 'referral_activated', $2, $3, $4)`,
+        [
+          partnerId,
+          'Реферал активирован! 💰',
+          `Ваш реферал совершил первый депозит! Вам начислено $${partnerReward} на реферальный баланс.`,
+          JSON.stringify({ refereeId: userId, reward: partnerReward, promoCodeId: promoId })
+        ]
+      );
+
+      logger.info('Referral bonus processed', {
         userId,
-        'Баланс пополнен',
-        `Ваш баланс пополнен на $${amount}. Новый баланс: $${newBalance.toFixed(2)}`
-      ]
-    );
+        partnerId,
+        userBonus: bonusAmount,
+        partnerReward,
+        promoCodeId: promoId
+      });
+    } else {
+      // Standard deposit notification (no bonus)
+      await client.query(
+        `INSERT INTO notifications (user_id, type, title, message)
+         VALUES ($1, 'balance_deposited', $2, $3)`,
+        [
+          userId,
+          'Баланс пополнен',
+          `Ваш баланс пополнен на $${depositAmount}. Новый баланс: $${newBalance.toFixed(2)}`
+        ]
+      );
+    }
 
     await client.query('COMMIT');
 
     // SECURITY: Check for anomalous deposit amounts (async, don't block response)
-    checkAnomalousTransaction(userId, amount, 'deposit').catch(err =>
+    checkAnomalousTransaction(userId, depositAmount, 'deposit').catch(err =>
       logger.error('Failed to check anomalous transaction', { err: err.message })
     );
 
-    // Check and unlock referral bonus if deposit >= unlock amount
-    // This happens after COMMIT so we don't block the main deposit transaction
-    try {
-      const bonusCheck = await query(
-        'SELECT locked_bonus, locked_bonus_unlock_amount, locked_bonus_unlocked FROM users WHERE id = $1',
-        [userId]
-      );
+    logger.info('Balance added successfully', {
+      userId,
+      depositAmount,
+      bonusAmount,
+      totalAdded: depositAmount + bonusAmount,
+      newBalance
+    });
 
-      if (bonusCheck.rows.length > 0) {
-        const bonusUser = bonusCheck.rows[0];
-        const lockedBonus = parseFloat(bonusUser.locked_bonus) || 0;
-        const unlockAmount = parseFloat(bonusUser.locked_bonus_unlock_amount) || 100;
-        const alreadyUnlocked = bonusUser.locked_bonus_unlocked;
-
-        // If user has locked bonus, not yet unlocked, and deposit >= unlock amount
-        if (lockedBonus > 0 && !alreadyUnlocked && parseFloat(amount) >= unlockAmount) {
-          // Unlock the bonus - add to main balance
-          await query(
-            `UPDATE users
-             SET balance = balance + locked_bonus,
-                 locked_bonus = 0,
-                 locked_bonus_unlocked = true
-             WHERE id = $1`,
-            [userId]
-          );
-
-          // Create notification about unlocked bonus
-          await query(
-            `INSERT INTO notifications (user_id, type, title, message)
-             VALUES ($1, 'bonus_unlocked', $2, $3)`,
-            [
-              userId,
-              'Бонус разблокирован!',
-              `Ваш реферальный бонус $${lockedBonus.toFixed(2)} разблокирован и добавлен к балансу!`
-            ]
-          );
-
-          logger.info(`Referral bonus $${lockedBonus} unlocked for user ${userId} after deposit $${amount}`);
-        }
-      }
-    } catch (bonusError) {
-      // Don't fail the deposit if bonus unlock fails - just log it
-      logger.error('Failed to check/unlock referral bonus', {
-        userId,
-        error: bonusError.message
-      });
-    }
-
-    logger.info('Balance added successfully', { userId, amount, newBalance });
-
-    return { success: true, newBalance, amount };
+    return {
+      success: true,
+      newBalance,
+      amount: depositAmount,
+      bonusAmount,
+      totalAdded: depositAmount + bonusAmount,
+      bonusApplied
+    };
   } catch (error) {
     await client.query('ROLLBACK');
-    logger.error('Failed to add balance', { userId, amount, error: error.message });
+    logger.error('Failed to add balance', { userId, amount, promoCode, error: error.message });
     throw error;
   } finally {
     client.release();

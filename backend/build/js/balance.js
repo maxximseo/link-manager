@@ -75,20 +75,36 @@ async function loadBalanceData() {
             navBalance.textContent = currentBalance.toFixed(2);
         }
 
-        // Show/hide locked bonus card
-        const lockedBonus = parseFloat(data.lockedBonus) || 0;
-        const unlockAmount = parseFloat(data.unlockAmount) || 100;
-        const lockedBonusCard = document.getElementById('lockedBonusCard');
+        // Show/hide referral bonus card (shown if user can receive bonus on first deposit)
+        const referralBonusReceived = data.referralBonusReceived || false;
+        const hasReferrer = data.referredByUserId || data.referred_by_user_id;
+        const referralBonusCard = document.getElementById('referralBonusCard');
+        const promoCodeSection = document.getElementById('promoCodeSection');
 
-        if (lockedBonusCard) {
-            if (lockedBonus > 0) {
-                lockedBonusCard.style.display = 'flex';
-                document.getElementById('lockedBonusAmount').textContent = lockedBonus.toFixed(2);
-                document.getElementById('unlockAmount').textContent = unlockAmount.toFixed(0);
+        // User can get bonus if: not received yet AND (has referrer OR can use promo code)
+        // Show promo code section for ALL users who haven't received bonus yet
+        const canReceiveBonus = !referralBonusReceived;
+
+        if (referralBonusCard) {
+            // Show referral bonus card only if user has referrer AND hasn't received bonus
+            if (canReceiveBonus && hasReferrer) {
+                referralBonusCard.style.display = 'flex';
+                const bonusAmountEl = document.getElementById('referralBonusAmount');
+                if (bonusAmountEl) {
+                    bonusAmountEl.textContent = '100'; // Default bonus amount
+                }
             } else {
-                lockedBonusCard.style.display = 'none';
+                referralBonusCard.style.display = 'none';
             }
         }
+
+        // Show promo code section for ALL users (they can check if promo is valid)
+        if (promoCodeSection) {
+            promoCodeSection.style.display = 'block';
+        }
+
+        // Store for later use
+        window.canReceiveReferralBonus = canReceiveBonus;
 
     } catch (error) {
         console.error('Failed to load balance:', error);
@@ -685,6 +701,7 @@ function resetDepositModal() {
     document.getElementById('depositStep1').style.display = 'block';
     document.getElementById('depositStep2').style.display = 'none';
     document.getElementById('depositAmount').value = '100';
+    resetPromoCode();
 }
 
 // Reset modal when closed
@@ -697,6 +714,12 @@ document.addEventListener('DOMContentLoaded', () => {
             loadPendingInvoices();
         });
     }
+
+    // Add listener to recalculate total when deposit amount changes
+    const depositAmountInput = document.getElementById('depositAmount');
+    if (depositAmountInput) {
+        depositAmountInput.addEventListener('input', updateTotalDepositAmount);
+    }
 });
 
 /**
@@ -705,6 +728,7 @@ document.addEventListener('DOMContentLoaded', () => {
 async function processDeposit() {
     const amount = parseFloat(document.getElementById('depositAmount').value);
     const description = document.getElementById('depositDescription')?.value || 'Пополнение баланса';
+    const promoCode = validatedPromoCode; // Use validated promo code
 
     if (isNaN(amount) || amount < 1 || amount > 10000) {
         showAlert(`${t('depositAmountError')} $1 ${t('depositTo')} $10,000`, 'danger');
@@ -712,13 +736,18 @@ async function processDeposit() {
     }
 
     try {
+        const requestBody = { amount, description };
+        if (promoCode) {
+            requestBody.promoCode = promoCode;
+        }
+
         const response = await fetch('/api/billing/deposit', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${getToken()}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ amount, description })
+            body: JSON.stringify(requestBody)
         });
 
         if (!response.ok) {
@@ -737,10 +766,18 @@ async function processDeposit() {
         await loadTransactions();
         updateDiscountProgress();
 
-        showAlert(`${t('depositSuccess')} $${amount.toFixed(2)}. ${t('newBalanceLabel')}: $${result.data.newBalance.toFixed(2)}`, 'success');
+        // Show success message with bonus info
+        let successMessage = `${t('depositSuccess')} $${amount.toFixed(2)}.`;
+        if (result.data.bonusAmount && result.data.bonusAmount > 0) {
+            successMessage += ` ${t('bonusReceived')}: +$${result.data.bonusAmount.toFixed(2)}!`;
+        }
+        successMessage += ` ${t('newBalanceLabel')}: $${result.data.newBalance.toFixed(2)}`;
+
+        showAlert(successMessage, 'success');
 
         // Reset form
         document.getElementById('depositAmount').value = '100';
+        resetPromoCode();
 
     } catch (error) {
         console.error('Failed to deposit:', error);
@@ -780,6 +817,119 @@ async function exportTransactions(format = 'csv') {
         console.error('Failed to export:', error);
         showAlert(t('exportError'), 'danger');
     }
+}
+
+/**
+ * Promo code validation
+ */
+let promoCheckTimeout = null;
+let validatedPromoCode = null;
+
+async function checkPromoCode() {
+    const input = document.getElementById('promoCodeInput');
+    const statusEl = document.getElementById('promoCodeStatus');
+    const previewEl = document.getElementById('promoBonusPreview');
+    const bonusAmountEl = document.getElementById('promoBonusAmount');
+    const totalPreviewEl = document.getElementById('totalDepositPreview');
+    const totalAmountEl = document.getElementById('totalDepositAmount');
+    const depositAmountEl = document.getElementById('depositAmount');
+    const applyBtn = document.getElementById('promoApplyBtn');
+
+    const code = input ? input.value.trim() : '';
+
+    // Reset if empty
+    if (!code) {
+        if (statusEl) statusEl.innerHTML = '';
+        if (previewEl) previewEl.style.display = 'none';
+        if (totalPreviewEl) totalPreviewEl.style.display = 'none';
+        validatedPromoCode = null;
+        return;
+    }
+
+    // Show loading state
+    if (statusEl) statusEl.innerHTML = '<span class="spinner-border spinner-border-sm text-primary"></span> <span class="text-muted">Проверка...</span>';
+    if (applyBtn) applyBtn.disabled = true;
+
+    try {
+        const response = await fetch(`/api/promo/validate?code=${encodeURIComponent(code)}`, {
+            headers: {
+                'Authorization': `Bearer ${getToken()}`
+            }
+        });
+
+        const result = await response.json();
+
+        if (result.valid) {
+            // Valid promo code - show success message
+            if (statusEl) statusEl.innerHTML = '';
+            const bonusAmount = parseFloat(result.promo.bonusAmount) || 100;
+            if (bonusAmountEl) {
+                bonusAmountEl.textContent = bonusAmount;
+            }
+            if (previewEl) previewEl.style.display = 'flex';
+
+            // Calculate and show total deposit amount
+            const depositAmount = parseFloat(depositAmountEl ? depositAmountEl.value : 100) || 100;
+            const totalAmount = depositAmount + bonusAmount;
+            if (totalAmountEl) totalAmountEl.textContent = totalAmount.toFixed(0);
+            if (totalPreviewEl) totalPreviewEl.style.display = 'flex';
+
+            // Store bonus amount for recalculation
+            window.currentPromoBonus = bonusAmount;
+            validatedPromoCode = code;
+        } else {
+            // Invalid promo code - show error
+            if (statusEl) statusEl.innerHTML = `<i class="bi bi-x-circle-fill text-danger"></i> <span class="text-danger">${result.error || 'Промокод недействителен'}</span>`;
+            if (previewEl) previewEl.style.display = 'none';
+            if (totalPreviewEl) totalPreviewEl.style.display = 'none';
+            window.currentPromoBonus = 0;
+            validatedPromoCode = null;
+        }
+    } catch (error) {
+        console.error('Promo validation error:', error);
+        if (statusEl) statusEl.innerHTML = '<i class="bi bi-exclamation-circle-fill text-warning"></i> <span class="text-warning">Ошибка проверки</span>';
+        if (previewEl) previewEl.style.display = 'none';
+        if (totalPreviewEl) totalPreviewEl.style.display = 'none';
+        window.currentPromoBonus = 0;
+        validatedPromoCode = null;
+    } finally {
+        if (applyBtn) applyBtn.disabled = false;
+    }
+}
+
+/**
+ * Reset promo code input
+ */
+function resetPromoCode() {
+    const input = document.getElementById('promoCodeInput');
+    const statusEl = document.getElementById('promoCodeStatus');
+    const previewEl = document.getElementById('promoBonusPreview');
+    const totalPreviewEl = document.getElementById('totalDepositPreview');
+
+    if (input) input.value = '';
+    if (statusEl) statusEl.innerHTML = '';
+    if (previewEl) previewEl.style.display = 'none';
+    if (totalPreviewEl) totalPreviewEl.style.display = 'none';
+    window.currentPromoBonus = 0;
+    validatedPromoCode = null;
+}
+
+/**
+ * Update total deposit amount when deposit input changes
+ */
+function updateTotalDepositAmount() {
+    const depositAmountEl = document.getElementById('depositAmount');
+    const totalPreviewEl = document.getElementById('totalDepositPreview');
+    const totalAmountEl = document.getElementById('totalDepositAmount');
+
+    // Only update if promo code is applied and total preview is visible
+    if (!totalPreviewEl || totalPreviewEl.style.display === 'none') return;
+
+    const depositAmount = parseFloat(depositAmountEl ? depositAmountEl.value : 100) || 100;
+    const bonusAmount = window.currentPromoBonus || 0;
+    const totalAmount = depositAmount + bonusAmount;
+
+    if (totalAmountEl) totalAmountEl.textContent = totalAmount.toFixed(0);
 }
 
 /**

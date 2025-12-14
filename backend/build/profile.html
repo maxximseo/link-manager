@@ -9,101 +9,274 @@
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/modern-table.css">
     <link rel="stylesheet" href="/css/sidebar.css">
+    <style>
+        /* Figma Design Styles */
+        .profile-card {
+            background: #fff;
+            border-radius: 1rem;
+            border: 2px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+
+        .profile-card-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .profile-card-header .icon-box {
+            width: 48px;
+            height: 48px;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .profile-card-header .icon-box.purple {
+            background: linear-gradient(135deg, #f3e8ff 0%, #e0e7ff 100%);
+        }
+
+        .profile-card-header .icon-box.purple i {
+            color: #9333ea;
+            font-size: 1.5rem;
+        }
+
+        .profile-card-header .icon-box.orange {
+            background: linear-gradient(135deg, #ffedd5 0%, #fef3c7 100%);
+        }
+
+        .profile-card-header .icon-box.orange i {
+            color: #ea580c;
+            font-size: 1.5rem;
+        }
+
+        .profile-card-header h3 {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: #111827;
+            margin: 0;
+        }
+
+        .profile-card-header p {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin: 0;
+        }
+
+        .profile-card-body {
+            padding: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #111827;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            background: #fff;
+            border-color: #a855f7;
+        }
+
+        .form-input.orange-focus:focus {
+            border-color: #f97316;
+        }
+
+        .form-input:disabled, .form-input[readonly] {
+            background: #f3f4f6;
+            color: #6b7280;
+            cursor: not-allowed;
+        }
+
+        .form-input::placeholder {
+            color: #9ca3af;
+        }
+
+        .form-hint {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-top: 0.375rem;
+        }
+
+        .btn-gradient-purple {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
+            color: #fff;
+            border: none;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-gradient-purple:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 25px rgba(168, 85, 247, 0.35);
+            color: #fff;
+        }
+
+        .btn-gradient-orange {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #f97316 0%, #d97706 100%);
+            color: #fff;
+            border: none;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-gradient-orange:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 25px rgba(249, 115, 22, 0.35);
+            color: #fff;
+        }
+
+        .btn-logout {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            padding: 0.875rem 1.5rem;
+            background: transparent;
+            color: #dc2626;
+            border: 2px solid #fecaca;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-logout:hover {
+            background: #fef2f2;
+            border-color: #f87171;
+            color: #b91c1c;
+        }
+
+        .profile-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+    </style>
 </head>
 <body>
     <!-- Content will be wrapped by sidebar.js -->
 
     <div class="container-fluid">
-        <div class="row justify-content-center">
-            <div class="col-md-8 col-lg-6">
-                <!-- Profile Info Card -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="mb-0"><i class="bi bi-person-circle"></i> <span data-i18n="profileInfoTitle">Информация профиля</span></h5>
-                    </div>
-                    <div class="card-body">
-                        <form id="profileForm">
-                            <div class="mb-3">
-                                <label for="username" class="form-label" data-i18n="usernameLabel">Имя пользователя</label>
-                                <input type="text" class="form-control" id="username" readonly>
-                                <small class="text-muted" data-i18n="usernameReadonly">Имя пользователя нельзя изменить</small>
-                            </div>
-                            <div class="mb-3">
-                                <label for="email" class="form-label" data-i18n="emailLabel">Email</label>
-                                <input type="email" class="form-control" id="email" data-i18n-placeholder="emailPlaceholder" placeholder="Введите email">
-                            </div>
-                            <div class="mb-3">
-                                <label for="displayName" class="form-label" data-i18n="displayNameLabel">Отображаемое имя</label>
-                                <input type="text" class="form-control" id="displayName" data-i18n-placeholder="displayNamePlaceholder" placeholder="Как вас называть">
-                            </div>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-save"></i> <span data-i18n="saveChangesBtn">Сохранить изменения</span>
-                            </button>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- Change Password Card -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="mb-0"><i class="bi bi-shield-lock"></i> <span data-i18n="changePasswordTitle">Смена пароля</span></h5>
-                    </div>
-                    <div class="card-body">
-                        <form id="passwordForm">
-                            <div class="mb-3">
-                                <label for="currentPassword" class="form-label" data-i18n="currentPasswordLabel">Текущий пароль</label>
-                                <input type="password" class="form-control" id="currentPassword" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="newPassword" class="form-label" data-i18n="newPasswordLabel">Новый пароль</label>
-                                <input type="password" class="form-control" id="newPassword" required minlength="6">
-                                <small class="text-muted" data-i18n="minPasswordHint">Минимум 6 символов</small>
-                            </div>
-                            <div class="mb-3">
-                                <label for="confirmPassword" class="form-label" data-i18n="confirmPasswordLabel">Повторите новый пароль</label>
-                                <input type="password" class="form-control" id="confirmPassword" required>
-                            </div>
-                            <button type="submit" class="btn btn-warning">
-                                <i class="bi bi-key"></i> <span data-i18n="changePasswordBtn">Сменить пароль</span>
-                            </button>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- Account Info Card -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="mb-0"><i class="bi bi-info-circle"></i> <span data-i18n="accountInfoTitle">Информация об аккаунте</span></h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-6">
-                                <p class="mb-1 text-muted" data-i18n="userIdLabel">ID пользователя</p>
-                                <p class="fw-bold" id="userId">-</p>
-                            </div>
-                            <div class="col-6">
-                                <p class="mb-1 text-muted" data-i18n="roleLabel">Роль</p>
-                                <p class="fw-bold"><span id="userRole" class="badge bg-secondary">-</span></p>
-                            </div>
-                            <div class="col-6">
-                                <p class="mb-1 text-muted" data-i18n="registrationDateLabel">Дата регистрации</p>
-                                <p class="fw-bold" id="createdAt">-</p>
-                            </div>
-                            <div class="col-6">
-                                <p class="mb-1 text-muted" data-i18n="currentBalanceLabel">Текущий баланс</p>
-                                <p class="fw-bold text-success">$<span id="balance">0.00</span></p>
-                            </div>
+        <div class="profile-container">
+            <!-- Profile Info Card -->
+            <div class="profile-card">
+                <div class="profile-card-header">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-box purple">
+                            <i class="bi bi-person-fill"></i>
+                        </div>
+                        <div>
+                            <h3 data-i18n="profileInfoTitle">Профиль</h3>
+                            <p data-i18n="profileSubtitle">Настройки аккаунта</p>
                         </div>
                     </div>
                 </div>
-
-                <!-- Logout Button -->
-                <div class="d-grid">
-                    <button class="btn btn-outline-danger" onclick="logout()">
-                        <i class="bi bi-box-arrow-right"></i> <span data-i18n="logoutBtn">Выйти из аккаунта</span>
-                    </button>
+                <div class="profile-card-body">
+                    <form id="profileForm">
+                        <div class="form-group">
+                            <label for="username" data-i18n="usernameLabel">Имя пользователя</label>
+                            <input type="text" class="form-input" id="username" readonly disabled>
+                            <p class="form-hint" data-i18n="usernameReadonly">Имя пользователя не может быть изменено</p>
+                        </div>
+                        <div class="form-group">
+                            <label for="email" data-i18n="emailLabel">Email</label>
+                            <input type="email" class="form-input" id="email" readonly disabled>
+                            <p class="form-hint" data-i18n="emailReadonly">Email не может быть изменен</p>
+                        </div>
+                        <div class="form-group">
+                            <label for="displayName" data-i18n="displayNameLabel">Отображаемое имя</label>
+                            <input type="text" class="form-input" id="displayName" data-i18n-placeholder="displayNamePlaceholder" placeholder="Как к вам обращаться">
+                        </div>
+                        <div class="pt-2">
+                            <button type="submit" class="btn-gradient-purple">
+                                <i class="bi bi-check2"></i>
+                                <span data-i18n="saveChangesBtn">Сохранить изменения</span>
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
+
+            <!-- Change Password Card -->
+            <div class="profile-card">
+                <div class="profile-card-header">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-box orange">
+                            <i class="bi bi-shield-lock-fill"></i>
+                        </div>
+                        <div>
+                            <h3 data-i18n="changePasswordTitle">Изменить пароль</h3>
+                            <p data-i18n="changePasswordSubtitle">Обновите пароль для вашего аккаунта</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="profile-card-body">
+                    <form id="passwordForm">
+                        <div class="form-group">
+                            <label for="currentPassword" data-i18n="currentPasswordLabel">Текущий пароль</label>
+                            <input type="password" class="form-input orange-focus" id="currentPassword" placeholder="••••••••" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="newPassword" data-i18n="newPasswordLabel">Новый пароль</label>
+                            <input type="password" class="form-input orange-focus" id="newPassword" placeholder="••••••••" required minlength="6">
+                            <p class="form-hint" data-i18n="minPasswordHint">Минимум 6 символов</p>
+                        </div>
+                        <div class="form-group">
+                            <label for="confirmPassword" data-i18n="confirmPasswordLabel">Подтвердите новый пароль</label>
+                            <input type="password" class="form-input orange-focus" id="confirmPassword" placeholder="••••••••" required>
+                        </div>
+                        <div class="pt-2">
+                            <button type="submit" class="btn-gradient-orange">
+                                <i class="bi bi-key-fill"></i>
+                                <span data-i18n="changePasswordBtn">Изменить пароль</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Logout Button -->
+            <button class="btn-logout" onclick="logout()">
+                <i class="bi bi-box-arrow-right"></i>
+                <span data-i18n="logoutBtn">Выйти из аккаунта</span>
+            </button>
         </div>
     </div>
 
@@ -152,34 +325,6 @@
                 document.getElementById('email').value = profile.email || '';
                 document.getElementById('displayName').value = profile.display_name || '';
 
-                // Fill account info
-                document.getElementById('userId').textContent = profile.id || '-';
-
-                const roleEl = document.getElementById('userRole');
-                if (profile.role === 'admin') {
-                    roleEl.textContent = 'Администратор';
-                    roleEl.className = 'badge bg-danger';
-                } else {
-                    roleEl.textContent = 'Пользователь';
-                    roleEl.className = 'badge bg-primary';
-                }
-
-                if (profile.created_at) {
-                    document.getElementById('createdAt').textContent = formatDate(profile.created_at);
-                }
-
-                // Load balance
-                const balanceResponse = await fetch('/api/billing/balance', {
-                    headers: {
-                        'Authorization': `Bearer ${getToken()}`
-                    }
-                });
-                if (balanceResponse.ok) {
-                    const balanceData = await balanceResponse.json();
-                    document.getElementById('balance').textContent =
-                        parseFloat(balanceData.balance || 0).toFixed(2);
-                }
-
             } catch (error) {
                 console.error('Error loading profile:', error);
                 showAlert('Ошибка загрузки профиля', 'danger');
@@ -190,7 +335,6 @@
         document.getElementById('profileForm').addEventListener('submit', async function(e) {
             e.preventDefault();
 
-            const email = document.getElementById('email').value.trim();
             const displayName = document.getElementById('displayName').value.trim();
 
             try {
@@ -201,7 +345,6 @@
                         'Authorization': `Bearer ${getToken()}`
                     },
                     body: JSON.stringify({
-                        email: email,
                         display_name: displayName
                     })
                 });

@@ -1626,6 +1626,227 @@ p {
     color: #b45309;
 }
 
+/* Referral Bonus Card (green theme - available bonus) */
+.referral-bonus-card {
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+    border: 2px dashed #22c55e;
+    border-radius: 1rem;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.referral-bonus-icon {
+    width: 3.5rem;
+    height: 3.5rem;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    border-radius: 0.875rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.referral-bonus-icon i {
+    font-size: 1.5rem;
+    color: white;
+}
+
+.referral-bonus-info {
+    flex: 1;
+    min-width: 150px;
+}
+
+.referral-bonus-info h5 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #166534;
+    margin: 0 0 0.25rem 0;
+}
+
+.referral-bonus-amount {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #15803d;
+    margin: 0;
+}
+
+.referral-bonus-hint {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.6);
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    color: #166534;
+}
+
+.referral-bonus-hint i {
+    font-size: 1rem;
+    color: #22c55e;
+}
+
+.referral-bonus-hint strong {
+    color: #15803d;
+}
+
+/* Promo Code Section in Deposit Modal */
+.promo-code-section {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.promo-code-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.75rem;
+}
+
+.promo-code-label i {
+    color: #6366f1;
+}
+
+.promo-code-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.promo-code-input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: all 0.2s ease;
+}
+
+.promo-apply-btn {
+    padding: 0.75rem 1.25rem;
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    color: white;
+    border: none;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.promo-apply-btn:hover {
+    background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.promo-apply-btn:active {
+    transform: translateY(0);
+}
+
+.promo-code-input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+}
+
+.promo-code-input::placeholder {
+    text-transform: none;
+    letter-spacing: normal;
+    color: #9ca3af;
+    font-weight: 400;
+}
+
+.promo-code-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+    min-height: 1.25rem;
+}
+
+.promo-code-status .bi-check-circle-fill {
+    color: #22c55e;
+}
+
+.promo-code-status .bi-x-circle-fill {
+    color: #ef4444;
+}
+
+.promo-code-status .spinner-border {
+    width: 1rem;
+    height: 1rem;
+    color: #6366f1;
+}
+
+.promo-bonus-preview {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    color: #166534;
+}
+
+.promo-bonus-preview i {
+    font-size: 1.25rem;
+    color: #22c55e;
+}
+
+.promo-bonus-preview strong {
+    font-size: 1.125rem;
+}
+
+/* Total Deposit Preview */
+.total-deposit-preview {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+    border-radius: 0.75rem;
+    font-size: 0.9rem;
+    color: #3730a3;
+}
+
+.total-deposit-preview i {
+    font-size: 1.25rem;
+    color: #4f46e5;
+}
+
+.total-deposit-preview strong {
+    font-size: 1.125rem;
+}
+
+.promo-code-hint {
+    font-size: 0.8125rem;
+    color: #6b7280;
+    margin: 0.75rem 0 0 0;
+}
+
+.promo-code-error {
+    font-size: 0.8125rem;
+    color: #ef4444;
+    margin: 0.5rem 0 0 0;
+}
+
 /* Discount Progress Section */
 .discount-progress-card {
     background: white;

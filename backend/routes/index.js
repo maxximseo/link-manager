@@ -18,6 +18,7 @@ const billingRoutes = require('./billing.routes');
 const adminRoutes = require('./admin.routes');
 const notificationRoutes = require('./notification.routes');
 const referralRoutes = require('./referral.routes');
+const promoRoutes = require('./promo.routes');
 const paymentRoutes = require('./payment.routes');
 const webhookRoutes = require('./webhook.routes');
 
@@ -67,6 +68,7 @@ router.use('/billing', billingRoutes);
 router.use('/admin', adminRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/referrals', referralRoutes);
+router.use('/promo', promoRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/webhooks', webhookRoutes); // Public webhook endpoints (no auth)
 

@@ -620,11 +620,12 @@ const translations = {
 
     // Profile Page
     profilePageTitle: 'Профиль - Link Manager',
-    profileInfoTitle: 'Информация профиля',
+    profileInfoTitle: 'Профиль',
+    profileSubtitle: 'Настройки аккаунта',
     usernameLabel: 'Имя пользователя',
     usernameReadonly: 'Имя пользователя нельзя изменить',
     emailLabel: 'Email',
-    emailPlaceholder: 'Введите email',
+    emailReadonly: 'Email нельзя изменить',
     displayNameLabel: 'Отображаемое имя',
     displayNamePlaceholder: 'Как вас называть',
     saveChangesBtn: 'Сохранить изменения',
@@ -668,6 +669,7 @@ const translations = {
     sidebarAdminPlacements: 'Размещения',
     sidebarAdminModeration: 'Модерация',
     sidebarAdminSitesModeration: 'Модерация сайтов',
+    sidebarAdminPromo: 'Промокоды',
     sidebarAdminWithdrawals: 'Выводы',
 
     // Time ago
@@ -743,7 +745,22 @@ const translations = {
     exportSuccess: 'Транзакции экспортированы в формате',
     exportError: 'Ошибка экспорта транзакций',
     payBtn: 'Оплатить',
-    hours24: '24 часа'
+    hours24: '24 часа',
+
+    // Promo code and referral bonus
+    referralBonusAvailable: 'Доступен бонус!',
+    depositForBonus: 'Пополните баланс на',
+    toGetReferralBonus: 'чтобы получить реферальный бонус',
+    promoCodeLabel: 'Промокод (необязательно)',
+    bonusAfterDeposit: 'Бонус после пополнения:',
+    promoCodeHint: 'При пополнении от $100 с промокодом вы получите бонус',
+    promoCodeInvalid: 'Промокод недействителен',
+    promoCodeExpired: 'Срок действия промокода истёк',
+    promoCodeUsed: 'Вы уже использовали реферальный бонус',
+    bonusReceived: 'Бонус получен',
+    promoApplyBtn: 'Применить',
+    promoAppliedBonus: 'Промокод применён! Бонус:',
+    totalToAccount: 'Итого на счёт:'
   },
   en: {
     // Navigation
@@ -1358,7 +1375,7 @@ const translations = {
     usernameLabel: 'Username',
     usernameReadonly: 'Username cannot be changed',
     emailLabel: 'Email',
-    emailPlaceholder: 'Enter email',
+    emailReadonly: 'Email cannot be changed',
     displayNameLabel: 'Display name',
     displayNamePlaceholder: 'What should we call you',
     saveChangesBtn: 'Save changes',
@@ -1402,6 +1419,7 @@ const translations = {
     sidebarAdminPlacements: 'Placements',
     sidebarAdminModeration: 'Moderation',
     sidebarAdminSitesModeration: 'Site moderation',
+    sidebarAdminPromo: 'Promo Codes',
     sidebarAdminWithdrawals: 'Withdrawals',
 
     // Time ago
@@ -1477,7 +1495,22 @@ const translations = {
     exportSuccess: 'Transactions exported in',
     exportError: 'Failed to export transactions',
     payBtn: 'Pay',
-    hours24: '24 hours'
+    hours24: '24 hours',
+
+    // Promo code and referral bonus
+    referralBonusAvailable: 'Bonus available!',
+    depositForBonus: 'Deposit at least',
+    toGetReferralBonus: 'to get your referral bonus',
+    promoCodeLabel: 'Promo Code (optional)',
+    bonusAfterDeposit: 'Bonus after deposit:',
+    promoCodeHint: 'Deposit $100+ with promo code to get bonus',
+    promoCodeInvalid: 'Promo code is invalid',
+    promoCodeExpired: 'Promo code has expired',
+    promoCodeUsed: 'You have already received a referral bonus',
+    bonusReceived: 'Bonus received',
+    promoApplyBtn: 'Apply',
+    promoAppliedBonus: 'Promo code applied! Bonus:',
+    totalToAccount: 'Total to account:'
   }
 };
 

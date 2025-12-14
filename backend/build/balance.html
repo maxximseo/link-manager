@@ -73,21 +73,21 @@
             </div>
         </div>
 
-        <!-- Locked Bonus Card (shown only if user has locked bonus) -->
-        <div id="lockedBonusCard" class="locked-bonus-card mb-4" style="display: none;">
-            <div class="locked-bonus-icon">
-                <i class="bi bi-lock-fill"></i>
+        <!-- Referral Bonus Info Card (shown if user can get bonus on first deposit) -->
+        <div id="referralBonusCard" class="referral-bonus-card mb-4" style="display: none;">
+            <div class="referral-bonus-icon">
+                <i class="bi bi-gift-fill"></i>
             </div>
-            <div class="locked-bonus-info">
-                <h5 data-i18n="lockedBonus">Заблокированный бонус</h5>
-                <p class="locked-bonus-amount">$<span id="lockedBonusAmount">50.00</span></p>
+            <div class="referral-bonus-info">
+                <h5 data-i18n="referralBonusAvailable">Доступен бонус!</h5>
+                <p class="referral-bonus-amount">+$<span id="referralBonusAmount">100</span></p>
             </div>
-            <div class="locked-bonus-hint">
+            <div class="referral-bonus-hint">
                 <i class="bi bi-info-circle"></i>
                 <span>
-                    <span data-i18n="depositToUnlock">Пополните баланс на</span>
-                    <strong>$<span id="unlockAmount">100</span></strong>
-                    <span data-i18n="toUnlockBonus">чтобы разблокировать бонус</span>
+                    <span data-i18n="depositForBonus">Пополните баланс на</span>
+                    <strong>$100+</strong>
+                    <span data-i18n="toGetReferralBonus">чтобы получить реферальный бонус</span>
                 </span>
             </div>
         </div>
@@ -261,6 +261,30 @@
                             <p class="deposit-amount-hint">
                                 <span data-i18n="minLabel">Минимум:</span> $<span id="minDepositAmount">10</span>, <span data-i18n="maxLabel">Максимум:</span> $<span id="maxDepositAmount">10 000</span>
                             </p>
+                        </div>
+
+                        <!-- Promo Code Section -->
+                        <div id="promoCodeSection" class="promo-code-section">
+                            <label class="promo-code-label">
+                                <i class="bi bi-tag"></i>
+                                <span data-i18n="promoCodeLabel">Промокод (необязательно)</span>
+                            </label>
+                            <div class="promo-code-input-wrapper">
+                                <input type="text" class="promo-code-input" id="promoCodeInput" maxlength="50" placeholder="WELCOME2024">
+                                <button type="button" class="promo-apply-btn" id="promoApplyBtn" onclick="checkPromoCode()" data-i18n="promoApplyBtn">Применить</button>
+                            </div>
+                            <div id="promoCodeStatus" class="promo-code-status"></div>
+                            <div id="promoBonusPreview" class="promo-bonus-preview" style="display: none;">
+                                <i class="bi bi-check-circle-fill text-success"></i>
+                                <span data-i18n="promoAppliedBonus">Промокод применён! Бонус:</span>
+                                <strong class="text-success">+$<span id="promoBonusAmount">100</span></strong>
+                            </div>
+                            <!-- Total Deposit Amount -->
+                            <div id="totalDepositPreview" class="total-deposit-preview" style="display: none;">
+                                <i class="bi bi-calculator"></i>
+                                <span data-i18n="totalToAccount">Итого на счёт:</span>
+                                <strong class="text-primary">$<span id="totalDepositAmount">200</span></strong>
+                            </div>
                         </div>
                     </div>
 
