@@ -411,6 +411,15 @@ const addProjectLinksBulk = async (projectId, userId, links) => {
 // Delete project link
 const deleteProjectLink = async (projectId, linkId, userId) => {
   try {
+    // Get affected sites BEFORE deletion
+    const affectedSites = await query(
+      `SELECT DISTINCT s.api_key FROM placement_content pc
+       JOIN placements p ON pc.placement_id = p.id
+       JOIN sites s ON p.site_id = s.id
+       WHERE pc.link_id = $1 AND s.api_key IS NOT NULL`,
+      [linkId]
+    );
+
     const result = await query(
       `
       DELETE FROM project_links pl
@@ -428,7 +437,10 @@ const deleteProjectLink = async (projectId, linkId, userId) => {
     if (result.rows.length > 0) {
       const cache = require('./cache.service');
       await cache.delPattern(`projects:user:${userId}:*`);
-      await cache.delPattern('wp:content:*');
+      // Targeted cache invalidation - only affected sites
+      for (const site of affectedSites.rows) {
+        await cache.del(`wp:content:${site.api_key}`);
+      }
     }
 
     return result.rows.length > 0;
