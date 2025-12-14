@@ -656,7 +656,7 @@ const translations = {
     sidebarAnalytics: 'Статистика',
     sidebarPartners: 'Партнёрка',
     sidebarBalanceLabel: 'Баланс',
-    sidebarAddLink: 'Добавить ссылку',
+    sidebarAddLink: 'Купить ссылки',
     sidebarNotifications: 'Уведомления',
     sidebarMarkAllRead: 'Отметить все как прочитанные',
     sidebarNoNotifications: 'Нет новых уведомлений',
