@@ -179,7 +179,7 @@ const translations = {
     siteUrl: 'URL сайта',
     apiToken: 'API Token',
     apiTokenHint: 'Установите плагин Link Manager на WordPress и скопируйте токен из настроек',
-    maxLinks: 'Макс. ссылок',
+    maxLinks: 'Макс. ссылок на главной',
     maxArticles: 'Макс. статей',
     seoMetrics: 'SEO метрики',
     priceLink: 'Цена ссылки',
