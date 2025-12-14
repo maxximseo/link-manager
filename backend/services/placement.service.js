@@ -540,8 +540,11 @@ const createPlacement = async data => {
     // Invalidate cache for placements and projects (after commit)
     await cache.delPattern(`placements:user:${userId}:*`);
     await cache.delPattern(`projects:user:${userId}:*`);
-    await cache.delPattern(`wp:content:*`); // Invalidate WordPress API cache
-    logger.debug('Cache invalidated after placement creation', { userId });
+    // Targeted cache invalidation - only this site, not all sites
+    if (site.api_key) {
+      await cache.del(`wp:content:${site.api_key}`);
+    }
+    logger.debug('Cache invalidated after placement creation', { userId, siteApiKey: site.api_key });
 
     return placement;
   } catch (error) {
