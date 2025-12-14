@@ -111,8 +111,8 @@ async function loadReferredUsers() {
     if (!users || users.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="4" class="text-center text-muted">
-            <i class="bi bi-people"></i> Пока нет привлечённых пользователей
+          <td colspan="4" class="text-center text-muted py-4">
+            <i class="bi bi-people"></i> ${t('noReferralsYet') || 'Пока нет привлечённых пользователей'}
           </td>
         </tr>
       `;
