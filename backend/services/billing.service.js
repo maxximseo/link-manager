@@ -2474,7 +2474,7 @@ const batchDeletePlacements = async (userId, userRole, placementIds) => {
   // Clear cache after batch
   await cache.delPattern(`placements:user:*`);
   await cache.delPattern(`projects:user:*`);
-  await cache.delPattern('wp:content:*');
+  // Note: wp:content cache invalidation handled by individual deleteAndRefundPlacement calls
 
   return {
     successful: successful.length,
