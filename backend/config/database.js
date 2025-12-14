@@ -21,13 +21,12 @@ if (process.env.DATABASE_URL) {
   }
 }
 
-// SSL configuration - Use rejectUnauthorized: false for cloud databases
+// SSL configuration - Use rejectUnauthorized: false for Supabase
 let sslConfig = false;
-if (process.env.DB_HOST?.includes('ondigitalocean.com') || process.env.DB_HOST?.includes('supabase.com')) {
-  // Cloud databases require SSL but we can disable certificate verification
+if (process.env.DB_HOST?.includes('supabase.com')) {
+  // Supabase requires SSL but we can disable certificate verification
   sslConfig = { rejectUnauthorized: false };
-  const provider = process.env.DB_HOST.includes('supabase.com') ? 'Supabase' : 'DigitalOcean';
-  logger.info(`Using SSL with disabled certificate verification for ${provider}`);
+  logger.info('Using SSL with disabled certificate verification for Supabase');
 } else {
   logger.info('SSL disabled for local development');
 }
