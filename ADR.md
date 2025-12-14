@@ -2201,7 +2201,7 @@ if (checkResult.rows.length === 0) {
 ### Running Migration
 
 ```bash
-# With SSL for DigitalOcean
+# With SSL for Supabase
 NODE_TLS_REJECT_UNAUTHORIZED=0 node database/run_updated_at_migration.js
 ```
 
@@ -2361,6 +2361,231 @@ Fixed incorrect file reference in CLAUDE.md:
 - ✅ Reduced confusion about which files are used
 - ✅ Documentation matches actual file names
 - ⚠️ Historical migration files deleted (already applied to database)
+
+---
+
+## ADR-032: Complete Removal of DigitalOcean Database References
+
+**Status**: ✅ COMPLETED
+**Date**: December 2025
+**Context**: After migration to Supabase (ADR-030), cleanup all remaining DigitalOcean database references from codebase
+
+### Decision
+
+Remove ALL references to DigitalOcean PostgreSQL database from code and documentation, keeping only:
+- DO Spaces (for backup storage)
+- Redis/Valkey on DigitalOcean
+
+### Files Deleted (29 total)
+
+**Migration Scripts (database/) - 27 files**:
+```
+run_available_for_purchase_migration.js
+run_billing_migration.js
+run_da_migration.js
+run_discount_migration.js
+run_dr_migration.js
+run_extended_fields_migration.js
+run_geo_migration.js
+run_limits_cooldown_migration.js
+run_locked_bonus_migration.js
+run_migration.js
+run_moderation_migration.js
+run_nullable_migration.js
+run_payment_invoices_migration.js
+run_promo_codes_migration.js
+run_promo_supabase.js
+run_ref_domains_migration.js
+run_referrals_migration.js
+run_registration_tokens_migration.js
+run_remove_anchor_unique.js
+run_site_pricing_migration.js
+run_site_types_migration.js
+run_site_visibility_migration.js
+run_tf_cf_keywords_traffic_migration.js
+run_token_expires_migration.js
+run_updated_at_migration.js
+run_user_id_migration.js
+run_usdt_wallet_migration.js
+```
+
+**Export/Import Scripts (scripts/) - 2 files**:
+```
+export-from-digitalocean.js
+import-to-supabase.js
+```
+
+### Files Modified
+
+**backend/config/database.js**:
+- Line 9: Changed comment from "DigitalOcean format" to "PostgreSQL standard format"
+- Lines 26-30: Removed `ondigitalocean.com` check, kept only `supabase.com`
+- Line 55: Removed DigitalOcean-specific SSL comment
+
+**Documentation Updated**:
+| File | Changes |
+|------|---------|
+| `CLAUDE.md` | Updated DB references to Supabase, removed DO DB mentions |
+| `RUNBOOK.md` | Removed DO IP whitelist instructions, simplified deployment |
+| `README.md` | Updated deployment section for Supabase |
+| `.env.example` | Added comment clarifying DO Spaces is for backups only |
+
+### What Was Preserved
+
+**DO Spaces (Backup Storage)**:
+- `DO_SPACES_KEY`, `DO_SPACES_SECRET` environment variables
+- `scripts/backup-database.sh`, `backup-files.sh`, `restore-database.sh`
+- Backup cron jobs and health checks
+
+**Redis/Valkey on DigitalOcean**:
+- TLS configuration in `backend/config/queue.js`
+- TLS configuration in `backend/services/cache.service.js`
+- Related tests in `tests/services/cache.service.test.js`
+
+### Database Connection Pattern (Updated)
+
+```javascript
+// SSL configuration - Use rejectUnauthorized: false for Supabase
+let sslConfig = false;
+if (process.env.DB_HOST?.includes('supabase.com')) {
+  sslConfig = { rejectUnauthorized: false };
+  logger.info('Using SSL with disabled certificate verification for Supabase');
+} else {
+  logger.info('SSL disabled for local development');
+}
+```
+
+### Consequences
+- ✅ Codebase now exclusively uses Supabase for database
+- ✅ Cleaner documentation without outdated DO DB references
+- ✅ Migration scripts removed (database already migrated)
+- ✅ DO Spaces retained for backup functionality
+- ✅ Redis/Valkey on DO retained (Supabase doesn't offer Redis)
+- ⚠️ New installations must use Supabase (no DO PostgreSQL support)
+
+---
+
+## ADR-033: Modern Modal Design System (Figma-style)
+
+**Status**: ✅ ACTIVE
+**Date**: December 2025
+**Decision Makers**: Development Team
+
+### Context
+
+Modal windows across the application had inconsistent designs - some used old Bootstrap styling, while newer modals (like Add Site) used modern Figma-inspired designs. Need to standardize modal design across all pages.
+
+### Decision
+
+Implement a consistent **Figma-style modal design system** with:
+1. **Gradient headers** with icon boxes
+2. **Subtitle descriptions** under titles
+3. **Modern form inputs** with focus states
+4. **Gradient action buttons**
+5. **Close button** aligned to top-right
+
+### Design Specifications
+
+**Header Structure**:
+```html
+<div class="[prefix]-modal-header">
+    <div class="[prefix]-modal-header-inner">
+        <div class="[prefix]-modal-icon">
+            <i class="bi bi-[icon-name]"></i>
+        </div>
+        <div class="[prefix]-modal-title-wrap">
+            <h5 class="[prefix]-modal-title">Title</h5>
+            <p class="[prefix]-modal-subtitle">Subtitle description</p>
+        </div>
+    </div>
+    <button class="[prefix]-modal-close">
+        <i class="bi bi-x-lg"></i>
+    </button>
+</div>
+```
+
+**Color Palettes by Context**:
+| Modal Type | Gradient | Icon |
+|------------|----------|------|
+| Site Modal | purple → indigo → cyan | `bi-globe2` |
+| Project Modal | blue → indigo → purple | `bi-folder-plus` |
+| Link Modal | green → teal | `bi-link-45deg` |
+| Article Modal | orange → amber | `bi-file-text` |
+
+**CSS Variables**:
+```css
+/* Project Modal */
+.project-modal-header {
+    background: linear-gradient(135deg, #3b82f6 0%, #6366f1 50%, #8b5cf6 100%);
+}
+
+/* Site Modal */
+.site-modal-header {
+    background: linear-gradient(135deg, #a855f7 0%, #6366f1 50%, #06b6d4 100%);
+}
+```
+
+**Form Input Styling**:
+```css
+.[prefix]-form-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.75rem;
+    font-size: 0.9375rem;
+    transition: all 0.2s;
+}
+
+.[prefix]-form-input:focus {
+    border-color: #6366f1;  /* Indigo for focus */
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+```
+
+### Implementation Pattern
+
+Each modal uses prefixed CSS classes to avoid conflicts:
+- **Sites**: `.site-modal-*`
+- **Projects**: `.project-modal-*`
+- **Links**: `.link-modal-*`
+- **Articles**: `.article-modal-*`
+
+### Modals Updated
+
+| Page | Modal | Status |
+|------|-------|--------|
+| sites.html | Add/Edit Site | ✅ Done |
+| dashboard.html | Create/Edit Project | ✅ Done |
+| profile.html | Profile Card | ✅ Done |
+| project-detail.html | Add/Edit Link | 🔄 Pending |
+| project-detail.html | Add/Edit Article | 🔄 Pending |
+| placements.html | Purchase Modal | 🔄 Pending |
+
+### Translation Keys Added
+
+```javascript
+// Russian
+configureProjectSettings: 'Настройте параметры вашего проекта',
+configureSiteSettings: 'Настройте параметры сайта и интеграцию',
+
+// English
+configureProjectSettings: 'Configure your project settings',
+configureSiteSettings: 'Configure site settings and integration',
+```
+
+### Consequences
+- ✅ Consistent, modern UI across all modals
+- ✅ Better UX with visual hierarchy (icon + title + subtitle)
+- ✅ Reusable CSS patterns with prefixed classes
+- ✅ i18n support for all modal text
+- ⚠️ Some modals still need updating (project-detail.html)
+- ⚠️ CSS added inline per page (could be extracted to common file)
+
+### Future Improvements
+- Extract modal CSS to shared `modal-modern.css`
+- Create JavaScript utility for modal initialization
+- Add animation transitions
 
 ---
 

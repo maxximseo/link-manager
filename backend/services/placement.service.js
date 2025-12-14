@@ -239,7 +239,7 @@ const createPlacement = async data => {
 
     // Check site quotas with row-level lock to prevent race conditions
     const siteResult = await client.query(
-      'SELECT max_links, used_links, max_articles, used_articles FROM sites WHERE id = $1 FOR UPDATE',
+      'SELECT max_links, used_links, max_articles, used_articles, api_key FROM sites WHERE id = $1 FOR UPDATE',
       [site_id]
     );
 

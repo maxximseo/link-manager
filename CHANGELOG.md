@@ -7,6 +7,91 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.6.10] - 2025-12-14
+
+### 🎨 UI/UX: Modern Modal Design System
+
+#### New Modal Designs (Figma-style)
+- **UPDATED** `dashboard.html` - Create Project modal:
+  - Gradient header (blue → indigo → purple)
+  - Icon box with folder-plus icon
+  - Subtitle "Настройте параметры вашего проекта"
+  - Modern form inputs with focus states
+  - Required field indicator (red asterisk)
+  - Gradient save button with checkmark icon
+
+- **UPDATED** `sites.html` - Add Site modal (previous session):
+  - Gradient header (purple → indigo → cyan)
+  - Site type toggle (WordPress / Static PHP)
+  - API Token field with copy button
+  - Price inputs with $ prefix
+  - Toggle switches for permissions
+  - Plugin download section
+
+#### Translation Updates
+- **ADDED** `configureProjectSettings` - RU: "Настройте параметры вашего проекта", EN: "Configure your project settings"
+- **ADDED** `columns` - RU: "Колонки", EN: "Columns"
+- **ADDED** `exportCsv` - RU: "Экспорт CSV", EN: "Export CSV"
+- **RENAMED** `maxLinks` - RU: "Макс. ссылок на главной", EN: "Max homepage links"
+- **RENAMED** `sidebarAddLink` - RU: "Купить ссылки", EN: "Buy links"
+
+### CSS Classes Added
+- `.project-modal-content` - Modal container with shadow
+- `.project-modal-header` - Gradient header
+- `.project-modal-icon` - Semi-transparent icon box
+- `.project-modal-title-wrap` - Title and subtitle wrapper
+- `.project-form-group` - Form group container
+- `.project-form-input` - Modern input styling
+- `.project-btn-save` - Gradient save button
+- `.project-btn-cancel` - Cancel button with border
+
+### Files Changed
+- `backend/build/dashboard.html` - New project modal design + CSS
+- `backend/build/js/translations.js` - New translation keys (RU + EN)
+
+---
+
+## [2.6.9] - 2025-12-14
+
+### 🔄 Infrastructure: Complete DigitalOcean Database Cleanup
+
+#### Files Deleted (29 total)
+- **DELETED** 27 migration scripts from `database/` directory:
+  - All `run_*_migration.js` files (billing, dr, da, geo, etc.)
+  - All migration runners no longer needed (database already configured)
+- **DELETED** 2 export/import scripts from `scripts/`:
+  - `export-from-digitalocean.js`
+  - `import-to-supabase.js`
+
+#### Code Changes
+- **UPDATED** `backend/config/database.js`:
+  - Removed `ondigitalocean.com` SSL check
+  - Now only checks for `supabase.com` domains
+  - Updated comments to reference Supabase instead of DigitalOcean
+
+#### Documentation Updated
+- **UPDATED** `CLAUDE.md` - All DB references now point to Supabase
+- **UPDATED** `RUNBOOK.md` - Removed DO IP whitelist instructions, simplified Quick Start
+- **UPDATED** `README.md` - Deployment section updated for Supabase
+- **UPDATED** `.env.example` - Clarified DO Spaces is for backup storage only
+- **ADDED** `ADR.md` - ADR-032: Complete Removal of DigitalOcean Database References
+
+#### What Was Preserved
+- DigitalOcean Spaces (DO_SPACES_*) for backup storage
+- Redis/Valkey on DigitalOcean with TLS configuration
+- All backup scripts (backup-database.sh, backup-files.sh, restore-database.sh)
+
+### Files Changed
+- `backend/config/database.js` - Supabase-only SSL config
+- `CLAUDE.md` - Updated database documentation
+- `RUNBOOK.md` - Simplified startup, removed DO DB instructions
+- `README.md` - Updated deployment section
+- `.env.example` - Added clarifying comment
+- `ADR.md` - Added ADR-032
+- `CHANGELOG.md` - This entry
+
+---
+
 ## [2.6.8] - 2025-12-13
 
 ### 🔄 Infrastructure: Database Migration to Supabase
