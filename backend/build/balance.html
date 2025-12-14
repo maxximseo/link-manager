@@ -73,6 +73,25 @@
             </div>
         </div>
 
+        <!-- Locked Bonus Card (shown only if user has locked bonus) -->
+        <div id="lockedBonusCard" class="locked-bonus-card mb-4" style="display: none;">
+            <div class="locked-bonus-icon">
+                <i class="bi bi-lock-fill"></i>
+            </div>
+            <div class="locked-bonus-info">
+                <h5 data-i18n="lockedBonus">Заблокированный бонус</h5>
+                <p class="locked-bonus-amount">$<span id="lockedBonusAmount">50.00</span></p>
+            </div>
+            <div class="locked-bonus-hint">
+                <i class="bi bi-info-circle"></i>
+                <span>
+                    <span data-i18n="depositToUnlock">Пополните баланс на</span>
+                    <strong>$<span id="unlockAmount">100</span></strong>
+                    <span data-i18n="toUnlockBonus">чтобы разблокировать бонус</span>
+                </span>
+            </div>
+        </div>
+
         <!-- Discount Progress -->
         <div class="discount-progress-card">
             <h5 class="card-title"><span data-i18n="yourDiscount">Ваша скидка:</span> <span id="currentDiscount">0</span>% <span id="discountTier" data-i18n="tierStandard">Стандарт</span></h5>

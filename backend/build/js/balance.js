@@ -75,6 +75,21 @@ async function loadBalanceData() {
             navBalance.textContent = currentBalance.toFixed(2);
         }
 
+        // Show/hide locked bonus card
+        const lockedBonus = parseFloat(data.lockedBonus) || 0;
+        const unlockAmount = parseFloat(data.unlockAmount) || 100;
+        const lockedBonusCard = document.getElementById('lockedBonusCard');
+
+        if (lockedBonusCard) {
+            if (lockedBonus > 0) {
+                lockedBonusCard.style.display = 'flex';
+                document.getElementById('lockedBonusAmount').textContent = lockedBonus.toFixed(2);
+                document.getElementById('unlockAmount').textContent = unlockAmount.toFixed(0);
+            } else {
+                lockedBonusCard.style.display = 'none';
+            }
+        }
+
     } catch (error) {
         console.error('Failed to load balance:', error);
         showAlert(t('balanceLoadError'), 'danger');
