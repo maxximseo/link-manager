@@ -627,7 +627,10 @@ const deleteProjectArticle = async (projectId, articleId, userId) => {
     if (result.rows.length > 0) {
       const cache = require('./cache.service');
       await cache.delPattern(`projects:user:${userId}:*`);
-      await cache.delPattern('wp:content:*');
+      // Targeted cache invalidation - only affected sites
+      for (const site of affectedSites.rows) {
+        await cache.del(`wp:content:${site.api_key}`);
+      }
     }
 
     return result.rows.length > 0;
