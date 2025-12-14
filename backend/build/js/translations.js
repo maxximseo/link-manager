@@ -1372,7 +1372,8 @@ const translations = {
 
     // Profile Page
     profilePageTitle: 'Profile - Link Manager',
-    profileInfoTitle: 'Profile information',
+    profileInfoTitle: 'Profile',
+    profileSubtitle: 'Account settings',
     usernameLabel: 'Username',
     usernameReadonly: 'Username cannot be changed',
     emailLabel: 'Email',
