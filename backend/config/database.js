@@ -6,7 +6,7 @@ require('dotenv').config({ path: path.join(__dirname, '..', '.env'), override: t
 
 const logger = require('./logger');
 
-// Parse DATABASE_URL if provided (DigitalOcean format)
+// Parse DATABASE_URL if provided (PostgreSQL standard format)
 if (process.env.DATABASE_URL) {
   try {
     const url = new URL(process.env.DATABASE_URL);
