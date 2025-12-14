@@ -913,6 +913,7 @@ const translations = {
     export: 'Export',
     addSite: 'Add site',
     configureSiteSettings: 'Configure site settings and integration',
+    configureProjectSettings: 'Configure your project settings',
     showSites: 'Show',
     sitesPerPage: 'sites',
     bulkRegistration: 'Bulk WordPress site registration',

@@ -315,7 +315,7 @@ psql -d linkmanager -c "UPDATE users SET password_hash='<new_hash>' WHERE userna
 
 ## 🚀 Production Deployment
 
-### DigitalOcean / Heroku
+### Supabase / Any Cloud Provider
 
 1. Set environment variables:
 ```bash
@@ -325,7 +325,7 @@ JWT_SECRET=<strong-32-char-secret>
 BCRYPT_ROUNDS=10
 ```
 
-2. SSL is auto-detected for DigitalOcean domains
+2. SSL is auto-detected for Supabase domains
 
 3. Build and start:
 ```bash
