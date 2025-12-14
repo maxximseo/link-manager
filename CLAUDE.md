@@ -2144,6 +2144,19 @@ The following major architectural decisions govern this codebase:
     - All mutable tables must have `updated_at` column
     - Migration: `run_updated_at_migration.js`
 
+30. **[ADR-030: Database Migration from DigitalOcean to Supabase](ADR.md#adr-030-database-migration-from-digitalocean-to-supabase)**
+    - PostgreSQL moved from DigitalOcean to Supabase
+    - Redis/Valkey remains on DigitalOcean
+
+31. **[ADR-031: Project Cleanup - Remove Unused Files](ADR.md#adr-031-project-cleanup---remove-unused-files)**
+    - Removed 24+ unused test files, docs, and old migrations
+    - Cleaner project structure
+
+32. **[ADR-032: Complete Removal of DigitalOcean Database References](ADR.md#adr-032-complete-removal-of-digitalocean-database-references)**
+    - Deleted 29 migration/export scripts
+    - Updated all docs to reference Supabase only
+    - Preserved DO Spaces (backups) and Redis (cache)
+
 ### When to Consult ADR
 
 **Before making these changes, read relevant ADRs**:
@@ -2161,6 +2174,7 @@ The following major architectural decisions govern this codebase:
 - ✅ Code quality/linting → ADR-022
 - ✅ API controller/service field handling → ADR-028 ⚠️ CRITICAL
 - ✅ Visual testing → ADR-027
+- ✅ Database provider/infrastructure → ADR-030, ADR-032
 
 **ADR Review Schedule**:
 - **Last Review**: December 2025

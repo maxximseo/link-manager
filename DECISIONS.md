@@ -748,6 +748,38 @@ UPDATE table SET field = $1 WHERE id = $2  // No audit trail
 
 ---
 
+### ✅ Database: Supabase SSL Configuration
+
+```javascript
+// ✅ CORRECT - Only Supabase SSL detection
+if (process.env.DB_HOST?.includes('supabase.com')) {
+  sslConfig = { rejectUnauthorized: false };
+  logger.info('Using SSL with disabled certificate verification for Supabase');
+}
+
+// ❌ OUTDATED - DigitalOcean database no longer supported
+if (process.env.DB_HOST?.includes('ondigitalocean.com')) {  // Removed in v2.6.9
+  // ...
+}
+```
+
+**See**: [ADR-030](ADR.md#adr-030-database-migration-from-digitalocean-to-supabase), [ADR-032](ADR.md#adr-032-complete-removal-of-digitalocean-database-references)
+
+---
+
+### ✅ Infrastructure: What's Where
+
+| Service | Provider | Notes |
+|---------|----------|-------|
+| PostgreSQL | **Supabase** | Primary database |
+| Redis/Valkey | DigitalOcean | Cache & queues |
+| Backup Storage | DO Spaces | S3-compatible |
+| App Hosting | DigitalOcean | Node.js app |
+
+**Key Insight**: Database is Supabase, but DO Spaces and Redis remain on DigitalOcean.
+
+---
+
 ## When in Doubt
 
 1. **Database operations** → Check [ADR-001](ADR.md#adr-001-no-orm---direct-sql-queries), [ADR-004](ADR.md#adr-004-transaction-wrapped-multi-step-operations)
@@ -760,6 +792,7 @@ UPDATE table SET field = $1 WHERE id = $2  // No audit trail
 8. **Site parameters** → Check [ADR-018](ADR.md#adr-018-geo-parameter-system)
 9. **Optimization approach** → Check [OPTIMIZATION_PRINCIPLES.md](OPTIMIZATION_PRINCIPLES.md)
 10. **Public sites access** → Check [ADR-020](ADR.md#adr-020-admin-only-public-site-control)
+11. **Database provider** → Check [ADR-030](ADR.md#adr-030-database-migration-from-digitalocean-to-supabase), [ADR-032](ADR.md#adr-032-complete-removal-of-digitalocean-database-references)
 
 ---
 
@@ -774,3 +807,116 @@ When adding new patterns:
 **Review**: Monthly during team sync
 **Last Review**: December 2025
 **Next Review**: January 2026
+
+---
+
+## UI/UX Patterns
+
+### ✅ Modern Modal Design (Figma-style)
+
+**Added**: December 2025 (v2.6.10)
+
+When creating or updating modal dialogs, use the Figma-style design system:
+
+```html
+<!-- ✅ CORRECT - Modern modal structure -->
+<div class="modal-content project-modal-content">
+  <div class="project-modal-header">
+    <div class="project-modal-title-section">
+      <div class="project-modal-icon">
+        <i class="bi bi-folder-plus"></i>
+      </div>
+      <div>
+        <h5 class="project-modal-title">Modal Title</h5>
+        <p class="project-modal-subtitle" data-i18n="subtitleKey">Subtitle text</p>
+      </div>
+    </div>
+    <button class="project-modal-close" onclick="closeModal()">
+      <i class="bi bi-x-lg"></i>
+    </button>
+  </div>
+  <div class="project-modal-body">
+    <!-- Form content -->
+  </div>
+</div>
+
+<!-- ❌ WRONG - Old Bootstrap style -->
+<div class="modal-header">
+  <h5 class="modal-title">Title</h5>
+  <button type="button" class="btn-close"></button>
+</div>
+```
+
+**Key CSS Properties**:
+```css
+.project-modal-header {
+  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 50%, #8b5cf6 100%);
+  padding: 1.5rem 2rem;
+  display: flex;
+  align-items: flex-start;  /* Close button at top */
+  justify-content: space-between;
+}
+
+.project-modal-icon {
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 0.75rem;
+}
+
+.project-form-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+```
+
+**Naming Convention**: Prefix modal CSS classes with page context:
+- `project-modal-*` for dashboard.html
+- `site-modal-*` for sites.html
+
+**See**: [ADR-033](ADR.md#adr-033-modern-modal-design-system-figma-style)
+
+---
+
+### ✅ Translation Key Naming
+
+```javascript
+// ✅ CORRECT - Descriptive camelCase
+{
+  maxLinks: 'Макс. ссылок на главной',
+  configureProjectSettings: 'Настройте параметры вашего проекта',
+  sidebarAddLink: 'Купить ссылки',
+  exportCsv: 'Экспорт CSV'
+}
+
+// ❌ WRONG - Generic or inconsistent
+{
+  max: 'Максимум',           // Too generic
+  add_link: 'Добавить',      // Use camelCase, not snake_case
+  EXPORT_BTN: 'Экспорт'      // Use camelCase, not UPPERCASE
+}
+```
+
+**Pattern**: Use `data-i18n` attribute with descriptive key:
+```html
+<label data-i18n="maxLinks">Макс. ссылок на главной</label>
+<button data-i18n="exportCsv">Экспорт CSV</button>
+```
+
+---
+
+### ✅ Close Button Alignment in Modal Headers
+
+```css
+/* ✅ CORRECT - Close button at top */
+.modal-header {
+  align-items: flex-start;
+}
+
+/* ❌ WRONG - Close button centered vertically */
+.modal-header {
+  align-items: center;  /* Close button looks disconnected */
+}
+```
+
+**Reason**: When modal header has icon + title + subtitle, close button should align to top-right corner, not vertically centered.
