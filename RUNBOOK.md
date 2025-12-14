@@ -22,43 +22,20 @@ This document contains step-by-step procedures for common operational tasks in t
 
 ## Server Operations
 
-### ⚡ Quick Local Start (ВАЖНО!)
+### ⚡ Quick Local Start
 
-**Перед запуском убедитесь что ваш IP добавлен в белый список DigitalOcean!**
-
-#### 1. Узнать свой IP
-```bash
-curl ifconfig.me
-# Пример: 91.84.98.55
-```
-
-#### 2. Добавить IP в белый список (DigitalOcean Console)
-
-**PostgreSQL:**
-1. DigitalOcean → Databases → `db-postgresql-nyc3-90526`
-2. Settings → Trusted Sources → Add Trusted Source
-3. Добавить: `ВАШ_IP/32` (например `91.84.98.55/32`)
-
-**Valkey (Redis):**
-1. DigitalOcean → Databases → `link-manager-valkey`
-2. Settings → Trusted Sources → Add Trusted Source
-3. Добавить: `ВАШ_IP/32`
-
-⚠️ **Без этого сервер будет висеть на подключении к БД!**
-
-#### 3. Запустить сервер
+#### 1. Запустить сервер
 ```bash
 npm run dev
 ```
 
-**Время запуска**: ~15-30 секунд (подключение к удалённым БД)
+**Время запуска**: ~15-30 секунд (подключение к Supabase)
 
 **Ожидаемый лог**:
 ```
 info: Successfully parsed DATABASE_URL
-info: Using SSL with disabled certificate verification
-info: Connecting to database: defaultdb on port: 25060
-info: Redis TLS enabled for DigitalOcean
+info: Using SSL with disabled certificate verification for Supabase
+info: Connecting to database: postgres on port: 5432
 info: Redis cache connected successfully
 info: Database tables initialized successfully
 🚀 New architecture server running on port 3003
@@ -259,48 +236,6 @@ psql -d linkmanager -c "SELECT COUNT(*) FROM users;"  # Should have admin user
 
 ---
 
-### Add updated_at Columns (v2.6.7+)
-
-**When needed**: If link editing doesn't save properly or you see `column updated_at does not exist` error.
-
-```bash
-# Run with SSL disabled for DigitalOcean
-NODE_TLS_REJECT_UNAUTHORIZED=0 node database/run_updated_at_migration.js
-```
-
-**Expected output**:
-```
-🚀 Starting migration: Add updated_at columns to tables...
-
-📋 Processing table: placements
-   ✅ Column updated_at already exists
-
-📋 Processing table: project_links
-   📝 Adding updated_at column...
-   ✓ Column added successfully
-   📝 Updating existing records...
-   ✓ Updated 155 records
-
-📋 Processing table: project_articles
-   ...
-
-✅ Migration completed successfully!
-```
-
-**Tables affected**:
-- `placements` (fallback: `published_at`)
-- `project_links` (fallback: `created_at`)
-- `project_articles` (fallback: `created_at`)
-- `registration_tokens` (fallback: `created_at`)
-
-**Verification**:
-```bash
-PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
-  -c "SELECT id, updated_at FROM project_links LIMIT 5;"
-```
-
----
-
 ### Check Database Connection
 
 ```bash
@@ -475,7 +410,7 @@ redis-cli DBSIZE  # Should return 0 or lower number
 
 ## Deployment Procedures
 
-### Deploy to Production (DigitalOcean)
+### Deploy to Production
 
 ```bash
 # 1. Run tests locally
@@ -488,12 +423,8 @@ git commit -m "Description of changes"
 # 3. Push to main (triggers auto-deploy)
 git push origin main
 
-# 4. Monitor deployment
-doctl apps list
-doctl apps logs <app-id> --type=deploy --follow
-
-# 5. Verify deployment
-curl https://shark-app-9kv6u.ondigitalocean.app/health
+# 4. Verify deployment
+curl https://your-app-url/health
 ```
 
 **Expected**: `{"status":"ok",...}`
@@ -517,50 +448,7 @@ git push origin main --force
 
 ---
 
-### Update Environment Variables
-
-```bash
-# DigitalOcean App Platform
-doctl apps update <app-id> --env-file=.env.production
-
-# Verify changes
-doctl apps get <app-id> --format json | jq '.spec.envs'
-
-# Restart app
-doctl apps restart <app-id>
-```
-
----
-
 ## Troubleshooting
-
-### 🚨 Server Hangs on Startup (Connection Timeout)
-
-**Симптомы**: Сервер висит на `Connecting to database...` или `Redis TLS enabled` без дальнейшего вывода
-
-**Причина**: IP не в белом списке DigitalOcean (Trusted Sources)
-
-**Диагностика**:
-```bash
-# Проверить свой IP
-curl ifconfig.me
-
-# Проверить доступность PostgreSQL
-nc -zv db-postgresql-nyc3-90526-do-user-24010108-0.j.db.ondigitalocean.com 25060
-
-# Проверить доступность Redis/Valkey
-nc -zv link-manager-valkey-do-user-24010108-0.d.db.ondigitalocean.com 25060
-```
-
-**Решение**:
-1. Зайти в DigitalOcean Console
-2. **PostgreSQL**: Databases → db-postgresql-nyc3-90526 → Settings → Trusted Sources → Add `ВАШ_IP/32`
-3. **Valkey**: Databases → link-manager-valkey → Settings → Trusted Sources → Add `ВАШ_IP/32`
-4. Перезапустить сервер: `pkill -f nodemon && npm run dev`
-
-**Важно**: IP может меняться при перезагрузке роутера или VPN!
-
----
 
 ### Server Won't Start
 
@@ -601,9 +489,8 @@ psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c "SHOW ssl;"
 
 **Solutions**:
 1. Verify `DATABASE_URL` in `.env` is correct
-2. Check DigitalOcean database firewall (allow app IP)
-3. Confirm SSL config: `ssl: { rejectUnauthorized: false }`
-4. Test connection pool: Increase `max: 25` if hitting limit
+2. Confirm SSL config: `ssl: { rejectUnauthorized: false }`
+3. Test connection pool: Increase `max: 25` if hitting limit
 
 ---
 
@@ -1018,7 +905,7 @@ curl http://localhost:3003/health/redis
 ```
 
 **Setup monitoring** (UptimeRobot, Pingdom, etc.):
-- URL: `https://shark-app-9kv6u.ondigitalocean.app/health`
+- URL: `https://your-app-url/health`
 - Interval: 5 minutes
 - Alert: Email/SMS on 2 consecutive failures
 
@@ -1218,7 +1105,7 @@ du -sh backend/logs/*.log | sort -h
 | Lead Developer | TBD | email@example.com | UTC+3 |
 | Database Admin | TBD | email@example.com | UTC+3 |
 | DevOps | TBD | email@example.com | UTC+3 |
-| DigitalOcean Support | - | https://cloud.digitalocean.com/support | 24/7 |
+| Supabase Support | - | https://supabase.com/dashboard/support | 24/7 |
 
 ---
 
