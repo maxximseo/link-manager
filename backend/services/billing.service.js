@@ -33,6 +33,9 @@ const getUserBalance = async userId => {
         u.email,
         u.balance,
         u.current_discount,
+        u.locked_bonus,
+        u.locked_bonus_unlock_amount,
+        u.locked_bonus_unlocked,
         dt.tier_name,
         dt.discount_percentage,
         GREATEST(0, COALESCE(ABS((
