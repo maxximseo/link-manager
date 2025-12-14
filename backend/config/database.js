@@ -51,7 +51,7 @@ const pool = new Pool(dbConfig);
 
 // Log SSL certificate info
 if (sslConfig && sslConfig.ca) {
-  logger.info('SSL certificate loaded for DigitalOcean database connection');
+  logger.info('SSL certificate loaded for database connection');
 }
 
 // Monitor pool events
