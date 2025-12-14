@@ -220,6 +220,15 @@ const registerUser = async (username, email, password, referralCode = null) => {
 
     const newUser = result.rows[0];
 
+    // If user registered via referral code, add $50 locked bonus
+    if (referredByUserId) {
+      await query(
+        'UPDATE users SET locked_bonus = 50.00, locked_bonus_unlock_amount = 100.00, locked_bonus_unlocked = false WHERE id = $1',
+        [newUser.id]
+      );
+      logger.info(`Locked bonus $50 added for user ${username} (referred by user ID ${referredByUserId})`);
+    }
+
     logger.info(`New user registered: ${username}${referredByUserId ? ` (referred by user ID ${referredByUserId})` : ''}`);
 
     // In production, you would send verification email here
