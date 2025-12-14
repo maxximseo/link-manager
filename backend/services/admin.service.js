@@ -863,7 +863,10 @@ const approvePlacement = async (placementId, adminId) => {
     const cache = require('./cache.service');
     await cache.delPattern(`placements:user:${placement.user_id}:*`);
     await cache.delPattern(`projects:user:${placement.user_id}:*`);
-    await cache.delPattern('wp:content:*');
+    // Targeted cache invalidation - only this site
+    if (placement.api_key) {
+      await cache.del(`wp:content:${placement.api_key}`);
+    }
 
     logger.info('Placement approved by admin', {
       placementId,
