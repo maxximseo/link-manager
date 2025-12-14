@@ -913,6 +913,8 @@ const translations = {
     reset: 'Reset',
     apply: 'Apply',
     export: 'Export',
+    columns: 'Columns',
+    exportCsv: 'Export CSV',
     addSite: 'Add site',
     configureSiteSettings: 'Configure site settings and integration',
     configureProjectSettings: 'Configure your project settings',
