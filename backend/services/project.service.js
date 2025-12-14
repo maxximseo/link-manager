@@ -282,7 +282,17 @@ const updateProjectLink = async (projectId, linkId, userId, linkData) => {
     // Clear cache after link update
     const cache = require('./cache.service');
     await cache.delPattern(`projects:user:${userId}:*`);
-    await cache.delPattern('wp:content:*');
+    // Targeted cache invalidation - only sites using this link
+    const affectedSites = await query(
+      `SELECT DISTINCT s.api_key FROM placement_content pc
+       JOIN placements p ON pc.placement_id = p.id
+       JOIN sites s ON p.site_id = s.id
+       WHERE pc.link_id = $1 AND s.api_key IS NOT NULL`,
+      [linkId]
+    );
+    for (const site of affectedSites.rows) {
+      await cache.del(`wp:content:${site.api_key}`);
+    }
 
     return result.rows[0];
   } catch (error) {
