@@ -1382,6 +1382,7 @@ const translations = {
     displayNamePlaceholder: 'What should we call you',
     saveChangesBtn: 'Save changes',
     changePasswordTitle: 'Change password',
+    changePasswordSubtitle: 'Update your account password',
     currentPasswordLabel: 'Current password',
     newPasswordLabel: 'New password',
     minPasswordHint: 'Minimum 6 characters',
