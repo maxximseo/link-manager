@@ -1652,7 +1652,7 @@ const refundPlacement = async (placementId, userId) => {
         finalPrice, // Positive amount for refund
         balanceBefore,
         balanceAfter,
-        `Refund for ${placement.type} placement on ${placement.site_name} (${placement.project_name})`,
+        `Возврат за размещение ${placement.type === 'article' ? 'статьи' : 'ссылки'} на ${placement.site_name} (${placement.project_name})`,
         placementId
       ]
     );
@@ -1802,7 +1802,7 @@ const refundPlacementInTransaction = async (client, placement) => {
       finalPrice,
       balanceBefore,
       balanceAfter,
-      `Refund for ${placement.type} placement on ${placement.site_name || 'site'} (${placement.project_name || 'project'})`,
+      `Возврат за размещение ${placement.type === 'article' ? 'статьи' : 'ссылки'} на ${placement.site_name || 'сайт'} (${placement.project_name || 'проект'})`,
       placement.id
     ]
   );
@@ -2029,7 +2029,7 @@ const deleteAndRefundPlacement = async (placementId, userId, userRole = 'user') 
           finalPrice,
           balanceBefore,
           balanceAfter,
-          `Refund for ${placement.type} placement on ${placement.site_name} (${placement.project_name})`,
+          `Возврат за размещение ${placement.type === 'article' ? 'статьи' : 'ссылки'} на ${placement.site_name} (${placement.project_name})`,
           placementId
         ]
       );
