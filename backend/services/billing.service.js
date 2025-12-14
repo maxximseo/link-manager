@@ -163,6 +163,54 @@ const addBalance = async (userId, amount, description = 'Balance deposit', admin
       logger.error('Failed to check anomalous transaction', { err: err.message })
     );
 
+    // Check and unlock referral bonus if deposit >= unlock amount
+    // This happens after COMMIT so we don't block the main deposit transaction
+    try {
+      const bonusCheck = await query(
+        'SELECT locked_bonus, locked_bonus_unlock_amount, locked_bonus_unlocked FROM users WHERE id = $1',
+        [userId]
+      );
+
+      if (bonusCheck.rows.length > 0) {
+        const bonusUser = bonusCheck.rows[0];
+        const lockedBonus = parseFloat(bonusUser.locked_bonus) || 0;
+        const unlockAmount = parseFloat(bonusUser.locked_bonus_unlock_amount) || 100;
+        const alreadyUnlocked = bonusUser.locked_bonus_unlocked;
+
+        // If user has locked bonus, not yet unlocked, and deposit >= unlock amount
+        if (lockedBonus > 0 && !alreadyUnlocked && parseFloat(amount) >= unlockAmount) {
+          // Unlock the bonus - add to main balance
+          await query(
+            `UPDATE users
+             SET balance = balance + locked_bonus,
+                 locked_bonus = 0,
+                 locked_bonus_unlocked = true
+             WHERE id = $1`,
+            [userId]
+          );
+
+          // Create notification about unlocked bonus
+          await query(
+            `INSERT INTO notifications (user_id, type, title, message)
+             VALUES ($1, 'bonus_unlocked', $2, $3)`,
+            [
+              userId,
+              'Бонус разблокирован!',
+              `Ваш реферальный бонус $${lockedBonus.toFixed(2)} разблокирован и добавлен к балансу!`
+            ]
+          );
+
+          logger.info(`Referral bonus $${lockedBonus} unlocked for user ${userId} after deposit $${amount}`);
+        }
+      }
+    } catch (bonusError) {
+      // Don't fail the deposit if bonus unlock fails - just log it
+      logger.error('Failed to check/unlock referral bonus', {
+        userId,
+        error: bonusError.message
+      });
+    }
+
     logger.info('Balance added successfully', { userId, amount, newBalance });
 
     return { success: true, newBalance, amount };
