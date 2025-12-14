@@ -571,7 +571,10 @@ const deleteSite = async (siteId, userId) => {
     const cache = require('./cache.service');
     await cache.delPattern(`placements:user:${userId}:*`);
     await cache.delPattern(`projects:user:${userId}:*`);
-    await cache.delPattern(`wp:content:*`);
+    // Targeted cache invalidation - only this site (before deletion, site variable still has api_key)
+    if (site.api_key) {
+      await cache.del(`wp:content:${site.api_key}`);
+    }
 
     logger.info('Site deleted with automatic refunds', {
       siteId,
