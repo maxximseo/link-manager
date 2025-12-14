@@ -911,6 +911,7 @@ const translations = {
     apply: 'Apply',
     export: 'Export',
     addSite: 'Add site',
+    configureSiteSettings: 'Configure site settings and integration',
     showSites: 'Show',
     sitesPerPage: 'sites',
     bulkRegistration: 'Bulk WordPress site registration',
