@@ -932,7 +932,7 @@ const translations = {
     siteUrl: 'Site URL',
     apiToken: 'API Token',
     apiTokenHint: 'Install Link Manager plugin on WordPress and copy the token from settings',
-    maxLinks: 'Max links',
+    maxLinks: 'Max homepage links',
     maxArticles: 'Max articles',
     seoMetrics: 'SEO metrics',
     priceLink: 'Link price',
