@@ -346,18 +346,18 @@ async function loadWallet() {
 async function saveWallet() {
   const walletInput = document.getElementById('usdtWallet');
   const wallet = walletInput.value.trim();
-  const saveBtn = walletInput.nextElementSibling;
+  const saveBtn = document.querySelector('.ref-wallet-save-btn');
   const walletStatus = document.getElementById('walletStatus');
 
   // Validate TRC20 format
   if (!wallet || !/^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(wallet)) {
-    showAlert('Неверный формат TRC20 адреса. Должен начинаться с T и содержать 34 символа.', 'danger');
+    showAlert(t('invalidTrc20Format') || 'Неверный формат TRC20 адреса. Должен начинаться с T и содержать 34 символа.', 'danger');
     return;
   }
 
   // Show loading state
   const originalBtnText = saveBtn.innerHTML;
-  saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Сохранение...';
+  saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> ' + (t('saving') || 'Сохранение...');
   saveBtn.disabled = true;
 
   try {
@@ -377,14 +377,14 @@ async function saveWallet() {
     }
 
     currentWallet = wallet;
-    walletStatus.textContent = 'Сохранён';
-    walletStatus.className = 'badge bg-success';
+    walletStatus.textContent = t('walletSaved') || 'Сохранён';
+    walletStatus.className = 'ref-wallet-badge saved';
 
-    showAlert('Кошелёк успешно сохранён!', 'success');
+    showAlert(t('walletSavedSuccess') || 'Кошелёк успешно сохранён!', 'success');
 
   } catch (error) {
     console.error('Error saving wallet:', error);
-    showAlert(error.message || 'Ошибка сохранения кошелька', 'danger');
+    showAlert(error.message || (t('walletSaveError') || 'Ошибка сохранения кошелька'), 'danger');
   } finally {
     // Restore button state
     saveBtn.innerHTML = originalBtnText;
