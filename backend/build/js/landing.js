@@ -61,7 +61,7 @@
     const loginBtn = document.getElementById('loginBtn');
 
     if (langLabel) {
-      langLabel.textContent = lang.toUpperCase();
+      langLabel.textContent = lang === 'ru' ? 'EN' : 'RU';
     }
 
     // Update login button href based on language
