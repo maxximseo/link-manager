@@ -904,7 +904,7 @@ const rejectPlacement = async (placementId, adminId, reason = 'Rejected by admin
     // Get placement details
     const placementResult = await client.query(
       `
-      SELECT p.*, s.site_name, pr.name as project_name
+      SELECT p.*, s.site_name, s.api_key, pr.name as project_name
       FROM placements p
       JOIN sites s ON p.site_id = s.id
       JOIN projects pr ON p.project_id = pr.id
