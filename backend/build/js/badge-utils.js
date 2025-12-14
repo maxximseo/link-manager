@@ -174,11 +174,11 @@ function getDiscountTierName(discount) {
     const discountInt = parseInt(discount) || 0;
     const tierNames = {
         0: typeof t === 'function' ? t('tierStandard') : 'Standard',
-        10: 'Бронза',
-        15: 'Серебро',
-        20: 'Золото',
-        25: 'Платина',
-        30: 'Алмаз'
+        10: 'Bronze',
+        15: 'Silver',
+        20: 'Gold',
+        25: 'Platinum',
+        30: 'Diamond'
     };
     return tierNames[discountInt] || (typeof t === 'function' ? t('tierStandard') : 'Standard');
 }

@@ -22,11 +22,11 @@ function getTranslatedTierName(discount) {
     if (discountInt === 0) return t('tierStandard');
     // Other tiers: Bronze(10%), Silver(15%), Gold(20%), Platinum(25%), Diamond(30%)
     const tierNames = {
-        10: 'Бронза',
-        15: 'Серебро',
-        20: 'Золото',
-        25: 'Платина',
-        30: 'Алмаз'
+        10: 'Bronze',
+        15: 'Silver',
+        20: 'Gold',
+        25: 'Platinum',
+        30: 'Diamond'
     };
     return tierNames[discountInt] || t('tierStandard');
 }
