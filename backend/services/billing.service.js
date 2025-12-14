@@ -2167,7 +2167,10 @@ const deleteAndRefundPlacement = async (placementId, userId, userRole = 'user') 
     const cache = require('./cache.service');
     await cache.delPattern(`placements:user:${refundUserId}:*`); // Owner's cache
     await cache.delPattern(`projects:user:${refundUserId}:*`); // Owner's cache
-    await cache.delPattern(`wp:content:*`);
+    // Targeted cache invalidation - only this site
+    if (placement.api_key) {
+      await cache.del(`wp:content:${placement.api_key}`);
+    }
 
     logger.info('Placement deleted atomically with refund by admin', {
       placementId,
