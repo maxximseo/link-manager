@@ -346,7 +346,11 @@ const updateSite = async (siteId, userId, data, userRole = null) => {
     if (result.rows.length > 0) {
       const cache = require('./cache.service');
       await cache.delPattern(`placements:user:${userId}:*`);
-      await cache.delPattern('wp:content:*');
+      // Targeted cache invalidation - only this site
+      const updatedSite = result.rows[0];
+      if (updatedSite.api_key) {
+        await cache.del(`wp:content:${updatedSite.api_key}`);
+      }
     }
 
     return result.rows.length > 0 ? result.rows[0] : null;
