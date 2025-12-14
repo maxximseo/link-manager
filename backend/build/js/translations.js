@@ -157,6 +157,8 @@ const translations = {
     reset: 'Сбросить',
     apply: 'Применить',
     export: 'Экспорт',
+    columns: 'Колонки',
+    exportCsv: 'Экспорт CSV',
     addSite: 'Добавить сайт',
     configureSiteSettings: 'Настройте параметры сайта и интеграцию',
     configureProjectSettings: 'Настройте параметры вашего проекта',
