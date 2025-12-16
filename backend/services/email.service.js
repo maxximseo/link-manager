@@ -155,7 +155,7 @@ async function sendVerificationEmail(email, token, username) {
 
         <div style="text-align: center; padding: 20px;">
           <p style="color: #a0aec0; font-size: 12px; margin: 0;">
-            © ${new Date().getFullYear()} LinkBuilder Pro. Все права защищены.
+            © ${new Date().getFullYear()} Serparium. Все права защищены.
           </p>
         </div>
       </div>
