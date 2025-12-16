@@ -172,7 +172,14 @@ const translations = {
     tokenMaxUses: 'Макс. использований',
     unlimited: 'безлимит',
     expirationDays: 'Срок действия (дней)',
+    tokenExpireDays: 'Срок действия (дней)',
     createToken: 'Создать',
+    generate: 'Сгенерировать',
+    siteColumn: 'Сайт',
+    siteActionsHeader: 'Действия',
+    allowGuestPostsTooltip: 'Разрешить размещение гест-постов',
+    publicSiteTooltip: 'Публичный сайт',
+    availableForPurchaseTooltip: 'Доступен для покупки',
     siteType: 'Тип сайта',
     wordpress: 'WordPress',
     staticPhp: 'Статичный PHP',
@@ -256,12 +263,13 @@ const translations = {
     copy: 'Копировать',
 
     // Placements Page
+    buyLinksTitle: 'Покупка ссылок - Link Manager',
     buyLinks: 'Купить ссылки',
     projectSelection: 'Выбор проекта',
     selectProject: 'Выберите проект',
     selectProjectPlaceholder: 'Выберите проект...',
     contentType: 'Тип контента',
-    mainPage: 'Main page',
+    mainPage: 'Главная страница',
     articles: 'Статьи',
     publicationSettings: 'Настройки публикации',
     publicationDate: 'Дата публикации',
@@ -279,6 +287,7 @@ const translations = {
     recommendation: 'Рекомендация:',
     recommendationText: 'Распределение публикаций на 30-60 дней создает наиболее естественный профиль ссылок для поисковых систем.',
     availableSites: 'Доступные сайты',
+    sitesLabel: 'сайтов',
     hidePurchased: 'Скрыть купленные',
     geoFilter: 'Фильтр по GEO:',
     allRegions: 'Все регионы',
@@ -929,6 +938,13 @@ const translations = {
     unlimited: 'unlimited',
     expirationDays: 'Expiration (days)',
     createToken: 'Create',
+    tokenExpireDays: 'Token expiry (days)',
+    generate: 'Generate',
+    siteColumn: 'Site',
+    siteActionsHeader: 'Actions',
+    allowGuestPostsTooltip: 'Allow guest posts',
+    publicSiteTooltip: 'Public site',
+    availableForPurchaseTooltip: 'Available for purchase',
     siteType: 'Site type',
     wordpress: 'WordPress',
     staticPhp: 'Static PHP',
@@ -1012,6 +1028,7 @@ const translations = {
     copy: 'Copy',
 
     // Placements Page
+    buyLinksTitle: 'Buy Links - Link Manager',
     buyLinks: 'Buy Links',
     projectSelection: 'Project Selection',
     selectProject: 'Select Project',
@@ -1035,6 +1052,7 @@ const translations = {
     recommendation: 'Recommendation:',
     recommendationText: 'Distributing publications over 30-60 days creates the most natural link profile for search engines.',
     availableSites: 'Available Sites',
+    sitesLabel: 'sites',
     hidePurchased: 'Hide purchased',
     geoFilter: 'GEO filter:',
     allRegions: 'All regions',
@@ -1565,6 +1583,8 @@ function setLang(lang) {
     document.documentElement.lang = lang;
     // Re-apply translations
     applyTranslations();
+    // Dispatch custom event for pages to re-render dynamic content (pagination, etc.)
+    window.dispatchEvent(new CustomEvent('languageChanged', { detail: { lang } }));
   }
 }
 
@@ -1649,6 +1669,16 @@ function applyTranslations() {
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
     const key = el.getAttribute('data-i18n-placeholder');
     el.placeholder = t(key);
+  });
+
+  // Also apply to titles (tooltips)
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    const key = el.getAttribute('data-i18n-title');
+    el.setAttribute('title', t(key));
+    // Update Bootstrap tooltip if initialized
+    if (el._tippy) {
+      el._tippy.setContent(t(key));
+    }
   });
 }
 

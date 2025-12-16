@@ -1957,7 +1957,7 @@
             // Update sites count info
             const sitesCountEl = document.getElementById('sitesCountInfo');
             if (sitesCountEl) {
-                sitesCountEl.textContent = `Showing ${startIndex + 1}-${endIndex} of ${totalSites} sites`;
+                sitesCountEl.textContent = `${t('showing')} ${startIndex + 1}-${endIndex} ${t('of')} ${totalSites} ${t('sitesLabel')}`;
             }
 
             // Build dropdown options for available content with usage counters
@@ -2141,7 +2141,7 @@
             const startIndex = (currentPage - 1) * sitesPerPage + 1;
             const endIndex = Math.min(currentPage * sitesPerPage, filteredSites.length);
             if (bottomPaginationInfo) {
-                bottomPaginationInfo.textContent = `Показано ${startIndex}–${endIndex} из ${filteredSites.length}`;
+                bottomPaginationInfo.textContent = `${t('showing')} ${startIndex}–${endIndex} ${t('of')} ${filteredSites.length}`;
             }
 
             // Build pagination buttons for new format
@@ -2251,6 +2251,16 @@
                         contentId: selectedContent.id,
                         contentName: contentName
                     };
+                } else {
+                    // Нет доступного контента - снять выбор с сайта
+                    const checkbox = document.querySelector(`.site-checkbox[data-site-id="${siteId}"]`);
+                    if (checkbox) {
+                        checkbox.checked = false;
+                    }
+                    selectedSitesForList.delete(siteId);
+                    dropdown.style.display = 'none';
+                    showNotification('Нет доступных анкоров для этого сайта', 'warning');
+                    return;
                 }
 
                 // Add change listener to track manual selection changes
@@ -2391,19 +2401,23 @@
 
         function updateListButtonCounts() {
             const count = selectedSitesForList.size;
-            document.getElementById('whitelistCount').textContent = count;
-            document.getElementById('blacklistCount').textContent = count;
+            const whitelistCount = document.getElementById('whitelistCount');
+            const blacklistCount = document.getElementById('blacklistCount');
+
+            if (whitelistCount) whitelistCount.textContent = count;
+            if (blacklistCount) blacklistCount.textContent = count;
 
             const addToWhitelistBtn = document.getElementById('addToWhitelistBtn');
             const addToBlacklistBtn = document.getElementById('addToBlacklistBtn');
+            const listActionsDiv = document.getElementById('listActionsDiv');
 
             if (count > 0) {
-                addToWhitelistBtn.disabled = false;
-                addToBlacklistBtn.disabled = false;
-                document.getElementById('listActionsDiv').style.display = 'block';
+                if (addToWhitelistBtn) addToWhitelistBtn.disabled = false;
+                if (addToBlacklistBtn) addToBlacklistBtn.disabled = false;
+                if (listActionsDiv) listActionsDiv.style.display = 'block';
             } else {
-                addToWhitelistBtn.disabled = true;
-                addToBlacklistBtn.disabled = true;
+                if (addToWhitelistBtn) addToWhitelistBtn.disabled = true;
+                if (addToBlacklistBtn) addToBlacklistBtn.disabled = true;
             }
         }
 
@@ -2411,12 +2425,50 @@
             const selectAll = document.getElementById('selectAllSites').checked;
             const checkboxes = document.querySelectorAll('.site-checkbox:not(:disabled)');
 
-            checkboxes.forEach(cb => {
-                if (cb.checked !== selectAll) {
-                    cb.checked = selectAll;
-                    onSiteCheckboxChange(parseInt(cb.dataset.siteId), selectAll);
+            if (selectAll) {
+                // Проверяем количество доступного контента
+                const allContent = selectedContentType === 'links' ? projectLinks : projectArticles;
+                const availableContent = allContent.filter(item => {
+                    const usageCount = item.usage_count || 0;
+                    const usageLimit = item.usage_limit || (selectedContentType === 'articles' ? 1 : 999);
+                    return usageCount < usageLimit;
+                });
+
+                const sitesCount = checkboxes.length;
+
+                if (availableContent.length === 0) {
+                    showNotification('Нет доступных анкоров для назначения', 'error');
+                    document.getElementById('selectAllSites').checked = false;
+                    return;
                 }
-            });
+
+                if (availableContent.length < sitesCount) {
+                    showNotification(`Внимание: анкоров (${availableContent.length}) меньше чем сайтов (${sitesCount}). Выбраны только первые ${availableContent.length} сайтов.`, 'warning');
+                }
+
+                // Сбрасываем round-robin индекс перед массовым выбором
+                nextContentIndex = 0;
+
+                let selectedCount = 0;
+                checkboxes.forEach(cb => {
+                    // Выбираем только если есть доступный контент
+                    if (selectedCount < availableContent.length) {
+                        if (!cb.checked) {
+                            cb.checked = true;
+                            onSiteCheckboxChange(parseInt(cb.dataset.siteId), true);
+                            selectedCount++;
+                        }
+                    }
+                });
+            } else {
+                // Снимаем выбор со всех
+                checkboxes.forEach(cb => {
+                    if (cb.checked) {
+                        cb.checked = false;
+                        onSiteCheckboxChange(parseInt(cb.dataset.siteId), false);
+                    }
+                });
+            }
         }
 
         async function createPlacement() {
@@ -3209,6 +3261,11 @@
             previewText.textContent = `${selectedCount} ${selectedCount === 1 ? 'сайт' : selectedCount < 5 ? 'сайта' : 'сайтов'} / ${periodDays} ${periodDays === 1 ? 'день' : periodDays < 5 ? 'дня' : 'дней'} = публикация каждые ${daysBetween} ${daysBetween == 1 ? 'день' : 'дня/дней'}`;
             previewDiv.style.display = 'block';
         }
+
+        // Listen for language changes to update dynamic content
+        window.addEventListener('languageChanged', () => {
+            renderSitesTable();
+        });
 
     </script>
 </body>

@@ -312,7 +312,7 @@ const SidebarNav = {
           <i class="bi ${collapseIcon}" id="collapseIcon"></i>
           <span id="collapseText">${collapseText}</span>
         </button>
-        <a href="/settings.html" class="nav-item" title="${t('sidebarSettings')}">
+        <a href="/profile.html" class="nav-item" title="${t('sidebarSettings')}">
           <i class="bi bi-gear"></i>
           <span>${t('sidebarSettings')}</span>
         </a>

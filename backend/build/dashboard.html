@@ -430,7 +430,7 @@
                         </ul>
                     </div>
                     <button class="btn-export" onclick="exportProjects()">
-                        <i class="bi bi-download"></i> Экспорт
+                        <i class="bi bi-download"></i> <span data-i18n="export">Export</span>
                     </button>
                 </div>
             </div>
@@ -501,7 +501,7 @@
                     <span data-i18n="recordsPerPage">записей на странице</span>
                 </div>
                 <div class="pagination-right">
-                    <span class="pagination-info" id="paginationInfo">Показано 1–10 из 10</span>
+                    <span class="pagination-info" id="paginationInfo">Showing 1–10 of 10</span>
                     <div class="pagination-buttons">
                         <button class="pagination-arrow" id="prevPage" onclick="goToPrevPage()">
                             <i class="bi bi-chevron-left"></i>
@@ -986,6 +986,11 @@
                 alertDiv.remove();
             }, 5000);
         }
+
+        // Listen for language changes to update dynamic content
+        window.addEventListener('languageChanged', () => {
+            updatePagination();
+        });
 
         // Load data on page load
         loadStatistics();

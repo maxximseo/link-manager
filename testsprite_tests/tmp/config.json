@@ -1,0 +1,17 @@
+{
+  "status": "init",
+  "scope": "codebase",
+  "type": "backend",
+  "localEndpoint": "http://localhost:3003/",
+  "serverPort": 63709,
+  "executionArgs": {
+    "projectName": "LINK",
+    "projectPath": "/Users/maximaffiliate/Library/Mobile Documents/com~apple~CloudDocs/Claude/LINK",
+    "testIds": [],
+    "additionalInstruction": "",
+    "envs": {
+      "API_KEY": "sk-user-OVrn0OHWYJXsmeoDk10-Tre3uEDQtKF7TDgcHdsGa3WvXPgdeZq_xhjUMHWt-KEBRzSyBE09IagreGWhE3l9kVkgzymm3vwiNbeZzJOejX7iP1CY39Wj-7YWhauT4Go_asQ"
+    }
+  },
+  "proxy": "http://04c7b5b0-a2b4-4fb1-9b89-cf08bddbcb05:nSnSXfIMEn7J1VS0g2xERf5eqZ6ZtYuv@tun.testsprite.com:8080"
+}

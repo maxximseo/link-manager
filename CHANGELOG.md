@@ -7,6 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.6.11] - 2025-12-14
+
+### 📚 Documentation: Claude Code Workflow Rules
+
+#### CLAUDE.md Updates
+- **ADDED** Critical rule: "Never run `npm run dev`" for Claude Code
+- **ADDED** Instruction to use `npm run build` for code compilation checks
+- **UPDATED** Development Commands section with build vs dev workflow
+
+#### ADR.md Updates
+- **ADDED** ADR-034: Claude Code Build vs Dev Workflow
+  - Documents why Claude should never run development server
+  - Defines build command as validation method
+  - Lists consequences and related documentation
+- **ADDED** ADR-035: QA Expert Agent for Interface Verification
+  - Documents 73 localization issues found
+  - Lists pages with good/bad i18n support
+  - Defines QA process and report format
+
+### 🔍 QA: Russian Localization Audit
+
+#### Issues Identified (73 total)
+- **HIGH PRIORITY (22)**: `register.html` - completely in English, no i18n
+- **MEDIUM PRIORITY (42)**: `showNotification()` calls with English strings
+- **LOW PRIORITY (9)**: Internal error messages in throw statements
+
+#### Pages Reviewed
+| Page | Status | Notes |
+|------|--------|-------|
+| balance.html | ✅ Good | Full i18n support |
+| profile.html | ✅ Good | Full i18n support |
+| referrals.html | ✅ Good | Full i18n support |
+| login.html | ✅ Good | Full i18n support |
+| register.html | ❌ Bad | Needs complete localization |
+| placements.html | ⚠️ Partial | JS notifications in English |
+| sites.html | ⚠️ Partial | JS notifications in English |
+
+### Files Changed
+- `CLAUDE.md` - Added build vs dev rules
+- `ADR.md` - Added ADR-034, ADR-035
+- `CHANGELOG.md` - This entry
+
+---
+
 ## [2.6.10] - 2025-12-14
 
 ### 🎨 UI/UX: Modern Modal Design System
