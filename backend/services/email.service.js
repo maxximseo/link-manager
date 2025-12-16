@@ -238,7 +238,7 @@ async function sendPasswordResetEmail(email, token, username) {
 
   return sendEmail({
     to: email,
-    subject: '🔐 Сброс пароля - LinkBuilder Pro',
+    subject: '🔐 Сброс пароля - Serparium',
     text: `Привет, ${username}!\n\nДля сброса пароля перейдите по ссылке: ${resetUrl}\n\nСсылка действительна 1 час.`,
     html
   });
