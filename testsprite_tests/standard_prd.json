@@ -1,0 +1,1982 @@
+{
+  "meta": {
+    "project": "Link Manager",
+    "date": "2025-12-10",
+    "prepared_by": "Software Development Manager"
+  },
+  "product_overview": "Link Manager is a B2B SaaS platform designed for SEO professionals and businesses to manage link and article placements on WordPress and static PHP websites. It features a marketplace enabling users to purchase and automate link/article placements with advanced project and site management capabilities alongside billing and referral systems.",
+  "core_goals": [
+    "Provide secure and scalable user authentication and role-based access control.",
+    "Enable comprehensive project management with support for links and articles, including bulk operations.",
+    "Support management of WordPress and static PHP sites with marketplace functionalities and site performance metrics.",
+    "Implement a robust placement system facilitating scheduled, auto-renewable, and restricted placements.",
+    "Operate a prepaid billing system with tiered discounts, transaction tracking, promo codes, and export options.",
+    "Deliver a referral program encouraging user growth through commission-based rewards and wallet withdrawals.",
+    "Offer an efficient notification system with caching and read status for user engagement and security alerts.",
+    "Equip administrators with tools for moderation, dashboard analytics, user and site management, and refund processing."
+  ],
+  "key_features": [
+    "Authentication System: User registration with email verification, JWT tokens with 7-day expiry, rate-limited login, IP whitelist for admins, and role-based access control.",
+    "Project Management: CRUD for projects, link and article management, bulk imports, usage tracking, and data validation.",
+    "Site Management: Support for WordPress and static PHP sites with API key or domain-based authentication, metrics tracking, public marketplace listing, site quotas, and bulk registration token support.",
+    "Placement System: Purchase and manage link/article placements with scheduling up to 90 days, auto-renewal, publishing integration with WordPress, and one placement per site per project limits.",
+    "Billing System: Prepaid balance model with 5 discount tiers, promo code support, transaction history with pagination, batch purchases, and CSV/JSON exports.",
+    "Referral System: Unique referral codes, commission tracking, withdrawal to main balance or USDT TRC20 wallets, with minimum withdrawal limits.",
+    "Notification System: User notifications management, read status updating, admin security alerts, Redis caching, and bulk notification deletion.",
+    "Admin Features: Dashboard statistics, user management including balance adjustments, placement and site moderation, bulk site parameter updates, and refund handling."
+  ],
+  "user_flow_summary": [
+    "User registers and verifies email, then logs in to access the platform.",
+    "User creates and manages projects, adding links and articles individually or via bulk import.",
+    "User registers sites manually or via WordPress plugin using registration tokens; sites appear in the public marketplace based on admin moderation.",
+    "User purchases placements on selected sites for their projects, scheduling and configuring auto-renewal as desired.",
+    "The system processes purchases, deducts from prepaid balances, schedules publishing on WordPress or static sites, and updates placement status.",
+    "Users receive notifications on account activity, placements, and referrals accessible in a notification center with read/unread tracking.",
+    "Users participate in referral programs generating commissions which can be withdrawn to main balance or external USDT wallets.",
+    "Admins monitor system statistics, moderate placements and sites, adjust user balances, perform bulk updates, and handle refunds."
+  ],
+  "validation_criteria": [
+    "Successful user registration with email verification and JWT token issuance.",
+    "Prevention of login beyond rate limits and enforcement of admin IP whitelisting.",
+    "Correct creation, update, bulk import, and deletion of projects, links, and articles with validation of usage limits.",
+    "Accurate registration and management of WordPress and static PHP sites, including marketplace visibility and quota enforcement.",
+    "Placement purchases processed only with sufficient balance; scheduled placements respected; auto-renewal toggled accurately.",
+    "Billing system correctly reflects discounts, transaction histories, promo code validations, and export functions.",
+    "Referral commission calculations and withdrawals execute with correct balance updates and wallet address management.",
+    "Notification queries return accurate read, unread counts and updates; bulk delete operations succeed.",
+    "Admin dashboard statistics reflect current data; user and placement moderation workflows complete with balance adjustments and refunds processed as expected."
+  ],
+  "code_summary": {
+    "tech_stack": [
+      "JavaScript",
+      "Node.js",
+      "Express.js",
+      "PostgreSQL",
+      "Redis",
+      "Bull Queue",
+      "JWT Authentication",
+      "bcryptjs",
+      "Winston Logger",
+      "Helmet Security",
+      "CORS",
+      "express-validator",
+      "express-rate-limit"
+    ],
+    "features": [
+      {
+        "name": "Authentication API",
+        "description": "User authentication with JWT tokens including login, registration, email verification, and token refresh",
+        "files": [
+          "backend/routes/auth.routes.js",
+          "backend/controllers/auth.controller.js",
+          "backend/services/auth.service.js"
+        ],
+        "api_doc": {
+          "openapi": "3.0.0",
+          "paths": {
+            "/api/auth/login": {
+              "post": {
+                "summary": "User login",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "username": {
+                            "type": "string"
+                          },
+                          "password": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "username",
+                          "password"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "Login successful, returns JWT token"
+                  },
+                  "401": {
+                    "description": "Invalid credentials"
+                  },
+                  "429": {
+                    "description": "Too many login attempts"
+                  }
+                }
+              }
+            },
+            "/api/auth/register": {
+              "post": {
+                "summary": "User registration",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "username": {
+                            "type": "string"
+                          },
+                          "email": {
+                            "type": "string"
+                          },
+                          "password": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "username",
+                          "email",
+                          "password"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "201": {
+                    "description": "Registration successful"
+                  },
+                  "400": {
+                    "description": "Validation error"
+                  }
+                }
+              }
+            },
+            "/api/auth/verify-email/{token}": {
+              "get": {
+                "summary": "Verify email address",
+                "parameters": [
+                  {
+                    "name": "token",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                      "type": "string"
+                    }
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Email verified"
+                  },
+                  "400": {
+                    "description": "Invalid or expired token"
+                  }
+                }
+              }
+            },
+            "/api/auth/refresh": {
+              "post": {
+                "summary": "Refresh JWT token",
+                "responses": {
+                  "200": {
+                    "description": "New token issued"
+                  },
+                  "401": {
+                    "description": "Invalid refresh token"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "User Management API",
+        "description": "User profile management and password changes",
+        "files": [
+          "backend/routes/user.routes.js",
+          "backend/controllers/user.controller.js"
+        ],
+        "api_doc": {
+          "openapi": "3.0.0",
+          "paths": {
+            "/api/users/profile": {
+              "get": {
+                "summary": "Get current user profile",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "User profile data"
+                  }
+                }
+              },
+              "patch": {
+                "summary": "Update user profile",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "email": {
+                            "type": "string"
+                          },
+                          "display_name": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "Profile updated"
+                  }
+                }
+              }
+            },
+            "/api/users/change-password": {
+              "post": {
+                "summary": "Change user password",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "currentPassword": {
+                            "type": "string"
+                          },
+                          "newPassword": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "currentPassword",
+                          "newPassword"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "Password changed"
+                  },
+                  "400": {
+                    "description": "Current password incorrect"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "Projects API",
+        "description": "CRUD operations for projects, links, and articles management",
+        "files": [
+          "backend/routes/project.routes.js",
+          "backend/controllers/project.controller.js",
+          "backend/services/project.service.js"
+        ],
+        "api_doc": {
+          "openapi": "3.0.0",
+          "paths": {
+            "/api/projects": {
+              "get": {
+                "summary": "Get all user projects",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "List of projects"
+                  }
+                }
+              },
+              "post": {
+                "summary": "Create new project",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "name"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "201": {
+                    "description": "Project created"
+                  }
+                }
+              }
+            },
+            "/api/projects/{id}": {
+              "get": {
+                "summary": "Get project by ID",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "parameters": [
+                  {
+                    "name": "id",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                      "type": "integer"
+                    }
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Project details"
+                  }
+                }
+              },
+              "put": {
+                "summary": "Update project",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Project updated"
+                  }
+                }
+              },
+              "delete": {
+                "summary": "Delete project",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Project deleted"
+                  }
+                }
+              }
+            },
+            "/api/projects/{id}/links": {
+              "get": {
+                "summary": "Get project links",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "List of links"
+                  }
+                }
+              },
+              "post": {
+                "summary": "Add link to project",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "anchor_text": {
+                            "type": "string"
+                          },
+                          "url": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "anchor_text",
+                          "url"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "201": {
+                    "description": "Link added"
+                  }
+                }
+              }
+            },
+            "/api/projects/{id}/links/bulk": {
+              "post": {
+                "summary": "Add multiple links to project",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "201": {
+                    "description": "Links added"
+                  }
+                }
+              }
+            },
+            "/api/projects/{id}/links/{linkId}": {
+              "put": {
+                "summary": "Update project link",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Link updated"
+                  }
+                }
+              },
+              "delete": {
+                "summary": "Delete project link",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Link deleted"
+                  }
+                }
+              }
+            },
+            "/api/projects/{id}/articles": {
+              "get": {
+                "summary": "Get project articles",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "List of articles"
+                  }
+                }
+              },
+              "post": {
+                "summary": "Add article to project",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "201": {
+                    "description": "Article added"
+                  }
+                }
+              }
+            },
+            "/api/projects/{id}/articles/{articleId}": {
+              "put": {
+                "summary": "Update project article",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Article updated"
+                  }
+                }
+              },
+              "delete": {
+                "summary": "Delete project article",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Article deleted"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "Sites API",
+        "description": "WordPress and static PHP sites management with marketplace support",
+        "files": [
+          "backend/routes/site.routes.js",
+          "backend/controllers/site.controller.js",
+          "backend/services/site.service.js"
+        ],
+        "api_doc": {
+          "openapi": "3.0.0",
+          "paths": {
+            "/api/sites": {
+              "get": {
+                "summary": "Get all user sites",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "List of sites"
+                  }
+                }
+              },
+              "post": {
+                "summary": "Create new site",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "site_url": {
+                            "type": "string"
+                          },
+                          "site_type": {
+                            "type": "string",
+                            "enum": [
+                              "wordpress",
+                              "static_php"
+                            ]
+                          },
+                          "api_key": {
+                            "type": "string"
+                          },
+                          "max_links": {
+                            "type": "integer"
+                          },
+                          "max_articles": {
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "site_url"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "201": {
+                    "description": "Site created"
+                  }
+                }
+              }
+            },
+            "/api/sites/marketplace": {
+              "get": {
+                "summary": "Get public marketplace sites",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "List of public sites available for purchase"
+                  }
+                }
+              }
+            },
+            "/api/sites/register-from-wordpress": {
+              "post": {
+                "summary": "Self-register site from WordPress plugin using token",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "registration_token": {
+                            "type": "string"
+                          },
+                          "site_url": {
+                            "type": "string"
+                          },
+                          "api_key": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "registration_token",
+                          "site_url",
+                          "api_key"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "201": {
+                    "description": "Site registered"
+                  },
+                  "400": {
+                    "description": "Invalid token"
+                  }
+                }
+              }
+            },
+            "/api/sites/generate-token": {
+              "post": {
+                "summary": "Generate registration token for bulk site registration",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Token generated"
+                  }
+                }
+              }
+            },
+            "/api/sites/tokens": {
+              "get": {
+                "summary": "Get user's registration tokens",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "List of tokens"
+                  }
+                }
+              }
+            },
+            "/api/sites/{id}": {
+              "get": {
+                "summary": "Get site by ID",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Site details"
+                  }
+                }
+              },
+              "put": {
+                "summary": "Update site",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Site updated"
+                  }
+                }
+              },
+              "delete": {
+                "summary": "Delete site",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Site deleted"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "Placements API",
+        "description": "View and manage link/article placements on sites",
+        "files": [
+          "backend/routes/placement.routes.js",
+          "backend/controllers/placement.controller.js",
+          "backend/services/placement.service.js"
+        ],
+        "api_doc": {
+          "openapi": "3.0.0",
+          "paths": {
+            "/api/placements": {
+              "get": {
+                "summary": "Get user placements",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "parameters": [
+                  {
+                    "name": "page",
+                    "in": "query",
+                    "schema": {
+                      "type": "integer"
+                    }
+                  },
+                  {
+                    "name": "limit",
+                    "in": "query",
+                    "schema": {
+                      "type": "integer"
+                    }
+                  },
+                  {
+                    "name": "status",
+                    "in": "query",
+                    "schema": {
+                      "type": "string"
+                    }
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "List of placements"
+                  }
+                }
+              },
+              "post": {
+                "summary": "Create placement (DEPRECATED - use /api/billing/purchase)",
+                "responses": {
+                  "410": {
+                    "description": "Endpoint deprecated"
+                  }
+                }
+              }
+            },
+            "/api/placements/statistics": {
+              "get": {
+                "summary": "Get placement statistics",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Statistics data"
+                  }
+                }
+              }
+            },
+            "/api/placements/available-sites/{projectId}": {
+              "get": {
+                "summary": "Get available sites for project",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "List of available sites"
+                  }
+                }
+              }
+            },
+            "/api/placements/{id}": {
+              "get": {
+                "summary": "Get placement by ID",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Placement details"
+                  }
+                }
+              },
+              "delete": {
+                "summary": "Delete placement (admin only)",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Placement deleted with refund"
+                  }
+                }
+              }
+            },
+            "/api/placements/{id}/publish-now": {
+              "post": {
+                "summary": "Publish scheduled placement immediately",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Placement published"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "Billing API",
+        "description": "Balance management, purchases, transactions, and discount tiers",
+        "files": [
+          "backend/routes/billing.routes.js",
+          "backend/services/billing.service.js"
+        ],
+        "api_doc": {
+          "openapi": "3.0.0",
+          "paths": {
+            "/api/billing/balance": {
+              "get": {
+                "summary": "Get user balance and billing info",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Balance information",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "balance": {
+                              "type": "number"
+                            },
+                            "totalSpent": {
+                              "type": "number"
+                            },
+                            "currentDiscount": {
+                              "type": "number"
+                            },
+                            "discountTier": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "/api/billing/deposit": {
+              "post": {
+                "summary": "Add balance to account",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "amount": {
+                            "type": "number",
+                            "minimum": 0.01,
+                            "maximum": 10000
+                          },
+                          "description": {
+                            "type": "string"
+                          },
+                          "promoCode": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "amount"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "Balance added"
+                  }
+                }
+              }
+            },
+            "/api/billing/transactions": {
+              "get": {
+                "summary": "Get transaction history",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "parameters": [
+                  {
+                    "name": "page",
+                    "in": "query",
+                    "schema": {
+                      "type": "integer"
+                    }
+                  },
+                  {
+                    "name": "limit",
+                    "in": "query",
+                    "schema": {
+                      "type": "integer"
+                    }
+                  },
+                  {
+                    "name": "type",
+                    "in": "query",
+                    "schema": {
+                      "type": "string"
+                    }
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Transaction list"
+                  }
+                }
+              }
+            },
+            "/api/billing/pricing": {
+              "get": {
+                "summary": "Get pricing with user's discount applied",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Pricing information"
+                  }
+                }
+              }
+            },
+            "/api/billing/discount-tiers": {
+              "get": {
+                "summary": "Get all discount tiers",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Discount tier list"
+                  }
+                }
+              }
+            },
+            "/api/billing/purchase": {
+              "post": {
+                "summary": "Purchase a placement (link or article)",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "projectId": {
+                            "type": "integer"
+                          },
+                          "siteId": {
+                            "type": "integer"
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "link",
+                              "article"
+                            ]
+                          },
+                          "contentIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "integer"
+                            }
+                          },
+                          "scheduledDate": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "autoRenewal": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "projectId",
+                          "siteId",
+                          "type",
+                          "contentIds"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "Purchase successful"
+                  },
+                  "400": {
+                    "description": "Insufficient balance or validation error"
+                  }
+                }
+              }
+            },
+            "/api/billing/batch-purchase": {
+              "post": {
+                "summary": "Batch purchase multiple placements",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Batch purchase results"
+                  }
+                }
+              }
+            },
+            "/api/billing/renew/{placementId}": {
+              "post": {
+                "summary": "Renew a placement",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Placement renewed"
+                  }
+                }
+              }
+            },
+            "/api/billing/auto-renewal/{placementId}": {
+              "patch": {
+                "summary": "Toggle auto-renewal for placement",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Auto-renewal toggled"
+                  }
+                }
+              }
+            },
+            "/api/billing/statistics/spending": {
+              "get": {
+                "summary": "Get spending statistics",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Spending stats for all periods"
+                  }
+                }
+              }
+            },
+            "/api/billing/export/placements": {
+              "get": {
+                "summary": "Export placements to CSV/JSON",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "parameters": [
+                  {
+                    "name": "format",
+                    "in": "query",
+                    "schema": {
+                      "type": "string",
+                      "enum": [
+                        "csv",
+                        "json"
+                      ]
+                    }
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Exported data file"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "Notifications API",
+        "description": "User notification management with read status",
+        "files": [
+          "backend/routes/notification.routes.js"
+        ],
+        "api_doc": {
+          "openapi": "3.0.0",
+          "paths": {
+            "/api/notifications": {
+              "get": {
+                "summary": "Get user notifications",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "parameters": [
+                  {
+                    "name": "page",
+                    "in": "query",
+                    "schema": {
+                      "type": "integer"
+                    }
+                  },
+                  {
+                    "name": "limit",
+                    "in": "query",
+                    "schema": {
+                      "type": "integer"
+                    }
+                  },
+                  {
+                    "name": "unread",
+                    "in": "query",
+                    "schema": {
+                      "type": "boolean"
+                    }
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Notification list"
+                  }
+                }
+              }
+            },
+            "/api/notifications/unread-count": {
+              "get": {
+                "summary": "Get unread notification count",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Unread count"
+                  }
+                }
+              }
+            },
+            "/api/notifications/{id}/read": {
+              "patch": {
+                "summary": "Mark notification as read",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Notification marked as read"
+                  }
+                }
+              }
+            },
+            "/api/notifications/mark-all-read": {
+              "patch": {
+                "summary": "Mark all notifications as read",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "All notifications marked as read"
+                  }
+                }
+              }
+            },
+            "/api/notifications/{id}": {
+              "delete": {
+                "summary": "Delete notification",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Notification deleted"
+                  }
+                }
+              }
+            },
+            "/api/notifications/all": {
+              "delete": {
+                "summary": "Delete all notifications",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "All notifications deleted"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "Referral API",
+        "description": "Affiliate/referral system with commissions and withdrawals",
+        "files": [
+          "backend/routes/referral.routes.js",
+          "backend/controllers/referral.controller.js",
+          "backend/services/referral.service.js"
+        ],
+        "api_doc": {
+          "openapi": "3.0.0",
+          "paths": {
+            "/api/referrals/validate/{code}": {
+              "get": {
+                "summary": "Validate referral code (public)",
+                "parameters": [
+                  {
+                    "name": "code",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                      "type": "string"
+                    }
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Code valid"
+                  },
+                  "404": {
+                    "description": "Code not found"
+                  }
+                }
+              }
+            },
+            "/api/referrals/stats": {
+              "get": {
+                "summary": "Get referral statistics",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Referral stats"
+                  }
+                }
+              }
+            },
+            "/api/referrals/link": {
+              "get": {
+                "summary": "Get referral link",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Referral link"
+                  }
+                }
+              }
+            },
+            "/api/referrals/referred-users": {
+              "get": {
+                "summary": "Get referred users list",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "List of referred users"
+                  }
+                }
+              }
+            },
+            "/api/referrals/transactions": {
+              "get": {
+                "summary": "Get referral commission transactions",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Commission transaction history"
+                  }
+                }
+              }
+            },
+            "/api/referrals/withdraw": {
+              "post": {
+                "summary": "Withdraw referral balance to main balance",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Withdrawal successful"
+                  }
+                }
+              }
+            },
+            "/api/referrals/wallet": {
+              "get": {
+                "summary": "Get USDT TRC20 wallet address",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Wallet address"
+                  }
+                }
+              },
+              "post": {
+                "summary": "Save USDT TRC20 wallet address",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Wallet saved"
+                  }
+                }
+              }
+            },
+            "/api/referrals/withdraw-to-wallet": {
+              "post": {
+                "summary": "Request withdrawal to external wallet",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Withdrawal request created"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "WordPress Integration API",
+        "description": "WordPress plugin integration for content retrieval and article publishing",
+        "files": [
+          "backend/routes/wordpress.routes.js",
+          "backend/controllers/wordpress.controller.js",
+          "backend/services/wordpress.service.js"
+        ],
+        "api_doc": {
+          "openapi": "3.0.0",
+          "paths": {
+            "/api/wordpress/get-content": {
+              "get": {
+                "summary": "Get content for WordPress site (public)",
+                "parameters": [
+                  {
+                    "name": "api_key",
+                    "in": "query",
+                    "schema": {
+                      "type": "string"
+                    }
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Content for site"
+                  }
+                }
+              }
+            },
+            "/api/wordpress/publish-article": {
+              "post": {
+                "summary": "Publish article to WordPress site",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Article published"
+                  }
+                }
+              }
+            },
+            "/api/wordpress/verify": {
+              "post": {
+                "summary": "Verify WordPress connection",
+                "responses": {
+                  "200": {
+                    "description": "Connection verified"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "Static Sites API",
+        "description": "Content retrieval for static PHP sites",
+        "files": [
+          "backend/routes/static.routes.js"
+        ],
+        "api_doc": {
+          "openapi": "3.0.0",
+          "paths": {
+            "/api/static/get-content-by-domain": {
+              "get": {
+                "summary": "Get content by domain (public, legacy)",
+                "parameters": [
+                  {
+                    "name": "domain",
+                    "in": "query",
+                    "required": true,
+                    "schema": {
+                      "type": "string"
+                    }
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Links content for domain"
+                  },
+                  "400": {
+                    "description": "Invalid domain"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "Payments API",
+        "description": "Cryptocurrency payment processing",
+        "files": [
+          "backend/routes/payment.routes.js",
+          "backend/controllers/payment.controller.js"
+        ],
+        "api_doc": {
+          "openapi": "3.0.0",
+          "paths": {
+            "/api/payments/config": {
+              "get": {
+                "summary": "Get payment configuration",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Payment config"
+                  }
+                }
+              }
+            },
+            "/api/payments/create-invoice": {
+              "post": {
+                "summary": "Create deposit invoice",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Invoice created"
+                  }
+                }
+              }
+            },
+            "/api/payments/invoice/{orderId}": {
+              "get": {
+                "summary": "Get invoice status",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Invoice status"
+                  }
+                }
+              }
+            },
+            "/api/payments/pending": {
+              "get": {
+                "summary": "Get pending invoices",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Pending invoices list"
+                  }
+                }
+              }
+            },
+            "/api/payments/history": {
+              "get": {
+                "summary": "Get payment history",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Payment history"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "Promo Codes API",
+        "description": "Promo code management for deposit bonuses",
+        "files": [
+          "backend/routes/promo.routes.js",
+          "backend/controllers/promo.controller.js"
+        ],
+        "api_doc": {
+          "openapi": "3.0.0",
+          "paths": {
+            "/api/promo/validate": {
+              "get": {
+                "summary": "Validate promo code",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "parameters": [
+                  {
+                    "name": "code",
+                    "in": "query",
+                    "required": true,
+                    "schema": {
+                      "type": "string"
+                    }
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Code validation result"
+                  }
+                }
+              }
+            },
+            "/api/promo": {
+              "get": {
+                "summary": "List all promo codes (admin)",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Promo codes list"
+                  }
+                }
+              },
+              "post": {
+                "summary": "Create promo code (admin)",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "201": {
+                    "description": "Promo code created"
+                  }
+                }
+              }
+            },
+            "/api/promo/{id}": {
+              "delete": {
+                "summary": "Deactivate promo code (admin)",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Promo deactivated"
+                  }
+                }
+              }
+            },
+            "/api/promo/{id}/activate": {
+              "put": {
+                "summary": "Activate promo code (admin)",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Promo activated"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "Admin API",
+        "description": "Administrative operations including dashboard, user management, moderation, and site management",
+        "files": [
+          "backend/routes/admin.routes.js",
+          "backend/services/admin.service.js"
+        ],
+        "api_doc": {
+          "openapi": "3.0.0",
+          "paths": {
+            "/api/admin/dashboard/stats": {
+              "get": {
+                "summary": "Get dashboard statistics",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Dashboard stats"
+                  }
+                }
+              }
+            },
+            "/api/admin/revenue": {
+              "get": {
+                "summary": "Get revenue breakdown",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Revenue data"
+                  }
+                }
+              }
+            },
+            "/api/admin/users": {
+              "get": {
+                "summary": "Get all users",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Users list"
+                  }
+                }
+              }
+            },
+            "/api/admin/users/{id}/adjust-balance": {
+              "post": {
+                "summary": "Adjust user balance",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Balance adjusted"
+                  }
+                }
+              }
+            },
+            "/api/admin/placements": {
+              "get": {
+                "summary": "Get all placements on admin's sites",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Placements list"
+                  }
+                }
+              }
+            },
+            "/api/admin/placements/{id}/refund": {
+              "post": {
+                "summary": "Refund a placement",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Placement refunded"
+                  }
+                }
+              }
+            },
+            "/api/admin/moderation": {
+              "get": {
+                "summary": "Get placements pending approval",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Pending approvals"
+                  }
+                }
+              }
+            },
+            "/api/admin/moderation/{id}/approve": {
+              "post": {
+                "summary": "Approve placement",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Placement approved"
+                  }
+                }
+              }
+            },
+            "/api/admin/moderation/{id}/reject": {
+              "post": {
+                "summary": "Reject placement with refund",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Placement rejected"
+                  }
+                }
+              }
+            },
+            "/api/admin/sites": {
+              "get": {
+                "summary": "Get all sites",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Sites list"
+                  }
+                }
+              }
+            },
+            "/api/admin/sites/{id}/public-status": {
+              "put": {
+                "summary": "Set site public status",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Status updated"
+                  }
+                }
+              }
+            },
+            "/api/admin/sites/bulk-update-params": {
+              "post": {
+                "summary": "Bulk update site parameters (DR, DA, etc.)",
+                "security": [
+                  {
+                    "bearerAuth": []
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Parameters updated"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "Health Check API",
+        "description": "System health monitoring endpoint",
+        "files": [
+          "backend/routes/index.js"
+        ],
+        "api_doc": {
+          "openapi": "3.0.0",
+          "paths": {
+            "/api/health": {
+              "get": {
+                "summary": "Health check endpoint",
+                "responses": {
+                  "200": {
+                    "description": "System status",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string"
+                            },
+                            "timestamp": {
+                              "type": "string"
+                            },
+                            "architecture": {
+                              "type": "string"
+                            },
+                            "queue": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

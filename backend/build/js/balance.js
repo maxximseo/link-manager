@@ -12,6 +12,7 @@ let currentPage = 1;
 let itemsPerPage = 100;
 let totalTransactions = 0;
 let totalPages = 1;
+let lastPagination = null; // Store pagination for language change re-render
 
 /**
  * Get translated tier name based on discount percentage
@@ -468,6 +469,7 @@ function renderTransactions(transactions) {
  * Render transactions pagination
  */
 function renderTransactionsPagination(pagination) {
+    lastPagination = pagination; // Store for language change re-render
     const total = pagination.total || 0;
     totalPages = pagination.pages || 1;
 
@@ -937,3 +939,14 @@ function updateTotalDepositAmount() {
  */
 // showAlert() is provided by security.js (loaded first)
 // getToken() is provided by auth.js (loaded first)
+
+// Listen for language changes to update dynamic content
+window.addEventListener('languageChanged', () => {
+    if (lastPagination) {
+        renderTransactionsPagination(lastPagination);
+    }
+    // Re-render discount tiers table
+    if (discountTiers.length > 0) {
+        renderDiscountTiers();
+    }
+});

@@ -1266,9 +1266,18 @@
             <!-- Table Toolbar -->
             <div class="table-toolbar">
                 <div class="toolbar-left">
-                    <div class="search-wrapper">
-                        <i class="bi bi-search"></i>
-                        <input type="text" class="search-input" id="searchInput" data-i18n-placeholder="searchByNameOrUrl" placeholder="Поиск по названию или URL...">
+                    <div class="search-wrapper d-flex align-items-center gap-2" style="flex-grow: 1; max-width: 600px;">
+                        <input type="text" class="form-control" id="searchInput"
+                            style="font-size: 14px; flex: 1; height: 38px;"
+                            onkeypress="if(event.key==='Enter')searchByDomains()">
+                        <button class="filter-btn" id="searchBtn" onclick="searchByDomains()" title="Найти">
+                            <i class="bi bi-search" id="searchIcon"></i>
+                            <span class="spinner-border spinner-border-sm" id="searchSpinner" style="display: none;"></span>
+                            <span id="searchBtnText">Найти</span>
+                        </button>
+                        <button class="filter-btn" id="resetSearchBtn" onclick="resetSearch()" title="Сбросить" style="display: none;">
+                            <i class="bi bi-x-circle"></i> Сбросить
+                        </button>
                     </div>
                     <div class="filters-dropdown">
                         <button class="filter-btn" onclick="toggleFiltersPanel()" id="filtersBtn">
@@ -1329,7 +1338,7 @@
                                     <input type="checkbox" class="form-check-input" id="selectAllSites" onchange="toggleSelectAll()">
                                 </th>
                                 <th style="width: 35px; cursor: pointer;" onclick="sortTable('site_name')">
-                                    Site <span id="sort-site_name"></span>
+                                    <span data-i18n="siteColumn">Сайт</span> <span id="sort-site_name"></span>
                                 </th>
                                 <th class="text-center" style="width: 60px; cursor: pointer;" onclick="sortTable('price_link')">
                                     Main <span id="sort-price_link"></span>
@@ -1377,15 +1386,15 @@
                                 <th style="width: 120px;" data-i18n="homepages">Главные</th>
                                 <th style="width: 120px;" data-i18n="guestPosts">Гест-посты</th>
                                 <th class="text-center" style="width: 60px;">
-                                    <i class="bi bi-file-text" data-bs-toggle="tooltip" data-bs-placement="top" title="Разрешить размещение гест-постов"></i>
+                                    <i class="bi bi-file-text" data-bs-toggle="tooltip" data-bs-placement="top" data-i18n-title="allowGuestPostsTooltip" title="Allow guest posts"></i>
                                 </th>
                                 <th class="text-center" style="width: 60px;">
-                                    <i class="bi bi-globe" data-bs-toggle="tooltip" data-bs-placement="top" title="Публичный сайт"></i>
+                                    <i class="bi bi-globe" data-bs-toggle="tooltip" data-bs-placement="top" data-i18n-title="publicSiteTooltip" title="Public site"></i>
                                 </th>
                                 <th class="text-center" style="width: 60px;">
-                                    <i class="bi bi-cart-check" data-bs-toggle="tooltip" data-bs-placement="top" title="Доступен для покупки"></i>
+                                    <i class="bi bi-cart-check" data-bs-toggle="tooltip" data-bs-placement="top" data-i18n-title="availableForPurchaseTooltip" title="Available for purchase"></i>
                                 </th>
-                                <th style="width: 80px;">Actions</th>
+                                <th style="width: 80px;" data-i18n="siteActionsHeader">Действия</th>
                             </tr>
                         </thead>
                         <tbody id="sitesTableBody">
@@ -1406,7 +1415,7 @@
                         <span data-i18n="sitesPerPage">сайтов</span>
                     </div>
                     <div class="pagination-right">
-                        <span class="pagination-info" id="paginationInfo">Показано 0–0 из 0</span>
+                        <span class="pagination-info" id="paginationInfo">Showing 0–0 of 0</span>
                         <div class="pagination-buttons">
                             <button class="pagination-btn" id="prevPageBtn" onclick="changePage(currentPage - 1)" disabled>
                                 <i class="bi bi-chevron-left"></i>
@@ -2015,10 +2024,13 @@
                 });
             }
 
-            // Event listeners
-            document.getElementById('searchInput').addEventListener('input', debounce(() => {
-                loadSites(1, currentLimit);
-            }, 500));
+            // Event listeners - Ctrl+Enter or Cmd+Enter to search
+            document.getElementById('searchInput').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    searchByDomains();
+                }
+            });
 
             // Add filter event listeners
             document.getElementById('allowArticlesFilter').addEventListener('change', applyClientFilters);
@@ -2150,6 +2162,92 @@
 
             // Update filter button state
             updateFiltersButtonState();
+        }
+
+        // Multi-domain search function - loads ALL sites from server
+        async function searchByDomains() {
+            const searchInput = document.getElementById('searchInput').value.trim();
+            const resetBtn = document.getElementById('resetSearchBtn');
+            const searchBtn = document.getElementById('searchBtn');
+            const searchIcon = document.getElementById('searchIcon');
+            const searchSpinner = document.getElementById('searchSpinner');
+            const searchBtnText = document.getElementById('searchBtnText');
+
+            if (!searchInput) {
+                // If empty - return to normal pagination
+                resetBtn.style.display = 'none';
+                loadSites(currentPage, currentLimit);
+                return;
+            }
+
+            // Parse domains: separators - space, comma
+            const domains = searchInput
+                .split(/[\s,]+/)
+                .map(d => d.trim().toLowerCase()
+                    .replace(/^https?:\/\//, '')
+                    .replace(/^www\./, '')
+                    .replace(/\/.*$/, ''))
+                .filter(d => d.length > 0);
+
+            if (domains.length === 0) {
+                resetBtn.style.display = 'none';
+                loadSites(currentPage, currentLimit);
+                return;
+            }
+
+            // Show loading state
+            searchBtn.disabled = true;
+            searchIcon.style.display = 'none';
+            searchSpinner.style.display = 'inline-block';
+            searchBtnText.textContent = 'Поиск...';
+
+            try {
+                // Load ALL sites from server for search
+                const response = await SitesAPI.getAll(1, 5000);
+                const allSitesFromServer = response.data || [];
+
+                // Filter sites by domain list
+                const filteredSites = allSitesFromServer.filter(site => {
+                    const siteUrl = (site.site_url || '').toLowerCase()
+                        .replace(/^https?:\/\//, '')
+                        .replace(/^www\./, '');
+
+                    // Check match with any of the domains
+                    return domains.some(domain => siteUrl.includes(domain));
+                });
+
+                window.sites = filteredSites;
+                displaySites();
+                updateFilteredCount(filteredSites.length, domains.length);
+
+                // Show reset button
+                resetBtn.style.display = 'flex';
+
+                // Show notification with count
+                if (filteredSites.length === 0) {
+                    showNotification('Не найдено сайтов по указанным доменам', 'warning');
+                } else if (filteredSites.length < domains.length) {
+                    const notFound = domains.length - filteredSites.length;
+                    showNotification(`Найдено ${filteredSites.length} из ${domains.length} доменов (${notFound} не найдено)`, 'info');
+                } else {
+                    showNotification(`Найдено ${filteredSites.length} сайтов`, 'success');
+                }
+            } catch (error) {
+                showNotification('Ошибка поиска: ' + error.message, 'error');
+            } finally {
+                // Reset button state
+                searchBtn.disabled = false;
+                searchIcon.style.display = 'inline-block';
+                searchSpinner.style.display = 'none';
+                searchBtnText.textContent = 'Найти';
+            }
+        }
+
+        // Reset search function - return to normal pagination
+        function resetSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('resetSearchBtn').style.display = 'none';
+            loadSites(currentPage, currentLimit);
         }
 
         // Filters panel toggle
@@ -2533,7 +2631,7 @@
             const startItem = totalSites > 0 ? (currentPage - 1) * currentLimit + 1 : 0;
             const endItem = Math.min(currentPage * currentLimit, totalSites);
             if (paginationInfo) {
-                paginationInfo.textContent = `Показано ${startItem}–${endItem} из ${totalSites}`;
+                paginationInfo.textContent = `${t('showing')} ${startItem}–${endItem} ${t('of')} ${totalSites}`;
             }
 
             // Обновить кнопки prev/next
@@ -3403,6 +3501,11 @@ ${'='.repeat(50)}`;
             document.getElementById('selectAllSites').indeterminate = false;
             updateBulkActionsBar();
         }
+
+        // Listen for language changes to update dynamic content
+        window.addEventListener('languageChanged', () => {
+            updatePaginationControls();
+        });
     </script>
 
     <!-- Bulk Price Update Modal -->

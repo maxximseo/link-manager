@@ -2589,6 +2589,158 @@ configureSiteSettings: 'Configure site settings and integration',
 
 ---
 
+## ADR-034: Claude Code Build vs Dev Workflow
+
+**Status**: ✅ ACTIVE
+**Date**: December 2025
+**Decision Makers**: Development Team
+
+### Context
+
+Claude Code (AI assistant) was running `npm run dev` to test code changes, which:
+1. Started a competing development server
+2. Interfered with user's running server instance
+3. Caused port conflicts (EADDRINUSE)
+4. Created auto-commit chaos when nodemon watched files
+
+### Decision
+
+**Claude Code must NEVER run `npm run dev`**. Instead, use `npm run build` to verify code compiles.
+
+### Rationale
+
+**Why this matters**:
+- ✅ User controls when server starts/stops
+- ✅ No port conflicts during development
+- ✅ No unexpected auto-commits from nodemon
+- ✅ Build command validates syntax without side effects
+- ✅ Clear separation of responsibilities
+
+**Workflow for Claude Code**:
+```bash
+# ✅ CORRECT: Check if code compiles
+npm run build
+
+# ❌ FORBIDDEN: Never run development server
+npm run dev
+```
+
+### Implementation
+
+**CLAUDE.md updated** with prominent warning:
+```markdown
+### ⚠️ CRITICAL: Build vs Dev Rules for Claude
+
+**Never run `npm run dev`** - This starts the development server
+which should only be controlled by the user.
+
+**Use `npm run build`** to check if code compiles correctly:
+- Check the results for any compilation errors
+- Fix any errors before considering the task complete
+- This ensures code quality without interfering with the running server
+```
+
+### Build Command Behavior
+
+```bash
+npm run build
+```
+- Validates JavaScript syntax
+- Checks for import/require errors
+- Reports compilation issues
+- Does NOT start a server
+- Does NOT watch files
+- Does NOT trigger auto-commits
+
+### Consequences
+- ✅ Clean development workflow
+- ✅ User has full server control
+- ✅ No interference between Claude and user
+- ✅ Build validation catches syntax errors
+- ⚠️ Claude cannot test runtime behavior directly
+- ⚠️ User must manually start server to see changes
+
+### Related Documentation
+- `CLAUDE.md` - Development Commands section
+- `package.json` - Script definitions
+
+---
+
+## ADR-035: QA Expert Agent for Interface Verification
+
+**Status**: ✅ ACTIVE
+**Date**: December 2025
+**Decision Makers**: Development Team
+
+### Context
+
+Frontend interface has 73+ localization issues identified:
+- Missing Russian translations
+- Inconsistent terminology
+- English strings in JavaScript `showNotification()` calls
+- `register.html` page completely in English
+
+### Decision
+
+Use **QA Expert Agent** to systematically verify Russian localization across all frontend pages.
+
+### QA Process
+
+1. **Inventory all frontend files** (`backend/build/*.html`, `backend/build/js/*.js`)
+2. **Check for localization issues**:
+   - Missing `data-i18n` attributes
+   - Hardcoded English strings in JS
+   - Inconsistent translations
+3. **Report format**:
+   ```
+   FILE: [filename]
+   LINE: [line number]
+   ISSUE TYPE: [Missing | Inconsistent | Hardcoded]
+   CURRENT: "[English text]"
+   RECOMMENDED: "[Russian text]"
+   PRIORITY: [High | Medium | Low]
+   ```
+
+### Pages with Good i18n
+- ✅ `balance.html`
+- ✅ `profile.html`
+- ✅ `referrals.html`
+- ✅ `login.html`
+
+### Pages Needing Work
+- ❌ `register.html` - No i18n support (HIGH PRIORITY)
+- ⚠️ `placements.html` - JS notifications in English
+- ⚠️ `sites.html` - JS notifications in English
+
+### Translation System Architecture
+
+**Files**:
+- `backend/build/js/translations.js` - All translation strings (RU/EN)
+- `backend/build/js/i18n.js` - Translation utility functions
+
+**HTML Pattern**:
+```html
+<label data-i18n="fieldName">Default text</label>
+<input placeholder="..." data-i18n-placeholder="placeholderKey">
+```
+
+**JavaScript Pattern**:
+```javascript
+// ❌ WRONG: Hardcoded string
+showNotification('Error occurred');
+
+// ✅ CORRECT: Use translation function
+showNotification(t('errorOccurred'));
+```
+
+### Consequences
+- ✅ Systematic verification process
+- ✅ Prioritized issues list
+- ✅ Clear fix recommendations
+- ⚠️ Requires ongoing maintenance as new features added
+
+---
+
 ## Decision Review Process
 
 ADRs should be reviewed when:

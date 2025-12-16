@@ -1,0 +1,52 @@
+[
+  {
+    "id": "TC001",
+    "title": "user login functionality",
+    "description": "Test the user login endpoint to verify successful login with valid credentials, handling of invalid credentials, and enforcement of rate limits."
+  },
+  {
+    "id": "TC002",
+    "title": "user registration process",
+    "description": "Validate the user registration endpoint for successful registration with required fields, and proper handling of validation errors."
+  },
+  {
+    "id": "TC003",
+    "title": "email verification mechanism",
+    "description": "Verify the email verification endpoint to ensure valid tokens confirm email addresses and invalid or expired tokens are handled correctly."
+  },
+  {
+    "id": "TC004",
+    "title": "jwt token refresh",
+    "description": "Test the JWT token refresh endpoint to confirm new tokens are issued for valid refresh tokens and invalid tokens are rejected."
+  },
+  {
+    "id": "TC005",
+    "title": "get current user profile",
+    "description": "Test retrieval of the current authenticated user's profile data with proper authorization."
+  },
+  {
+    "id": "TC006",
+    "title": "update user profile",
+    "description": "Validate updating user profile fields such as email and display name with proper authorization and data validation."
+  },
+  {
+    "id": "TC007",
+    "title": "change user password",
+    "description": "Test the password change endpoint to ensure current password verification and successful update to new password."
+  },
+  {
+    "id": "TC008",
+    "title": "project creation and retrieval",
+    "description": "Verify creating a new project with required fields and retrieving all projects for the authenticated user."
+  },
+  {
+    "id": "TC009",
+    "title": "site registration from wordpress plugin",
+    "description": "Test the self-registration of a site from the WordPress plugin using a valid registration token, site URL, and API key, including handling invalid tokens."
+  },
+  {
+    "id": "TC010",
+    "title": "purchase placement with billing",
+    "description": "Validate the purchase placement endpoint to ensure placement purchases are processed correctly with sufficient balance, proper scheduling, and auto-renewal options."
+  }
+]

@@ -59,9 +59,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Development Commands
 
-### Running the Server
+### ⚠️ CRITICAL: Build vs Dev Rules for Claude
+
+**Never run `npm run dev`** - This starts the development server which should only be controlled by the user.
+
+**Use `npm run build`** to check if code compiles correctly:
 ```bash
-# Development with nodemon (auto-reload on file changes) - RECOMMENDED
+npm run build
+```
+- Check the results for any compilation errors
+- Fix any errors before considering the task complete
+- This ensures code quality without interfering with the running server
+
+### Running the Server (User Only)
+```bash
+# Development with nodemon (auto-reload on file changes) - USER RUNS THIS
 npm run dev
 
 # Development without nodemon
@@ -2157,6 +2169,18 @@ The following major architectural decisions govern this codebase:
     - Updated all docs to reference Supabase only
     - Preserved DO Spaces (backups) and Redis (cache)
 
+33. **[ADR-033: Modern Modal Design System (Figma-style)](ADR.md#adr-033-modern-modal-design-system-figma-style)**
+    - Consistent modal design across all pages
+    - Gradient headers, icon boxes, modern inputs
+
+34. **[ADR-034: Claude Code Build vs Dev Workflow](ADR.md#adr-034-claude-code-build-vs-dev-workflow)** ⚠️ CRITICAL
+    - Claude must NEVER run `npm run dev`
+    - Use `npm run build` to check code compiles
+
+35. **[ADR-035: QA Expert Agent for Interface Verification](ADR.md#adr-035-qa-expert-agent-for-interface-verification)**
+    - 73 localization issues documented
+    - QA process for Russian interface
+
 ### When to Consult ADR
 
 **Before making these changes, read relevant ADRs**:
@@ -2175,6 +2199,8 @@ The following major architectural decisions govern this codebase:
 - ✅ API controller/service field handling → ADR-028 ⚠️ CRITICAL
 - ✅ Visual testing → ADR-027
 - ✅ Database provider/infrastructure → ADR-030, ADR-032
+- ✅ Claude Code workflow rules → ADR-034 ⚠️ CRITICAL
+- ✅ Interface localization QA → ADR-035
 
 **ADR Review Schedule**:
 - **Last Review**: December 2025
