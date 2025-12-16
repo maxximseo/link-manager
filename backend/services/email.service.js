@@ -129,7 +129,7 @@ async function sendVerificationEmail(email, token, username) {
           </h2>
 
           <p style="color: #4a5568; font-size: 16px; line-height: 1.6; margin: 0 0 25px 0;">
-            Спасибо за регистрацию в LinkBuilder Pro! Чтобы завершить регистрацию и начать пользоваться сервисом, пожалуйста, подтвердите свой email адрес.
+            Спасибо за регистрацию в Serparium! Чтобы завершить регистрацию и начать пользоваться сервисом, пожалуйста, подтвердите свой email адрес.
           </p>
 
           <div style="text-align: center; margin: 30px 0;">
