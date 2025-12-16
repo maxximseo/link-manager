@@ -7,6 +7,95 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.6.12] - 2025-12-16
+
+### 💳 Feature: CryptoCloud Payment Integration
+
+Full cryptocurrency payment gateway integration for balance deposits.
+
+#### New Files Created
+- `backend/services/payment.service.js` - CryptoCloud API integration (435 lines)
+  - `createDepositInvoice()` - Create invoice via CryptoCloud API
+  - `verifyWebhookSignature()` - JWT signature verification
+  - `processWebhook()` - Handle payment notifications
+  - `processSuccessfulPayment()` - Add balance on successful payment
+  - `getInvoiceByOrderId()`, `getInvoiceStatus()` - Invoice queries
+  - `getUserPayments()` - Payment history with pagination
+  - `getPendingInvoices()` - Active invoices list
+  - `cancelExpiredInvoices()` - Cleanup job
+- `backend/controllers/payment.controller.js` - HTTP handlers (188 lines)
+- `backend/routes/payment.routes.js` - Authenticated routes with rate limiting
+- `backend/routes/webhook.routes.js` - Public webhook endpoint
+- `database/migrate_add_payment_invoices.sql` - Database table
+
+#### New API Endpoints
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/payments/config` | GET | Get payment config (min/max, currencies) |
+| `/api/payments/create-invoice` | POST | Create deposit invoice |
+| `/api/payments/invoice/:orderId` | GET | Get invoice status |
+| `/api/payments/pending` | GET | List pending invoices |
+| `/api/payments/history` | GET | Payment history |
+| `/api/webhooks/cryptocloud` | POST | CryptoCloud webhook |
+
+#### Database Changes
+- **NEW TABLE**: `payment_invoices`
+  - 13 columns: id, user_id, invoice_uuid, order_id, amount, status, payment_link, crypto_currency, crypto_amount, expires_at, paid_at, created_at, updated_at
+  - 5 indexes for fast lookups
+
+#### Configuration
+New environment variables (add to `.env`):
+```bash
+CRYPTOCLOUD_API_KEY=eyJ...
+CRYPTOCLOUD_SHOP_ID=xxx
+CRYPTOCLOUD_SECRET_KEY=xxx
+```
+
+#### Security Features
+- JWT webhook signature verification (HS256)
+- Idempotency check prevents duplicate balance additions
+- Rate limiting: 10 invoices/minute
+- Amount validation: $10 min, $10,000 max
+
+### 🔐 Feature: Remember Me - 7-Day Session Persistence
+
+Fixed "Remember me" checkbox functionality.
+
+#### Problem
+- Access token: 1 hour expiry
+- Refresh token: 7 days expiry
+- Checkbox existed but didn't work
+- After browser restart, expired token caused 401 errors
+
+#### Solution
+Modified `backend/build/js/auth.js`:
+- `initTokenRefresh()` now auto-refreshes expired tokens on page load
+- If access token expired but refresh token exists → immediate refresh
+- Users now stay logged in for full 7 days
+
+#### Files Changed
+- `backend/build/js/auth.js` - Added auto-refresh logic in `initTokenRefresh()`
+
+### 📚 Documentation Updates
+
+#### ADR.md
+- **ADDED** ADR-036: CryptoCloud Payment Integration
+- **ADDED** ADR-037: Remember Me - 7-Day Session Persistence
+
+#### API_REFERENCE.md
+- **ADDED** Payments (CryptoCloud) section with 5 endpoints
+- **ADDED** Webhooks section with cryptocloud endpoint
+- **UPDATED** Table of Contents
+- **UPDATED** API Version to 2.6.12
+
+### Migration Required
+```bash
+# Apply payment_invoices migration (via Supabase)
+mcp__supabase__apply_migration(name="add_payment_invoices", query="...")
+```
+
+---
+
 ## [2.6.11] - 2025-12-14
 
 ### 📚 Documentation: Claude Code Workflow Rules

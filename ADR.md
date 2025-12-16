@@ -2741,6 +2741,151 @@ showNotification(t('errorOccurred'));
 
 ---
 
+## ADR-036: CryptoCloud Payment Integration
+
+**Status**: ✅ ACTIVE
+**Date**: December 2025
+**Decision Makers**: Development Team
+
+### Context
+Need cryptocurrency payment integration for balance deposits. Users should be able to pay with crypto (USDT, BTC, ETH, etc.) to top up their account balance.
+
+### Decision
+Integrate **CryptoCloud.plus** payment gateway for cryptocurrency deposits.
+
+### Rationale
+**Why CryptoCloud**:
+- ✅ Simple REST API with JWT authentication
+- ✅ Supports multiple cryptocurrencies (USDT, BTC, ETH, LTC, TRX, XMR, DOGE, TON)
+- ✅ Webhook notifications for payment status
+- ✅ No KYC for basic usage
+- ✅ Competitive fees
+
+**Architecture**:
+```
+User → Create Invoice → CryptoCloud API → Payment Link
+                                              ↓
+User pays → CryptoCloud Webhook → Verify JWT → Add Balance
+```
+
+### Implementation
+
+**Files Created/Modified**:
+- `backend/services/payment.service.js` - CryptoCloud API integration
+- `backend/controllers/payment.controller.js` - HTTP handlers
+- `backend/routes/payment.routes.js` - Authenticated payment routes
+- `backend/routes/webhook.routes.js` - Public webhook endpoint
+- `database/migrate_add_payment_invoices.sql` - Invoice table
+
+**Environment Variables**:
+```bash
+CRYPTOCLOUD_API_KEY=eyJ...      # JWT token from CryptoCloud
+CRYPTOCLOUD_SHOP_ID=xxx         # Shop/Project ID
+CRYPTOCLOUD_SECRET_KEY=xxx      # For webhook signature verification
+```
+
+**Database Schema**:
+```sql
+CREATE TABLE payment_invoices (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    invoice_uuid VARCHAR(100) UNIQUE NOT NULL,  -- CryptoCloud ID
+    order_id VARCHAR(100) UNIQUE NOT NULL,       -- Our ID
+    amount DECIMAL(10,2) NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending',        -- pending/paid/expired/cancelled
+    payment_link TEXT,
+    crypto_currency VARCHAR(50),
+    crypto_amount DECIMAL(20,8),
+    expires_at TIMESTAMP,
+    paid_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**API Endpoints**:
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/api/payments/config` | GET | Yes | Get min/max amounts, currencies |
+| `/api/payments/create-invoice` | POST | Yes | Create deposit invoice |
+| `/api/payments/invoice/:orderId` | GET | Yes | Get invoice status |
+| `/api/payments/pending` | GET | Yes | List pending invoices |
+| `/api/payments/history` | GET | Yes | Payment history with pagination |
+| `/api/webhooks/cryptocloud` | POST | No* | Webhook handler (*JWT signature) |
+
+**Security**:
+- Webhook signature verification using JWT (HS256)
+- Idempotency check prevents duplicate balance additions
+- Rate limiting: 10 invoice creations per minute
+- Amount validation: $10 minimum, $10,000 maximum
+
+**Webhook Flow**:
+1. CryptoCloud sends POST to `/api/webhooks/cryptocloud`
+2. Service verifies JWT `token` field using `CRYPTOCLOUD_SECRET_KEY`
+3. If valid + status=success: Update invoice, add balance via `billingService.addBalance()`
+4. Transaction wrapped in PostgreSQL BEGIN/COMMIT
+
+### Consequences
+- ✅ Users can deposit via cryptocurrency
+- ✅ Automatic balance update on payment confirmation
+- ✅ Full audit trail in `payment_invoices` table
+- ⚠️ Requires webhook URL accessible from internet (production)
+- ⚠️ Invoice expiry handling needed (24h default)
+
+### Related Documentation
+- API Reference: `/api/payments/*` section
+- RUNBOOK.md: Payment troubleshooting procedures
+- CLAUDE.md: Environment variables section
+
+---
+
+## ADR-037: Remember Me - 7-Day Session Persistence
+
+**Status**: ✅ ACTIVE
+**Date**: December 2025
+
+### Context
+Users complained about being logged out after closing browser, despite "Remember me" checkbox existing in login form.
+
+### Problem Analysis
+- Access token: 1 hour expiry
+- Refresh token: 7 days expiry
+- Checkbox existed but was **not functional**
+- When browser reopened:
+  - `isAuthenticated()` returned true (token in localStorage)
+  - But token was expired → first API call returned 401
+
+### Decision
+Auto-refresh expired access token on page load if refresh token exists.
+
+### Implementation
+**File**: `backend/build/js/auth.js`
+
+```javascript
+function initTokenRefresh() {
+    const expiry = getTokenExpiry();
+    const now = Date.now();
+
+    if (expiry && expiry > now) {
+        // Token not expired - schedule refresh
+        const remainingSeconds = Math.floor((expiry - now) / 1000);
+        scheduleTokenRefresh(remainingSeconds);
+    } else if (getRefreshToken()) {
+        // Token expired but refresh token exists - refresh immediately
+        // This keeps user logged in for 7 days (refresh token lifetime)
+        refreshAccessToken();
+    }
+}
+```
+
+### Consequences
+- ✅ Users stay logged in for 7 days (refresh token lifetime)
+- ✅ Seamless session continuation after browser restart
+- ✅ No UI changes needed - works automatically
+- ⚠️ "Remember me" checkbox now effectively always on (could add opt-out later)
+
+---
+
 ## Decision Review Process
 
 ADRs should be reviewed when:

@@ -45,7 +45,10 @@ function initTransporter() {
  * Send email via Resend or SMTP
  */
 async function sendEmail({ to, subject, text, html }) {
-  const from = process.env.EMAIL_FROM || 'onboarding@resend.dev';
+  // Use configured from address with name
+  const fromEmail = process.env.RESEND_FROM_EMAIL || process.env.EMAIL_FROM || 'onboarding@resend.dev';
+  const fromName = process.env.RESEND_FROM_NAME || 'Serparium';
+  const from = `${fromName} <${fromEmail}>`;
 
   // Try Resend first
   if (resend) {
