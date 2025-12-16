@@ -309,6 +309,127 @@ async function sendHealthAlert(metrics, anomalies) {
 }
 
 /**
+ * Send welcome email to new user
+ */
+async function sendWelcomeEmail(email, username) {
+  const appUrl = process.env.APP_URL || 'https://serparium.com';
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7fa;">
+      <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px 16px 0 0; padding: 40px 30px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 600;">
+            🎉 Добро пожаловать в Serparium!
+          </h1>
+        </div>
+
+        <div style="background: white; padding: 40px 30px; border-radius: 0 0 16px 16px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          <h2 style="color: #1a1a2e; margin: 0 0 20px 0; font-size: 22px;">
+            Привет, ${username}! 👋
+          </h2>
+
+          <p style="color: #4a5568; font-size: 16px; line-height: 1.6; margin: 0 0 25px 0;">
+            Ваш аккаунт успешно создан. Теперь вы можете:
+          </p>
+
+          <ul style="color: #4a5568; font-size: 16px; line-height: 2; margin: 0 0 25px 0; padding-left: 20px;">
+            <li>Создавать проекты и добавлять ссылки</li>
+            <li>Управлять сайтами и размещениями</li>
+            <li>Отслеживать статистику</li>
+          </ul>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${appUrl}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 14px rgba(102, 126, 234, 0.4);">
+              Начать работу
+            </a>
+          </div>
+        </div>
+
+        <div style="text-align: center; padding: 20px;">
+          <p style="color: #a0aec0; font-size: 12px; margin: 0;">
+            © ${new Date().getFullYear()} Serparium. Все права защищены.
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return sendEmail({
+    to: email,
+    subject: '🎉 Добро пожаловать в Serparium!',
+    text: `Привет, ${username}!\n\nДобро пожаловать в Serparium!\n\nВаш аккаунт успешно создан. Теперь вы можете создавать проекты, управлять ссылками и размещениями.\n\nНачать работу: ${appUrl}\n\n---\nSerparium`,
+    html
+  });
+}
+
+/**
+ * Send payment confirmation email
+ */
+async function sendPaymentConfirmationEmail(email, username, amount, currency = 'Криптовалюта') {
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7fa;">
+      <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+        <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border-radius: 16px 16px 0 0; padding: 40px 30px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 600;">
+            ✅ Платёж получен!
+          </h1>
+        </div>
+
+        <div style="background: white; padding: 40px 30px; border-radius: 0 0 16px 16px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          <h2 style="color: #1a1a2e; margin: 0 0 20px 0; font-size: 22px;">
+            Привет, ${username}!
+          </h2>
+
+          <p style="color: #4a5568; font-size: 16px; line-height: 1.6; margin: 0 0 25px 0;">
+            Ваш платёж успешно обработан и зачислен на баланс.
+          </p>
+
+          <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0;">
+            <div style="font-size: 36px; color: #28a745; font-weight: 600;">
+              +$${amount.toFixed(2)}
+            </div>
+            <div style="color: #6c757d; margin-top: 5px;">
+              ${currency}
+            </div>
+          </div>
+
+          <p style="color: #4a5568; font-size: 16px; line-height: 1.6; margin: 25px 0 0 0;">
+            Средства уже доступны на вашем балансе.
+          </p>
+        </div>
+
+        <div style="text-align: center; padding: 20px;">
+          <p style="color: #a0aec0; font-size: 12px; margin: 0;">
+            © ${new Date().getFullYear()} Serparium. Все права защищены.
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return sendEmail({
+    to: email,
+    subject: '✅ Платёж получен - Serparium',
+    text: `Привет, ${username}!\n\nВаш платёж на сумму $${amount.toFixed(2)} (${currency}) успешно обработан.\n\nСредства зачислены на ваш баланс.\n\n---\nSerparium`,
+    html
+  });
+}
+
+/**
  * Check if email service is configured
  */
 function isConfigured() {
@@ -319,6 +440,8 @@ module.exports = {
   sendEmail,
   sendVerificationEmail,
   sendPasswordResetEmail,
+  sendWelcomeEmail,
+  sendPaymentConfirmationEmail,
   sendAlertEmail,
   sendHealthAlert,
   initTransporter,
