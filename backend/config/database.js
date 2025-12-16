@@ -39,7 +39,7 @@ const dbConfig = {
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   ssl: sslConfig,
-  max: 25, // Increased pool size for performance
+  max: 50, // Increased pool size to support batch operations (10 parallel × 3 connections each = 30 max)
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 30000
 };
