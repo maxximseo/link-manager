@@ -14,6 +14,7 @@ This document contains step-by-step procedures for common operational tasks in t
 3. [Database Operations](#database-operations)
 4. [Deployment Procedures](#deployment-procedures)
 5. [Troubleshooting](#troubleshooting)
+   - [Payment System Issues (CryptoCloud)](#payment-system-issues-cryptocloud)
 6. [Backup & Recovery](#backup--recovery)
 7. [Monitoring & Alerts](#monitoring--alerts)
 8. [Security Incidents](#security-incidents)
@@ -611,6 +612,127 @@ psql -d linkmanager -c "EXPLAIN ANALYZE SELECT ..."
 3. Increase `max` in connection pool (currently 25)
 4. Add query-specific index if needed
 5. Review [ADR-003](ADR.md#adr-003-redis-cache-with-graceful-degradation) for caching strategy
+
+---
+
+### Payment System Issues (CryptoCloud)
+
+**Symptoms**: Invoice creation fails, webhooks not received, balance not updated
+
+**See Also**: [ADR-036: CryptoCloud Payment Integration](ADR.md#adr-036-cryptocloud-payment-integration)
+
+#### Invoice Creation Fails
+
+**Diagnosis**:
+```bash
+# Check environment variables
+node -e "require('dotenv').config(); console.log({
+  api: process.env.CRYPTOCLOUD_API_KEY ? 'SET' : 'MISSING',
+  shop: process.env.CRYPTOCLOUD_SHOP_ID ? 'SET' : 'MISSING',
+  secret: process.env.CRYPTOCLOUD_SECRET_KEY ? 'SET' : 'MISSING'
+});"
+
+# Test API connection
+curl -s -X POST https://api.cryptocloud.plus/v2/invoice/create \
+  -H "Authorization: Token $CRYPTOCLOUD_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"amount": 15, "shop_id": "'$CRYPTOCLOUD_SHOP_ID'", "currency": "USD", "order_id": "test_'$(date +%s)'"}' | jq .
+```
+
+**Solutions**:
+1. Verify all 3 CryptoCloud environment variables in `.env`
+2. Check API key validity in CryptoCloud dashboard
+3. Ensure Shop ID matches active shop
+4. Check server logs: `tail -f backend/logs/error-*.log`
+
+#### Webhook Not Received
+
+**Diagnosis**:
+```bash
+# Check recent webhook logs
+grep "Webhook received" backend/logs/combined-*.log | tail -10
+
+# Verify webhook URL in CryptoCloud dashboard
+# Should be: https://your-domain.com/api/webhooks/cryptocloud
+
+# Test webhook endpoint manually
+curl -X POST http://localhost:3003/api/webhooks/cryptocloud \
+  -H "Content-Type: application/json" \
+  -d '{"status":"test","invoice_id":"test","order_id":"test","token":"invalid"}'
+# Should return: {"error":"Invalid signature"}
+```
+
+**Solutions**:
+1. Verify webhook URL is correct in CryptoCloud dashboard (HTTPS required in production)
+2. Check firewall allows incoming POST requests
+3. Confirm CORS doesn't block CryptoCloud IPs
+4. Review webhook logs for signature verification failures
+
+#### Invalid Signature Error
+
+**Diagnosis**:
+```bash
+# Check secret key matches
+node -e "require('dotenv').config(); console.log('Secret key length:', process.env.CRYPTOCLOUD_SECRET_KEY?.length);"
+
+# The secret key should match what's in CryptoCloud dashboard > Shop Settings
+```
+
+**Solutions**:
+1. Copy `Secret Key` from CryptoCloud dashboard exactly (no extra spaces)
+2. Ensure `CRYPTOCLOUD_SECRET_KEY` in `.env` is correct
+3. Restart server after changing `.env`
+
+#### Balance Not Updated After Payment
+
+**Diagnosis**:
+```bash
+# Check invoice status in database
+psql -d linkmanager -c "SELECT id, user_id, order_id, amount, status, paid_at FROM payment_invoices ORDER BY created_at DESC LIMIT 5;"
+
+# Check billing transactions
+psql -d linkmanager -c "SELECT id, user_id, type, amount, balance_after FROM billing_transactions WHERE type = 'crypto_deposit' ORDER BY created_at DESC LIMIT 5;"
+
+# Check user balance
+psql -d linkmanager -c "SELECT id, username, balance FROM users WHERE id = YOUR_USER_ID;"
+```
+
+**Solutions**:
+1. If invoice status is 'pending', payment not completed - wait or check CryptoCloud dashboard
+2. If invoice status is 'paid' but no transaction - webhook processing failed, check error logs
+3. Manually add balance if needed (emergency):
+   ```sql
+   -- EMERGENCY ONLY: Manual balance correction
+   UPDATE users SET balance = balance + 15.00 WHERE id = YOUR_USER_ID;
+   INSERT INTO billing_transactions (user_id, type, amount, balance_after, metadata)
+   VALUES (YOUR_USER_ID, 'manual_deposit', 15.00, (SELECT balance FROM users WHERE id = YOUR_USER_ID), '{"reason":"Manual correction for failed webhook"}');
+   ```
+
+#### Testing Payment Flow
+
+```bash
+# 1. Get auth token
+TOKEN=$(curl -s -X POST http://localhost:3003/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin123"}' | jq -r '.token')
+
+# 2. Check payment system is configured
+curl -s -H "Authorization: Bearer $TOKEN" http://localhost:3003/api/payments/config | jq .
+# Expected: {"enabled":true,"minAmount":10,"maxAmount":10000,...}
+
+# 3. Create test invoice
+curl -s -X POST http://localhost:3003/api/payments/create-invoice \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"amount": 15}' | jq .
+# Expected: {"success":true,"invoice":{...,"paymentLink":"https://..."}}
+
+# 4. Check pending invoices
+curl -s -H "Authorization: Bearer $TOKEN" http://localhost:3003/api/payments/pending | jq .
+
+# 5. Check payment history
+curl -s -H "Authorization: Bearer $TOKEN" http://localhost:3003/api/payments/history | jq .
+```
 
 ---
 

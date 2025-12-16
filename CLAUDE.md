@@ -793,6 +793,125 @@ Backup Configuration (optional, enables automated encrypted backups):
 Sentry Configuration (optional, enables error tracking):
 - `SENTRY_DSN` - Sentry Data Source Name for error reporting
 
+CryptoCloud Payment Integration (required for cryptocurrency deposits):
+- `CRYPTOCLOUD_API_KEY` - CryptoCloud.plus API token (format: `eyJhbGciOi...`)
+- `CRYPTOCLOUD_SHOP_ID` - Shop ID from CryptoCloud dashboard
+- `CRYPTOCLOUD_SECRET_KEY` - Secret key for JWT webhook signature verification (HS256)
+
+## CryptoCloud Payment Integration (v2.6.12+)
+
+**Status**: Active since December 2025
+
+Cryptocurrency payment system for balance deposits via CryptoCloud.plus gateway.
+
+### Architecture Overview
+
+```
+User Balance Page → Create Invoice → CryptoCloud API → Payment Link
+                                                          ↓
+User Pays in Crypto → CryptoCloud Webhook → JWT Verify → Add Balance
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `backend/services/payment.service.js` | Core business logic (435 lines, 9 functions) |
+| `backend/controllers/payment.controller.js` | HTTP handlers (6 endpoints) |
+| `backend/routes/payment.routes.js` | Routes with rate limiting |
+| `backend/routes/webhook.routes.js` | Public webhook endpoint |
+| `database/migrate_add_payment_invoices.sql` | Database schema |
+
+### API Endpoints
+
+**Authenticated (require JWT token):**
+- `GET /api/payments/config` - Payment configuration (min/max amounts)
+- `POST /api/payments/create-invoice` - Create deposit invoice
+- `GET /api/payments/pending` - User's pending invoices
+- `GET /api/payments/history` - User's payment history
+- `GET /api/payments/invoice/:orderId` - Specific invoice status
+
+**Public (webhook):**
+- `POST /api/webhooks/cryptocloud` - CryptoCloud payment notification
+
+### Rate Limiting
+
+- Invoice creation: 10/minute (prevent abuse)
+- General payment endpoints: 100/minute
+
+### Database Schema
+
+Table: `payment_invoices`
+```sql
+CREATE TABLE payment_invoices (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    invoice_uuid VARCHAR(100),    -- CryptoCloud UUID
+    order_id VARCHAR(100) UNIQUE, -- Internal order ID
+    amount DECIMAL(10,2) NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending',
+    crypto_currency VARCHAR(10),
+    crypto_amount DECIMAL(20,10),
+    payment_link TEXT,
+    expires_at TIMESTAMP,
+    paid_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Webhook Security
+
+CryptoCloud sends JWT token in webhook payload. Service verifies signature using HS256 algorithm with `CRYPTOCLOUD_SECRET_KEY`.
+
+**Verification in payment.service.js:**
+```javascript
+const decoded = jwt.verify(token, secretKey, { algorithms: ['HS256'] });
+```
+
+### Amount Limits
+
+- Minimum: $10
+- Maximum: $10,000
+- Currency: USD (CryptoCloud converts to crypto)
+
+### Supported Cryptocurrencies
+
+USDT, BTC, ETH, LTC, TRX, XMR, DOGE, TON
+
+### Testing Payment Integration
+
+```bash
+# Get fresh auth token
+TOKEN=$(curl -s -X POST http://localhost:3003/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin123"}' | jq -r '.token')
+
+# Check payment config
+curl -H "Authorization: Bearer $TOKEN" http://localhost:3003/api/payments/config
+
+# Create test invoice ($15)
+curl -X POST http://localhost:3003/api/payments/create-invoice \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"amount": 15}'
+
+# Check pending invoices
+curl -H "Authorization: Bearer $TOKEN" http://localhost:3003/api/payments/pending
+```
+
+### Common Issues
+
+**"Payment system not configured"**
+- Check `CRYPTOCLOUD_API_KEY` and `CRYPTOCLOUD_SHOP_ID` in .env
+
+**"Invalid signature" on webhook**
+- Verify `CRYPTOCLOUD_SECRET_KEY` matches CryptoCloud dashboard
+
+**Invoice stuck in "pending"**
+- User hasn't paid yet, or webhook failed
+- Check server logs for webhook errors
+
 ## Pagination Limits (Updated January 2025)
 
 **CRITICAL**: System-wide pagination limits increased to support high-volume operations (5000+ placements).
@@ -2181,6 +2300,14 @@ The following major architectural decisions govern this codebase:
     - 73 localization issues documented
     - QA process for Russian interface
 
+36. **[ADR-036: CryptoCloud Payment Integration](ADR.md#adr-036-cryptocloud-payment-integration)**
+    - Cryptocurrency deposits via CryptoCloud.plus gateway
+    - JWT webhook verification with HS256
+
+37. **[ADR-037: Remember Me - 7-Day Session Persistence](ADR.md#adr-037-remember-me---7-day-session-persistence)**
+    - Auto-refresh expired access tokens on page load
+    - 7-day session persistence using refresh tokens
+
 ### When to Consult ADR
 
 **Before making these changes, read relevant ADRs**:
@@ -2201,6 +2328,8 @@ The following major architectural decisions govern this codebase:
 - ✅ Database provider/infrastructure → ADR-030, ADR-032
 - ✅ Claude Code workflow rules → ADR-034 ⚠️ CRITICAL
 - ✅ Interface localization QA → ADR-035
+- ✅ Payment integration → ADR-036
+- ✅ Session/token management → ADR-002, ADR-037
 
 **ADR Review Schedule**:
 - **Last Review**: December 2025

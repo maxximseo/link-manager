@@ -4,8 +4,8 @@ Complete reference for all API endpoints in Link Manager system.
 
 **Base URL**: `http://localhost:3003/api` (development)
 **Production URL**: `https://shark-app-9kv6u.ondigitalocean.app/api`
-**API Version**: 2.5.7
-**Last Updated**: November 2025
+**API Version**: 2.6.12
+**Last Updated**: December 2025
 
 ---
 
@@ -16,11 +16,13 @@ Complete reference for all API endpoints in Link Manager system.
 3. [Sites](#sites)
 4. [Placements](#placements)
 5. [Billing](#billing)
-6. [WordPress Integration](#wordpress-integration)
-7. [Static PHP Sites](#static-php-sites)
-8. [Admin](#admin)
-9. [Error Codes](#error-codes)
-10. [Rate Limits](#rate-limits)
+6. [Payments (CryptoCloud)](#payments-cryptocloud)
+7. [WordPress Integration](#wordpress-integration)
+8. [Static PHP Sites](#static-php-sites)
+9. [Admin](#admin)
+10. [Webhooks](#webhooks)
+11. [Error Codes](#error-codes)
+12. [Rate Limits](#rate-limits)
 
 ---
 
@@ -1066,6 +1068,193 @@ Export user placements to CSV or JSON.
 ID,Project,Site,Type,Status,Price,Purchased,Published,Expires
 1,SEO Campaign,My Blog,link,placed,23.75,2025-01-20,2025-01-20,2026-01-20
 ```
+
+---
+
+## Payments (CryptoCloud)
+
+Cryptocurrency payment endpoints for balance deposits via CryptoCloud.plus.
+
+**Rate Limit**: 10 invoice creations per minute, 100 requests per minute for other endpoints.
+
+### GET /api/payments/config
+
+Get payment system configuration.
+
+**Response** (200 OK):
+```json
+{
+  "enabled": true,
+  "minAmount": 10,
+  "maxAmount": 10000,
+  "currencies": ["USDT", "BTC", "ETH", "LTC", "TRX", "XMR", "DOGE", "TON"]
+}
+```
+
+---
+
+### POST /api/payments/create-invoice
+
+Create a new deposit invoice. Returns payment link for cryptocurrency payment.
+
+**Request**:
+```json
+{
+  "amount": 50,
+  "email": "user@example.com"  // Optional
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "success": true,
+  "invoice": {
+    "id": 1,
+    "orderId": "deposit_1072_1765910209642",
+    "amount": 50,
+    "paymentLink": "https://pay.cryptocloud.plus/VISBJ5RH",
+    "expiresAt": "2025-12-17T18:36:51.879Z",
+    "status": "pending"
+  }
+}
+```
+
+**Errors**:
+- `400 Bad Request` - Amount below minimum ($10) or above maximum ($10,000)
+- `500 Internal Server Error` - Payment system unavailable
+
+---
+
+### GET /api/payments/invoice/:orderId
+
+Get status of a specific invoice.
+
+**Response** (200 OK):
+```json
+{
+  "invoice": {
+    "id": 1,
+    "orderId": "deposit_1072_1765910209642",
+    "amount": 50,
+    "status": "pending",
+    "paymentLink": "https://pay.cryptocloud.plus/VISBJ5RH",
+    "expiresAt": "2025-12-17T18:36:51.879Z",
+    "paidAt": null,
+    "createdAt": "2025-12-16T18:36:54.534Z"
+  }
+}
+```
+
+**Invoice Statuses**:
+- `pending` - Awaiting payment
+- `paid` - Payment confirmed, balance added
+- `expired` - Invoice expired (24h)
+- `cancelled` - Invoice cancelled
+
+---
+
+### GET /api/payments/pending
+
+Get list of active (pending) invoices for current user.
+
+**Response** (200 OK):
+```json
+{
+  "invoices": [
+    {
+      "id": 2,
+      "orderId": "deposit_1072_1765910632824",
+      "amount": 15,
+      "paymentLink": "https://pay.cryptocloud.plus/J20SS1TM",
+      "expiresAt": "2025-12-17T18:43:54.502Z",
+      "createdAt": "2025-12-16T18:43:54.918Z"
+    }
+  ]
+}
+```
+
+---
+
+### GET /api/payments/history
+
+Get payment history with pagination.
+
+**Query Parameters**:
+- `page` (integer, default: 1) - Page number
+- `limit` (integer, default: 20, max: 100) - Items per page
+
+**Response** (200 OK):
+```json
+{
+  "payments": [
+    {
+      "id": 2,
+      "orderId": "deposit_1072_1765910632824",
+      "amount": 15,
+      "status": "paid",
+      "cryptoCurrency": "USDT_TRC20",
+      "cryptoAmount": 15.00,
+      "expiresAt": "2025-12-17T18:43:54.502Z",
+      "paidAt": "2025-12-16T19:00:00.000Z",
+      "createdAt": "2025-12-16T18:43:54.918Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 2,
+    "totalPages": 1
+  }
+}
+```
+
+---
+
+## Webhooks
+
+Public webhook endpoints for external services. No authentication required (signature verification instead).
+
+### POST /api/webhooks/cryptocloud
+
+CryptoCloud.plus payment notification webhook.
+
+**Security**: JWT signature verification using `CRYPTOCLOUD_SECRET_KEY`.
+
+**Request Body** (from CryptoCloud):
+```json
+{
+  "status": "success",
+  "invoice_id": "INV-XXXXXXXX",
+  "order_id": "deposit_1072_1765910209642",
+  "amount_crypto": "15.00000000",
+  "currency": "USDT_TRC20",
+  "token": "eyJ..."  // JWT for signature verification
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "status": "ok",
+  "success": true,
+  "message": "Payment processed",
+  "userId": 1072,
+  "amount": 50
+}
+```
+
+**Errors**:
+- `400 Bad Request` - Invalid JWT signature
+- `404 Not Found` - Invoice not found
+
+**Webhook Processing**:
+1. Verify JWT signature using secret key
+2. Find invoice by `order_id`
+3. Check idempotency (skip if already paid)
+4. Update invoice status to `paid`
+5. Add balance to user account via `billingService.addBalance()`
+6. Log transaction details
 
 ---
 
