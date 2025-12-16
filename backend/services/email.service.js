@@ -116,7 +116,7 @@ async function sendVerificationEmail(email, token, username) {
       <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px 16px 0 0; padding: 40px 30px; text-align: center;">
           <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 600;">
-            🔗 LinkBuilder Pro
+            🔗 Serparium
           </h1>
           <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">
             Подтверждение email
