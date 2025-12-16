@@ -181,7 +181,7 @@ Serparium
 
   return sendEmail({
     to: email,
-    subject: '🔗 Подтвердите ваш email - LinkBuilder Pro',
+    subject: '🔗 Подтвердите ваш email - Serparium',
     text,
     html
   });
