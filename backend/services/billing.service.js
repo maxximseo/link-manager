@@ -2214,10 +2214,10 @@ const batchPurchasePlacements = async (userId, purchases) => {
   });
 
   // Process in chunks to avoid exhausting DB connection pool
-  // Pool has 25 connections, but each purchase spawns async operations (publishPlacementAsync,
-  // createReferralCommission) that take additional connections. With 5 parallel purchases,
-  // max connections = 5 × 3 = 15, safely within pool limit of 25.
-  const CONCURRENCY_LIMIT = 5;
+  // Pool has 50 connections, each purchase spawns async operations (publishPlacementAsync,
+  // createReferralCommission) that take additional connections. With 10 parallel purchases,
+  // max connections = 10 × 3 = 30, safely within pool limit of 50.
+  const CONCURRENCY_LIMIT = 10;
   const successful = [];
   const failed = [];
   let lastBalance = null;
