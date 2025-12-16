@@ -166,7 +166,7 @@ async function sendVerificationEmail(email, token, username) {
   const text = `
 Привет, ${username}!
 
-Спасибо за регистрацию в LinkBuilder Pro!
+Спасибо за регистрацию в Serparium!
 
 Чтобы подтвердить свой email, перейдите по ссылке:
 ${verifyUrl}
@@ -176,7 +176,7 @@ ${verifyUrl}
 Если вы не регистрировались, просто проигнорируйте это письмо.
 
 ---
-LinkBuilder Pro
+Serparium
   `.trim();
 
   return sendEmail({
