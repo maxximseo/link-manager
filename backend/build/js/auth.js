@@ -255,8 +255,13 @@ function initTokenRefresh() {
     const now = Date.now();
 
     if (expiry && expiry > now) {
+        // Token not expired - schedule refresh
         const remainingSeconds = Math.floor((expiry - now) / 1000);
         scheduleTokenRefresh(remainingSeconds);
+    } else if (getRefreshToken()) {
+        // Token expired but refresh token exists - refresh immediately
+        // This keeps user logged in for 7 days (refresh token lifetime)
+        refreshAccessToken();
     }
 }
 
