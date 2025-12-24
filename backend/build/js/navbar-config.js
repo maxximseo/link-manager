@@ -12,6 +12,7 @@ const NavbarConfig = {
             { text: 'Проекты', href: '/dashboard.html', page: 'dashboard' },
             { text: 'Ссылки', href: '/placements-manager.html', page: 'placements-manager' },
             { text: 'Сайты', href: '/sites.html', page: 'sites' },
+            { text: 'Аренды', href: '/rentals.html', page: 'rentals' },
             { text: 'Покупка', href: '/placements.html', page: 'placements' },
             { text: 'Баланс', href: '/balance.html', page: 'balance' },
             { text: 'Статистика', href: '/statistics.html', page: 'statistics' },
