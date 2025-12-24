@@ -6,7 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const rentalController = require('../controllers/rental.controller');
-const authMiddleware = require('../middleware/auth.middleware');
+const authMiddleware = require('../middleware/auth');
 const rateLimit = require('express-rate-limit');
 
 // Rate limiters
