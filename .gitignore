@@ -1,5 +1,14 @@
 node_modules/
+
+# Environment files (protect credentials)
 .env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+# Logs
 *.log
 dev.log
 backend/logs/

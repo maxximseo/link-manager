@@ -2886,6 +2886,102 @@ function initTokenRefresh() {
 
 ---
 
+## ADR-038: Resend Email Integration
+
+**Status**: ✅ ACTIVE
+**Date**: December 2025
+
+### Context
+Need transactional email capability for:
+- User registration welcome emails
+- Password reset emails
+- Payment confirmation notifications
+- System alerts to admins
+
+### Decision
+Integrate **Resend.com** email API as primary email provider with SMTP fallback.
+
+**Why Resend**:
+- Developer-friendly API
+- High deliverability rates
+- Simple Node.js SDK
+- Generous free tier (100 emails/day)
+- Excellent documentation
+
+### Architecture
+```
+Email Request → email.service.js
+                    ↓
+            [Resend configured?]
+                 /        \
+               Yes         No
+               ↓            ↓
+          Resend API    SMTP Fallback
+               ↓            ↓
+          Email Sent    Email Sent
+```
+
+### Implementation
+
+**Configuration** (`.env`):
+```
+RESEND_API_KEY=re_xxx...
+RESEND_FROM_EMAIL=noreply@serparium.com
+RESEND_FROM_NAME=Serparium
+```
+
+**Service File**: `backend/services/email.service.js`
+
+**Key Functions**:
+| Function | Purpose |
+|----------|---------|
+| `sendEmail()` | Generic email sending |
+| `sendVerificationEmail()` | Email confirmation link |
+| `sendPasswordResetEmail()` | Password reset link |
+| `sendWelcomeEmail()` | New user welcome |
+| `sendPaymentConfirmationEmail()` | Payment received notification |
+| `sendAlertEmail()` | Admin alerts |
+
+### Domain Verification Required
+
+For production use with custom domain (serparium.com):
+1. Go to https://resend.com/domains
+2. Add domain: serparium.com
+3. Add DNS records:
+   - SPF: `v=spf1 include:_spf.resend.com ~all`
+   - DKIM: MX record as provided by Resend
+   - DMARC: `v=DMARC1; p=none;` (recommended)
+4. Wait for verification (usually 5-10 minutes)
+
+### Email Templates
+
+All templates use:
+- Inline CSS for email client compatibility
+- Responsive design (max-width: 600px)
+- Russian localization
+- Serparium branding (gradient header: #667eea → #764ba2)
+
+### Graceful Degradation
+
+If Resend fails, system falls back to SMTP:
+```javascript
+// Try Resend first
+if (resend) { ... }
+
+// SMTP fallback
+const transport = initTransporter();
+```
+
+### Consequences
+- ✅ Reliable transactional email delivery
+- ✅ Beautiful HTML email templates
+- ✅ Admin alerts for critical events
+- ✅ Fallback to SMTP if needed
+- ⚠️ Domain verification required for production
+- ⚠️ Rate limits apply (100/day free, 3000/day paid)
+
+---
+
 ## Decision Review Process
 
 ADRs should be reviewed when:
