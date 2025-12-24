@@ -798,6 +798,86 @@ CryptoCloud Payment Integration (required for cryptocurrency deposits):
 - `CRYPTOCLOUD_SHOP_ID` - Shop ID from CryptoCloud dashboard
 - `CRYPTOCLOUD_SECRET_KEY` - Secret key for JWT webhook signature verification (HS256)
 
+Resend Email Service (required for transactional emails):
+- `RESEND_API_KEY` - Resend.com API key (format: `re_xxx...`)
+- `RESEND_FROM_EMAIL` - Sender email address (e.g., `noreply@serparium.com`)
+- `RESEND_FROM_NAME` - Sender display name (e.g., `Serparium`)
+
+## Resend Email Integration (v2.6.13+)
+
+**Status**: Active since December 2025
+
+Transactional email system via Resend.com API for serparium.com domain.
+
+### Domain Verification Required
+
+Before emails can be sent from serparium.com:
+1. Go to https://resend.com/domains
+2. Add domain: `serparium.com`
+3. Add DNS records (SPF, DKIM, DMARC) as instructed by Resend
+4. Wait for verification (5-10 minutes)
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `backend/services/email.service.js` | Email sending service (450+ lines) |
+
+### Available Email Functions
+
+```javascript
+const emailService = require('./services/email.service');
+
+// Generic email
+await emailService.sendEmail({ to, subject, text, html });
+
+// User registration
+await emailService.sendVerificationEmail(email, token, username);
+await emailService.sendWelcomeEmail(email, username);
+
+// Password reset
+await emailService.sendPasswordResetEmail(email, token, username);
+
+// Payment notification
+await emailService.sendPaymentConfirmationEmail(email, username, amount, currency);
+
+// Admin alerts
+await emailService.sendAlertEmail(alertType, title, message, details);
+```
+
+### Testing Email Service
+
+```bash
+# Test configuration
+node -e "
+require('dotenv').config({ path: './backend/.env' });
+const emailService = require('./backend/services/email.service');
+console.log('Email configured:', emailService.isConfigured());
+"
+
+# Send test email (after domain verification)
+node -e "
+require('dotenv').config({ path: './backend/.env' });
+const emailService = require('./backend/services/email.service');
+emailService.sendEmail({
+  to: 'test@example.com',
+  subject: 'Test',
+  text: 'Test email'
+}).then(console.log);
+"
+```
+
+### Common Issues
+
+**"Domain not verified" error**
+- Domain serparium.com needs verification in Resend dashboard
+- Add required DNS records and wait for propagation
+
+**Emails not being received**
+- Check spam folder
+- Verify DKIM/SPF/DMARC records are correct
+- Check Resend dashboard for delivery status
+
 ## CryptoCloud Payment Integration (v2.6.12+)
 
 **Status**: Active since December 2025
@@ -1733,17 +1813,25 @@ node database/run_extended_fields_migration.js
 # 10. Add limits_changed_at for 6-month cooldown (REQUIRED for v2.6.5+)
 node database/run_limits_cooldown_migration.js
 
-# 11. Seed data
+# 11. Add slot rentals tables (REQUIRED for v2.8.0+)
+node database/run_slot_rentals_migration.js
+
+# 12. Add updated_at columns to users/sites (REQUIRED for v2.8.1+)
+psql -d linkmanager -f database/migrate_add_updated_at_users_sites.sql
+
+# 13. Seed data
 psql -d linkmanager -f database/seed.sql
 ```
 
-**DO NOT SKIP** migrations #2, #3, #4, #8, #9, or #10 - system will not work without them.
+**DO NOT SKIP** migrations #2, #3, #4, #8, #9, #10, #11, or #12 - system will not work without them.
 
 **Optional migrations**: #6 (billing), #7 (bulk registration)
 
 **New in v2.5.0**: Migrations #8 and #9 add support for duplicate anchor texts and extended JSONB fields.
 
 **New in v2.6.5**: Migration #10 adds limits_changed_at column for 6-month cooldown on max_links/max_articles changes.
+
+**New in v2.8.0**: Migrations #11 and #12 add site slot rental system (P2P slot leasing).
 
 ## Bulk WordPress Site Registration (NEW - November 2025)
 
@@ -2308,6 +2396,10 @@ The following major architectural decisions govern this codebase:
     - Auto-refresh expired access tokens on page load
     - 7-day session persistence using refresh tokens
 
+38. **[ADR-038: Resend Email Integration](ADR.md#adr-038-resend-email-integration)**
+    - Resend.com API for transactional emails
+    - Domain: serparium.com with SMTP fallback
+
 ### When to Consult ADR
 
 **Before making these changes, read relevant ADRs**:
@@ -2330,6 +2422,7 @@ The following major architectural decisions govern this codebase:
 - ✅ Interface localization QA → ADR-035
 - ✅ Payment integration → ADR-036
 - ✅ Session/token management → ADR-002, ADR-037
+- ✅ Email/notifications → ADR-038
 
 **ADR Review Schedule**:
 - **Last Review**: December 2025
