@@ -1703,6 +1703,81 @@
         </div>
     </div>
 
+    <!-- Create Rental Modal -->
+    <div class="modal fade" id="createRentalModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-key me-2"></i>Сдать слоты в аренду
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info mb-3">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Арендатор получит возможность бесплатно размещать ссылки на вашем сайте в пределах арендованных слотов.
+                        Деньги будут сразу зачислены на ваш баланс.
+                    </div>
+
+                    <input type="hidden" id="rentalSiteId">
+
+                    <div class="mb-3">
+                        <label class="form-label">Сайт</label>
+                        <p class="form-control-plaintext fw-bold" id="rentalSiteName">-</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Доступно слотов</label>
+                        <p class="form-control-plaintext" id="rentalAvailableSlots">-</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="rentalTenantUsername">Логин арендатора <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="rentalTenantUsername" placeholder="Введите username арендатора" required>
+                        <div class="form-text">Пользователь должен быть зарегистрирован в системе</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="rentalSlotsCount">Количество слотов <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="rentalSlotsCount" min="1" value="1" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="rentalPricePerSlot">Цена за слот ($)</label>
+                        <input type="number" class="form-control" id="rentalPricePerSlot" min="0" step="0.01" value="25.00">
+                        <div class="form-text">По умолчанию $25 за слот. Оставьте пустым для использования цены по умолчанию.</div>
+                    </div>
+
+                    <div class="bg-light p-3 rounded">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Количество слотов:</span>
+                            <span id="rentalCalcSlots">1</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Цена за слот:</span>
+                            <span>$<span id="rentalCalcPrice">25.00</span></span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between fw-bold">
+                            <span>Итого (вы получите):</span>
+                            <span class="text-success fs-5">$<span id="rentalCalcTotal">25.00</span></span>
+                        </div>
+                        <div class="text-muted small mt-2">
+                            <i class="bi bi-calendar me-1"></i>Срок аренды: 365 дней
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-primary" onclick="submitCreateRental()">
+                        <i class="bi bi-check2 me-1"></i>Создать аренду
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Export Sites Modal -->
     <div class="modal fade" id="exportModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
@@ -2595,6 +2670,9 @@
                     </td>
                     <td>
                         <div class="action-buttons">
+                            <button class="action-btn action-rental" onclick="openCreateRentalModal(${s.id})" title="Сдать в аренду" style="color: #7c3aed;">
+                                <i class="bi bi-key"></i>
+                            </button>
                             <button class="action-btn action-edit" onclick="editSite(${s.id})" title="Настройки">
                                 <i class="bi bi-gear"></i>
                             </button>
@@ -3506,6 +3584,107 @@ ${'='.repeat(50)}`;
         window.addEventListener('languageChanged', () => {
             updatePaginationControls();
         });
+
+        // ===== RENTAL FUNCTIONS =====
+
+        let createRentalModal;
+
+        // Initialize rental modal
+        document.addEventListener('DOMContentLoaded', () => {
+            createRentalModal = new bootstrap.Modal(document.getElementById('createRentalModal'));
+
+            // Update calculation on input change
+            document.getElementById('rentalSlotsCount').addEventListener('input', updateRentalCalc);
+            document.getElementById('rentalPricePerSlot').addEventListener('input', updateRentalCalc);
+        });
+
+        // Open create rental modal
+        function openCreateRentalModal(siteId) {
+            const site = window.sites.find(s => s.id === siteId);
+            if (!site) {
+                showNotification('Сайт не найден', 'error');
+                return;
+            }
+
+            // Calculate available slots
+            const availableSlots = site.max_links - site.used_links;
+
+            if (availableSlots <= 0) {
+                showNotification('Нет доступных слотов для аренды', 'warning');
+                return;
+            }
+
+            // Fill modal
+            document.getElementById('rentalSiteId').value = siteId;
+            document.getElementById('rentalSiteName').textContent = site.site_name || site.site_url;
+            document.getElementById('rentalAvailableSlots').textContent = `${availableSlots} из ${site.max_links}`;
+            document.getElementById('rentalSlotsCount').max = availableSlots;
+            document.getElementById('rentalSlotsCount').value = Math.min(1, availableSlots);
+            document.getElementById('rentalPricePerSlot').value = site.price_link || 25.00;
+            document.getElementById('rentalTenantUsername').value = '';
+
+            updateRentalCalc();
+            createRentalModal.show();
+        }
+
+        // Update rental calculation
+        function updateRentalCalc() {
+            const slots = parseInt(document.getElementById('rentalSlotsCount').value) || 0;
+            const price = parseFloat(document.getElementById('rentalPricePerSlot').value) || 25.00;
+            const total = slots * price;
+
+            document.getElementById('rentalCalcSlots').textContent = slots;
+            document.getElementById('rentalCalcPrice').textContent = price.toFixed(2);
+            document.getElementById('rentalCalcTotal').textContent = total.toFixed(2);
+        }
+
+        // Submit create rental
+        async function submitCreateRental() {
+            const siteId = parseInt(document.getElementById('rentalSiteId').value);
+            const tenantUsername = document.getElementById('rentalTenantUsername').value.trim();
+            const slotsCount = parseInt(document.getElementById('rentalSlotsCount').value);
+            const pricePerSlot = parseFloat(document.getElementById('rentalPricePerSlot').value);
+
+            if (!tenantUsername) {
+                showNotification('Введите логин арендатора', 'warning');
+                return;
+            }
+
+            if (!slotsCount || slotsCount < 1) {
+                showNotification('Укажите количество слотов', 'warning');
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/rentals', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        siteId,
+                        tenantUsername,
+                        slotsCount,
+                        pricePerSlot: pricePerSlot || undefined
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    showNotification('Аренда успешно создана! Деньги зачислены на ваш баланс.', 'success');
+                    createRentalModal.hide();
+                    await loadSites(); // Refresh sites to update used_links
+                } else {
+                    showNotification(result.error || 'Ошибка при создании аренды', 'error');
+                }
+            } catch (error) {
+                console.error('Error creating rental:', error);
+                showNotification('Ошибка при создании аренды', 'error');
+            }
+        }
     </script>
 
     <!-- Bulk Price Update Modal -->

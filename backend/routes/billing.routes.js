@@ -214,6 +214,7 @@ router.post(
       .isISO8601()
       .withMessage('Scheduled date must be valid ISO8601 date'),
     body('autoRenewal').optional().isBoolean().withMessage('Auto renewal must be boolean'),
+    body('useRentalSlot').optional().isBoolean().withMessage('Use rental slot must be boolean'),
     // SECURITY: Optional idempotency key to prevent duplicate purchases
     body('idempotencyKey')
       .optional()
@@ -223,8 +224,16 @@ router.post(
   validateRequest,
   async (req, res) => {
     try {
-      const { projectId, siteId, type, contentIds, scheduledDate, autoRenewal, idempotencyKey } =
-        req.body;
+      const {
+        projectId,
+        siteId,
+        type,
+        contentIds,
+        scheduledDate,
+        autoRenewal,
+        useRentalSlot,
+        idempotencyKey
+      } = req.body;
 
       // SECURITY: Check idempotency key to prevent duplicate purchases
       if (idempotencyKey) {
@@ -270,7 +279,8 @@ router.post(
         type,
         contentIds,
         scheduledDate,
-        autoRenewal
+        autoRenewal,
+        useRentalSlot: useRentalSlot || false
       });
 
       const responseData = {

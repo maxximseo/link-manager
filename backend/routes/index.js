@@ -21,6 +21,7 @@ const referralRoutes = require('./referral.routes');
 const promoRoutes = require('./promo.routes');
 const paymentRoutes = require('./payment.routes');
 const webhookRoutes = require('./webhook.routes');
+const rentalRoutes = require('./rental.routes');
 
 // Import legacy server for fallback (for routes not yet modularized)
 const legacyRoutes = require('./legacy');
@@ -71,6 +72,7 @@ router.use('/referrals', referralRoutes);
 router.use('/promo', promoRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/webhooks', webhookRoutes); // Public webhook endpoints (no auth)
+router.use('/rentals', rentalRoutes);
 
 // Queue routes (if available)
 if (queueRoutes) {

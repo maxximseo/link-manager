@@ -59,7 +59,10 @@ class Navbar {
                     </a>
                     <div class="dropdown-menu dropdown-menu-end notification-dropdown" id="notificationsList">
                         <div class="notification-header">
-                            <h6>Уведомления</h6>
+                            <div>
+                                <h6>Уведомления</h6>
+                                <small class="text-muted" id="notificationCountText"></small>
+                            </div>
                             <a href="#" class="mark-all-read" onclick="Navbar.markAllNotificationsRead(event)">Отметить все как прочитанные</a>
                         </div>
                         <div class="notification-list" id="notificationsListContent">
@@ -257,17 +260,17 @@ Navbar.loadNotifications = async function() {
     const cached = localStorage.getItem('notifications_cache');
     if (cached) {
         try {
-            const { notifications, unreadCount, timestamp } = JSON.parse(cached);
+            const { notifications, unreadCount, totalCount, timestamp } = JSON.parse(cached);
             // Use cache if less than 5 minutes old
             if (Date.now() - timestamp < 300000) {
-                Navbar.displayNotifications(notifications, unreadCount);
+                Navbar.displayNotifications(notifications, unreadCount, totalCount);
             }
         } catch (e) { /* ignore cache errors */ }
     }
 
     // 2. Fetch fresh data in background
     try {
-        const response = await fetch('/api/notifications?limit=20', {
+        const response = await fetch('/api/notifications?limit=100', {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -278,14 +281,16 @@ Navbar.loadNotifications = async function() {
         const result = await response.json();
         const notifications = result.data || [];
         const unreadCount = result.pagination?.unread || notifications.filter(n => !n.read).length;
+        const totalCount = result.pagination?.total || notifications.length;
 
         // Update UI
-        Navbar.displayNotifications(notifications, unreadCount);
+        Navbar.displayNotifications(notifications, unreadCount, totalCount);
 
         // Cache for next page load
         localStorage.setItem('notifications_cache', JSON.stringify({
             notifications,
             unreadCount,
+            totalCount,
             timestamp: Date.now()
         }));
 
@@ -297,12 +302,24 @@ Navbar.loadNotifications = async function() {
 /**
  * Display notifications in UI (extracted for reuse)
  */
-Navbar.displayNotifications = function(notifications, unreadCount) {
+Navbar.displayNotifications = function(notifications, unreadCount, totalCount) {
     // Update badge
     const badge = document.getElementById('notificationBadge');
     if (badge) {
-        badge.textContent = unreadCount;
+        badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
         badge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
+    }
+
+    // Update count text in header
+    const countText = document.getElementById('notificationCountText');
+    if (countText) {
+        if (unreadCount > 0) {
+            countText.textContent = `${unreadCount} непрочитанных`;
+        } else if (totalCount > 0) {
+            countText.textContent = `${totalCount} всего`;
+        } else {
+            countText.textContent = '';
+        }
     }
 
     // Update dropdown list

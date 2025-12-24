@@ -1454,6 +1454,7 @@
         let userPricing = null; // Pricing data with user's discount
         let currentSortColumn = null; // Current sort column (dr, da, tf, cf, etc.)
         let currentSortDirection = 'desc'; // Sort direction: 'asc' or 'desc'
+        let userRentals = {}; // Map of siteId -> rental data for current user
 
         /**
          * Mask URL for premium sites (DR >= 20 OR DA >= 30)
@@ -1711,8 +1712,38 @@
             try {
                 // Use marketplace endpoint to get public sites + user's own sites
                 sites = await SitesAPI.getMarketplace();
+
+                // Load user's active rentals
+                await loadUserRentals();
             } catch (error) {
                 showNotification('Failed to load sites: ' + error.message, 'error');
+            }
+        }
+
+        async function loadUserRentals() {
+            try {
+                const response = await fetch('/api/rentals?role=tenant', {
+                    headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+                });
+                if (response.ok) {
+                    const result = await response.json();
+                    const rentals = result.data || [];
+                    // Build map: siteId -> rental info
+                    userRentals = {};
+                    for (const rental of rentals) {
+                        if (rental.status === 'active') {
+                            userRentals[rental.site_id] = {
+                                id: rental.id,
+                                slotsTotal: rental.slots_count,
+                                slotsUsed: rental.slots_used,
+                                slotsAvailable: rental.slots_count - rental.slots_used,
+                                expiresAt: rental.expires_at
+                            };
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load user rentals:', error);
             }
         }
 
@@ -2035,13 +2066,24 @@
 
                 // Price based on content type (with user's discount)
                 // SPECIAL: $0.10 for user's own sites
+                // SPECIAL: $0.00 for rented slots
                 const currentUser = getCurrentUser();
                 const isOwnSite = site.user_id === currentUser?.id;
-                const price = isOwnSite
-                    ? 0.10
-                    : parseFloat(contentType === 'links'
+                const rental = userRentals[site.id];
+                const hasAvailableRentalSlot = rental && rental.slotsAvailable > 0 && contentType === 'links';
+
+                let price;
+                let rentalBadge = '';
+                if (hasAvailableRentalSlot) {
+                    price = 0.00;
+                    rentalBadge = `<span class="badge bg-purple ms-1" title="Арендовано ${rental.slotsUsed}/${rental.slotsTotal} слотов"><i class="bi bi-key-fill"></i> ${rental.slotsAvailable}</span>`;
+                } else if (isOwnSite) {
+                    price = 0.10;
+                } else {
+                    price = parseFloat(contentType === 'links'
                         ? (userPricing?.link?.finalPrice || 25)
                         : (userPricing?.article?.finalPrice || 15));
+                }
 
                 // Slot availability display (dynamic based on content type)
                 let slotsDisplay = '';
@@ -2094,7 +2136,7 @@
                         <td class="text-muted text-center">${geoValue}</td>
                         <td class="text-center">${siteTypeBadge}</td>
                         <td class="${slotsClass} text-nowrap text-center"><small>${slotsDisplay}</small></td>
-                        <td class="text-success fw-bold text-center">$${typeof price === 'number' ? price.toFixed(2) : price}</td>
+                        <td class="${hasAvailableRentalSlot ? 'text-purple' : 'text-success'} fw-bold text-center">$${typeof price === 'number' ? price.toFixed(2) : price}${rentalBadge}</td>
                         <td class="text-center">${site.statusBadge}</td>
                         <td class="text-center">${visibilityBadge}</td>
                     </tr>
@@ -2509,12 +2551,20 @@
             const purchases = [];
             let dateIndex = 0;
             for (const [siteId, assignment] of Object.entries(siteAssignments)) {
+                const siteIdInt = parseInt(siteId);
                 const purchaseData = {
                     projectId: projectId,
-                    siteId: parseInt(siteId),
+                    siteId: siteIdInt,
                     type: selectedContentType === 'links' ? 'link' : 'article',
                     contentIds: [assignment.contentId]
                 };
+
+                // Check if this site has available rental slots for the user
+                const rental = userRentals[siteIdInt];
+                if (rental && rental.slotsAvailable > 0 && selectedContentType === 'links') {
+                    purchaseData.useRentalSlot = true;
+                    console.log(`🔑 Site ${siteIdInt} using rental slot (${rental.slotsAvailable} available)`);
+                }
 
                 // Add scheduled date for distributed publication
                 if (publishType === 'distributed' && distributedDates.length > 0) {

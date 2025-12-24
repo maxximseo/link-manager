@@ -381,7 +381,8 @@ const purchasePlacement = async ({
   type, // 'link' or 'article'
   contentIds, // Array of link/article IDs
   scheduledDate, // Optional: scheduled publish date (ISO string)
-  autoRenewal = false
+  autoRenewal = false,
+  useRentalSlot = false // Optional: use rented slot (free placement)
 }) => {
   const client = await pool.connect();
 
@@ -536,13 +537,70 @@ const purchasePlacement = async ({
       }
     }
 
+    // 4.6. Check for rental slot usage (only for links)
+    let activeRental = null;
+    let isRentedPlacement = false;
+
+    if (type === 'link' && useRentalSlot) {
+      // Verify user has active rental for this site
+      const rentalResult = await client.query(
+        `
+        SELECT * FROM site_slot_rentals
+        WHERE tenant_id = $1 AND site_id = $2 AND status = 'active'
+        AND expires_at > NOW()
+        FOR UPDATE
+        `,
+        [userId, siteId]
+      );
+
+      if (rentalResult.rows.length === 0) {
+        throw new Error(
+          `У вас нет активной аренды на сайте "${site.site_name}". ` +
+            `Используйте обычную покупку или сначала получите арендные слоты.`
+        );
+      }
+
+      activeRental = rentalResult.rows[0];
+
+      // Check if rental has available slots
+      if (activeRental.slots_used >= activeRental.slots_count) {
+        throw new Error(
+          `Все арендные слоты использованы (${activeRental.slots_used}/${activeRental.slots_count}). ` +
+            `Продлите аренду или используйте обычную покупку.`
+        );
+      }
+
+      isRentedPlacement = true;
+      logger.info('Using rental slot for placement', {
+        userId,
+        siteId,
+        rentalId: activeRental.id,
+        slotsAvailable: activeRental.slots_count - activeRental.slots_used
+      });
+    }
+
     // 5. Calculate price
-    // SPECIAL PRICING: If user owns the site, flat rate of $0.10 (no discounts applied)
+    // SPECIAL PRICING PRIORITY:
+    // 1. Rented slot → $0 (free, slot already paid for)
+    // 2. Own site → $0.10 flat rate
+    // 3. Standard pricing with user discount tier
     const isOwnSite = site.user_id === userId;
 
     let basePrice, discount, finalPrice;
 
-    if (isOwnSite) {
+    if (isRentedPlacement) {
+      // Rented slot - FREE placement (slot was paid during rental creation)
+      basePrice = 0;
+      discount = 0;
+      finalPrice = 0;
+      logger.info('Rental slot pricing applied', {
+        userId,
+        siteId,
+        siteName: site.site_name,
+        rentalId: activeRental.id,
+        price: 0
+      });
+    } else if (isOwnSite) {
       // Owner's special rate for both links and articles
       basePrice = PRICING.OWNER_RATE;
       discount = 0;
@@ -579,36 +637,49 @@ const purchasePlacement = async ({
       );
     }
 
-    // 8. Deduct from balance
-    const newBalance = parseFloat(user.balance) - finalPrice;
-    const newTotalSpent = parseFloat(user.total_spent) + finalPrice;
+    // 8. Deduct from balance (skip for free rental placements)
+    let newBalance = parseFloat(user.balance);
+    let newTotalSpent = parseFloat(user.total_spent);
+    let transactionId = null;
 
-    await client.query('UPDATE users SET balance = $1, total_spent = $2 WHERE id = $3', [
-      newBalance,
-      newTotalSpent,
-      userId
-    ]);
+    if (finalPrice > 0) {
+      newBalance = parseFloat(user.balance) - finalPrice;
+      newTotalSpent = parseFloat(user.total_spent) + finalPrice;
 
-    // 9. Create transaction
-    const transactionResult = await client.query(
-      `
-      INSERT INTO transactions (
-        user_id, type, amount, balance_before, balance_after, description, metadata
-      )
-      VALUES ($1, 'purchase', $2, $3, $4, $5, $6)
-      RETURNING id
-    `,
-      [
-        userId,
-        -finalPrice,
-        user.balance,
+      await client.query('UPDATE users SET balance = $1, total_spent = $2 WHERE id = $3', [
         newBalance,
-        `Покупка размещения ${type === 'article' ? 'статьи' : 'ссылки'} на ${site.site_name}`,
-        JSON.stringify({ type, discount, basePrice, finalPrice, projectId, siteId })
-      ]
-    );
+        newTotalSpent,
+        userId
+      ]);
 
-    const transactionId = transactionResult.rows[0].id;
+      // 9. Create transaction (only for paid placements)
+      const transactionResult = await client.query(
+        `
+        INSERT INTO transactions (
+          user_id, type, amount, balance_before, balance_after, description, metadata
+        )
+        VALUES ($1, 'purchase', $2, $3, $4, $5, $6)
+        RETURNING id
+      `,
+        [
+          userId,
+          -finalPrice,
+          user.balance,
+          newBalance,
+          `Покупка размещения ${type === 'article' ? 'статьи' : 'ссылки'} на ${site.site_name}`,
+          JSON.stringify({ type, discount, basePrice, finalPrice, projectId, siteId })
+        ]
+      );
+
+      transactionId = transactionResult.rows[0].id;
+    } else {
+      // For free rental placements, log but don't create transaction
+      logger.info('Free rental placement - no transaction created', {
+        userId,
+        siteId,
+        rentalId: activeRental?.id
+      });
+    }
 
     // 10. Calculate expiry date (only for links)
     let expiresAt = null;
@@ -724,34 +795,62 @@ const purchasePlacement = async ({
     }
 
     // 14. Update site quotas
-    if (type === 'link') {
-      await client.query('UPDATE sites SET used_links = used_links + 1 WHERE id = $1', [siteId]);
-    } else {
-      await client.query('UPDATE sites SET used_articles = used_articles + 1 WHERE id = $1', [
-        siteId
-      ]);
+    // NOTE: For rented placements, site quota was already reserved when rental was created
+    // So we DON'T increment used_links again - it would double-count
+    if (!isRentedPlacement) {
+      if (type === 'link') {
+        await client.query('UPDATE sites SET used_links = used_links + 1 WHERE id = $1', [siteId]);
+      } else {
+        await client.query('UPDATE sites SET used_articles = used_articles + 1 WHERE id = $1', [
+          siteId
+        ]);
+      }
     }
 
-    // 15. Update discount tier if needed
-    const newTier = await calculateDiscountTier(newTotalSpent);
-    if (newTier.discount !== parseFloat(user.current_discount)) {
-      await client.query('UPDATE users SET current_discount = $1 WHERE id = $2', [
-        newTier.discount,
-        userId
-      ]);
-
-      // Notify user about tier upgrade
+    // 14.5. Update rental slot usage (if using rented slot)
+    if (isRentedPlacement && activeRental) {
+      // Increment slots_used in rental
       await client.query(
-        `
-        INSERT INTO notifications (user_id, type, title, message)
-        VALUES ($1, 'discount_tier_achieved', $2, $3)
-      `,
-        [
-          userId,
-          'Новый уровень скидки!',
-          `Поздравляем! Вы достигли уровня "${newTier.tier}" со скидкой ${newTier.discount}%`
-        ]
+        `UPDATE site_slot_rentals SET slots_used = slots_used + 1, updated_at = NOW() WHERE id = $1`,
+        [activeRental.id]
       );
+
+      // Create rental_placements record to track which placement uses which rental
+      await client.query(
+        `INSERT INTO rental_placements (rental_id, placement_id) VALUES ($1, $2)`,
+        [activeRental.id, placement.id]
+      );
+
+      logger.info('Rental slot used', {
+        rentalId: activeRental.id,
+        placementId: placement.id,
+        slotsUsed: activeRental.slots_used + 1,
+        slotsTotal: activeRental.slots_count
+      });
+    }
+
+    // 15. Update discount tier if needed (skip for free placements)
+    if (finalPrice > 0) {
+      const newTier = await calculateDiscountTier(newTotalSpent);
+      if (newTier.discount !== parseFloat(user.current_discount)) {
+        await client.query('UPDATE users SET current_discount = $1 WHERE id = $2', [
+          newTier.discount,
+          userId
+        ]);
+
+        // Notify user about tier upgrade
+        await client.query(
+          `
+          INSERT INTO notifications (user_id, type, title, message)
+          VALUES ($1, 'discount_tier_achieved', $2, $3)
+        `,
+          [
+            userId,
+            'Новый уровень скидки!',
+            `Поздравляем! Вы достигли уровня "${newTier.tier}" со скидкой ${newTier.discount}%`
+          ]
+        );
+      }
     }
 
     // 16. Get project name for notifications
@@ -760,13 +859,14 @@ const purchasePlacement = async ({
     const typeLabel = type === 'link' ? 'ссылка' : 'статья';
 
     // Build notification message with content details
+    const priceText = isRentedPlacement ? 'Бесплатно (аренда)' : `Списано $${finalPrice.toFixed(2)}`;
     let userNotificationMessage;
     if (type === 'link' && contentData.url) {
-      userNotificationMessage = `Ссылка "${contentData.url}" → "${site.site_url}". Списано $${finalPrice.toFixed(2)}.`;
+      userNotificationMessage = `Ссылка "${contentData.url}" → "${site.site_url}". ${priceText}.`;
     } else if (type === 'article' && contentData.title) {
-      userNotificationMessage = `Статья "${contentData.title}" → "${site.site_url}". Списано $${finalPrice.toFixed(2)}.`;
+      userNotificationMessage = `Статья "${contentData.title}" → "${site.site_url}". ${priceText}.`;
     } else {
-      userNotificationMessage = `Куплена ${typeLabel} на сайте "${site.site_name}" для проекта "${project.name}". Списано $${finalPrice.toFixed(2)}.`;
+      userNotificationMessage = `Куплена ${typeLabel} на сайте "${site.site_name}" для проекта "${project.name}". ${priceText}.`;
     }
 
     // 17. NOTIFICATION: Create notification for user about purchase
@@ -789,16 +889,19 @@ const purchasePlacement = async ({
           projectName: project.name,
           contentUrl: contentData.url || null,
           contentTitle: contentData.title || null,
-          price: finalPrice
+          price: finalPrice,
+          isRented: isRentedPlacement,
+          rentalId: activeRental?.id || null
         })
       ]
     );
 
     // Build admin notification message
+    const adminPriceText = isRentedPlacement ? 'аренда' : `$${finalPrice.toFixed(2)}`;
     const adminNotificationMessage =
       type === 'link' && contentData.url
-        ? `"${user.username}": "${contentData.url}" → "${site.site_url}" ($${finalPrice.toFixed(2)})`
-        : `"${user.username}": "${contentData.title || 'N/A'}" → "${site.site_url}" ($${finalPrice.toFixed(2)})`;
+        ? `"${user.username}": "${contentData.url}" → "${site.site_url}" (${adminPriceText})`
+        : `"${user.username}": "${contentData.title || 'N/A'}" → "${site.site_url}" (${adminPriceText})`;
 
     // 18. NOTIFICATION: Create notification for other admins about purchase (exclude buyer to avoid duplicates)
     await client.query(
@@ -2600,8 +2703,601 @@ const createReferralCommission = async (userId, transactionId, placementId, purc
   }
 };
 
+// ============================================
+// SLOT RENTAL SYSTEM
+// ============================================
+
+const RENTAL_PRICING = {
+  DEFAULT_PRICE_PER_SLOT: 25.0,
+  RENTAL_PERIOD_DAYS: 365,
+  RENEWAL_DISCOUNT: 30 // 30% discount on renewal
+};
+
+/**
+ * Create slot rental (owner creates, tenant pays)
+ * @param {number} ownerId - Site owner who creates the rental
+ * @param {number} siteId - Site ID
+ * @param {string} tenantUsername - Username of the tenant
+ * @param {number} slotsCount - Number of slots to rent
+ * @param {number} pricePerSlot - Price per slot (optional, defaults to site price or $25)
+ */
+const createSlotRental = async (ownerId, siteId, tenantUsername, slotsCount, pricePerSlot = null) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    // 1. Get site and verify ownership
+    const siteResult = await client.query(
+      `SELECT s.*, u.username as owner_username
+       FROM sites s
+       JOIN users u ON s.user_id = u.id
+       WHERE s.id = $1 FOR UPDATE`,
+      [siteId]
+    );
+
+    if (siteResult.rows.length === 0) {
+      throw new Error('Сайт не найден');
+    }
+
+    const site = siteResult.rows[0];
+
+    if (site.user_id !== ownerId) {
+      throw new Error('Только владелец сайта может создавать аренду');
+    }
+
+    // 2. Get tenant by username
+    const tenantResult = await client.query(
+      `SELECT id, username, balance, current_discount FROM users WHERE username = $1 FOR UPDATE`,
+      [tenantUsername]
+    );
+
+    if (tenantResult.rows.length === 0) {
+      throw new Error(`Пользователь "${tenantUsername}" не найден`);
+    }
+
+    const tenant = tenantResult.rows[0];
+
+    if (tenant.id === ownerId) {
+      throw new Error('Нельзя сдать сайт в аренду самому себе');
+    }
+
+    // 3. Check available slots
+    const availableSlots = site.max_links - site.used_links;
+    if (slotsCount > availableSlots) {
+      throw new Error(`Доступно только ${availableSlots} свободных слотов`);
+    }
+
+    // 4. Check for existing active rental
+    const existingRental = await client.query(
+      `SELECT id FROM site_slot_rentals
+       WHERE site_id = $1 AND tenant_id = $2 AND status = 'active'`,
+      [siteId, tenant.id]
+    );
+
+    if (existingRental.rows.length > 0) {
+      throw new Error(`У пользователя "${tenantUsername}" уже есть активная аренда на этом сайте`);
+    }
+
+    // 5. Calculate price
+    const finalPricePerSlot = pricePerSlot || site.price_link || RENTAL_PRICING.DEFAULT_PRICE_PER_SLOT;
+    const tenantDiscount = parseFloat(tenant.current_discount) || 0;
+    const totalBasePrice = finalPricePerSlot * slotsCount;
+    const totalPrice = totalBasePrice * (1 - tenantDiscount / 100);
+
+    // 6. Check tenant balance
+    const tenantBalance = parseFloat(tenant.balance);
+    if (tenantBalance < totalPrice) {
+      throw new Error(
+        `Недостаточно средств у арендатора. Требуется: $${totalPrice.toFixed(2)}, доступно: $${tenantBalance.toFixed(2)}`
+      );
+    }
+
+    // 7. Get owner for payment
+    const ownerResult = await client.query(`SELECT balance FROM users WHERE id = $1 FOR UPDATE`, [ownerId]);
+    const ownerBalance = parseFloat(ownerResult.rows[0].balance);
+
+    // 8. Deduct from tenant
+    const newTenantBalance = tenantBalance - totalPrice;
+    await client.query(
+      `UPDATE users SET balance = $1, total_spent = total_spent + $2, updated_at = NOW() WHERE id = $3`,
+      [newTenantBalance, totalPrice, tenant.id]
+    );
+
+    // 9. Pay owner (P2P transfer)
+    const newOwnerBalance = ownerBalance + totalPrice;
+    await client.query(`UPDATE users SET balance = $1, updated_at = NOW() WHERE id = $2`, [
+      newOwnerBalance,
+      ownerId
+    ]);
+
+    // 10. Create tenant transaction (debit)
+    const tenantTxResult = await client.query(
+      `INSERT INTO transactions (
+        user_id, type, amount, balance_before, balance_after, description, metadata, created_at
+      ) VALUES ($1, 'slot_rental', $2, $3, $4, $5, $6, NOW()) RETURNING id`,
+      [
+        tenant.id,
+        -totalPrice,
+        tenantBalance,
+        newTenantBalance,
+        `Аренда ${slotsCount} слотов на ${site.site_name || site.site_url} (${RENTAL_PRICING.RENTAL_PERIOD_DAYS} дней)`,
+        JSON.stringify({
+          siteId,
+          siteName: site.site_name || site.site_url,
+          slotsCount,
+          pricePerSlot: finalPricePerSlot,
+          ownerId,
+          ownerUsername: site.owner_username
+        })
+      ]
+    );
+
+    // 11. Create owner transaction (credit)
+    await client.query(
+      `INSERT INTO transactions (
+        user_id, type, amount, balance_before, balance_after, description, metadata, created_at
+      ) VALUES ($1, 'slot_rental_income', $2, $3, $4, $5, $6, NOW())`,
+      [
+        ownerId,
+        totalPrice,
+        ownerBalance,
+        newOwnerBalance,
+        `Доход от аренды ${slotsCount} слотов на ${site.site_name || site.site_url}`,
+        JSON.stringify({
+          siteId,
+          slotsCount,
+          tenantId: tenant.id,
+          tenantUsername: tenant.username,
+          pricePerSlot: finalPricePerSlot
+        })
+      ]
+    );
+
+    // 12. Calculate expiry date
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + RENTAL_PRICING.RENTAL_PERIOD_DAYS);
+
+    // 13. Create rental record
+    const rentalResult = await client.query(
+      `INSERT INTO site_slot_rentals (
+        site_id, owner_id, tenant_id, slots_count, slots_used,
+        price_per_slot, total_price, discount_applied,
+        starts_at, expires_at, status, payment_transaction_id,
+        created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, 0, $5, $6, $7, NOW(), $8, 'active', $9, NOW(), NOW())
+      RETURNING *`,
+      [
+        siteId,
+        ownerId,
+        tenant.id,
+        slotsCount,
+        finalPricePerSlot,
+        totalPrice,
+        tenantDiscount,
+        expiresAt,
+        tenantTxResult.rows[0].id
+      ]
+    );
+
+    // 14. Reserve slots on site (increase used_links)
+    await client.query(`UPDATE sites SET used_links = used_links + $1, updated_at = NOW() WHERE id = $2`, [
+      slotsCount,
+      siteId
+    ]);
+
+    // 15. Notifications
+    await client.query(
+      `INSERT INTO notifications (user_id, type, title, message, metadata, created_at)
+       VALUES ($1, 'slot_rental_received', $2, $3, $4, NOW())`,
+      [
+        ownerId,
+        'Новая аренда слотов',
+        `Пользователь "${tenant.username}" арендовал ${slotsCount} слотов на ${site.site_name || site.site_url} за $${totalPrice.toFixed(2)}`,
+        JSON.stringify({ rentalId: rentalResult.rows[0].id, slotsCount, tenantId: tenant.id })
+      ]
+    );
+
+    await client.query(
+      `INSERT INTO notifications (user_id, type, title, message, metadata, created_at)
+       VALUES ($1, 'slot_rental_purchased', $2, $3, $4, NOW())`,
+      [
+        tenant.id,
+        'Аренда слотов оформлена',
+        `Вы арендовали ${slotsCount} слотов на ${site.site_name || site.site_url} до ${expiresAt.toLocaleDateString('ru-RU')}. Размещайте ссылки бесплатно!`,
+        JSON.stringify({ rentalId: rentalResult.rows[0].id, expiresAt })
+      ]
+    );
+
+    await client.query('COMMIT');
+
+    logger.info('Slot rental created successfully', {
+      rentalId: rentalResult.rows[0].id,
+      ownerId,
+      tenantId: tenant.id,
+      siteId,
+      slotsCount,
+      totalPrice
+    });
+
+    return {
+      success: true,
+      rental: rentalResult.rows[0],
+      tenantNewBalance: newTenantBalance,
+      ownerNewBalance: newOwnerBalance
+    };
+  } catch (error) {
+    await client.query('ROLLBACK');
+    logger.error('Failed to create slot rental', {
+      ownerId,
+      siteId,
+      tenantUsername,
+      slotsCount,
+      error: error.message
+    });
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+/**
+ * Renew slot rental (tenant pays owner)
+ * Price = original price_per_slot * slots_count * 0.7 * (1 - personalDiscount%)
+ */
+const renewSlotRental = async (tenantId, rentalId) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    // 1. Get rental with all related data
+    const rentalResult = await client.query(
+      `SELECT r.*,
+              s.site_name, s.site_url,
+              o.balance as owner_balance, o.username as owner_username,
+              t.balance as tenant_balance, t.current_discount as tenant_discount
+       FROM site_slot_rentals r
+       JOIN sites s ON r.site_id = s.id
+       JOIN users o ON r.owner_id = o.id
+       JOIN users t ON r.tenant_id = t.id
+       WHERE r.id = $1 AND r.tenant_id = $2
+       FOR UPDATE OF r, o, t`,
+      [rentalId, tenantId]
+    );
+
+    if (rentalResult.rows.length === 0) {
+      throw new Error('Аренда не найдена или недостаточно прав');
+    }
+
+    const rental = rentalResult.rows[0];
+
+    if (rental.status !== 'active' && rental.status !== 'expired') {
+      throw new Error('Можно продлить только активную или истёкшую аренду');
+    }
+
+    // 2. Calculate renewal price
+    // Formula: price_per_slot * slots_count * 0.7 * (1 - personalDiscount%)
+    const basePrice = parseFloat(rental.price_per_slot) * rental.slots_count;
+    const afterRenewalDiscount = basePrice * (1 - RENTAL_PRICING.RENEWAL_DISCOUNT / 100);
+    const personalDiscount = parseFloat(rental.tenant_discount) || 0;
+    const renewalPrice = afterRenewalDiscount * (1 - personalDiscount / 100);
+
+    // 3. Check tenant balance
+    const tenantBalance = parseFloat(rental.tenant_balance);
+    if (tenantBalance < renewalPrice) {
+      throw new Error(`Недостаточно средств для продления. Требуется: $${renewalPrice.toFixed(2)}`);
+    }
+
+    // 4. Process payment
+    const newTenantBalance = tenantBalance - renewalPrice;
+    await client.query(
+      `UPDATE users SET balance = $1, total_spent = total_spent + $2, updated_at = NOW() WHERE id = $3`,
+      [newTenantBalance, renewalPrice, tenantId]
+    );
+
+    const newOwnerBalance = parseFloat(rental.owner_balance) + renewalPrice;
+    await client.query(`UPDATE users SET balance = $1, updated_at = NOW() WHERE id = $2`, [
+      newOwnerBalance,
+      rental.owner_id
+    ]);
+
+    // 5. Extend rental
+    const currentExpiry = new Date(rental.expires_at);
+    const newExpiresAt = new Date(Math.max(currentExpiry.getTime(), Date.now()));
+    newExpiresAt.setDate(newExpiresAt.getDate() + RENTAL_PRICING.RENTAL_PERIOD_DAYS);
+
+    await client.query(
+      `UPDATE site_slot_rentals
+       SET expires_at = $1, status = 'active', updated_at = NOW()
+       WHERE id = $2`,
+      [newExpiresAt, rentalId]
+    );
+
+    // 6. Create transactions
+    await client.query(
+      `INSERT INTO transactions (user_id, type, amount, balance_before, balance_after, description, metadata, created_at)
+       VALUES ($1, 'slot_rental_renewal', $2, $3, $4, $5, $6, NOW())`,
+      [
+        tenantId,
+        -renewalPrice,
+        tenantBalance,
+        newTenantBalance,
+        `Продление аренды ${rental.slots_count} слотов на ${rental.site_name || rental.site_url}`,
+        JSON.stringify({
+          rentalId,
+          siteId: rental.site_id,
+          slotsCount: rental.slots_count,
+          pricePerSlot: rental.price_per_slot,
+          renewalDiscount: RENTAL_PRICING.RENEWAL_DISCOUNT,
+          personalDiscount
+        })
+      ]
+    );
+
+    await client.query(
+      `INSERT INTO transactions (user_id, type, amount, balance_before, balance_after, description, metadata, created_at)
+       VALUES ($1, 'slot_rental_income', $2, $3, $4, $5, $6, NOW())`,
+      [
+        rental.owner_id,
+        renewalPrice,
+        rental.owner_balance,
+        newOwnerBalance,
+        `Продление аренды ${rental.slots_count} слотов от ${rental.tenant_username || 'арендатора'}`,
+        JSON.stringify({ rentalId, tenantId })
+      ]
+    );
+
+    // 7. Notifications
+    await client.query(
+      `INSERT INTO notifications (user_id, type, title, message, metadata, created_at)
+       VALUES ($1, 'slot_rental_renewed', $2, $3, $4, NOW())`,
+      [
+        tenantId,
+        'Аренда продлена',
+        `Аренда ${rental.slots_count} слотов на ${rental.site_name || rental.site_url} продлена до ${newExpiresAt.toLocaleDateString('ru-RU')}`,
+        JSON.stringify({ rentalId, newExpiresAt })
+      ]
+    );
+
+    await client.query('COMMIT');
+
+    logger.info('Slot rental renewed', {
+      rentalId,
+      tenantId,
+      renewalPrice,
+      newExpiresAt
+    });
+
+    return {
+      success: true,
+      newExpiresAt,
+      renewalPrice,
+      newBalance: newTenantBalance,
+      discountsApplied: {
+        renewal: RENTAL_PRICING.RENEWAL_DISCOUNT,
+        personal: personalDiscount,
+        total: RENTAL_PRICING.RENEWAL_DISCOUNT + personalDiscount * (1 - RENTAL_PRICING.RENEWAL_DISCOUNT / 100)
+      }
+    };
+  } catch (error) {
+    await client.query('ROLLBACK');
+    logger.error('Failed to renew slot rental', { tenantId, rentalId, error: error.message });
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+/**
+ * Get user's slot rentals
+ * @param {number} userId - User ID
+ * @param {string} role - 'owner', 'tenant', or 'all'
+ */
+const getUserSlotRentals = async (userId, role = 'all') => {
+  let whereClause = '';
+
+  if (role === 'owner') {
+    whereClause = 'WHERE r.owner_id = $1';
+  } else if (role === 'tenant') {
+    whereClause = 'WHERE r.tenant_id = $1';
+  } else {
+    whereClause = 'WHERE r.owner_id = $1 OR r.tenant_id = $1';
+  }
+
+  const result = await query(
+    `SELECT
+       r.*,
+       s.site_name, s.site_url, s.max_links,
+       owner.username as owner_username,
+       tenant.username as tenant_username
+     FROM site_slot_rentals r
+     JOIN sites s ON r.site_id = s.id
+     JOIN users owner ON r.owner_id = owner.id
+     JOIN users tenant ON r.tenant_id = tenant.id
+     ${whereClause}
+     ORDER BY r.created_at DESC`,
+    [userId]
+  );
+
+  return result.rows;
+};
+
+/**
+ * Get active rental for a specific site and user
+ */
+const getActiveRentalForSite = async (userId, siteId) => {
+  const result = await query(
+    `SELECT r.*, s.site_name, s.site_url
+     FROM site_slot_rentals r
+     JOIN sites s ON r.site_id = s.id
+     WHERE r.tenant_id = $1 AND r.site_id = $2
+     AND r.status = 'active' AND r.expires_at > NOW()
+     AND r.slots_used < r.slots_count`,
+    [userId, siteId]
+  );
+
+  return result.rows[0] || null;
+};
+
+/**
+ * Cancel slot rental (owner only, if no slots used)
+ */
+const cancelSlotRental = async (ownerId, rentalId) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    // Get rental
+    const rentalResult = await client.query(
+      `SELECT r.*, s.site_name, t.username as tenant_username
+       FROM site_slot_rentals r
+       JOIN sites s ON r.site_id = s.id
+       JOIN users t ON r.tenant_id = t.id
+       WHERE r.id = $1 AND r.owner_id = $2
+       FOR UPDATE`,
+      [rentalId, ownerId]
+    );
+
+    if (rentalResult.rows.length === 0) {
+      throw new Error('Аренда не найдена или недостаточно прав');
+    }
+
+    const rental = rentalResult.rows[0];
+
+    if (rental.slots_used > 0) {
+      throw new Error(`Нельзя отменить аренду: использовано ${rental.slots_used} слотов`);
+    }
+
+    if (rental.status !== 'active') {
+      throw new Error('Можно отменить только активную аренду');
+    }
+
+    // Update rental status
+    await client.query(`UPDATE site_slot_rentals SET status = 'cancelled', updated_at = NOW() WHERE id = $1`, [
+      rentalId
+    ]);
+
+    // Release reserved slots
+    await client.query(`UPDATE sites SET used_links = used_links - $1, updated_at = NOW() WHERE id = $2`, [
+      rental.slots_count,
+      rental.site_id
+    ]);
+
+    // Refund tenant
+    await client.query(`UPDATE users SET balance = balance + $1, updated_at = NOW() WHERE id = $2`, [
+      rental.total_price,
+      rental.tenant_id
+    ]);
+
+    // Deduct from owner
+    await client.query(`UPDATE users SET balance = balance - $1, updated_at = NOW() WHERE id = $2`, [
+      rental.total_price,
+      ownerId
+    ]);
+
+    // Create refund transactions
+    await client.query(
+      `INSERT INTO transactions (user_id, type, amount, description, metadata, created_at)
+       VALUES ($1, 'slot_rental_refund', $2, $3, $4, NOW())`,
+      [
+        rental.tenant_id,
+        rental.total_price,
+        `Возврат за отменённую аренду ${rental.slots_count} слотов на ${rental.site_name}`,
+        JSON.stringify({ rentalId, reason: 'cancelled_by_owner' })
+      ]
+    );
+
+    // Notification to tenant
+    await client.query(
+      `INSERT INTO notifications (user_id, type, title, message, metadata, created_at)
+       VALUES ($1, 'slot_rental_cancelled', $2, $3, $4, NOW())`,
+      [
+        rental.tenant_id,
+        'Аренда отменена',
+        `Владелец отменил аренду ${rental.slots_count} слотов на ${rental.site_name}. Средства возвращены на баланс.`,
+        JSON.stringify({ rentalId, refundAmount: rental.total_price })
+      ]
+    );
+
+    await client.query('COMMIT');
+
+    logger.info('Slot rental cancelled', { rentalId, ownerId, refundAmount: rental.total_price });
+
+    return { success: true, refundAmount: rental.total_price };
+  } catch (error) {
+    await client.query('ROLLBACK');
+    logger.error('Failed to cancel slot rental', { ownerId, rentalId, error: error.message });
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+/**
+ * Use rented slot for placement (called from purchasePlacement)
+ * Returns rental if used, null if no rental available
+ */
+const useRentedSlot = async (client, tenantId, siteId, placementId) => {
+  // Find active rental with available slots
+  const rentalResult = await client.query(
+    `SELECT * FROM site_slot_rentals
+     WHERE tenant_id = $1 AND site_id = $2
+     AND status = 'active' AND expires_at > NOW()
+     AND slots_used < slots_count
+     FOR UPDATE`,
+    [tenantId, siteId]
+  );
+
+  if (rentalResult.rows.length === 0) {
+    return null;
+  }
+
+  const rental = rentalResult.rows[0];
+
+  // Increment slots_used
+  await client.query(
+    `UPDATE site_slot_rentals SET slots_used = slots_used + 1, updated_at = NOW() WHERE id = $1`,
+    [rental.id]
+  );
+
+  // Link placement to rental
+  await client.query(`INSERT INTO rental_placements (rental_id, placement_id) VALUES ($1, $2)`, [
+    rental.id,
+    placementId
+  ]);
+
+  logger.info('Rented slot used', {
+    rentalId: rental.id,
+    tenantId,
+    siteId,
+    placementId,
+    slotsRemaining: rental.slots_count - rental.slots_used - 1
+  });
+
+  return rental;
+};
+
+/**
+ * Get rentals for a specific site (for owner view)
+ */
+const getSiteRentals = async (siteId, ownerId) => {
+  const result = await query(
+    `SELECT r.*, t.username as tenant_username
+     FROM site_slot_rentals r
+     JOIN users t ON r.tenant_id = t.id
+     WHERE r.site_id = $1 AND r.owner_id = $2
+     ORDER BY r.created_at DESC`,
+    [siteId, ownerId]
+  );
+
+  return result.rows;
+};
+
 module.exports = {
   PRICING,
+  RENTAL_PRICING,
   getUserBalance,
   calculateDiscountTier,
   getDiscountTiers,
@@ -2619,5 +3315,13 @@ module.exports = {
   restoreUsageCountsInTransaction,
   publishScheduledPlacement,
   publishPlacementAsync,
-  createReferralCommission
+  createReferralCommission,
+  // Slot rentals
+  createSlotRental,
+  renewSlotRental,
+  getUserSlotRentals,
+  getActiveRentalForSite,
+  cancelSlotRental,
+  useRentedSlot,
+  getSiteRentals
 };
