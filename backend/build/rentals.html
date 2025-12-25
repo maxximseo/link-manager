@@ -3,166 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Аренда слотов - Link Manager</title>
+    <title data-i18n="rentalsPageTitle">Аренда слотов - Link Manager</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/modern-table.css">
     <link rel="stylesheet" href="/css/sidebar.css">
     <style>
-        .rental-card {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            padding: 20px;
-            margin-bottom: 16px;
-            border: 1px solid #e5e7eb;
+        /* Purple badge for rental status */
+        .badge.bg-purple {
+            background: linear-gradient(135deg, #8b5cf6, #6366f1) !important;
+            color: white;
         }
-        .rental-card:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        /* Pending approval row styling */
+        .rental-pending-row {
+            background-color: #fffbeb !important;
         }
-        .rental-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 16px;
+        .rental-pending-row:hover {
+            background-color: #fef3c7 !important;
         }
-        .rental-site {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #1f2937;
+        /* Rejected row styling */
+        .rental-rejected-row {
+            background-color: #f3f4f6 !important;
+            opacity: 0.7;
         }
-        .rental-site a {
-            color: #4f46e5;
-            text-decoration: none;
-        }
-        .rental-site a:hover {
-            text-decoration: underline;
-        }
-        .rental-status {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 500;
-        }
-        .rental-status.active {
-            background: #dcfce7;
-            color: #166534;
-        }
-        .rental-status.expired {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-        .rental-status.cancelled {
-            background: #f3f4f6;
-            color: #6b7280;
-        }
-        .rental-stats {
-            display: flex;
-            gap: 24px;
-            margin-bottom: 16px;
-        }
-        .rental-stat {
-            display: flex;
-            flex-direction: column;
-        }
-        .rental-stat-label {
-            font-size: 0.75rem;
-            color: #6b7280;
-            margin-bottom: 2px;
-        }
-        .rental-stat-value {
-            font-size: 1rem;
-            font-weight: 600;
-            color: #1f2937;
-        }
-        .slots-progress {
-            width: 100%;
-            height: 8px;
-            background: #e5e7eb;
-            border-radius: 4px;
-            overflow: hidden;
-            margin-top: 8px;
-        }
-        .slots-progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #4f46e5, #7c3aed);
-            border-radius: 4px;
-            transition: width 0.3s ease;
-        }
-        .rental-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-top: 16px;
-            border-top: 1px solid #f3f4f6;
-        }
-        .rental-expiry {
-            font-size: 0.875rem;
-            color: #6b7280;
-        }
-        .rental-expiry.expiring-soon {
-            color: #d97706;
-        }
-        .rental-expiry.expired {
-            color: #dc2626;
-        }
-        .owner-info {
-            font-size: 0.875rem;
-            color: #6b7280;
-        }
-        .tenant-info {
-            font-size: 0.875rem;
-            color: #6b7280;
-        }
-        .tabs-container {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 24px;
-            background: #f3f4f6;
-            padding: 4px;
-            border-radius: 8px;
-            width: fit-content;
-        }
-        .tab-btn {
-            padding: 8px 20px;
+        /* Action buttons for pending */
+        .btn-approve {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
             border: none;
-            background: transparent;
-            border-radius: 6px;
-            font-weight: 500;
-            color: #6b7280;
-            cursor: pointer;
-            transition: all 0.2s;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
         }
-        .tab-btn.active {
-            background: #fff;
-            color: #1f2937;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        .btn-approve:hover {
+            background: linear-gradient(135deg, #16a34a, #15803d);
+            color: white;
         }
-        .tab-btn:hover:not(.active) {
-            color: #1f2937;
+        .btn-reject {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            border: none;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
         }
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #6b7280;
+        .btn-reject:hover {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            color: white;
         }
-        .empty-state i {
-            font-size: 3rem;
-            margin-bottom: 16px;
-            color: #d1d5db;
-        }
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-        }
-        .page-title {
-            font-size: 1.5rem;
+        /* SEO columns styling */
+        .seo-metric-th {
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%) !important;
             font-weight: 600;
-            color: #1f2937;
-            margin: 0;
+            white-space: nowrap;
+        }
+        .seo-metric-td {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%) !important;
+        }
+        /* Compact cells */
+        .sites-table td, .sites-table th {
+            padding: 0.5rem 0.75rem;
+            vertical-align: middle;
+        }
+        /* Auto-renewal switch */
+        .form-check.form-switch .form-check-input {
+            cursor: pointer;
+        }
+        /* Progress bar compact */
+        .slots-progress {
+            min-width: 60px;
+            height: 6px;
         }
     </style>
 </head>
@@ -170,85 +79,161 @@
     <!-- Content will be wrapped by sidebar.js -->
 
     <div class="container-fluid">
-        <div class="page-header">
-            <h1 class="page-title">
-                <i class="bi bi-key me-2"></i>Аренда слотов
-            </h1>
-        </div>
+        <!-- 3 Stat Cards -->
+        <div class="row g-4 mb-4">
+            <!-- Active Rentals - Blue Gradient -->
+            <div class="col-md-4">
+                <div class="balance-stat-card card-blue">
+                    <div class="card-circle card-circle-lg"></div>
+                    <div class="card-circle card-circle-sm"></div>
+                    <div class="card-content">
+                        <div class="card-header-row">
+                            <span class="card-label" data-i18n="activeRentals">Активных аренд</span>
+                            <div class="card-icon">
+                                <i class="bi bi-key"></i>
+                            </div>
+                        </div>
+                        <p class="card-value"><span id="activeRentalsCount">0</span></p>
+                        <span class="card-subtitle" data-i18n="asATenant">Как арендатор</span>
+                    </div>
+                </div>
+            </div>
 
-        <!-- Tabs -->
-        <div class="tabs-container">
-            <button class="tab-btn active" data-tab="tenant" onclick="switchTab('tenant')">
-                <i class="bi bi-download me-1"></i>Мои аренды
-            </button>
-            <button class="tab-btn" data-tab="owner" onclick="switchTab('owner')">
-                <i class="bi bi-upload me-1"></i>Сданные в аренду
-            </button>
-        </div>
+            <!-- Available Slots - White -->
+            <div class="col-md-4">
+                <div class="balance-stat-card card-white">
+                    <div class="card-content">
+                        <div class="card-header-row">
+                            <span class="card-label" data-i18n="availableSlots">Доступно слотов</span>
+                            <div class="card-icon">
+                                <i class="bi bi-boxes"></i>
+                            </div>
+                        </div>
+                        <p class="card-value"><span id="availableSlotsCount">0</span></p>
+                        <span class="card-subtitle" data-i18n="forPlacements">Для размещений</span>
+                    </div>
+                </div>
+            </div>
 
-        <!-- Tenant View (My Rentals) -->
-        <div id="tenantTab" class="tab-content">
-            <div id="tenantRentals">
-                <div class="empty-state" id="tenantEmptyState">
-                    <i class="bi bi-inbox"></i>
-                    <h5>Нет активных аренд</h5>
-                    <p>Когда владелец сайта сдаст вам слоты в аренду, они появятся здесь</p>
+            <!-- Pending Requests - Amber -->
+            <div class="col-md-4">
+                <div class="balance-stat-card card-amber">
+                    <div class="card-content">
+                        <div class="card-header-row">
+                            <span class="card-label" data-i18n="pendingRequests">Ожидает подтверждения</span>
+                            <div class="card-icon">
+                                <i class="bi bi-hourglass-split"></i>
+                            </div>
+                        </div>
+                        <p class="card-value"><span id="pendingCount">0</span></p>
+                        <span class="card-subtitle" data-i18n="pendingApproval">Запросов на аренду</span>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Owner View (My Sites Rented Out) -->
-        <div id="ownerTab" class="tab-content" style="display: none;">
-            <div id="ownerRentals">
-                <div class="empty-state" id="ownerEmptyState">
+        <!-- Main Table Card -->
+        <div class="card">
+            <div class="card-header modern-card-header">
+                <div>
+                    <h2 data-i18n="myRentals">Мои аренды</h2>
+                    <p data-i18n="rentalsSubtitle">Сайты, слоты которых вы арендуете</p>
+                </div>
+            </div>
+            <div class="card-body" style="padding: 0;">
+                <!-- Empty state -->
+                <div class="notification-empty" id="emptyState" style="display: none;">
                     <i class="bi bi-inbox"></i>
-                    <h5>Нет сданных в аренду сайтов</h5>
-                    <p>Вы можете сдать слоты своих сайтов в аренду другим пользователям через страницу "Мои сайты"</p>
-                    <a href="/sites.html" class="btn btn-primary mt-3">
-                        <i class="bi bi-globe me-1"></i>Перейти к сайтам
-                    </a>
+                    <h5 data-i18n="noActiveRentals">Нет аренд</h5>
+                    <p data-i18n="noActiveRentalsHint">Когда владелец сайта сдаст вам слоты в аренду, они появятся здесь</p>
+                </div>
+
+                <!-- Table -->
+                <div class="table-responsive" id="tableContainer">
+                    <table class="sites-table">
+                        <thead>
+                            <tr>
+                                <th data-i18n="siteColumn">Сайт</th>
+                                <th class="text-center seo-metric-th">DR</th>
+                                <th class="text-center seo-metric-th">DA</th>
+                                <th class="text-center seo-metric-th">TF</th>
+                                <th class="text-center seo-metric-th">CF</th>
+                                <th class="text-center seo-metric-th">RD</th>
+                                <th class="text-center seo-metric-th">RDm</th>
+                                <th class="text-center seo-metric-th">Norm</th>
+                                <th class="text-center seo-metric-th">KW</th>
+                                <th class="text-center seo-metric-th">Traf</th>
+                                <th class="text-center" data-i18n="geoColumn">GEO</th>
+                                <th class="text-center" data-i18n="statusColumn">Статус</th>
+                                <th class="text-center" data-i18n="typeColumn">Тип</th>
+                                <th data-i18n="ownerColumn">Владелец</th>
+                                <th data-i18n="homepageLinks">Главные</th>
+                                <th data-i18n="guestPosts">Гест-посты</th>
+                                <th data-i18n="expiryDate">Дата</th>
+                                <th class="text-center" data-i18n="autoRenewal">Продление</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rentalsTableBody">
+                            <!-- Rendered by JS -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Renew Modal -->
-    <div class="modal fade" id="renewModal" tabindex="-1">
+    <!-- Approve Confirmation Modal -->
+    <div class="modal fade" id="approveModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="bi bi-arrow-repeat me-2"></i>Продлить аренду
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label text-muted">Сайт</label>
-                        <p class="fw-bold mb-0" id="renewSiteName">-</p>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-muted">Количество слотов</label>
-                        <p class="fw-bold mb-0" id="renewSlotsCount">-</p>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-muted">Стоимость продления</label>
-                        <div class="d-flex align-items-baseline gap-2">
-                            <span class="fs-4 fw-bold text-primary" id="renewPrice">$0.00</span>
-                            <span class="text-muted text-decoration-line-through" id="renewOriginalPrice">$0.00</span>
-                            <span class="badge bg-success" id="renewDiscount">-30%</span>
+            <div class="modal-content deposit-modal-modern">
+                <div class="deposit-modal-header" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);">
+                    <div class="deposit-header-content">
+                        <div class="deposit-header-icon">
+                            <i class="bi bi-check-circle"></i>
                         </div>
-                        <small class="text-muted" id="renewDiscountInfo">Скидка 30% + ваша персональная скидка</small>
+                        <div class="deposit-header-text">
+                            <h5 class="deposit-title" data-i18n="approveRentalTitle">Подтвердить аренду</h5>
+                            <p class="deposit-subtitle" data-i18n="approveRentalSubtitle">Средства будут списаны с вашего баланса</p>
+                        </div>
                     </div>
-                    <div class="alert alert-info">
-                        <i class="bi bi-info-circle me-1"></i>
-                        Аренда будет продлена на 365 дней с текущей даты истечения
+                    <button type="button" class="deposit-close-btn" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+                <div class="deposit-modal-body">
+                    <div class="deposit-info-block mb-3">
+                        <div class="deposit-info-icon"><i class="bi bi-globe"></i></div>
+                        <div class="deposit-info-content">
+                            <h6 data-i18n="siteLabel">Сайт</h6>
+                            <p class="fw-bold mb-0" id="approveSiteName">-</p>
+                        </div>
+                    </div>
+                    <div class="deposit-info-block mb-3">
+                        <div class="deposit-info-icon"><i class="bi bi-boxes"></i></div>
+                        <div class="deposit-info-content">
+                            <h6 data-i18n="slotsLabel">Количество слотов</h6>
+                            <p class="fw-bold mb-0" id="approveSlotsCount">-</p>
+                        </div>
+                    </div>
+                    <div class="deposit-amount-section">
+                        <label class="deposit-amount-label">
+                            <i class="bi bi-currency-dollar"></i>
+                            <span data-i18n="totalCost">Стоимость</span>
+                        </label>
+                        <div class="d-flex align-items-baseline gap-3 mb-2">
+                            <span class="fs-2 fw-bold text-success" id="approvePrice">$0.00</span>
+                        </div>
+                    </div>
+                    <div class="alert alert-warning d-flex align-items-center gap-2 mt-3">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <span data-i18n="approveWarning">После подтверждения средства будут списаны с вашего баланса</span>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="button" class="btn btn-primary" onclick="confirmRenew()">
-                        <i class="bi bi-arrow-repeat me-1"></i>Продлить
+                <div class="deposit-modal-footer">
+                    <button type="button" class="deposit-btn-secondary" data-bs-dismiss="modal" data-i18n="cancelBtn">Отмена</button>
+                    <button type="button" class="deposit-btn-primary" onclick="confirmApprove()" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);">
+                        <i class="bi bi-check-lg"></i>
+                        <span data-i18n="confirmApprove">Подтвердить</span>
                     </button>
                 </div>
             </div>
@@ -262,14 +247,27 @@
     <script src="/js/badge-utils.js"></script>
     <script src="/js/api.js"></script>
     <script src="/js/sidebar.js"></script>
-    <script src="/js/navbar.js"></script>
+    <script src="/js/translations.js"></script>
+
+    <script>
+        // Initialize sidebar navigation with i18n support
+        const lang = getLang();
+        SidebarNav.init({
+            activePage: 'rentals',
+            pageTitle: lang === 'en' ? 'Slot Rentals' : 'Аренда слотов',
+            pageSubtitle: lang === 'en' ? 'Manage your slot rentals' : 'Управление арендой слотов',
+            pageIcon: 'building',
+            pageIconGradient: 'gradient-purple'
+        });
+        if (typeof applyTranslations === 'function') {
+            applyTranslations();
+        }
+    </script>
 
     <script>
         // State
-        let currentTab = 'tenant';
-        let tenantRentals = [];
-        let ownerRentals = [];
-        let selectedRentalForRenew = null;
+        let rentals = [];
+        let selectedRentalId = null;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
@@ -277,47 +275,22 @@
                 window.location.href = '/login.html';
                 return;
             }
-
             await loadRentals();
         });
-
-        // Switch tabs
-        function switchTab(tab) {
-            currentTab = tab;
-
-            // Update tab buttons
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.tab === tab);
-            });
-
-            // Show/hide content
-            document.getElementById('tenantTab').style.display = tab === 'tenant' ? 'block' : 'none';
-            document.getElementById('ownerTab').style.display = tab === 'owner' ? 'block' : 'none';
-        }
 
         // Load rentals from API
         async function loadRentals() {
             try {
                 const token = getToken();
-
-                // Load tenant rentals
-                const tenantResponse = await fetch('/api/rentals?role=tenant', {
+                const response = await fetch('/api/rentals?role=tenant', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                if (tenantResponse.ok) {
-                    const tenantResult = await tenantResponse.json();
-                    tenantRentals = tenantResult.data || [];
-                    renderTenantRentals();
-                }
 
-                // Load owner rentals
-                const ownerResponse = await fetch('/api/rentals?role=owner', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (ownerResponse.ok) {
-                    const ownerResult = await ownerResponse.json();
-                    ownerRentals = ownerResult.data || [];
-                    renderOwnerRentals();
+                if (response.ok) {
+                    const result = await response.json();
+                    rentals = result.data || [];
+                    renderTable();
+                    updateStats();
                 }
             } catch (error) {
                 console.error('Error loading rentals:', error);
@@ -325,201 +298,266 @@
             }
         }
 
-        // Render tenant rentals
-        function renderTenantRentals() {
-            const container = document.getElementById('tenantRentals');
-            const emptyState = document.getElementById('tenantEmptyState');
+        // Update stats cards
+        function updateStats() {
+            const activeRentals = rentals.filter(r => r.status === 'active');
+            const pendingRentals = rentals.filter(r => r.status === 'pending_approval');
+            const availableSlots = activeRentals.reduce((sum, r) => sum + (r.slots_count - r.slots_used), 0);
 
-            if (tenantRentals.length === 0) {
-                emptyState.style.display = 'block';
-                return;
-            }
-
-            emptyState.style.display = 'none';
-
-            let html = '';
-            for (const rental of tenantRentals) {
-                html += renderRentalCard(rental, 'tenant');
-            }
-
-            container.innerHTML = html;
+            document.getElementById('activeRentalsCount').textContent = activeRentals.length;
+            document.getElementById('availableSlotsCount').textContent = availableSlots;
+            document.getElementById('pendingCount').textContent = pendingRentals.length;
         }
 
-        // Render owner rentals
-        function renderOwnerRentals() {
-            const container = document.getElementById('ownerRentals');
-            const emptyState = document.getElementById('ownerEmptyState');
-
-            if (ownerRentals.length === 0) {
-                emptyState.style.display = 'block';
-                return;
-            }
-
-            emptyState.style.display = 'none';
-
-            let html = '';
-            for (const rental of ownerRentals) {
-                html += renderRentalCard(rental, 'owner');
-            }
-
-            container.innerHTML = html;
+        // Format number with K/M suffix
+        function formatNumber(num) {
+            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+            return num || 0;
         }
 
-        // Render single rental card
-        function renderRentalCard(rental, viewType) {
-            const slotsUsedPercent = (rental.slots_used / rental.slots_count) * 100;
-            const expiryDate = new Date(rental.expires_at);
-            const now = new Date();
-            const daysLeft = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24));
+        // Get progress bar color
+        function getProgressColor(percent) {
+            if (percent >= 90) return 'bg-danger';
+            if (percent >= 70) return 'bg-warning';
+            return 'bg-success';
+        }
 
-            let expiryClass = '';
-            let expiryText = '';
-            if (rental.status === 'expired' || daysLeft <= 0) {
-                expiryClass = 'expired';
-                expiryText = 'Истекла';
-            } else if (daysLeft <= 7) {
-                expiryClass = 'expiring-soon';
-                expiryText = `Истекает через ${daysLeft} дн.`;
+        // Get site type badge
+        function getSiteTypeBadgeLocal(siteType) {
+            if (siteType === 'static_php') {
+                return '<span class="badge bg-secondary">Static</span>';
+            }
+            return '<span class="badge bg-primary">WordPress</span>';
+        }
+
+        // Render single rental row
+        function renderRentalRow(rental) {
+            const slotsUsed = rental.slots_used || 0;
+            const slotsTotal = rental.slots_count || 0;
+            const slotsPercent = slotsTotal > 0 ? Math.round((slotsUsed / slotsTotal) * 100) : 0;
+            const expiresDate = formatDate(rental.expires_at);
+
+            // Row class based on status
+            let rowClass = '';
+            if (rental.status === 'pending_approval') rowClass = 'rental-pending-row';
+            else if (rental.status === 'rejected') rowClass = 'rental-rejected-row';
+
+            // Status cell
+            let statusCell = '';
+            if (rental.status === 'pending_approval') {
+                statusCell = `
+                    <td class="text-center">
+                        <div class="d-flex gap-1 justify-content-center">
+                            <button class="btn-approve" onclick="openApproveModal(${rental.id})" title="Подтвердить">
+                                <i class="bi bi-check-lg"></i>
+                            </button>
+                            <button class="btn-reject" onclick="rejectRental(${rental.id})" title="Отклонить">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+            } else if (rental.status === 'active') {
+                statusCell = `<td class="text-center"><span class="badge bg-purple">Аренда</span></td>`;
+            } else if (rental.status === 'rejected') {
+                statusCell = `<td class="text-center"><span class="badge bg-secondary">Отклонено</span></td>`;
+            } else if (rental.status === 'expired') {
+                statusCell = `<td class="text-center"><span class="badge bg-danger">Истекла</span></td>`;
             } else {
-                expiryText = `До ${formatDate(rental.expires_at)}`;
+                statusCell = `<td class="text-center"><span class="badge bg-secondary">${escapeHtml(rental.status)}</span></td>`;
             }
 
-            const statusClass = rental.status === 'active' ? 'active' :
-                               rental.status === 'expired' ? 'expired' : 'cancelled';
-            const statusText = rental.status === 'active' ? 'Активна' :
-                              rental.status === 'expired' ? 'Истекла' : 'Отменена';
-
-            const siteUrl = rental.site_url || '#';
-            const siteName = rental.site_name || 'Сайт';
-
-            let footerContent = '';
-            if (viewType === 'tenant') {
-                footerContent = `
-                    <div class="owner-info">
-                        <i class="bi bi-person me-1"></i>Владелец: ${escapeHtml(rental.owner_username || 'N/A')}
-                    </div>
-                    ${rental.status === 'active' ? `
-                        <button class="btn btn-sm btn-outline-primary" onclick="openRenewModal(${rental.id})">
-                            <i class="bi bi-arrow-repeat me-1"></i>Продлить
-                        </button>
-                    ` : ''}
+            // Auto-renewal toggle (only for active rentals)
+            let renewalCell = '';
+            if (rental.status === 'active') {
+                renewalCell = `
+                    <td class="text-center">
+                        <div class="form-check form-switch d-flex justify-content-center">
+                            <input class="form-check-input" type="checkbox" id="autoRenewal${rental.id}"
+                                   ${rental.auto_renewal ? 'checked' : ''}
+                                   onchange="toggleAutoRenewal(${rental.id}, this.checked)">
+                        </div>
+                    </td>
                 `;
             } else {
-                footerContent = `
-                    <div class="tenant-info">
-                        <i class="bi bi-person me-1"></i>Арендатор: ${escapeHtml(rental.tenant_username || 'N/A')}
-                    </div>
-                    <div class="text-muted">
-                        $${parseFloat(rental.total_price || 0).toFixed(2)} получено
-                    </div>
-                `;
+                renewalCell = `<td class="text-center"><span class="text-muted">—</span></td>`;
             }
+
+            // Guest posts info
+            const maxArticles = rental.max_articles || 0;
+            const guestPostsCell = maxArticles > 0
+                ? `<span class="text-muted">0/${maxArticles}</span>`
+                : '<span class="text-muted">—</span>';
 
             return `
-                <div class="rental-card">
-                    <div class="rental-header">
-                        <div class="rental-site">
-                            <a href="${escapeHtml(siteUrl)}" target="_blank">
-                                <i class="bi bi-globe me-1"></i>${escapeHtml(siteName)}
-                            </a>
+                <tr class="${rowClass}">
+                    <td>
+                        <a href="${escapeHtml(rental.site_url || '#')}" target="_blank" class="text-decoration-none fw-medium">
+                            ${escapeHtml(rental.site_name || extractDomain(rental.site_url))}
+                            <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.7rem; opacity: 0.5;"></i>
+                        </a>
+                    </td>
+                    <td class="text-center seo-metric-td">${rental.dr || 0}</td>
+                    <td class="text-center seo-metric-td">${rental.da || 0}</td>
+                    <td class="text-center seo-metric-td">${rental.tf || 0}</td>
+                    <td class="text-center seo-metric-td">${rental.cf || 0}</td>
+                    <td class="text-center seo-metric-td">${formatNumber(rental.ref_domains || 0)}</td>
+                    <td class="text-center seo-metric-td">${formatNumber(rental.rd_main || 0)}</td>
+                    <td class="text-center seo-metric-td">${formatNumber(rental.norm || 0)}</td>
+                    <td class="text-center seo-metric-td">${formatNumber(rental.keywords || 0)}</td>
+                    <td class="text-center seo-metric-td">${formatNumber(rental.traffic || 0)}</td>
+                    <td class="text-center">${escapeHtml(rental.geo || '—')}</td>
+                    ${statusCell}
+                    <td class="text-center">${getSiteTypeBadgeLocal(rental.site_type)}</td>
+                    <td>${escapeHtml(rental.owner_username || '—')}</td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="fw-semibold">${slotsUsed}/${slotsTotal}</span>
+                            <div class="progress slots-progress flex-grow-1">
+                                <div class="progress-bar ${getProgressColor(slotsPercent)}" style="width: ${slotsPercent}%"></div>
+                            </div>
                         </div>
-                        <span class="rental-status ${statusClass}">${statusText}</span>
-                    </div>
-
-                    <div class="rental-stats">
-                        <div class="rental-stat">
-                            <span class="rental-stat-label">Слотов всего</span>
-                            <span class="rental-stat-value">${rental.slots_count}</span>
-                        </div>
-                        <div class="rental-stat">
-                            <span class="rental-stat-label">Использовано</span>
-                            <span class="rental-stat-value">${rental.slots_used}</span>
-                        </div>
-                        <div class="rental-stat">
-                            <span class="rental-stat-label">Доступно</span>
-                            <span class="rental-stat-value">${rental.slots_count - rental.slots_used}</span>
-                        </div>
-                        <div class="rental-stat">
-                            <span class="rental-stat-label">Цена за слот</span>
-                            <span class="rental-stat-value">$${parseFloat(rental.price_per_slot || 0).toFixed(2)}</span>
-                        </div>
-                    </div>
-
-                    <div>
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="rental-stat-label">Использование слотов</span>
-                            <span class="rental-stat-label">${rental.slots_used}/${rental.slots_count}</span>
-                        </div>
-                        <div class="slots-progress">
-                            <div class="slots-progress-bar" style="width: ${slotsUsedPercent}%"></div>
-                        </div>
-                    </div>
-
-                    <div class="rental-footer">
-                        <div class="rental-expiry ${expiryClass}">
-                            <i class="bi bi-calendar me-1"></i>${expiryText}
-                        </div>
-                        ${footerContent}
-                    </div>
-                </div>
+                    </td>
+                    <td>${guestPostsCell}</td>
+                    <td><span class="date-text">${expiresDate}</span></td>
+                    ${renewalCell}
+                </tr>
             `;
         }
 
-        // Open renew modal
-        function openRenewModal(rentalId) {
-            const rental = tenantRentals.find(r => r.id === rentalId);
-            if (!rental) return;
-
-            selectedRentalForRenew = rental;
-
-            document.getElementById('renewSiteName').textContent = rental.site_name || 'Сайт';
-            document.getElementById('renewSlotsCount').textContent = rental.slots_count + ' слотов';
-
-            // Calculate renewal price (30% base discount + personal discount)
-            const pricePerSlot = parseFloat(rental.price_per_slot || 25);
-            const originalPrice = pricePerSlot * rental.slots_count;
-
-            // Get user's personal discount from localStorage or API
-            const userDiscount = parseFloat(localStorage.getItem('userDiscount') || 0);
-            const totalDiscount = 30 + userDiscount;
-            const renewalPrice = originalPrice * (1 - 0.30) * (1 - userDiscount / 100);
-
-            document.getElementById('renewOriginalPrice').textContent = '$' + originalPrice.toFixed(2);
-            document.getElementById('renewPrice').textContent = '$' + renewalPrice.toFixed(2);
-            document.getElementById('renewDiscount').textContent = '-' + totalDiscount.toFixed(0) + '%';
-            document.getElementById('renewDiscountInfo').textContent =
-                `Скидка 30% базовая${userDiscount > 0 ? ' + ' + userDiscount + '% персональная' : ''}`;
-
-            const modal = new bootstrap.Modal(document.getElementById('renewModal'));
-            modal.show();
+        // Extract domain from URL
+        function extractDomain(url) {
+            if (!url) return 'N/A';
+            try {
+                const hostname = new URL(url).hostname;
+                return hostname.replace('www.', '');
+            } catch {
+                return url;
+            }
         }
 
-        // Confirm renewal
-        async function confirmRenew() {
-            if (!selectedRentalForRenew) return;
+        // Render table
+        function renderTable() {
+            const tbody = document.getElementById('rentalsTableBody');
+            const tableContainer = document.getElementById('tableContainer');
+            const emptyState = document.getElementById('emptyState');
 
+            if (rentals.length === 0) {
+                tableContainer.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            tableContainer.style.display = 'block';
+            emptyState.style.display = 'none';
+
+            // Sort: pending_approval first, then active, then others
+            const sorted = [...rentals].sort((a, b) => {
+                const order = { 'pending_approval': 0, 'active': 1, 'expired': 2, 'rejected': 3, 'cancelled': 4 };
+                return (order[a.status] || 5) - (order[b.status] || 5);
+            });
+
+            tbody.innerHTML = sorted.map(renderRentalRow).join('');
+        }
+
+        // Toggle auto-renewal
+        async function toggleAutoRenewal(rentalId, enabled) {
             try {
                 const token = getToken();
-                const response = await fetch(`/api/rentals/${selectedRentalForRenew.id}/renew`, {
-                    method: 'POST',
+                const response = await fetch(`/api/rentals/${rentalId}/auto-renewal`, {
+                    method: 'PATCH',
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
-                    }
+                    },
+                    body: JSON.stringify({ enabled })
                 });
 
                 const result = await response.json();
 
                 if (response.ok && result.success) {
-                    showAlert('Аренда успешно продлена!', 'success');
-                    bootstrap.Modal.getInstance(document.getElementById('renewModal')).hide();
-                    await loadRentals();
+                    if (enabled) {
+                        const renewalPrice = result.data.renewal_price || 0;
+                        showAlert(`Авто-продление включено. Стоимость продления: $${renewalPrice.toFixed(2)} (скидка 30%)`, 'success');
+                    } else {
+                        showAlert('Авто-продление отключено', 'info');
+                    }
                 } else {
-                    showAlert(result.error || 'Ошибка при продлении', 'danger');
+                    showAlert(result.error || 'Ошибка', 'danger');
+                    // Revert checkbox
+                    document.getElementById(`autoRenewal${rentalId}`).checked = !enabled;
                 }
             } catch (error) {
-                console.error('Error renewing rental:', error);
-                showAlert('Ошибка при продлении аренды', 'danger');
+                console.error('Error toggling auto-renewal:', error);
+                showAlert('Ошибка при изменении настройки', 'danger');
+                document.getElementById(`autoRenewal${rentalId}`).checked = !enabled;
+            }
+        }
+
+        // Open approve modal
+        function openApproveModal(rentalId) {
+            const rental = rentals.find(r => r.id === rentalId);
+            if (!rental) return;
+
+            selectedRentalId = rentalId;
+
+            document.getElementById('approveSiteName').textContent = rental.site_name || extractDomain(rental.site_url);
+            document.getElementById('approveSlotsCount').textContent = rental.slots_count + ' слотов';
+            document.getElementById('approvePrice').textContent = '$' + parseFloat(rental.total_price || 0).toFixed(2);
+
+            const modal = new bootstrap.Modal(document.getElementById('approveModal'));
+            modal.show();
+        }
+
+        // Confirm approve
+        async function confirmApprove() {
+            if (!selectedRentalId) return;
+
+            try {
+                const token = getToken();
+                const response = await fetch(`/api/rentals/${selectedRentalId}/approve`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    showAlert('Аренда подтверждена!', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('approveModal')).hide();
+                    await loadRentals();
+                } else {
+                    showAlert(result.error || 'Ошибка при подтверждении', 'danger');
+                }
+            } catch (error) {
+                console.error('Error approving rental:', error);
+                showAlert('Ошибка при подтверждении аренды', 'danger');
+            }
+        }
+
+        // Reject rental
+        async function rejectRental(rentalId) {
+            if (!confirm('Отклонить запрос на аренду?')) return;
+
+            try {
+                const token = getToken();
+                const response = await fetch(`/api/rentals/${rentalId}/reject`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    showAlert('Запрос отклонён', 'info');
+                    await loadRentals();
+                } else {
+                    showAlert(result.error || 'Ошибка при отклонении', 'danger');
+                }
+            } catch (error) {
+                console.error('Error rejecting rental:', error);
+                showAlert('Ошибка при отклонении', 'danger');
             }
         }
     </script>
