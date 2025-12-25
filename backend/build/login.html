@@ -67,21 +67,21 @@
         <!-- Login card -->
         <div class="login-card">
             <form class="login-form" id="loginForm">
-                <!-- Name field (only for register) -->
+                <!-- Username field (only for register) -->
                 <div class="form-group" id="nameGroup" style="display: none;">
-                    <label data-i18n="name">Имя</label>
+                    <label data-i18n="username">Имя пользователя</label>
                     <div class="input-wrapper">
                         <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        <input type="text" class="form-input" id="name" data-i18n-placeholder="yourName" placeholder="Ваше имя" autocomplete="name">
+                        <input type="text" class="form-input" id="regUsername" data-i18n-placeholder="yourUsername" placeholder="Имя пользователя" autocomplete="username">
                     </div>
                 </div>
 
-                <!-- Email/Username field -->
+                <!-- Email field -->
                 <div class="form-group">
                     <label data-i18n="email">Email</label>
                     <div class="input-wrapper">
                         <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-                        <input type="text" class="form-input" id="username" placeholder="your@email.com" required autocomplete="username">
+                        <input type="text" class="form-input" id="username" placeholder="your@email.com" required autocomplete="email">
                     </div>
                 </div>
 
@@ -95,6 +95,15 @@
                             <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                             <svg id="eyeOffIcon" style="display: none;" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
                         </button>
+                    </div>
+                </div>
+
+                <!-- Confirm Password field (only for register) -->
+                <div class="form-group" id="confirmPasswordGroup" style="display: none;">
+                    <label data-i18n="confirmPassword">Подтвердите пароль</label>
+                    <div class="input-wrapper">
+                        <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <input type="password" class="form-input" id="confirmPassword" placeholder="••••••••" autocomplete="new-password">
                     </div>
                 </div>
 
@@ -171,6 +180,7 @@
             // Elements
             const form = document.getElementById('loginForm');
             const nameGroup = document.getElementById('nameGroup');
+            const confirmPasswordGroup = document.getElementById('confirmPasswordGroup');
             const loginOptions = document.getElementById('loginOptions');
             const termsText = document.getElementById('termsText');
             const titleText = document.getElementById('titleText');
@@ -203,6 +213,7 @@
             function updateUI() {
                 if (isLoginMode) {
                     nameGroup.style.display = 'none';
+                    confirmPasswordGroup.style.display = 'none';
                     loginOptions.style.display = 'flex';
                     termsText.style.display = 'none';
                     titleText.setAttribute('data-i18n', 'welcomeBack');
@@ -211,8 +222,11 @@
                     toggleQuestion.setAttribute('data-i18n', 'noAccount');
                     toggleText.setAttribute('data-i18n', 'register');
                     document.title = getLang() === 'en' ? 'LinkBuilder Pro - Login' : 'LinkBuilder Pro - Вход';
+                    // Update autocomplete for login mode
+                    document.getElementById('password').setAttribute('autocomplete', 'current-password');
                 } else {
                     nameGroup.style.display = 'block';
+                    confirmPasswordGroup.style.display = 'block';
                     loginOptions.style.display = 'none';
                     termsText.style.display = 'block';
                     titleText.setAttribute('data-i18n', 'createAccount');
@@ -221,6 +235,8 @@
                     toggleQuestion.setAttribute('data-i18n', 'alreadyHaveAccount');
                     toggleText.setAttribute('data-i18n', 'login');
                     document.title = getLang() === 'en' ? 'LinkBuilder Pro - Register' : 'LinkBuilder Pro - Регистрация';
+                    // Update autocomplete for register mode
+                    document.getElementById('password').setAttribute('autocomplete', 'new-password');
                 }
 
                 // Re-apply translations
@@ -244,7 +260,7 @@
             async function handleSubmit(e) {
                 e.preventDefault();
 
-                const username = document.getElementById('username').value;
+                const email = document.getElementById('username').value;
                 const password = document.getElementById('password').value;
                 const submitBtn = document.getElementById('submitBtn');
 
@@ -256,18 +272,66 @@
                 try {
                     if (isLoginMode) {
                         // Login
-                        await login(username, password);
+                        await login(email, password);
                         window.location.href = '/dashboard.html';
                     } else {
-                        // Register - redirect to register page for now
-                        window.location.href = '/register.html';
+                        // Register
+                        const username = document.getElementById('regUsername').value;
+                        const confirmPassword = document.getElementById('confirmPassword').value;
+
+                        // Validation
+                        if (!username || username.length < 3) {
+                            throw new Error(getLang() === 'en' ? 'Username must be at least 3 characters' : 'Имя пользователя должно быть не менее 3 символов');
+                        }
+                        if (!email || !email.includes('@')) {
+                            throw new Error(getLang() === 'en' ? 'Please enter a valid email' : 'Введите корректный email');
+                        }
+                        if (!password || password.length < 6) {
+                            throw new Error(getLang() === 'en' ? 'Password must be at least 6 characters' : 'Пароль должен быть не менее 6 символов');
+                        }
+                        if (password !== confirmPassword) {
+                            throw new Error(getLang() === 'en' ? 'Passwords do not match' : 'Пароли не совпадают');
+                        }
+
+                        // Call register API
+                        const response = await fetch('/api/auth/register', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ username, email, password, confirmPassword })
+                        });
+
+                        const data = await response.json();
+
+                        if (!response.ok) {
+                            throw new Error(data.error || (getLang() === 'en' ? 'Registration failed' : 'Ошибка регистрации'));
+                        }
+
+                        // Success - show message and switch to login mode
+                        const successMsg = getLang() === 'en'
+                            ? 'Registration successful! Please check your email to verify your account.'
+                            : 'Регистрация успешна! Проверьте email для подтверждения аккаунта.';
+
+                        loginError.style.color = '#22c55e';
+                        loginError.textContent = successMsg;
+                        loginError.style.display = 'block';
+
+                        // Switch to login mode after 2 seconds
+                        setTimeout(() => {
+                            isLoginMode = true;
+                            updateUI();
+                            loginError.style.color = '#ef4444';
+                            // Pre-fill email
+                            document.getElementById('username').value = email;
+                        }, 2000);
                     }
                 } catch (error) {
+                    loginError.style.color = '#ef4444';
                     loginError.textContent = error.message;
                     loginError.style.display = 'block';
-                    submitBtn.disabled = false;
-                    submitText.textContent = t(isLoginMode ? 'login' : 'register');
                 }
+
+                submitBtn.disabled = false;
+                submitText.textContent = t(isLoginMode ? 'login' : 'register');
             }
 
             // Event listeners
