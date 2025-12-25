@@ -3622,5 +3622,6 @@ module.exports = {
   getSiteRentals,
   toggleRentalAutoRenewal,
   approveSlotRental,
-  rejectSlotRental
+  rejectSlotRental,
+  getAvailableSlots
 };
