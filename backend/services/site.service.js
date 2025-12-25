@@ -19,7 +19,14 @@ const getUserSites = async (userId, page = 0, limit = 0, recalculate = false) =>
 
     // Fetch sites data
     let sitesQuery =
-      'SELECT id, user_id, site_name, site_url, api_key, site_type, max_links, max_articles, used_links, used_articles, allow_articles, is_public, available_for_purchase, price_link, price_article, dr, da, ref_domains, rd_main, norm, tf, cf, keywords, traffic, geo, limits_changed_at, moderation_status, rejection_reason, created_at FROM sites WHERE user_id = $1 ORDER BY created_at DESC';
+      `SELECT s.id, s.user_id, s.site_name, s.site_url, s.api_key, s.site_type, s.max_links, s.max_articles, s.used_links, s.used_articles, s.allow_articles, s.is_public, s.available_for_purchase, s.price_link, s.price_article, s.dr, s.da, s.ref_domains, s.rd_main, s.norm, s.tf, s.cf, s.keywords, s.traffic, s.geo, s.limits_changed_at, s.moderation_status, s.rejection_reason, s.created_at,
+      EXISTS(
+        SELECT 1 FROM site_slot_rentals r
+        WHERE r.site_id = s.id
+        AND r.status = 'active'
+        AND r.expires_at > NOW()
+      ) AS has_active_rental
+      FROM sites s WHERE s.user_id = $1 ORDER BY s.created_at DESC`;
     const queryParams = [userId];
 
     if (usePagination) {
@@ -30,15 +37,26 @@ const getUserSites = async (userId, page = 0, limit = 0, recalculate = false) =>
 
     const result = await query(sitesQuery, queryParams);
 
+    // Calculate revenue for each site
+    const sitesWithRevenue = await Promise.all(
+      result.rows.map(async site => {
+        const revenue = await calculateSiteRevenue(site.id, userId);
+        return {
+          ...site,
+          revenue_365d: revenue
+        };
+      })
+    );
+
     // If pagination is requested, return paginated format
     if (usePagination) {
       // Get total count
-      const countResult = await query('SELECT COUNT(*) FROM sites WHERE user_id = $1', [userId]);
+      const countResult = await query('SELECT COUNT(*) FROM sites s WHERE s.user_id = $1', [userId]);
       const total = parseInt(countResult.rows[0].count, 10);
       const totalPages = Math.ceil(total / limit);
 
       return {
-        data: result.rows,
+        data: sitesWithRevenue,
         pagination: {
           page,
           limit,
@@ -51,7 +69,7 @@ const getUserSites = async (userId, page = 0, limit = 0, recalculate = false) =>
       };
     } else {
       // Return simple array for backward compatibility
-      return result.rows;
+      return sitesWithRevenue;
     }
   } catch (error) {
     logger.error('Get user sites error:', error);
@@ -69,16 +87,22 @@ const getMarketplaceSites = async userId => {
     const result = await query(
       `
       SELECT
-        id, user_id, site_name, site_url, site_type,
-        max_links, max_articles, used_links, used_articles,
-        allow_articles, is_public, available_for_purchase, price_link, price_article, dr, da, ref_domains, rd_main, norm, tf, cf, keywords, traffic, geo, created_at,
+        s.id, s.user_id, s.site_name, s.site_url, s.site_type,
+        s.max_links, s.max_articles, s.used_links, s.used_articles,
+        s.allow_articles, s.is_public, s.available_for_purchase, s.price_link, s.price_article, s.dr, s.da, s.ref_domains, s.rd_main, s.norm, s.tf, s.cf, s.keywords, s.traffic, s.geo, s.created_at,
+        EXISTS(
+          SELECT 1 FROM site_slot_rentals r
+          WHERE r.site_id = s.id
+          AND r.status = 'active'
+          AND r.expires_at > NOW()
+        ) AS has_active_rental,
         CASE
-          WHEN user_id = $1 THEN api_key
+          WHEN s.user_id = $1 THEN s.api_key
           ELSE NULL
         END as api_key
-      FROM sites
-      WHERE is_public = TRUE OR user_id = $1
-      ORDER BY created_at DESC
+      FROM sites s
+      WHERE s.is_public = TRUE OR s.user_id = $1
+      ORDER BY s.created_at DESC
     `,
       [userId]
     );
@@ -1162,6 +1186,47 @@ const getSitesWithZeroParam = async parameter => {
   }
 };
 
+// Calculate total revenue for a site over the last 365 days
+// Includes: rental income + placement sales (links and articles)
+const calculateSiteRevenue = async (siteId, userId) => {
+  try {
+    const result = await query(
+      `
+      WITH rental_income AS (
+        -- Доход от аренды слотов - считаем напрямую из site_slot_rentals.total_price
+        -- для всех активных аренд (независимо от транзакций)
+        SELECT COALESCE(SUM(r.total_price), 0) as amount
+        FROM site_slot_rentals r
+        WHERE r.site_id = $1
+          AND r.owner_id = $2
+          AND r.status IN ('active', 'pending_approval')
+          AND r.created_at >= NOW() - INTERVAL '365 days'
+      ),
+      placement_income AS (
+        -- Доход от продажи ссылок и статей
+        -- КРИТИЧНО: используем placements.purchase_transaction_id -> transactions.id
+        SELECT COALESCE(SUM(ABS(t.amount)), 0) as amount
+        FROM placements p
+        JOIN transactions t ON p.purchase_transaction_id = t.id
+        WHERE p.site_id = $1
+          AND t.type = 'purchase'
+          AND t.created_at >= NOW() - INTERVAL '365 days'
+      )
+      SELECT
+        (SELECT amount FROM rental_income) +
+        (SELECT amount FROM placement_income) as total_revenue
+    `,
+      [siteId, userId]
+    );
+
+    return parseFloat(result.rows[0].total_revenue || 0);
+  } catch (error) {
+    logger.error('Calculate site revenue error:', { siteId, userId, error: error.message });
+    // Return 0 on error instead of throwing
+    return 0;
+  }
+};
+
 module.exports = {
   getUserSites,
   getMarketplaceSites,
@@ -1185,5 +1250,7 @@ module.exports = {
   getSitesForModeration,
   approveSite,
   rejectSite,
-  getModerationStats
+  getModerationStats,
+  // Revenue calculation
+  calculateSiteRevenue
 };

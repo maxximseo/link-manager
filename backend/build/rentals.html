@@ -10,11 +10,96 @@
     <link rel="stylesheet" href="/css/modern-table.css">
     <link rel="stylesheet" href="/css/sidebar.css">
     <style>
+        /* Custom styles for rentals table - copied from sites.html */
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Card border styling */
+        .card {
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        /* === SEO Metrics columns - голубой фон как в placements-manager === */
+        .seo-metric-th,
+        .seo-metric-td {
+            background: #eff6ff !important;
+        }
+
+        .seo-metric-th {
+            color: #1d4ed8 !important;
+            font-weight: 600 !important;
+        }
+
+        /* Sites Table - стиль как на dashboard */
+        .sites-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .sites-table thead {
+            background: #f9fafb;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .sites-table th {
+            padding: 12px 8px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 500;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
+        }
+
+        .sites-table th:first-child {
+            padding-left: 16px;
+        }
+
+        .sites-table tbody tr {
+            border-bottom: 1px solid #f3f4f6;
+            transition: background 0.15s;
+        }
+
+        .sites-table tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        .sites-table td {
+            padding: 10px 8px;
+            font-size: 13px;
+            color: #374151;
+            vertical-align: middle;
+        }
+
+        .sites-table td:first-child {
+            padding-left: 16px;
+        }
+
+        /* Progress bar custom styling */
+        .progress {
+            background-color: #e9ecef;
+            border-radius: 4px;
+        }
+
+        .slots-progress {
+            min-width: 60px;
+            height: 6px;
+        }
+
         /* Purple badge for rental status */
         .badge.bg-purple {
             background: linear-gradient(135deg, #8b5cf6, #6366f1) !important;
             color: white;
         }
+
         /* Pending approval row styling */
         .rental-pending-row {
             background-color: #fffbeb !important;
@@ -22,11 +107,13 @@
         .rental-pending-row:hover {
             background-color: #fef3c7 !important;
         }
+
         /* Rejected row styling */
         .rental-rejected-row {
             background-color: #f3f4f6 !important;
             opacity: 0.7;
         }
+
         /* Action buttons for pending */
         .btn-approve {
             background: linear-gradient(135deg, #22c55e, #16a34a);
@@ -50,28 +137,10 @@
             background: linear-gradient(135deg, #dc2626, #b91c1c);
             color: white;
         }
-        /* SEO columns styling */
-        .seo-metric-th {
-            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%) !important;
-            font-weight: 600;
-            white-space: nowrap;
-        }
-        .seo-metric-td {
-            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%) !important;
-        }
-        /* Compact cells */
-        .sites-table td, .sites-table th {
-            padding: 0.5rem 0.75rem;
-            vertical-align: middle;
-        }
+
         /* Auto-renewal switch */
         .form-check.form-switch .form-check-input {
             cursor: pointer;
-        }
-        /* Progress bar compact */
-        .slots-progress {
-            min-width: 60px;
-            height: 6px;
         }
     </style>
 </head>
@@ -154,6 +223,11 @@
                         <thead>
                             <tr>
                                 <th data-i18n="siteColumn">Сайт</th>
+                                <th class="text-center" data-i18n="statusColumn">Статус</th>
+                                <th data-i18n="homepageLinks">Главные</th>
+                                <th data-i18n="guestPosts">Гест-посты</th>
+                                <th data-i18n="expiresColumn">Истекает</th>
+                                <th class="text-center" data-i18n="autoRenewal">Продление</th>
                                 <th class="text-center seo-metric-th">DR</th>
                                 <th class="text-center seo-metric-th">DA</th>
                                 <th class="text-center seo-metric-th">TF</th>
@@ -163,14 +237,9 @@
                                 <th class="text-center seo-metric-th">Norm</th>
                                 <th class="text-center seo-metric-th">KW</th>
                                 <th class="text-center seo-metric-th">Traf</th>
-                                <th class="text-center" data-i18n="geoColumn">GEO</th>
-                                <th class="text-center" data-i18n="statusColumn">Статус</th>
+                                <th class="text-center">GEO</th>
                                 <th class="text-center" data-i18n="typeColumn">Тип</th>
                                 <th data-i18n="ownerColumn">Владелец</th>
-                                <th data-i18n="homepageLinks">Главные</th>
-                                <th data-i18n="guestPosts">Гест-посты</th>
-                                <th data-i18n="expiryDate">Дата</th>
-                                <th class="text-center" data-i18n="autoRenewal">Продление</th>
                             </tr>
                         </thead>
                         <tbody id="rentalsTableBody">
@@ -398,19 +467,7 @@
                             <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.7rem; opacity: 0.5;"></i>
                         </a>
                     </td>
-                    <td class="text-center seo-metric-td">${rental.dr || 0}</td>
-                    <td class="text-center seo-metric-td">${rental.da || 0}</td>
-                    <td class="text-center seo-metric-td">${rental.tf || 0}</td>
-                    <td class="text-center seo-metric-td">${rental.cf || 0}</td>
-                    <td class="text-center seo-metric-td">${formatNumber(rental.ref_domains || 0)}</td>
-                    <td class="text-center seo-metric-td">${formatNumber(rental.rd_main || 0)}</td>
-                    <td class="text-center seo-metric-td">${formatNumber(rental.norm || 0)}</td>
-                    <td class="text-center seo-metric-td">${formatNumber(rental.keywords || 0)}</td>
-                    <td class="text-center seo-metric-td">${formatNumber(rental.traffic || 0)}</td>
-                    <td class="text-center">${escapeHtml(rental.geo || '—')}</td>
                     ${statusCell}
-                    <td class="text-center">${getSiteTypeBadgeLocal(rental.site_type)}</td>
-                    <td>${escapeHtml(rental.owner_username || '—')}</td>
                     <td>
                         <div class="d-flex align-items-center gap-2">
                             <span class="fw-semibold">${slotsUsed}/${slotsTotal}</span>
@@ -422,6 +479,18 @@
                     <td>${guestPostsCell}</td>
                     <td><span class="date-text">${expiresDate}</span></td>
                     ${renewalCell}
+                    <td class="text-center seo-metric-td">${rental.dr || 0}</td>
+                    <td class="text-center seo-metric-td">${rental.da || 0}</td>
+                    <td class="text-center seo-metric-td">${rental.tf || 0}</td>
+                    <td class="text-center seo-metric-td">${rental.cf || 0}</td>
+                    <td class="text-center seo-metric-td">${formatNumber(rental.ref_domains || 0)}</td>
+                    <td class="text-center seo-metric-td">${formatNumber(rental.rd_main || 0)}</td>
+                    <td class="text-center seo-metric-td">${formatNumber(rental.norm || 0)}</td>
+                    <td class="text-center seo-metric-td">${formatNumber(rental.keywords || 0)}</td>
+                    <td class="text-center seo-metric-td">${formatNumber(rental.traffic || 0)}</td>
+                    <td class="text-center">${escapeHtml(rental.geo || '—')}</td>
+                    <td class="text-center">${getSiteTypeBadgeLocal(rental.site_type)}</td>
+                    <td>${escapeHtml(rental.owner_username || '—')}</td>
                 </tr>
             `;
         }

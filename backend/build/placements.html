@@ -1849,6 +1849,19 @@
                 // FIRST: Filter out sites that are not available for purchase
                 sitesToShow = sitesToShow.filter(site => site.available_for_purchase !== false);
 
+                // SECOND: Filter out owner's rented sites (владелец не должен видеть свои арендованные сайты)
+                const token = getAuthToken();
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                const currentUserId = payload.userId;
+
+                sitesToShow = sitesToShow.filter(site => {
+                    // Если владелец сайта (user_id совпадает) И есть активная аренда → скрыть
+                    if (site.has_active_rental && site.user_id === currentUserId) {
+                        return false;
+                    }
+                    return true;
+                });
+
                 // If whitelist is ACTIVE and not empty, show ONLY whitelist sites
                 if (whitelistActive && whitelist.size > 0) {
                     sitesToShow = sitesToShow.filter(site => whitelist.has(site.id));

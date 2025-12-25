@@ -84,7 +84,13 @@ const getUserPlacements = async (userId, page = 0, limit = 0, filters = {}) => {
       FROM placements p
       LEFT JOIN sites s ON p.site_id = s.id
       LEFT JOIN projects proj ON p.project_id = proj.id
-      WHERE (s.user_id = $1 OR proj.user_id = $1)
+      LEFT JOIN rental_placements rp ON p.id = rp.placement_id
+      LEFT JOIN site_slot_rentals r ON rp.rental_id = r.id
+      WHERE (
+        (rp.rental_id IS NULL AND (s.user_id = $1 OR proj.user_id = $1))
+        OR
+        (rp.rental_id IS NOT NULL AND r.tenant_id = $1)
+      )
     `;
 
     const queryParams = [userId];
@@ -127,7 +133,13 @@ const getUserPlacements = async (userId, page = 0, limit = 0, filters = {}) => {
         FROM placements p
         LEFT JOIN sites s ON p.site_id = s.id
         LEFT JOIN projects proj ON p.project_id = proj.id
-        WHERE (s.user_id = $1 OR proj.user_id = $1)
+        LEFT JOIN rental_placements rp ON p.id = rp.placement_id
+        LEFT JOIN site_slot_rentals r ON rp.rental_id = r.id
+        WHERE (
+          (rp.rental_id IS NULL AND (s.user_id = $1 OR proj.user_id = $1))
+          OR
+          (rp.rental_id IS NOT NULL AND r.tenant_id = $1)
+        )
       `;
       const countParams = [userId];
       let countParamIndex = 2;
