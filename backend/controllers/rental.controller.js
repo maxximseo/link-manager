@@ -98,41 +98,67 @@ const getUserRentals = async (req, res) => {
 };
 
 /**
- * Check available rental slots for a site (for current user)
- * GET /api/rentals/:siteId/available
+ * Check available rental slots for a site
+ * Two modes:
+ * 1. For TENANT (check their active rental): returns hasRental, slotsUsed, slotsAvailable
+ * 2. For OWNER (check available for new rental): returns max_links, used_links, reserved_slots, available_slots
+ * GET /api/rentals/:siteId/available?mode=tenant|owner
  */
 const getAvailableSlots = async (req, res) => {
   try {
     const userId = req.user.id;
     const siteId = parseInt(req.params.siteId);
+    const mode = req.query.mode || 'tenant'; // Default: tenant mode
 
     if (isNaN(siteId)) {
       return res.status(400).json({ error: 'Неверный siteId' });
     }
 
-    const rental = await billingService.getActiveRentalForSite(userId, siteId);
+    if (!['tenant', 'owner'].includes(mode)) {
+      return res.status(400).json({ error: 'Параметр mode должен быть tenant или owner' });
+    }
 
-    if (!rental) {
+    // TENANT MODE: Check their active rental
+    if (mode === 'tenant') {
+      const rental = await billingService.getActiveRentalForSite(userId, siteId);
+
+      if (!rental) {
+        return res.json({
+          success: true,
+          hasRental: false,
+          data: null
+        });
+      }
+
       return res.json({
         success: true,
-        hasRental: false,
-        data: null
+        hasRental: true,
+        data: {
+          rentalId: rental.id,
+          slotsTotal: rental.slots_count,
+          slotsUsed: rental.slots_used,
+          slotsAvailable: rental.slots_count - rental.slots_used,
+          expiresAt: rental.expires_at
+        }
       });
     }
 
-    res.json({
-      success: true,
-      hasRental: true,
-      data: {
-        rentalId: rental.id,
-        slotsTotal: rental.slots_count,
-        slotsUsed: rental.slots_used,
-        slotsAvailable: rental.slots_count - rental.slots_used,
-        expiresAt: rental.expires_at
-      }
-    });
+    // OWNER MODE: Check available for new rental creation
+    if (mode === 'owner') {
+      const slotsData = await billingService.getAvailableSlots(siteId, userId);
+
+      return res.json({
+        success: true,
+        data: slotsData
+      });
+    }
   } catch (error) {
     logger.error('Get available slots error:', error);
+
+    if (error.message.includes('не найден') || error.message.includes('владелец')) {
+      return res.status(400).json({ error: error.message });
+    }
+
     res.status(500).json({ error: 'Ошибка при проверке арендных слотов' });
   }
 };
