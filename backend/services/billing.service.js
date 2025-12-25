@@ -3540,6 +3540,57 @@ const rejectSlotRental = async (tenantId, rentalId) => {
   return { rentalId, rejected: true };
 };
 
+/**
+ * Get available slots for rental on a site
+ * Takes into account: used_links + reserved slots in active/pending rentals
+ * @param {number} siteId - Site ID
+ * @param {number} userId - User ID (must be site owner)
+ */
+const getAvailableSlots = async (siteId, userId) => {
+  const client = await pool.connect();
+  try {
+    // 1. Get site data and verify ownership
+    const siteResult = await client.query(
+      'SELECT max_links, used_links, user_id, site_name, site_url FROM sites WHERE id = $1',
+      [siteId]
+    );
+
+    if (siteResult.rows.length === 0) {
+      throw new Error('Сайт не найден');
+    }
+
+    const site = siteResult.rows[0];
+
+    // 2. Verify user is site owner
+    if (site.user_id !== userId) {
+      throw new Error('Только владелец сайта может просматривать доступные слоты');
+    }
+
+    // 3. Count slots reserved in rentals (active + pending approval/payment)
+    const rentalsResult = await client.query(
+      `SELECT COALESCE(SUM(slots_count), 0) as reserved_slots
+       FROM site_slot_rentals
+       WHERE site_id = $1 AND status IN ('active', 'pending_approval', 'pending_payment')`,
+      [siteId]
+    );
+
+    const reservedSlots = parseInt(rentalsResult.rows[0].reserved_slots) || 0;
+
+    // 4. Calculate available slots
+    const availableSlots = Math.max(0, site.max_links - site.used_links - reservedSlots);
+
+    return {
+      max_links: site.max_links,
+      used_links: site.used_links,
+      reserved_slots: reservedSlots,
+      available_slots: availableSlots,
+      site_name: site.site_name || site.site_url
+    };
+  } finally {
+    client.release();
+  }
+};
+
 module.exports = {
   PRICING,
   RENTAL_PRICING,
