@@ -142,7 +142,7 @@ const authenticateUser = async (usernameOrEmail, password) => {
     };
     const refreshToken = jwt.sign(refreshPayload, process.env.JWT_SECRET, { expiresIn: '7d' });
 
-    logger.info(`Successful login for user ${username}`);
+    logger.info(`Successful login for user ${user.username}`);
 
     return {
       success: true,
