@@ -42,12 +42,13 @@ if (weakSecrets.includes(secretLower)) {
   throw new Error('JWT_SECRET is too weak. Please use a cryptographically random secret.');
 }
 
-// Authenticate user with username and password
-const authenticateUser = async (username, password) => {
+// Authenticate user with username/email and password
+const authenticateUser = async (usernameOrEmail, password) => {
   try {
+    // Allow login with either username or email
     const result = await query(
-      'SELECT id, username, password, role, failed_login_attempts, account_locked_until FROM users WHERE username = $1',
-      [username]
+      'SELECT id, username, email, password, role, failed_login_attempts, account_locked_until FROM users WHERE username = $1 OR email = $1',
+      [usernameOrEmail]
     );
     const user = result.rows[0];
 
@@ -98,7 +99,7 @@ const authenticateUser = async (username, password) => {
           [newAttempts, lockUntil, user.id]
         );
 
-        logger.warn(`Account locked for user ${username} after ${newAttempts} failed attempts`);
+        logger.warn(`Account locked for user ${usernameOrEmail} after ${newAttempts} failed attempts`);
 
         return {
           success: false,
