@@ -3447,6 +3447,31 @@ const approveSlotRental = async (tenantId, rentalId) => {
       throw new Error(`Недостаточно средств. Требуется: $${totalPrice.toFixed(2)}, на балансе: $${tenantBalance.toFixed(2)}`);
     }
 
+    // Re-check available slots before approving (in case other rentals were approved meanwhile)
+    const siteCheck = await client.query(
+      'SELECT max_links, used_links FROM sites WHERE id = $1',
+      [rental.site_id]
+    );
+    const site = siteCheck.rows[0];
+
+    // Count already reserved slots (excluding current rental)
+    const reservedCheck = await client.query(
+      `SELECT COALESCE(SUM(slots_count), 0) as reserved_slots
+       FROM site_slot_rentals
+       WHERE site_id = $1 AND status = 'active' AND id != $2`,
+      [rental.site_id, rentalId]
+    );
+    const reservedSlots = parseInt(reservedCheck.rows[0].reserved_slots) || 0;
+    const availableSlots = site.max_links - site.used_links - reservedSlots;
+
+    if (rental.slots_count > availableSlots) {
+      throw new Error(
+        `Недостаточно свободных слотов для одобрения. ` +
+        `Доступно ${availableSlots}, запрошено ${rental.slots_count}. ` +
+        `Занято: ${site.used_links} размещений + ${reservedSlots} в активных арендах из ${site.max_links}`
+      );
+    }
+
     // Deduct from tenant
     await client.query('UPDATE users SET balance = balance - $1, updated_at = NOW() WHERE id = $2', [
       totalPrice,
