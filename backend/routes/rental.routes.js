@@ -64,6 +64,28 @@ router.get('/site/:siteId', rentalLimiter, rentalController.getSiteRentals);
 router.post('/:id/renew', createRentalLimiter, rentalController.renewRental);
 
 /**
+ * @route   PATCH /api/rentals/:id/auto-renewal
+ * @desc    Toggle auto-renewal for a rental (tenant only)
+ * @access  Private (tenant only)
+ * @body    { enabled: boolean }
+ */
+router.patch('/:id/auto-renewal', rentalLimiter, rentalController.toggleAutoRenewal);
+
+/**
+ * @route   POST /api/rentals/:id/approve
+ * @desc    Approve a pending rental request (tenant approves)
+ * @access  Private (tenant only)
+ */
+router.post('/:id/approve', createRentalLimiter, rentalController.approveRental);
+
+/**
+ * @route   POST /api/rentals/:id/reject
+ * @desc    Reject a pending rental request (tenant rejects)
+ * @access  Private (tenant only)
+ */
+router.post('/:id/reject', rentalLimiter, rentalController.rejectRental);
+
+/**
  * @route   DELETE /api/rentals/:id
  * @desc    Cancel a rental (owner cancels, only if slots_used=0)
  * @access  Private (owner only)

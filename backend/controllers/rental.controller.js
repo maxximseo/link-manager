@@ -235,11 +235,115 @@ const getSiteRentals = async (req, res) => {
   }
 };
 
+/**
+ * Toggle auto-renewal for a rental (tenant only)
+ * PATCH /api/rentals/:id/auto-renewal
+ */
+const toggleAutoRenewal = async (req, res) => {
+  try {
+    const tenantId = req.user.id;
+    const rentalId = parseInt(req.params.id);
+    const { enabled } = req.body;
+
+    if (isNaN(rentalId)) {
+      return res.status(400).json({ error: 'Неверный rentalId' });
+    }
+
+    if (typeof enabled !== 'boolean') {
+      return res.status(400).json({ error: 'Параметр enabled должен быть boolean' });
+    }
+
+    const result = await billingService.toggleRentalAutoRenewal(tenantId, rentalId, enabled);
+
+    res.json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    logger.error('Toggle auto-renewal error:', error);
+
+    if (error.message.includes('не найдена') || error.message.includes('недостаточно прав')) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.status(500).json({ error: 'Ошибка при изменении авто-продления' });
+  }
+};
+
+/**
+ * Approve a pending rental (tenant approves)
+ * POST /api/rentals/:id/approve
+ */
+const approveRental = async (req, res) => {
+  try {
+    const tenantId = req.user.id;
+    const rentalId = parseInt(req.params.id);
+
+    if (isNaN(rentalId)) {
+      return res.status(400).json({ error: 'Неверный rentalId' });
+    }
+
+    const result = await billingService.approveSlotRental(tenantId, rentalId);
+
+    res.json({
+      success: true,
+      message: 'Аренда подтверждена',
+      data: result
+    });
+  } catch (error) {
+    logger.error('Approve rental error:', error);
+
+    if (
+      error.message.includes('не найдена') ||
+      error.message.includes('Недостаточно') ||
+      error.message.includes('уже обработана')
+    ) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.status(500).json({ error: 'Ошибка при подтверждении аренды' });
+  }
+};
+
+/**
+ * Reject a pending rental (tenant rejects)
+ * POST /api/rentals/:id/reject
+ */
+const rejectRental = async (req, res) => {
+  try {
+    const tenantId = req.user.id;
+    const rentalId = parseInt(req.params.id);
+
+    if (isNaN(rentalId)) {
+      return res.status(400).json({ error: 'Неверный rentalId' });
+    }
+
+    const result = await billingService.rejectSlotRental(tenantId, rentalId);
+
+    res.json({
+      success: true,
+      message: 'Запрос на аренду отклонён',
+      data: result
+    });
+  } catch (error) {
+    logger.error('Reject rental error:', error);
+
+    if (error.message.includes('не найдена') || error.message.includes('уже обработана')) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.status(500).json({ error: 'Ошибка при отклонении аренды' });
+  }
+};
+
 module.exports = {
   createRental,
   getUserRentals,
   getAvailableSlots,
   renewRental,
   cancelRental,
-  getSiteRentals
+  getSiteRentals,
+  toggleAutoRenewal,
+  approveRental,
+  rejectRental
 };

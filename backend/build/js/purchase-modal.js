@@ -348,7 +348,12 @@ async function confirmPurchase() {
         }
         await updateTabCounts();
 
-        showAlert(`Размещение успешно куплено! Новый баланс: $${result.data.newBalance.toFixed(2)}`, 'success');
+        // Разные сообщения для ссылок и статей
+        if (type === 'link') {
+            showAlert(`Ссылка успешно размещена! Новый баланс: $${result.data.newBalance.toFixed(2)}`, 'success');
+        } else {
+            showAlert(`Статья отправлена на модерацию. Новый баланс: $${result.data.newBalance.toFixed(2)}`, 'info');
+        }
 
     } catch (error) {
         console.error('Purchase failed:', error);

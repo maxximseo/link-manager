@@ -2849,6 +2849,10 @@
             const progressBar = document.getElementById('progressBar');
             const total = successful + failed;
 
+            // Получаем тип контента для правильного сообщения
+            const contentType = document.querySelector('input[name="contentType"]:checked')?.value || 'link';
+            const isArticle = contentType === 'article';
+
             if (failed === 0) {
                 // All successful - show green progress bar and success message
                 progressBar.style.background = 'linear-gradient(90deg, #22c55e, #16a34a)';
@@ -2857,7 +2861,12 @@
                 // Show success results block
                 const resultsDiv = document.getElementById('progressResults');
                 resultsDiv.style.display = 'block';
-                document.getElementById('progressResultsList').textContent = `Успешно куплено ${successful} из ${total} размещений.`;
+                // Разные сообщения для ссылок и статей
+                if (isArticle) {
+                    document.getElementById('progressResultsList').textContent = `${successful} из ${total} статей отправлено на модерацию.`;
+                } else {
+                    document.getElementById('progressResultsList').textContent = `Успешно размещено ${successful} из ${total} ссылок.`;
+                }
             } else if (successful === 0) {
                 // All failed - show red progress bar
                 progressBar.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
@@ -2870,7 +2879,12 @@
                 // Show partial success message
                 const resultsDiv = document.getElementById('progressResults');
                 resultsDiv.style.display = 'block';
-                document.getElementById('progressResultsList').textContent = `Успешно куплено ${successful} из ${total} размещений.`;
+                // Разные сообщения для ссылок и статей
+                if (isArticle) {
+                    document.getElementById('progressResultsList').textContent = `${successful} из ${total} статей отправлено на модерацию.`;
+                } else {
+                    document.getElementById('progressResultsList').textContent = `Успешно размещено ${successful} из ${total} ссылок.`;
+                }
             }
 
             // Show errors if any
