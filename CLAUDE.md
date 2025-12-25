@@ -61,7 +61,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### ⚠️ CRITICAL: Build vs Dev Rules for Claude
 
-**Never run `npm run dev`** - This starts the development server which should only be controlled by the user.
+**IMPORTANT: Auto-restart server after backend changes**
+
+When you make changes to backend files (controllers, services, routes), you MUST restart the server:
+```bash
+# Kill current process and restart
+lsof -ti:3003 | xargs kill -9 2>/dev/null
+npm run dev > /dev/null 2>&1 &
+sleep 3 && echo "✅ Сервер перезапущен"
+```
+
+**When to restart:**
+- ✅ Changes to `backend/services/*.js` (API logic changes)
+- ✅ Changes to `backend/controllers/*.js` (endpoint handlers)
+- ✅ Changes to `backend/routes/*.js` (route definitions)
+- ✅ Changes to `backend/config/*.js` (configuration)
+- ✅ Changes to database schemas or migrations
+- ❌ NO restart needed for `backend/build/*.html` or `backend/build/js/*.js` (frontend files)
 
 **Use `npm run build`** to check if code compiles correctly:
 ```bash

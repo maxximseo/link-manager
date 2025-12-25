@@ -3349,22 +3349,39 @@ const getSiteRentals = async (siteId, ownerId) => {
  * @param {boolean} enabled - Enable or disable auto-renewal
  */
 const toggleRentalAutoRenewal = async (tenantId, rentalId, enabled) => {
+  // First check if rental exists and get its details
+  const checkResult = await query(
+    `SELECT id, tenant_id, status FROM site_slot_rentals WHERE id = $1`,
+    [rentalId]
+  );
+
+  if (checkResult.rows.length === 0) {
+    throw new Error('Аренда не найдена');
+  }
+
+  const rental = checkResult.rows[0];
+
+  if (rental.tenant_id !== tenantId) {
+    throw new Error('Недостаточно прав для изменения этой аренды');
+  }
+
+  if (rental.status !== 'active') {
+    throw new Error('Авто-продление доступно только для активных аренд');
+  }
+
+  // Now perform the update
   const result = await query(
     `UPDATE site_slot_rentals
      SET auto_renewal = $1, updated_at = NOW()
-     WHERE id = $2 AND tenant_id = $3 AND status = 'active'
+     WHERE id = $2
      RETURNING *`,
-    [enabled, rentalId, tenantId]
+    [enabled, rentalId]
   );
 
-  if (result.rows.length === 0) {
-    throw new Error('Аренда не найдена или недостаточно прав');
-  }
-
-  const rental = result.rows[0];
+  const updatedRental = result.rows[0];
 
   // Calculate renewal price for response (30% discount only, NO personal discount)
-  const renewalPrice = parseFloat(rental.total_price) * 0.7;
+  const renewalPrice = parseFloat(updatedRental.total_price) * 0.7;
 
   logger.info('Rental auto-renewal toggled', {
     rentalId,
@@ -3374,7 +3391,7 @@ const toggleRentalAutoRenewal = async (tenantId, rentalId, enabled) => {
   });
 
   return {
-    ...rental,
+    ...updatedRental,
     renewal_price: renewalPrice
   };
 };

@@ -1380,11 +1380,9 @@
                                     <span data-i18n="status">Статус</span> <span id="sort-moderation_status"></span>
                                 </th>
                                 <th class="text-center" style="width: 80px;" data-i18n="type">Тип</th>
-                                <th class="text-center" style="width: 60px;" title="Открыть сайт">
-                                    <i class="bi bi-box-arrow-up-right"></i>
-                                </th>
                                 <th style="width: 120px;" data-i18n="homepages">Главные</th>
                                 <th style="width: 120px;" data-i18n="guestPosts">Гест-посты</th>
+                                <th style="width: 100px;" data-i18n="revenue365">Доход (365д)</th>
                                 <th class="text-center" style="width: 60px;">
                                     <i class="bi bi-file-text" data-bs-toggle="tooltip" data-bs-placement="top" data-i18n-title="allowGuestPostsTooltip" title="Allow guest posts"></i>
                                 </th>
@@ -2518,7 +2516,12 @@
                 const linksUsed = s.used_links || 0;
                 const linksMax = s.max_links || 0;
                 const linksPercent = linksMax > 0 ? (linksUsed / linksMax * 100) : 0;
-                const linksColor = linksPercent >= 90 ? 'danger' : linksPercent >= 70 ? 'warning' : 'success';
+                let linksColor = linksPercent >= 90 ? 'danger' : linksPercent >= 70 ? 'warning' : 'success';
+
+                // НОВОЕ: если есть активная аренда - ВСЕГДА красный
+                if (s.has_active_rental) {
+                    linksColor = 'danger';
+                }
 
                 const articlesUsed = s.used_articles || 0;
                 const articlesMax = s.max_articles || 0;
@@ -2612,12 +2615,7 @@
                     <td class="text-center">
                         ${typeBadge}
                     </td>
-                    <td>
-                        <a href="${escapeHtml(s.site_url)}" target="_blank" class="btn btn-sm btn-primary" title="${escapeHtml(s.site_url)}">
-                            <i class="bi bi-box-arrow-up-right"></i>
-                        </a>
-                    </td>
-                    <td>
+                    <td ${s.has_active_rental ? 'class="table-danger"' : ''}>
                         <div class="text-center fw-semibold mb-1">${linksUsed} / ${linksMax}</div>
                         <div class="progress" style="height: 6px;">
                             <div class="progress-bar bg-${linksColor}" role="progressbar"
@@ -2626,6 +2624,7 @@
                                  aria-valuemin="0"
                                  aria-valuemax="${linksMax}"></div>
                         </div>
+                        ${s.has_active_rental ? '<small class="text-danger d-block mt-1">В аренде</small>' : ''}
                     </td>
                     <td>
                         ${siteType === 'wordpress' ? `
@@ -2638,6 +2637,9 @@
                                      aria-valuemax="${articlesMax}"></div>
                             </div>
                         ` : '<span class="text-muted">N/A</span>'}
+                    </td>
+                    <td class="text-center">
+                        <span class="badge bg-success">$${(s.revenue_365d || 0).toFixed(2)}</span>
                     </td>
                     <td class="text-center">
                         <div class="form-check form-switch d-inline-block">
