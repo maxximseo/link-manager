@@ -31,7 +31,7 @@ async function runMigration() {
     console.log('✅ Migration completed successfully!');
 
     // Verify
-    const result = await client.query(`
+    const result = await pool.query(`
       SELECT column_name, data_type, column_default
       FROM information_schema.columns
       WHERE table_name = 'site_slot_rentals' AND column_name = 'history'
@@ -52,7 +52,7 @@ async function runMigration() {
     }
     process.exit(1);
   } finally {
-    await client.end();
+    await pool.end();
     console.log('\n🔌 Disconnected from database');
   }
 }
