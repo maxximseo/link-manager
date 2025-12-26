@@ -344,25 +344,49 @@ const getRecentPurchases = async (limit = 20) => {
     // Validate limit to prevent resource exhaustion (max 1000)
     const safeLimit = Math.min(Math.max(1, parseInt(limit, 10) || 20), 1000);
 
+    // Combined query: placements + slot rentals
     const result = await query(
       `
-      SELECT
-        p.id,
-        p.type,
-        p.status,
-        p.final_price,
-        p.discount_applied,
-        p.purchased_at,
-        u.username,
-        u.email,
-        pr.name as project_name,
-        s.site_name,
-        s.site_url
-      FROM placements p
-      JOIN users u ON p.user_id = u.id
-      JOIN projects pr ON p.project_id = pr.id
-      JOIN sites s ON p.site_id = s.id
-      ORDER BY p.purchased_at DESC
+      (
+        SELECT
+          p.id,
+          p.type,
+          p.status,
+          p.final_price,
+          p.discount_applied,
+          p.purchased_at,
+          u.username,
+          u.email,
+          pr.name as project_name,
+          s.site_name,
+          s.site_url,
+          'placement' as source
+        FROM placements p
+        JOIN users u ON p.user_id = u.id
+        JOIN projects pr ON p.project_id = pr.id
+        JOIN sites s ON p.site_id = s.id
+      )
+      UNION ALL
+      (
+        SELECT
+          ssr.id,
+          'slot_rental' as type,
+          ssr.status,
+          ssr.total_price as final_price,
+          0 as discount_applied,
+          ssr.created_at as purchased_at,
+          tenant.username,
+          tenant.email,
+          NULL as project_name,
+          s.site_name,
+          s.site_url,
+          'rental' as source
+        FROM site_slot_rentals ssr
+        JOIN users tenant ON ssr.tenant_id = tenant.id
+        JOIN sites s ON ssr.site_id = s.id
+        WHERE ssr.status = 'active'
+      )
+      ORDER BY purchased_at DESC
       LIMIT $1
     `,
       [safeLimit]
