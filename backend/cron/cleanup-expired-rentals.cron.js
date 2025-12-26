@@ -2,6 +2,7 @@ const cron = require('node-cron');
 const { pool } = require('../config/database');
 const logger = require('../config/logger');
 const notificationService = require('../services/notification.service');
+const wordpressRentalService = require('../services/wordpress-rental.service');
 
 /**
  * Process expired rentals:
