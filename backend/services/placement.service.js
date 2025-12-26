@@ -80,7 +80,9 @@ const getUserPlacements = async (userId, page = 0, limit = 0, filters = {}) => {
          WHERE pc.placement_id = p.id AND pc.link_id IS NOT NULL LIMIT 1) as link_title,
         (SELECT pa.title FROM placement_content pc
          LEFT JOIN project_articles pa ON pc.article_id = pa.id
-         WHERE pc.placement_id = p.id AND pc.article_id IS NOT NULL LIMIT 1) as article_title
+         WHERE pc.placement_id = p.id AND pc.article_id IS NOT NULL LIMIT 1) as article_title,
+        CASE WHEN rp.rental_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_rental,
+        rp.rental_id
       FROM placements p
       LEFT JOIN sites s ON p.site_id = s.id
       LEFT JOIN projects proj ON p.project_id = proj.id
