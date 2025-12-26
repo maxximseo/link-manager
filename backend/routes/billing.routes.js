@@ -646,7 +646,7 @@ router.get('/statistics/timeline', authMiddleware, async (req, res) => {
         SUM(ABS(amount)) as total_amount
       FROM transactions
       WHERE user_id = $2
-        AND type IN ('purchase', 'renewal', 'auto_renewal')
+        AND type IN ('purchase', 'renewal', 'auto_renewal', 'slot_rental', 'slot_rental_renewal')
         AND created_at >= $3
       GROUP BY DATE_TRUNC($1, created_at), type
       ORDER BY period`,
