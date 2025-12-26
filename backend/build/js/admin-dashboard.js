@@ -213,20 +213,23 @@ function updateRevenueByTypeChart(revenue) {
 
     const purchases = parseFloat(revenue.purchases || 0);
     const renewals = parseFloat(revenue.renewals || 0);
+    const rentals = parseFloat(revenue.rentals || 0);
 
     revenueByTypeChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: ['Покупки', 'Продления'],
+            labels: ['Покупки', 'Продления', 'Аренда'],
             datasets: [{
-                data: [purchases, renewals],
+                data: [purchases, renewals, rentals],
                 backgroundColor: [
                     'rgba(13, 110, 253, 0.8)',
-                    'rgba(25, 135, 84, 0.8)'
+                    'rgba(25, 135, 84, 0.8)',
+                    'rgba(255, 193, 7, 0.8)'
                 ],
                 borderColor: [
                     'rgba(13, 110, 253, 1)',
-                    'rgba(25, 135, 84, 1)'
+                    'rgba(25, 135, 84, 1)',
+                    'rgba(255, 193, 7, 1)'
                 ],
                 borderWidth: 1
             }]
@@ -243,9 +246,10 @@ function updateRevenueByTypeChart(revenue) {
                         label: function(context) {
                             const label = context.label || '';
                             const value = context.parsed || 0;
-                            const count = context.dataIndex === 0
-                                ? revenue.purchases || 0
-                                : revenue.renewals || 0;
+                            let count = 0;
+                            if (context.dataIndex === 0) count = revenue.purchases || 0;
+                            else if (context.dataIndex === 1) count = revenue.renewals || 0;
+                            else if (context.dataIndex === 2) count = revenue.rentals || 0;
                             return `${label}: $${value.toFixed(2)} (${count} шт)`;
                         }
                     }
