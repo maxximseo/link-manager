@@ -320,7 +320,7 @@ function updateRevenueTimelineChart(data, groupBy) {
         const periodKey = formatPeriodKey(item.period, groupBy);
 
         if (!periods[periodKey]) {
-            periods[periodKey] = { purchase: 0, renewal: 0, auto_renewal: 0 };
+            periods[periodKey] = { purchase: 0, renewal: 0, rental: 0 };
         }
 
         const amount = parseFloat(item.total_amount || 0);
@@ -329,6 +329,8 @@ function updateRevenueTimelineChart(data, groupBy) {
             periods[periodKey].purchase += amount;
         } else if (item.type === 'renewal' || item.type === 'auto_renewal') {
             periods[periodKey].renewal += amount;
+        } else if (item.type === 'slot_rental' || item.type === 'slot_rental_renewal') {
+            periods[periodKey].rental += amount;
         }
     });
 
@@ -338,6 +340,7 @@ function updateRevenueTimelineChart(data, groupBy) {
     const labels = sortedPeriods;
     const purchaseData = sortedPeriods.map(p => periods[p].purchase);
     const renewalData = sortedPeriods.map(p => periods[p].renewal);
+    const rentalData = sortedPeriods.map(p => periods[p].rental);
 
     revenueTimelineChart = new Chart(ctx, {
         type: 'line',
@@ -357,6 +360,14 @@ function updateRevenueTimelineChart(data, groupBy) {
                     data: renewalData,
                     borderColor: 'rgba(25, 135, 84, 1)',
                     backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: 'Аренда',
+                    data: rentalData,
+                    borderColor: 'rgba(255, 193, 7, 1)',
+                    backgroundColor: 'rgba(255, 193, 7, 0.1)',
                     tension: 0.4,
                     fill: true
                 }
