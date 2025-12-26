@@ -261,10 +261,7 @@ async function confirmAdjustBalance() {
         return;
     }
 
-    if (!reason) {
-        alert('Укажите причину корректировки');
-        return;
-    }
+    // Reason is optional - no validation required
 
     const currentBalance = parseFloat(document.getElementById('adjustCurrentBalance').value);
     const newBalance = currentBalance + amount;

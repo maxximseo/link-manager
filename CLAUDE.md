@@ -2766,10 +2766,13 @@ git push
 ```
 
 **How to use credentials in Claude Code**:
-1. Read from `.credentials.local` file when needed
-2. NEVER hardcode credentials in code
-3. NEVER include in commits or logs
-4. Use environment variables in production
+1. **ALWAYS check `.credentials.local` first** when testing API or needing auth credentials
+2. Read from `.credentials.local` file when needed
+3. NEVER hardcode credentials in code
+4. NEVER include in commits or logs
+5. Use environment variables in production
+
+**When testing API endpoints**: Always read admin credentials from `.credentials.local` before making authenticated requests.
 
 **Protected files in `.gitignore`**:
 ```
