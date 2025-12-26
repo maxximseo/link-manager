@@ -18,6 +18,9 @@ const wordpressLimiter = createLimiter(RATE_LIMITS.WORDPRESS);
 const financialLimiter = createLimiter(RATE_LIMITS.FINANCIAL);
 const depositLimiter = createLimiter(RATE_LIMITS.DEPOSIT);
 
+// General limiter - same as API limiter (100 requests per minute)
+const generalLimiter = createLimiter(RATE_LIMITS.API);
+
 module.exports = {
   loginLimiter,
   apiLimiter,
@@ -25,5 +28,6 @@ module.exports = {
   placementLimiter,
   wordpressLimiter,
   financialLimiter,
-  depositLimiter
+  depositLimiter,
+  generalLimiter
 };
