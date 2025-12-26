@@ -3735,7 +3735,8 @@ ${'='.repeat(50)}`;
                 }
             } catch (error) {
                 console.error('Error creating rental:', error);
-                showNotification('Ошибка при создании аренды', 'error');
+                // Показать конкретную ошибку от сервера (например "Недостаточно средств...")
+                showNotification(error.message || 'Ошибка при создании аренды', 'error');
             }
         }
     </script>
