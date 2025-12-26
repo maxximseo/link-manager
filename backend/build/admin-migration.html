@@ -125,6 +125,12 @@
                 return;
             }
 
+            // Initialize sidebar
+            SidebarNav.init({
+                activePage: 'admin-migration',
+                pageTitle: 'Миграция API'
+            });
+
             await loadMigrationStatus();
         });
 

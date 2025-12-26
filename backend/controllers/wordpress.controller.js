@@ -135,9 +135,40 @@ const handleContent = (req, res) => {
   }
 };
 
+// Confirm endpoint update (called by WordPress plugin after applying new endpoint)
+const confirmEndpointUpdate = async (req, res) => {
+  try {
+    // SECURITY: Support API key from header (preferred) or body
+    const apiKey = req.headers['x-api-key'] || req.body.api_key;
+
+    if (!apiKey) {
+      return res.status(400).json({
+        error: 'API key is required in X-API-Key header or request body'
+      });
+    }
+
+    const result = await wordpressService.confirmEndpointUpdate(apiKey);
+
+    if (result) {
+      res.json({
+        success: true,
+        message: 'Endpoint update confirmed'
+      });
+    } else {
+      res.json({
+        success: false,
+        message: 'No pending endpoint update found'
+      });
+    }
+  } catch (error) {
+    return handleError(res, error, 'Failed to confirm endpoint update', 500);
+  }
+};
+
 module.exports = {
   getContent,
   publishArticle,
   verifyConnection,
-  handleContent
+  handleContent,
+  confirmEndpointUpdate
 };
