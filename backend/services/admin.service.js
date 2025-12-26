@@ -24,11 +24,11 @@ const getAdminStats = async (period = 'day') => {
     const revenueResult = await query(
       `
       SELECT
-        SUM(CASE WHEN type IN ('purchase', 'renewal', 'auto_renewal', 'slot_rental', 'slot_rental_renewal', 'slot_rental_income') THEN ABS(amount) ELSE 0 END) as total_revenue,
+        SUM(CASE WHEN type IN ('purchase', 'renewal', 'auto_renewal', 'slot_rental', 'slot_rental_renewal') THEN ABS(amount) ELSE 0 END) as total_revenue,
         COUNT(CASE WHEN type = 'purchase' THEN 1 END) as purchases_count,
         COUNT(CASE WHEN type IN ('renewal', 'auto_renewal') THEN 1 END) as renewals_count,
-        COUNT(CASE WHEN type IN ('slot_rental', 'slot_rental_renewal', 'slot_rental_income') THEN 1 END) as rentals_count,
-        AVG(CASE WHEN type IN ('purchase', 'renewal', 'auto_renewal', 'slot_rental', 'slot_rental_renewal', 'slot_rental_income') THEN ABS(amount) END) as avg_transaction
+        COUNT(CASE WHEN type IN ('slot_rental', 'slot_rental_renewal') THEN 1 END) as rentals_count,
+        AVG(CASE WHEN type IN ('purchase', 'renewal', 'auto_renewal', 'slot_rental', 'slot_rental_renewal') THEN ABS(amount) END) as avg_transaction
       FROM transactions
       WHERE created_at >= NOW() - make_interval(days => $1)
     `,
