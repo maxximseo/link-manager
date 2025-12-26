@@ -108,6 +108,25 @@
             background-color: #fef3c7 !important;
         }
 
+        /* Icon box styling */
+        .icon-box {
+            width: 48px;
+            height: 48px;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-box.purple {
+            background: linear-gradient(135deg, #f3e8ff 0%, #e0e7ff 100%);
+        }
+
+        .icon-box.purple i {
+            color: #9333ea;
+            font-size: 1.5rem;
+        }
+
         /* Rejected row styling */
         .rental-rejected-row {
             background-color: #f3f4f6 !important;
@@ -204,9 +223,14 @@
         <!-- Main Table Card -->
         <div class="card">
             <div class="card-header modern-card-header">
-                <div>
-                    <h2 data-i18n="myRentals">Мои аренды</h2>
-                    <p data-i18n="rentalsSubtitle">Сайты, слоты которых вы арендуете</p>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="icon-box purple">
+                        <i class="bi bi-key-fill"></i>
+                    </div>
+                    <div>
+                        <h2 data-i18n="myRentals">Мои аренды</h2>
+                        <p data-i18n="rentalsSubtitle">Сайты, слоты которых вы арендуете</p>
+                    </div>
                 </div>
             </div>
             <div class="card-body" style="padding: 0;">
