@@ -27,7 +27,7 @@ const SidebarNav = {
       { id: 'projects', label: t('sidebarProjects'), icon: 'bi-bullseye', href: '/dashboard.html' },
       { id: 'links', label: t('sidebarLinks'), icon: 'bi-link-45deg', href: '/placements-manager.html' },
       { id: 'sites', label: t('sidebarSites'), icon: 'bi-globe', href: '/sites.html' },
-      { id: 'rentals', label: t('sidebarRentals'), icon: 'bi-building', href: '/rentals.html' },
+      { id: 'rentals', label: t('sidebarRentals'), icon: 'bi-calendar3', href: '/rentals.html' },
       { id: 'purchase', label: t('sidebarPurchase'), icon: 'bi-cart', href: '/placements.html' },
       { id: 'balance', label: t('sidebarBalance'), icon: 'bi-wallet2', href: '/balance.html' },
       { id: 'analytics', label: t('sidebarAnalytics'), icon: 'bi-pie-chart', href: '/statistics.html' },
