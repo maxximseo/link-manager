@@ -3635,7 +3635,12 @@ ${'='.repeat(50)}`;
 
             try {
                 // Get available slots from server (considers reserved slots in other rentals)
-                const result = await RentalsAPI.getAvailableSlots(`${siteId}?mode=owner`);
+                const token = getToken();
+                const response = await fetch(`/api/rentals/${siteId}/available?mode=owner`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) throw new Error('Failed to get available slots');
+                const result = await response.json();
                 const slotsData = result.data;
                 const availableSlots = slotsData.available_slots;
 
