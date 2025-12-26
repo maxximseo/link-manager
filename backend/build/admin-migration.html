@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Миграция API Endpoint - Link Manager Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/sidebar.css">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-broadcast"></i> Миграция API Endpoint</h1>
+        </div>
+
+        <!-- Info Alert -->
+        <div class="alert alert-info mb-4">
+            <h5><i class="bi bi-info-circle"></i> Как это работает</h5>
+            <p class="mb-2">Эта функция позволяет массово обновить API endpoint для всех WordPress-плагинов.</p>
+            <ul class="mb-0">
+                <li>При отправке нового endpoint создаётся запись для каждого сайта</li>
+                <li>Плагины получат новый адрес при следующем запросе к API</li>
+                <li>Плагин автоматически обновит свои настройки</li>
+                <li>Используйте эту функцию при смене домена API</li>
+            </ul>
+        </div>
+
+        <!-- Broadcast Form -->
+        <div class="card mb-4">
+            <div class="card-header bg-warning bg-opacity-25">
+                <i class="bi bi-send"></i> Отправить новый Endpoint
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="mb-3">
+                            <label for="newEndpointUrl" class="form-label">Новый API Endpoint</label>
+                            <input type="url" class="form-control form-control-lg" id="newEndpointUrl"
+                                   placeholder="https://api.serparium.com/api">
+                            <div class="form-text">
+                                Введите полный URL нового API endpoint (например: https://new-domain.com/api)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center">
+                        <button class="btn btn-warning btn-lg w-100" onclick="broadcastEndpoint()">
+                            <i class="bi bi-send-fill"></i> Отправить всем сайтам
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Migration Status -->
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-graph-up"></i> Статус миграции
+            </div>
+            <div class="card-body">
+                <div id="noMigration" class="text-center text-muted py-4">
+                    <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                    <p class="mt-2">Активных миграций нет</p>
+                </div>
+
+                <div id="migrationStatus" style="display: none;">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-muted">Текущий endpoint миграции</label>
+                            <div class="font-monospace bg-light p-2 rounded" id="migrationEndpoint">-</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted">Прогресс</label>
+                            <div class="progress" style="height: 25px;">
+                                <div class="progress-bar bg-success" id="migrationProgress"
+                                     role="progressbar" style="width: 0%">
+                                    <span id="progressText">0%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <div class="border rounded p-3">
+                                <div class="text-muted small">Всего сайтов</div>
+                                <div class="fs-3 fw-bold" id="totalSites">0</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 border-success">
+                                <div class="text-muted small">Подтверждено</div>
+                                <div class="fs-3 fw-bold text-success" id="confirmedSites">0</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 border-warning">
+                                <div class="text-muted small">Ожидают</div>
+                                <div class="fs-3 fw-bold text-warning" id="pendingSites">0</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/security.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/sidebar.js"></script>
+
+    <script>
+        // Check admin access
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!isAuthenticated()) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            if (!isAdmin()) {
+                alert('Доступ запрещён. Требуются права администратора.');
+                window.location.href = '/dashboard.html';
+                return;
+            }
+
+            await loadMigrationStatus();
+        });
+
+        // Broadcast new endpoint to all sites
+        async function broadcastEndpoint() {
+            const newEndpoint = document.getElementById('newEndpointUrl').value.trim();
+
+            if (!newEndpoint) {
+                showNotification('Введите новый API Endpoint', 'error');
+                return;
+            }
+
+            // Validate URL format
+            try {
+                new URL(newEndpoint);
+            } catch (e) {
+                showNotification('Некорректный URL формат', 'error');
+                return;
+            }
+
+            if (!confirm('Вы уверены, что хотите отправить новый endpoint всем сайтам?\n\nНовый endpoint: ' + newEndpoint)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/broadcast-endpoint', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${getToken()}`
+                    },
+                    body: JSON.stringify({ newEndpoint })
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    showNotification(`Endpoint отправлен ${result.updatedCount} сайтам`, 'success');
+                    document.getElementById('newEndpointUrl').value = '';
+                    await loadMigrationStatus();
+                } else {
+                    showNotification(result.error || 'Ошибка при отправке endpoint', 'error');
+                }
+            } catch (error) {
+                console.error('Error broadcasting endpoint:', error);
+                showNotification('Ошибка при отправке endpoint', 'error');
+            }
+        }
+
+        // Load migration status
+        async function loadMigrationStatus() {
+            try {
+                const response = await fetch('/api/admin/endpoint-migration-status', {
+                    headers: {
+                        'Authorization': `Bearer ${getToken()}`
+                    }
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success && result.data) {
+                    const data = result.data;
+
+                    if (data.total > 0) {
+                        document.getElementById('noMigration').style.display = 'none';
+                        document.getElementById('migrationStatus').style.display = 'block';
+
+                        document.getElementById('migrationEndpoint').textContent = data.new_endpoint || 'N/A';
+                        document.getElementById('totalSites').textContent = data.total;
+                        document.getElementById('confirmedSites').textContent = data.confirmed;
+                        document.getElementById('pendingSites').textContent = data.pending;
+
+                        // Calculate and display progress
+                        const progress = data.total > 0 ? Math.round((data.confirmed / data.total) * 100) : 0;
+                        document.getElementById('migrationProgress').style.width = progress + '%';
+                        document.getElementById('progressText').textContent = progress + '%';
+                    } else {
+                        document.getElementById('noMigration').style.display = 'block';
+                        document.getElementById('migrationStatus').style.display = 'none';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading migration status:', error);
+            }
+        }
+
+        // Simple notification
+        function showNotification(message, type = 'info') {
+            const alertClass = type === 'error' ? 'alert-danger' : (type === 'success' ? 'alert-success' : 'alert-info');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 400px;';
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(alertDiv);
+
+            setTimeout(() => alertDiv.remove(), 5000);
+        }
+    </script>
+</body>
+</html>
