@@ -3528,6 +3528,9 @@ const approveSlotRental = async (tenantId, rentalId) => {
 
     await client.query('COMMIT');
 
+    // Invalidate cache for this site (slots activated)
+    await cache.clearRentalCache(rental.site_id);
+
     logger.info('Slot rental approved', {
       rentalId,
       tenantId,
