@@ -420,12 +420,24 @@ const purchasePlacement = async ({
     // 3.1. NEW: Check site visibility authorization
     // User can purchase if:
     // - Site is public (is_public = TRUE), OR
-    // - User owns the site (site.user_id === userId)
+    // - User owns the site (site.user_id === userId), OR
+    // - User has active rental on the site
+    let hasActiveRental = false;
     if (!site.is_public && site.user_id !== userId) {
-      throw new Error(
-        `Сайт "${site.site_name}" приватный. ` +
-          `Только владелец может размещать контент на приватных сайтах.`
+      // Check for active rental
+      const rentalCheck = await client.query(
+        `SELECT id FROM site_slot_rentals
+         WHERE site_id = $1 AND tenant_id = $2 AND status = 'active' AND expires_at > NOW()`,
+        [siteId, userId]
       );
+      hasActiveRental = rentalCheck.rows.length > 0;
+
+      if (!hasActiveRental) {
+        throw new Error(
+          `Сайт "${site.site_name}" приватный. ` +
+            `Только владелец или арендатор может размещать контент на приватных сайтах.`
+        );
+      }
     }
 
     // 3.5. Validate site type - static_php sites cannot purchase articles
