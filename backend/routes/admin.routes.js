@@ -801,4 +801,55 @@ router.post('/bulk-update-placement-status', async (req, res) => {
   }
 });
 
+// ============================================================================
+// Endpoint Migration Routes
+// ============================================================================
+
+/**
+ * @route POST /api/admin/broadcast-endpoint
+ * @desc Broadcast new API endpoint to all WordPress sites
+ * @access Admin only
+ */
+router.post('/broadcast-endpoint', generalLimiter, async (req, res) => {
+  try {
+    const { new_endpoint } = req.body;
+
+    if (!new_endpoint) {
+      return res.status(400).json({ error: 'new_endpoint is required' });
+    }
+
+    // Validate URL format
+    try {
+      new URL(new_endpoint);
+    } catch {
+      return res.status(400).json({ error: 'Invalid endpoint URL format' });
+    }
+
+    const result = await siteService.broadcastEndpoint(new_endpoint);
+
+    res.json({
+      success: true,
+      ...result
+    });
+  } catch (error) {
+    logger.error('Broadcast endpoint error:', error);
+    res.status(500).json({ error: 'Failed to broadcast endpoint', details: error.message });
+  }
+});
+
+/**
+ * @route GET /api/admin/endpoint-migration-status
+ * @desc Get current endpoint migration status
+ * @access Admin only
+ */
+router.get('/endpoint-migration-status', generalLimiter, async (req, res) => {
+  try {
+    const status = await siteService.getEndpointMigrationStatus();
+    res.json(status);
+  } catch (error) {
+    logger.error('Get endpoint migration status error:', error);
+    res.status(500).json({ error: 'Failed to get migration status', details: error.message });
+  }
+});
+
 module.exports = router;
