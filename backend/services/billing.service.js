@@ -2750,9 +2750,10 @@ const createSlotRental = async (ownerId, siteId, tenantUsername, slotsCount, pri
       throw new Error('Только владелец сайта может создавать аренду');
     }
 
-    // 2. Get tenant by username
+    // 2. Get tenant by username or email
     const tenantResult = await client.query(
-      `SELECT id, username, balance, current_discount FROM users WHERE username = $1 FOR UPDATE`,
+      `SELECT id, username, balance, current_discount FROM users
+       WHERE username = $1 OR email = $1 FOR UPDATE`,
       [tenantUsername]
     );
 
