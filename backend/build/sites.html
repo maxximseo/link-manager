@@ -1720,86 +1720,81 @@
                     </div>
                 </div>
 
-                <!-- Компактный контент -->
-                <div style="padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem;">
+                <!-- Контент -->
+                <div style="padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
                     <input type="hidden" id="rentalSiteId">
 
                     <!-- Сайт -->
                     <div>
-                        <label style="display: block; font-size: 0.8125rem; font-weight: 500; color: rgb(75, 85, 99); margin-bottom: 0.375rem;">Сайт</label>
-                        <p style="font-weight: 600; font-size: 0.9375rem; color: rgb(17, 24, 39); margin: 0;" id="rentalSiteName">-</p>
+                        <label style="display: block; font-size: 0.75rem; font-weight: 700; color: rgb(17, 24, 39); margin-bottom: 0.375rem;">Сайт</label>
+                        <div style="font-weight: 500; font-size: 0.875rem; color: rgb(17, 24, 39); background: rgb(249, 250, 251); padding: 0.5rem 0.75rem; border-radius: 0.5rem; border: 2px solid rgb(229, 231, 235);" id="rentalSiteName">-</div>
                     </div>
 
                     <!-- Доступно слотов -->
                     <div>
-                        <label style="display: block; font-size: 0.8125rem; font-weight: 500; color: rgb(75, 85, 99); margin-bottom: 0.375rem;">Доступно слотов</label>
-                        <p style="font-size: 0.875rem; color: rgb(107, 114, 128); margin: 0;" id="rentalAvailableSlots">-</p>
+                        <label style="display: block; font-size: 0.75rem; font-weight: 700; color: rgb(17, 24, 39); margin-bottom: 0.375rem;">Доступно слотов</label>
+                        <div style="font-weight: 500; font-size: 0.875rem; color: rgb(17, 24, 39); background: rgb(249, 250, 251); padding: 0.5rem 0.75rem; border-radius: 0.5rem; border: 2px solid rgb(229, 231, 235);" id="rentalAvailableSlots">-</div>
                     </div>
 
                     <!-- Логин арендатора -->
                     <div>
-                        <label for="rentalTenantUsername" style="display: block; font-size: 0.8125rem; font-weight: 500; color: rgb(75, 85, 99); margin-bottom: 0.375rem;">
+                        <label for="rentalTenantUsername" style="display: block; font-size: 0.75rem; font-weight: 700; color: rgb(17, 24, 39); margin-bottom: 0.375rem;">
                             Логин арендатора <span style="color: rgb(239, 68, 68);">*</span>
                         </label>
-                        <input type="text" id="rentalTenantUsername" placeholder="username" required
-                            style="width: 100%; padding: 0.5rem 0.875rem; border: 1px solid rgb(209, 213, 219); border-radius: 0.5rem; font-size: 0.875rem; color: rgb(17, 24, 39); transition: all 0.2s;"
-                            onfocus="this.style.outline='none'; this.style.borderColor='rgb(59, 130, 246)'; this.style.boxShadow='0 0 0 2px rgba(59, 130, 246, 0.1)'"
-                            onblur="this.style.borderColor='rgb(209, 213, 219)'; this.style.boxShadow='none'">
+                        <input type="text" id="rentalTenantUsername" placeholder="Введите username арендатора" required
+                            style="width: 100%; padding: 0.5rem 0.75rem; border: 2px solid rgb(229, 231, 235); border-radius: 0.5rem; font-size: 0.875rem; color: rgb(17, 24, 39); transition: all 0.2s;"
+                            onfocus="this.style.outline='none'; this.style.borderColor='rgb(59, 130, 246)'"
+                            onblur="this.style.borderColor='rgb(229, 231, 235)'">
                     </div>
 
-                    <!-- Количество и цена в одной строке -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
-                        <div>
-                            <label for="rentalSlotsCount" style="display: block; font-size: 0.8125rem; font-weight: 500; color: rgb(75, 85, 99); margin-bottom: 0.375rem;">
-                                Слотов <span style="color: rgb(239, 68, 68);">*</span>
-                            </label>
-                            <input type="number" id="rentalSlotsCount" min="1" value="1" required
-                                style="width: 100%; padding: 0.5rem 0.875rem; border: 1px solid rgb(209, 213, 219); border-radius: 0.5rem; font-size: 0.875rem; color: rgb(17, 24, 39); transition: all 0.2s;"
-                                onfocus="this.style.outline='none'; this.style.borderColor='rgb(59, 130, 246)'; this.style.boxShadow='0 0 0 2px rgba(59, 130, 246, 0.1)'"
-                                onblur="this.style.borderColor='rgb(209, 213, 219)'; this.style.boxShadow='none'">
-                        </div>
-                        <div>
-                            <label for="rentalPricePerSlot" style="display: block; font-size: 0.8125rem; font-weight: 500; color: rgb(75, 85, 99); margin-bottom: 0.375rem;">Цена ($)</label>
-                            <input type="number" id="rentalPricePerSlot" min="0" step="0.01" value="25.00"
-                                style="width: 100%; padding: 0.5rem 0.875rem; border: 1px solid rgb(209, 213, 219); border-radius: 0.5rem; font-size: 0.875rem; color: rgb(17, 24, 39); transition: all 0.2s;"
-                                onfocus="this.style.outline='none'; this.style.borderColor='rgb(59, 130, 246)'; this.style.boxShadow='0 0 0 2px rgba(59, 130, 246, 0.1)'"
-                                onblur="this.style.borderColor='rgb(209, 213, 219)'; this.style.boxShadow='none'">
-                        </div>
+                    <!-- Количество слотов -->
+                    <div>
+                        <label for="rentalSlotsCount" style="display: block; font-size: 0.75rem; font-weight: 700; color: rgb(17, 24, 39); margin-bottom: 0.375rem;">
+                            Количество слотов <span style="color: rgb(239, 68, 68);">*</span>
+                        </label>
+                        <input type="number" id="rentalSlotsCount" min="1" value="1" required
+                            style="width: 100%; padding: 0.5rem 0.75rem; border: 2px solid rgb(229, 231, 235); border-radius: 0.5rem; font-size: 0.875rem; color: rgb(17, 24, 39); transition: all 0.2s;"
+                            onfocus="this.style.outline='none'; this.style.borderColor='rgb(59, 130, 246)'"
+                            onblur="this.style.borderColor='rgb(229, 231, 235)'">
                     </div>
 
-                    <!-- Компактный блок расчета -->
-                    <div style="background: rgb(240, 253, 244); padding: 0.875rem; border-radius: 0.5rem; border: 1px solid rgb(34, 197, 94);">
+                    <!-- Цена за слот -->
+                    <div>
+                        <label for="rentalPricePerSlot" style="display: block; font-size: 0.75rem; font-weight: 700; color: rgb(17, 24, 39); margin-bottom: 0.375rem;">Цена за слот ($)</label>
+                        <input type="number" id="rentalPricePerSlot" min="0" step="0.01" value="25.00"
+                            style="width: 100%; padding: 0.5rem 0.75rem; border: 2px solid rgb(229, 231, 235); border-radius: 0.5rem; font-size: 0.875rem; color: rgb(17, 24, 39); transition: all 0.2s;"
+                            onfocus="this.style.outline='none'; this.style.borderColor='rgb(59, 130, 246)'"
+                            onblur="this.style.borderColor='rgb(229, 231, 235)'">
+                    </div>
+
+                    <!-- Итоговый блок -->
+                    <div style="background: linear-gradient(135deg, rgb(240, 253, 244), rgb(220, 252, 231)); padding: 0.875rem; border-radius: 0.75rem; border: 2px solid rgb(34, 197, 94);">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.375rem;">
-                            <span style="color: rgb(22, 101, 52); font-size: 0.8125rem;">Слотов:</span>
-                            <span id="rentalCalcSlots" style="color: rgb(22, 101, 52); font-weight: 600; font-size: 0.875rem;">1</span>
+                            <span style="font-size: 0.75rem; font-weight: 700; color: rgb(55, 65, 81);">Количество слотов:</span>
+                            <span id="rentalCalcSlots" style="font-weight: 700; font-size: 1rem; color: rgb(17, 24, 39);">1</span>
                         </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                            <span style="color: rgb(22, 101, 52); font-size: 0.8125rem;">Цена:</span>
-                            <span style="color: rgb(22, 101, 52); font-weight: 600; font-size: 0.875rem;">$<span id="rentalCalcPrice">25.00</span></span>
-                        </div>
-                        <hr style="margin: 0.5rem 0; border: none; border-top: 1px solid rgb(134, 239, 172);">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-weight: 600; font-size: 0.875rem; color: rgb(21, 128, 61);">Итого:</span>
-                            <span style="font-weight: 700; font-size: 1.25rem; background: linear-gradient(135deg, rgb(34, 197, 94), rgb(22, 163, 74)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
-                                $<span id="rentalCalcTotal">25.00</span>
+                            <span style="font-size: 0.75rem; font-weight: 700; color: rgb(55, 65, 81);">Итоговая сумма:</span>
+                            <span style="font-weight: 700; font-size: 1.25rem; color: rgb(22, 163, 74); display: flex; align-items: center; gap: 0.25rem;">
+                                <i class="bi bi-currency-dollar" style="font-size: 1rem;"></i><span id="rentalCalcTotal">25.00</span>
                             </span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Компактный футер -->
-                <div style="padding: 0.875rem 1.25rem; background: rgb(249, 250, 251); border-top: 1px solid rgb(229, 231, 235); display: flex; align-items: center; justify-content: flex-end; gap: 0.625rem;">
+                <!-- Футер -->
+                <div style="padding: 1.25rem; display: flex; gap: 0.625rem;">
                     <button type="button" data-bs-dismiss="modal"
-                        style="padding: 0.5rem 1.125rem; color: rgb(75, 85, 99); background: white; border: 1px solid rgb(209, 213, 219); border-radius: 0.5rem; font-weight: 500; font-size: 0.875rem; cursor: pointer; transition: all 0.2s;"
-                        onmouseover="this.style.background='rgb(249, 250, 251)'"
-                        onmouseout="this.style.background='white'">
+                        style="flex: 1; padding: 0.625rem 1rem; color: rgb(55, 65, 81); background: rgb(243, 244, 246); border: 2px solid rgb(229, 231, 235); border-radius: 0.5rem; font-weight: 700; font-size: 0.875rem; cursor: pointer; transition: all 0.2s;"
+                        onmouseover="this.style.background='rgb(229, 231, 235)'"
+                        onmouseout="this.style.background='rgb(243, 244, 246)'">
                         Отмена
                     </button>
                     <button type="button" onclick="submitCreateRental()"
-                        style="padding: 0.5rem 1.125rem; color: white; background: linear-gradient(90deg, rgb(147, 51, 234), rgb(37, 99, 235), rgb(6, 182, 212)); border: none; border-radius: 0.5rem; font-weight: 500; font-size: 0.875rem; cursor: pointer; transition: all 0.2s;"
-                        onmouseover="this.style.transform='scale(1.03)'; this.style.boxShadow='0 4px 8px rgba(0, 0, 0, 0.1)'"
-                        onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none'">
-                        Создать
+                        style="flex: 1; padding: 0.625rem 1rem; color: white; background: linear-gradient(90deg, rgb(147, 51, 234), rgb(59, 130, 246)); border: none; border-radius: 0.5rem; font-weight: 700; font-size: 0.875rem; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); display: flex; align-items: center; justify-content: center; gap: 0.5rem;"
+                        onmouseover="this.style.boxShadow='0 10px 15px -3px rgba(0, 0, 0, 0.2)'"
+                        onmouseout="this.style.boxShadow='0 4px 6px -1px rgba(0, 0, 0, 0.1)'">
+                        <i class="bi bi-upload" style="font-size: 1rem;"></i>Создать
                     </button>
                 </div>
             </div>

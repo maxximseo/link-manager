@@ -155,6 +155,32 @@ const BillingAPI = {
     })
 };
 
+// Rentals API
+const RentalsAPI = {
+    getAvailableSlots: (siteId) => apiCall(`/rentals/${siteId}/available`),
+    create: (data) => apiCall('/rentals', {
+        method: 'POST',
+        body: JSON.stringify(data)
+    }),
+    getAll: (filters = {}) => {
+        const params = new URLSearchParams(filters);
+        return apiCall(`/rentals?${params}`);
+    },
+    get: (id) => apiCall(`/rentals/${id}`),
+    approve: (id) => apiCall(`/rentals/${id}/approve`, {
+        method: 'POST'
+    }),
+    reject: (id) => apiCall(`/rentals/${id}/reject`, {
+        method: 'POST'
+    }),
+    cancel: (id) => apiCall(`/rentals/${id}/cancel`, {
+        method: 'POST'
+    }),
+    renew: (id) => apiCall(`/rentals/${id}/renew`, {
+        method: 'POST'
+    })
+};
+
 // #8: Table Sorting Utility
 class TableSorter {
     constructor(tableId, storageKey) {
