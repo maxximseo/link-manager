@@ -187,7 +187,7 @@ const getUsers = async ({ page = 1, limit = 50, search = null, role = null }) =>
         GREATEST(0, COALESCE(ABS((
           SELECT SUM(t.amount)
           FROM transactions t
-          WHERE t.user_id = u.id AND t.type IN ('purchase', 'renewal')
+          WHERE t.user_id = u.id AND t.type IN ('purchase', 'renewal', 'slot_rental', 'slot_rental_renewal')
         )), 0) - COALESCE((
           SELECT SUM(t.amount)
           FROM transactions t
