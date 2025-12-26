@@ -422,6 +422,82 @@ getDiscountTierName(discount)     // 0→'Стандарт', 10→'Bronze'...
 
 Bootstrap 5.3.0 for UI with custom styles in `backend/build/css/styles.css`.
 
+### Figma Design System
+
+**Project URL**: https://www.figma.com/make/29nqv8OoZuTgVyGv8AITVL/Design-User-Interface
+
+**File Key**: `29nqv8OoZuTgVyGv8AITVL`
+
+**⚠️ IMPORTANT**: This is a **Figma Make** file (not Design/FigJam). Figma MCP tools do NOT support Make files.
+
+**How to use designs from Make file:**
+
+1. **User provides screenshot or link** to specific component
+2. Claude analyzes visual design from screenshot
+3. Implements HTML/CSS based on visual specs
+
+**Alternative workflow (for regular Figma Design files):**
+```javascript
+// Extract from URL: https://figma.com/design/:fileKey/:fileName?node-id=1-2
+fileKey: 'abc123'
+nodeId: '1:2' // from ?node-id=1-2
+
+// Use mcp__figma__get_design_context
+mcp__figma__get_design_context({
+  fileKey: 'abc123',
+  nodeId: '1:2',
+  clientLanguages: 'javascript,html,css',
+  clientFrameworks: 'vanilla js'
+})
+```
+
+**How to work with Figma Make files:**
+
+1. **Get list of source files**:
+   ```javascript
+   mcp__figma__get_design_context({
+     fileKey: '29nqv8OoZuTgVyGv8AITVL',
+     nodeId: '0:1',
+     clientLanguages: 'html,css,javascript',
+     clientFrameworks: 'vanilla js'
+   })
+   // Returns list of all .tsx components and images
+   ```
+
+2. **Read specific component**:
+   ```javascript
+   ReadMcpResourceTool({
+     server: 'figma',
+     uri: 'file://figma/make/source/29nqv8OoZuTgVyGv8AITVL/components/Rentals.tsx'
+   })
+   // Returns React/TypeScript code with exact styling
+   ```
+
+3. **Available components** (read these for UI specs):
+   - `components/Rentals.tsx` - Rental modal form
+   - `components/Sites.tsx` - Sites table
+   - `components/EditSiteModal.tsx` - Site edit modal
+   - `components/ui/dialog.tsx` - Dialog/modal base component
+   - `components/ui/button.tsx` - Button styles
+   - `components/ui/input.tsx` - Input field styles
+
+**Current UI specs from Figma:**
+- **Modal width**: max-w-md (28rem/448px) - ADJUSTED to 36rem for Russian text
+- **Modal header**: bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-500
+- **Content padding**: p-5 (1.25rem)
+- **Form spacing**: space-y-3 (0.75rem between fields)
+- **Labels**: text-xs font-semibold text-gray-900
+- **Inputs**: border-2 border-gray-200, focus:border-blue-500, rounded-lg, px-3 py-2
+- **Summary box**: bg-gradient from-green-50 to-emerald-50, border-2 border-green-200, p-3.5
+- **Primary btn**: bg-gradient from-purple-600 to-blue-600, rounded-lg, shadow-lg
+- **Secondary btn**: bg-gray-100 hover:bg-gray-200, border-2 border-gray-200
+
+**Color palette:**
+- Purple: #9333ea, #7c3aed
+- Blue: #2563eb, #0ea5e9 (cyan)
+- Green: #22c55e, #10b981 (emerald)
+- Gray: #f9fafb (bg-50), #e5e7eb (border-200), #6b7280 (text-600)
+
 ## Important Patterns & Conventions
 
 ### Database Transactions (CRITICAL)
