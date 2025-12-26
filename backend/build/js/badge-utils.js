@@ -30,7 +30,8 @@ function getPlacementStatusBadge(status) {
 
 const PLACEMENT_TYPE_BADGES = {
     'link': '<span class="badge bg-primary">Главная</span>',
-    'article': '<span class="badge bg-success">Статья</span>'
+    'article': '<span class="badge bg-success">Статья</span>',
+    'slot_rental': '<span class="badge bg-warning">Аренда</span>'
 };
 
 function getPlacementTypeBadge(type) {
