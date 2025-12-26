@@ -9,17 +9,16 @@ const fs = require('fs');
 // Load .env from backend directory
 require('dotenv').config({ path: path.join(__dirname, '..', 'backend', '.env') });
 
-const { Client } = require('pg');
+const { Pool } = require('pg');
 
 async function runMigration() {
-  const client = new Client({
+  const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false }
   });
 
   try {
     console.log('🔌 Connecting to database...');
-    await client.connect();
     console.log('✅ Connected successfully');
 
     console.log('\n📝 Running migration: Add history JSONB to site_slot_rentals...');
@@ -28,7 +27,7 @@ async function runMigration() {
       'utf8'
     );
 
-    await client.query(sql);
+    await pool.query(sql);
     console.log('✅ Migration completed successfully!');
 
     // Verify
