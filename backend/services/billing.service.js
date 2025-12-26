@@ -3528,6 +3528,18 @@ const approveSlotRental = async (tenantId, rentalId) => {
       [rentalId]
     );
 
+    // Log approval action
+    await logRentalAction(
+      client,
+      rentalId,
+      'approved',
+      tenantId,
+      'tenant',
+      'pending_approval',
+      'active',
+      { totalPrice, ownerUsername: rental.owner_username }
+    );
+
     // Create transaction for tenant (expense)
     await client.query(
       `INSERT INTO transactions (user_id, type, amount, description, created_at)
