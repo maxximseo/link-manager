@@ -102,11 +102,56 @@ npm start
 **Nodemon**: Installed globally and as devDependency. Watches all `.js`, `.mjs`, `.json` files and auto-restarts server on changes.
 
 ### Database Operations
+
+**CRITICAL: Standard Migration Pattern for Claude**
+
+When adding new columns/tables to existing schema, use this simplified pattern:
+
 ```bash
-# Run migrations
+# Step 1: Create test migration script (fastest, no SSL hassle)
+# File: database/test-<feature>-migration.js
+
+const { query } = require('../backend/config/database');
+
+async function test() {
+  try {
+    console.log('Adding column...');
+    await query(`ALTER TABLE table_name ADD COLUMN IF NOT EXISTS column_name TYPE DEFAULT 'value'`);
+    console.log('✅ Column added');
+
+    console.log('Creating index...');
+    await query('CREATE INDEX IF NOT EXISTS idx_name ON table_name (column_name)');
+    console.log('✅ Index created');
+
+    console.log('\n✅ Migration completed successfully!');
+  } catch (error) {
+    console.error('❌ Error:', error.message);
+    process.exit(1);
+  }
+  process.exit(0);
+}
+
+test();
+```
+
+```bash
+# Step 2: Run migration (uses existing database.js config, no SSL issues)
+node database/test-<feature>-migration.js
+```
+
+**Why this pattern:**
+- ✅ Reuses existing database.js config (SSL already configured)
+- ✅ No need for new Pool/Client setup
+- ✅ Faster to write (3 lines vs 50+ lines)
+- ✅ No SSL certificate issues
+- ✅ Works with both Supabase and local PostgreSQL
+
+**Traditional migrations (only when necessary):**
+```bash
+# Complex migrations with multiple SQL files
 PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f database/migrate_usage_limits.sql
 
-# Or use the migration runner
+# Or use migration runner (for .sql files)
 node database/run_migration.js
 
 # CRITICAL: If you get "column user_id does not exist" error, run this migration first:

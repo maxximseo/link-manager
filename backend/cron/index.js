@@ -10,6 +10,7 @@ const { scheduleLogCleanup } = require('./cleanup-logs.cron');
 const { initDatabaseBackupCron } = require('./database-backup.cron');
 const { initHealthMonitor } = require('./health-monitor.cron');
 const { initExpiredPlacementsCleanupCron } = require('./cleanup-expired-placements.cron');
+const { initRentalExpirationCron } = require('./cleanup-expired-rentals.cron');
 
 /**
  * Initialize all cron jobs
