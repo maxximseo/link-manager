@@ -2974,6 +2974,9 @@ const createSlotRental = async (ownerId, siteId, tenantUsername, slotsCount, pri
 
     await client.query('COMMIT');
 
+    // Invalidate cache for this site (slots reserved in pending state)
+    await cache.clearRentalCache(siteId);
+
     logger.info('Slot rental request created (pending approval)', {
       rentalId: rentalResult.rows[0].id,
       ownerId,
