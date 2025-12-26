@@ -168,6 +168,23 @@ async function delPattern(pattern) {
 }
 
 /**
+ * Clear rental cache for a specific site
+ * @param {number} siteId - Site ID
+ * @returns {Promise<number>} - Number of keys deleted
+ */
+async function clearRentalCache(siteId) {
+  if (!cacheAvailable || !redis) return 0;
+
+  try {
+    const pattern = `rental:available:site:${siteId}*`;
+    return await delPattern(pattern);
+  } catch (error) {
+    logger.warn('clearRentalCache error:', error.message);
+    return 0;
+  }
+}
+
+/**
  * Get cache statistics
  * @returns {Promise<object>} - Cache stats
  */
@@ -199,6 +216,7 @@ module.exports = {
   set,
   del,
   delPattern,
+  clearRentalCache,
   getStats,
   isAvailable: () => cacheAvailable
 };
