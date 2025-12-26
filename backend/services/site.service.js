@@ -1364,5 +1364,8 @@ module.exports = {
   rejectSite,
   getModerationStats,
   // Revenue calculation
-  calculateSiteRevenue
+  calculateSiteRevenue,
+  // Endpoint migration
+  broadcastEndpoint,
+  getEndpointMigrationStatus
 };
