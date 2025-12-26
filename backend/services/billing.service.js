@@ -3591,35 +3591,59 @@ const approveSlotRental = async (tenantId, rentalId) => {
  * @param {number} rentalId - Rental ID
  */
 const rejectSlotRental = async (tenantId, rentalId) => {
-  const result = await query(
-    `UPDATE site_slot_rentals
-     SET status = 'rejected', updated_at = NOW()
-     WHERE id = $1 AND tenant_id = $2 AND status = 'pending_approval'
-     RETURNING *`,
-    [rentalId, tenantId]
-  );
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
 
-  if (result.rows.length === 0) {
-    throw new Error('Аренда не найдена или уже обработана');
+    const result = await client.query(
+      `UPDATE site_slot_rentals
+       SET status = 'rejected', updated_at = NOW()
+       WHERE id = $1 AND tenant_id = $2 AND status = 'pending_approval'
+       RETURNING *`,
+      [rentalId, tenantId]
+    );
+
+    if (result.rows.length === 0) {
+      throw new Error('Аренда не найдена или уже обработана');
+    }
+
+    const rental = result.rows[0];
+
+    // Log rejection
+    await logRentalAction(
+      client,
+      rentalId,
+      'rejected',
+      tenantId,
+      'tenant',
+      'pending_approval',
+      'rejected',
+      { ownerUsername: rental.owner_username }
+    );
+
+    // Notify owner about rejection
+    const notificationService = require('./notification.service');
+    await notificationService.create(rental.owner_id, {
+      type: 'rental_rejected',
+      title: 'Аренда отклонена',
+      message: `Пользователь отклонил запрос на аренду слотов`
+    });
+
+    await client.query('COMMIT');
+
+    logger.info('Slot rental rejected', {
+      rentalId,
+      tenantId,
+      ownerId: rental.owner_id
+    });
+
+    return { rentalId, rejected: true };
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
   }
-
-  const rental = result.rows[0];
-
-  // Notify owner about rejection
-  const notificationService = require('./notification.service');
-  await notificationService.create(rental.owner_id, {
-    type: 'rental_rejected',
-    title: 'Аренда отклонена',
-    message: `Пользователь отклонил запрос на аренду слотов`
-  });
-
-  logger.info('Slot rental rejected', {
-    rentalId,
-    tenantId,
-    ownerId: rental.owner_id
-  });
-
-  return { rentalId, rejected: true };
 };
 
 /**
