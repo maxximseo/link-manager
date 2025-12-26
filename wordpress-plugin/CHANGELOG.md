@@ -1,5 +1,37 @@
 # Link Manager Widget Pro - Changelog
 
+## Version 2.6.0 (2025-12-26)
+
+### Added
+- **Multi-layer fallback caching**: 3-level cache system to keep links visible even when API is unavailable
+  - Level 1: WordPress Transient (5 minutes) - fast, volatile
+  - Level 2: wp_options persistent storage (7 days) - survives cache clears
+  - Level 3: File-based cache (UNLIMITED) - emergency fallback, persists until API responds
+- **Automatic endpoint migration**: Plugin can receive new API endpoint from server response
+  - Checks for `endpoint_update` field in API response
+  - Automatically updates stored endpoint when migration is available
+  - Saves previous endpoint for potential rollback
+- New constant `LMW_PERSISTENT_TTL` (7 days) for persistent storage
+- Methods: `get_persistent_storage()`, `update_persistent_storage()`, `get_file_cache()`, `update_file_cache()`, `check_endpoint_update()`
+
+### Improved
+- **Enhanced resilience**: Plugin continues showing existing links even if API is down for days/weeks
+- Reduced API timeout from 30s to 15s for faster fallback
+- Error logging for all fallback scenarios
+
+### Architecture
+- Cache fallback chain: Transient → wp_options → File
+- On API success: Updates ALL three cache layers
+- On API failure: Falls back through layers until content found
+- File cache location: `wp-content/cache/lmw_{hash}.json`
+
+### Use Cases
+- **API server downtime**: Links remain visible from persistent/file cache
+- **Domain migration**: Admin can broadcast new endpoint to all 200+ sites from dashboard
+- **Network issues**: Graceful degradation with cached content
+
+---
+
 ## Version 2.4.5 (2025-01-16)
 
 ### Added
