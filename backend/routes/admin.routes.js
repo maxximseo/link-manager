@@ -830,7 +830,8 @@ router.post('/broadcast-endpoint', generalLimiter, async (req, res) => {
 
     res.json({
       success: true,
-      ...result
+      updatedCount: result.updated,
+      message: result.message
     });
   } catch (error) {
     logger.error('Broadcast endpoint error:', error);
