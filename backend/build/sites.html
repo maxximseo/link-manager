@@ -3663,9 +3663,16 @@ ${'='.repeat(50)}`;
                 // Восстановить сохранённые значения или использовать defaults
                 const savedTenant = localStorage.getItem('rental_last_tenant');
                 const savedPrice = localStorage.getItem('rental_last_price');
+                const savedSlots = localStorage.getItem('rental_last_slots');
 
                 document.getElementById('rentalTenantUsername').value = savedTenant || '';
                 document.getElementById('rentalPricePerSlot').value = savedPrice || site.price_link || 25.00;
+
+                // Восстановить количество слотов (но не больше доступных)
+                if (savedSlots) {
+                    const savedSlotsNum = parseInt(savedSlots);
+                    document.getElementById('rentalSlotsCount').value = Math.min(savedSlotsNum, availableSlots);
+                }
 
                 updateRentalCalc();
                 createRentalModal.show();
@@ -3705,6 +3712,7 @@ ${'='.repeat(50)}`;
             try {
                 // Сохранить данные формы для следующего использования
                 localStorage.setItem('rental_last_tenant', tenantUsername);
+                localStorage.setItem('rental_last_slots', slotsCount.toString());
                 if (pricePerSlot) {
                     localStorage.setItem('rental_last_price', pricePerSlot.toString());
                 }
