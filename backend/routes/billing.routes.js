@@ -596,7 +596,8 @@ router.get('/statistics/placements', authMiddleware, async (req, res) => {
         },
         spending: {
           purchases: parseFloat(spending.purchases || 0),
-          renewals: parseFloat(spending.renewals || 0)
+          renewals: parseFloat(spending.renewals || 0),
+          rentals: parseFloat(spending.rentals || 0)
         }
       }
     });
