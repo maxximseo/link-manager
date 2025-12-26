@@ -940,6 +940,145 @@ Resend Email Service (required for transactional emails):
 - `RESEND_FROM_EMAIL` - Sender email address (e.g., `noreply@serparium.com`)
 - `RESEND_FROM_NAME` - Sender display name (e.g., `Serparium`)
 
+## Site Slot Rentals System (v2.8.0+)
+
+**Status**: Active since December 2025
+
+P2P slot rental system allowing site owners to rent out link slots to other users.
+
+### Architecture Overview
+
+```
+Owner creates rental → Tenant receives notification → Tenant approves/pays → Slots reserved
+                                                                              ↓
+                                                        Tenant places links using rented slots
+                                                                              ↓
+                                                        Monthly auto-renewal or expiration
+```
+
+### Database Schema
+
+**Table**: `site_slot_rentals`
+```sql
+CREATE TABLE site_slot_rentals (
+    id SERIAL PRIMARY KEY,
+    site_id INTEGER NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
+    owner_id INTEGER NOT NULL REFERENCES users(id),
+    tenant_id INTEGER NOT NULL REFERENCES users(id),
+    slots_count INTEGER NOT NULL,           -- Number of slots rented
+    slots_used INTEGER DEFAULT 0,           -- Slots currently in use
+    price_per_slot DECIMAL(10,2) NOT NULL,  -- Monthly price per slot
+    total_price DECIMAL(10,2) NOT NULL,     -- Total monthly payment
+    status VARCHAR(20) DEFAULT 'pending_approval',
+    expires_at TIMESTAMP,                   -- Rental expiration date
+    auto_renewal BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**Status Values**:
+- `pending_approval` - Awaiting tenant confirmation
+- `active` - Rental active, slots available for use
+- `expired` - Rental period ended
+- `cancelled` - Cancelled by owner or tenant
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `backend/controllers/rental.controller.js` | HTTP handlers (9 endpoints) |
+| `backend/services/billing.service.js` | Rental business logic (createSlotRental, etc.) |
+| `backend/routes/rental.routes.js` | Route definitions |
+| `backend/cron/cleanup-expired-rentals.cron.js` | Auto-expire old rentals |
+| `backend/build/sites.html` | Rental modal UI |
+
+### API Endpoints
+
+```
+POST   /api/rentals                    - Create rental (owner)
+GET    /api/rentals?role=owner|tenant  - Get user's rentals
+GET    /api/rentals/:siteId/available  - Check available slots
+POST   /api/rentals/:id/approve        - Approve rental (tenant)
+POST   /api/rentals/:id/reject         - Reject rental (tenant)
+POST   /api/rentals/:id/renew          - Renew rental (tenant)
+DELETE /api/rentals/:id                - Cancel rental (owner)
+PATCH  /api/rentals/:id/auto-renewal   - Toggle auto-renewal
+GET    /api/rentals/site/:siteId       - Get site's rentals (owner)
+```
+
+### Tenant Lookup
+
+**IMPORTANT**: When creating a rental, tenant is looked up by **username OR email**:
+
+```sql
+SELECT id, username, balance, current_discount FROM users
+WHERE username = $1 OR email = $1 FOR UPDATE
+```
+
+**UI Field Label**: "Логин арендатора" - accepts both username and email address.
+
+**Example**:
+- Input: `mmmmm135788@gmail.com` → Finds user with that email
+- Input: `mmmmm135788` → Finds user with that username
+
+### Admin vs Regular Owner
+
+**Admin Owner** (owner has role='admin'):
+- Rental created as `active` immediately
+- Payment deducted from tenant's balance instantly
+- Money credited to owner's balance instantly
+
+**Regular Owner**:
+- Rental created as `pending_approval`
+- Tenant receives notification to approve
+- Tenant must click "Approve" and have sufficient balance
+- Only then payment is processed
+
+### Slot Availability Calculation
+
+```javascript
+availableSlots = site.max_links - site.used_links - reservedSlots
+
+// reservedSlots = SUM of slots in active/pending rentals
+```
+
+### Rental Modal (sites.html)
+
+**Location**: Line ~1705 in `backend/build/sites.html`
+
+**Key Elements**:
+- `#createRentalModal` - Modal container
+- `#rentalSiteId` - Hidden site ID
+- `#rentalTenantUsername` - Username/email input
+- `#rentalSlotsCount` - Number of slots
+- `#rentalPricePerSlot` - Price per slot
+- `#rentalCalcTotal` - Calculated total
+
+**Width**: `max-width: 28rem` (Figma design spec)
+
+### Common Issues
+
+**"Пользователь не найден"**
+- User doesn't exist in system
+- Check username AND email spelling
+- User must be registered before rental creation
+
+**"Ошибка при создании аренды" (generic)**
+- Check server logs for actual error
+- Common causes: insufficient balance, no available slots, duplicate rental
+
+**Modal closes when clicking input field**
+- Fixed by adding `class="modal-content"` to inner div
+- Bootstrap requires this class for proper click handling
+
+### Migration Required
+
+```bash
+# Run slot rentals migration
+node database/run_slot_rentals_migration.js
+```
+
 ## Resend Email Integration (v2.6.13+)
 
 **Status**: Active since December 2025
