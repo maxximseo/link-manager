@@ -61,7 +61,10 @@ const TRANSACTION_TYPE_BADGES = {
     'auto_renewal': '<span class="badge bg-info">Авто-продление</span>',
     'refund': '<span class="badge bg-warning">Возврат</span>',
     'admin_adjustment': '<span class="badge bg-secondary">Корректировка</span>',
-    'adjustment': '<span class="badge bg-secondary">Корректировка</span>'
+    'adjustment': '<span class="badge bg-secondary">Корректировка</span>',
+    'slot_rental': '<span class="badge bg-warning">Аренда слота</span>',
+    'slot_rental_renewal': '<span class="badge bg-warning">Продление аренды</span>',
+    'slot_rental_income': '<span class="badge bg-success">Доход от аренды</span>'
 };
 
 function getTransactionTypeBadge(type) {
