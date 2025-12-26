@@ -10,11 +10,16 @@ const { Client } = require('pg');
 const fs = require('fs');
 
 async function runMigration() {
+  // Parse connection string to check if SSL is needed
+  const needsSSL = process.env.DATABASE_URL && (
+    process.env.DATABASE_URL.includes('supabase') ||
+    process.env.DATABASE_URL.includes('amazonaws') ||
+    process.env.DATABASE_URL.includes('ssl=true')
+  );
+
   const client = new Client({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.DATABASE_URL?.includes('supabase')
-      ? { rejectUnauthorized: false }
-      : undefined
+    ssl: needsSSL ? { rejectUnauthorized: false } : false
   });
 
   try {
