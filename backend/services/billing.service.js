@@ -578,26 +578,36 @@ const purchasePlacement = async ({
     let activeRental = null;
     let isRentedPlacement = false;
 
-    if (type === 'link' && useRentalSlot) {
-      // Verify user has active rental for this site
-      const rentalResult = await client.query(
-        `
-        SELECT * FROM site_slot_rentals
-        WHERE tenant_id = $1 AND site_id = $2 AND status = 'active'
-        AND expires_at > NOW()
-        FOR UPDATE
-        `,
-        [userId, siteId]
-      );
-
-      if (rentalResult.rows.length === 0) {
-        throw new Error(
-          `У вас нет активной аренды на сайте "${site.site_name}". ` +
-            `Используйте обычную покупку или сначала получите арендные слоты.`
+    // If user has active rental with available slots, auto-use it (or use explicit useRentalSlot flag)
+    if (type === 'link' && (useRentalSlot || userRentalSlots)) {
+      // Use already fetched rental data if available, otherwise fetch
+      if (userRentalSlots) {
+        // Already have rental data from limit check - fetch full record
+        const rentalResult = await client.query(
+          `SELECT * FROM site_slot_rentals WHERE id = $1 FOR UPDATE`,
+          [userRentalSlots.id]
         );
-      }
+        activeRental = rentalResult.rows[0];
+      } else {
+        // Fetch rental data
+        const rentalResult = await client.query(
+          `
+          SELECT * FROM site_slot_rentals
+          WHERE tenant_id = $1 AND site_id = $2 AND status = 'active'
+          AND expires_at > NOW()
+          FOR UPDATE
+          `,
+          [userId, siteId]
+        );
 
-      activeRental = rentalResult.rows[0];
+        if (rentalResult.rows.length === 0) {
+          throw new Error(
+            `У вас нет активной аренды на сайте "${site.site_name}". ` +
+              `Используйте обычную покупку или сначала получите арендные слоты.`
+          );
+        }
+        activeRental = rentalResult.rows[0];
+      }
 
       // Check if rental has available slots
       if (activeRental.slots_used >= activeRental.slots_count) {
