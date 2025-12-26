@@ -3464,7 +3464,7 @@ const approveSlotRental = async (tenantId, rentalId) => {
 
     // Get rental with lock
     const rentalResult = await client.query(
-      `SELECT r.*, s.site_name, s.site_url, u.username as owner_username
+      `SELECT r.*, s.site_name, s.site_url, s.api_key, u.username as owner_username
        FROM site_slot_rentals r
        JOIN sites s ON r.site_id = s.id
        JOIN users u ON r.owner_id = u.id
