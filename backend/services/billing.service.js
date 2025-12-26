@@ -2977,7 +2977,7 @@ const createSlotRental = async (ownerId, siteId, tenantUsername, slotsCount, pri
         [
           tenant.id,
           'Аренда слотов оформлена',
-          `Вы арендовали ${slotsCount} слотов на ${site.site_name || site.site_url} до ${expiresAt.toLocaleDateString('ru-RU')}. Размещайте ссылки бесплатно!`,
+          `Вы арендовали ${slotsCount} слотов на ${site.site_name || site.site_url} до ${expiresAt.toLocaleDateString('ru-RU')}. Можно размещать ссылки!`,
           JSON.stringify({ rentalId: rentalResult.rows[0].id, expiresAt })
         ]
       );
