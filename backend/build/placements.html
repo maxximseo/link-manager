@@ -1459,15 +1459,21 @@
         /**
          * Mask URL for premium sites (DR >= 20 OR DA >= 30)
          * Admins and Gold tier (discount >= 20%) see all URLs
+         * Users with active rental on the site see full URL
          * Format: elearning-reviews.org → elear***ws.org
          */
-        function maskUrl(url, dr, da) {
+        function maskUrl(url, dr, da, siteId = null) {
             const currentUser = getCurrentUser();
             const userDiscount = userPricing?.link?.discount || 0;
             const isAdminUser = currentUser?.role === 'admin';
 
             // Admins and Gold+ users (discount >= 20%) see all URLs
             if (isAdminUser || userDiscount >= 20) {
+                return url;
+            }
+
+            // Users with active rental on this site see full URL
+            if (siteId && userRentals[siteId]) {
                 return url;
             }
 
@@ -2134,7 +2140,7 @@
                                    ${tooltipAttr}>
                         </td>
                         <td>
-                            ${escapeHtml(maskUrl(cleanUrl, drValue, daValue))}
+                            ${escapeHtml(maskUrl(cleanUrl, drValue, daValue, site.id))}
                         </td>
                         <td id="assigned_${site.id}">${dropdownHtml}</td>
                         <td class="seo-metric-td text-center ${getMetricColorClass(drValue)}">${drValue}</td>
