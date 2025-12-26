@@ -329,7 +329,7 @@ function updateRevenueTimelineChart(data, groupBy) {
             periods[periodKey].purchase += amount;
         } else if (item.type === 'renewal' || item.type === 'auto_renewal') {
             periods[periodKey].renewal += amount;
-        } else if (item.type === 'slot_rental' || item.type === 'slot_rental_renewal' || item.type === 'slot_rental_income') {
+        } else if (item.type === 'slot_rental' || item.type === 'slot_rental_renewal') {
             periods[periodKey].rental += amount;
         }
     });
