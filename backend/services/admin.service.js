@@ -78,6 +78,7 @@ const getAdminStats = async (period = 'day') => {
         total: parseFloat(revenueResult.rows[0].total_revenue || 0),
         purchases: parseInt(revenueResult.rows[0].purchases_count, 10),
         renewals: parseInt(revenueResult.rows[0].renewals_count, 10),
+        rentals: parseInt(revenueResult.rows[0].rentals_count || 0, 10),
         avgTransaction: parseFloat(revenueResult.rows[0].avg_transaction || 0)
       },
       placements: {
