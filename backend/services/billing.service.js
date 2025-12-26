@@ -3681,6 +3681,25 @@ const rejectSlotRental = async (tenantId, rentalId) => {
       ownerId: rental.owner_id
     });
 
+    // Send webhook to WordPress site (optional - won't break if fails)
+    const webhookResult = await wordpressRentalService.notifyRentalStatusChange(
+      siteData.site_url,
+      siteData.api_key || '',
+      {
+        id: rentalId,
+        slot_type: rental.slot_type || 'link',
+        slot_count: rental.slots_count,
+        tenant_id: tenantId,
+        expires_at: rental.expires_at,
+        status: 'rejected'
+      },
+      'rejected'
+    );
+
+    if (!webhookResult.success) {
+      logger.warn(`[Rental] WordPress webhook failed for rental ${rentalId}, but rental rejected successfully`);
+    }
+
     return { rentalId, rejected: true };
   } catch (error) {
     await client.query('ROLLBACK');
