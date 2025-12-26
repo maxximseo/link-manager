@@ -473,7 +473,7 @@ router.get('/statistics/spending', authMiddleware, async (req, res) => {
           COUNT(*) as count
         FROM transactions
         WHERE user_id = $1
-          AND type IN ('purchase', 'renewal', 'auto_renewal')
+          AND type IN ('purchase', 'renewal', 'auto_renewal', 'slot_rental', 'slot_rental_renewal')
           AND created_at >= NOW() - INTERVAL '1 day'`,
         [userId]
       ),
@@ -484,7 +484,7 @@ router.get('/statistics/spending', authMiddleware, async (req, res) => {
           COUNT(*) as count
         FROM transactions
         WHERE user_id = $1
-          AND type IN ('purchase', 'renewal', 'auto_renewal')
+          AND type IN ('purchase', 'renewal', 'auto_renewal', 'slot_rental', 'slot_rental_renewal')
           AND created_at >= NOW() - INTERVAL '7 days'`,
         [userId]
       ),
@@ -495,7 +495,7 @@ router.get('/statistics/spending', authMiddleware, async (req, res) => {
           COUNT(*) as count
         FROM transactions
         WHERE user_id = $1
-          AND type IN ('purchase', 'renewal', 'auto_renewal')
+          AND type IN ('purchase', 'renewal', 'auto_renewal', 'slot_rental', 'slot_rental_renewal')
           AND created_at >= NOW() - INTERVAL '1 month'`,
         [userId]
       ),
@@ -506,7 +506,7 @@ router.get('/statistics/spending', authMiddleware, async (req, res) => {
           COUNT(*) as count
         FROM transactions
         WHERE user_id = $1
-          AND type IN ('purchase', 'renewal', 'auto_renewal')
+          AND type IN ('purchase', 'renewal', 'auto_renewal', 'slot_rental', 'slot_rental_renewal')
           AND created_at >= NOW() - INTERVAL '1 year'`,
         [userId]
       )
