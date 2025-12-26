@@ -1469,6 +1469,54 @@
         </div>
     </div>
 
+    <!-- API Endpoint Migration Section (Admin Only) -->
+    <div id="endpointMigrationSection" class="card mt-4" style="display: none;">
+        <div class="card-header bg-warning bg-opacity-25">
+            <h5 class="mb-0">
+                <i class="bi bi-broadcast"></i> Миграция API Endpoint
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="mb-3">
+                        <label for="newEndpointUrl" class="form-label">Новый API Endpoint</label>
+                        <input type="url" class="form-control" id="newEndpointUrl"
+                               placeholder="https://api.serparium.com/api">
+                        <small class="text-muted">
+                            Все плагины получат новый адрес при следующем запросе к API
+                        </small>
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex align-items-center">
+                    <button class="btn btn-warning w-100" onclick="broadcastEndpoint()">
+                        <i class="bi bi-send"></i> Отправить всем сайтам
+                    </button>
+                </div>
+            </div>
+
+            <!-- Migration Status -->
+            <div id="migrationStatus" class="mt-3" style="display: none;">
+                <div class="alert alert-info mb-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>Текущая миграция:</strong>
+                            <span id="migrationEndpoint"></span>
+                        </div>
+                        <div>
+                            <span class="badge bg-success" id="migrationConfirmed">0</span> подтверждено /
+                            <span class="badge bg-warning" id="migrationPending">0</span> ожидает
+                        </div>
+                    </div>
+                    <div class="progress mt-2" style="height: 8px;">
+                        <div class="progress-bar bg-success" id="migrationProgress"
+                             role="progressbar" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Create/Edit Modal - Figma Design -->
     <div class="modal fade" id="siteModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
@@ -2121,6 +2169,9 @@
                     el.style.display = '';
                 });
             }
+
+            // Initialize endpoint migration section for admin users
+            await initEndpointMigration();
 
             // Event listeners - Ctrl+Enter or Cmd+Enter to search
             document.getElementById('searchInput').addEventListener('keydown', (e) => {
@@ -3737,6 +3788,99 @@ ${'='.repeat(50)}`;
                 console.error('Error creating rental:', error);
                 // Показать конкретную ошибку от сервера (например "Недостаточно средств...")
                 showNotification(error.message || 'Ошибка при создании аренды', 'error');
+            }
+        }
+
+        // ======== ENDPOINT MIGRATION FUNCTIONS ========
+
+        // Broadcast new endpoint to all sites
+        async function broadcastEndpoint() {
+            const newEndpoint = document.getElementById('newEndpointUrl').value.trim();
+
+            if (!newEndpoint) {
+                showNotification('Введите новый API Endpoint', 'error');
+                return;
+            }
+
+            // Validate URL format
+            try {
+                new URL(newEndpoint);
+            } catch (e) {
+                showNotification('Некорректный URL формат', 'error');
+                return;
+            }
+
+            if (!confirm('Вы уверены, что хотите отправить новый endpoint всем сайтам?\n\nНовый endpoint: ' + newEndpoint)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/broadcast-endpoint', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${getToken()}`
+                    },
+                    body: JSON.stringify({ newEndpoint })
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    showNotification(`Endpoint отправлен ${result.updatedCount} сайтам`, 'success');
+                    document.getElementById('newEndpointUrl').value = '';
+                    // Reload migration status
+                    await loadMigrationStatus();
+                } else {
+                    showNotification(result.error || 'Ошибка при отправке endpoint', 'error');
+                }
+            } catch (error) {
+                console.error('Error broadcasting endpoint:', error);
+                showNotification('Ошибка при отправке endpoint', 'error');
+            }
+        }
+
+        // Load migration status
+        async function loadMigrationStatus() {
+            try {
+                const response = await fetch('/api/admin/endpoint-migration-status', {
+                    headers: {
+                        'Authorization': `Bearer ${getToken()}`
+                    }
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success && result.data) {
+                    const data = result.data;
+                    const statusDiv = document.getElementById('migrationStatus');
+
+                    if (data.total > 0) {
+                        statusDiv.style.display = 'block';
+                        document.getElementById('migrationEndpoint').textContent = data.new_endpoint || 'N/A';
+                        document.getElementById('migrationConfirmed').textContent = data.confirmed;
+                        document.getElementById('migrationPending').textContent = data.pending;
+
+                        // Calculate progress percentage
+                        const progress = data.total > 0 ? Math.round((data.confirmed / data.total) * 100) : 0;
+                        document.getElementById('migrationProgress').style.width = progress + '%';
+                    } else {
+                        statusDiv.style.display = 'none';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading migration status:', error);
+            }
+        }
+
+        // Initialize endpoint migration section for admin users
+        async function initEndpointMigration() {
+            if (isAdmin()) {
+                const section = document.getElementById('endpointMigrationSection');
+                if (section) {
+                    section.style.display = 'block';
+                    await loadMigrationStatus();
+                }
             }
         }
     </script>
