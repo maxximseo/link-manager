@@ -3,7 +3,7 @@
  * Plugin Name: Link Manager Widget Pro
  * Plugin URI: https://github.com/maxximseo/link-manager
  * Description: Display placed links and articles from Link Manager system
- * Version: 2.5.1
+ * Version: 2.6.0
  * Author: Link Manager Team
  * License: GPL v2 or later
  */
@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('LMW_VERSION', '2.5.1');
+define('LMW_VERSION', '2.6.0');
 define('LMW_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('LMW_PLUGIN_PATH', plugin_dir_path(__FILE__));
 
@@ -22,6 +22,10 @@ define('LMW_PLUGIN_PATH', plugin_dir_path(__FILE__));
 if (!defined('LMW_API_ENDPOINT')) {
     define('LMW_API_ENDPOINT', 'https://shark-app-9kv6u.ondigitalocean.app/api');
 }
+
+// Persistent cache TTL (7 days) for fallback when API is unavailable
+define('LMW_PERSISTENT_TTL', 604800);
+// File cache is UNLIMITED - survives until API returns successful response
 
 /**
  * Main plugin class
@@ -451,10 +455,122 @@ class LinkManagerWidget {
     }
 
     /**
-     * Fetch content from API
+     * Get content from persistent storage (wp_options)
+     * Used as fallback when API is unavailable (7-day TTL)
+     */
+    private function get_persistent_storage() {
+        $option_key = 'lmw_persistent_content_' . md5($this->api_key);
+        $data = get_option($option_key);
+
+        if (!$data || !isset($data['timestamp']) || !isset($data['content'])) {
+            return false;
+        }
+
+        // Check if data is still valid (7 days)
+        $age = time() - $data['timestamp'];
+        if ($age > LMW_PERSISTENT_TTL) {
+            return false;
+        }
+
+        return $data['content'];
+    }
+
+    /**
+     * Update persistent storage with fresh content
+     * autoload = false to avoid loading on every page
+     */
+    private function update_persistent_storage($content) {
+        $option_key = 'lmw_persistent_content_' . md5($this->api_key);
+        $data = array(
+            'content' => $content,
+            'timestamp' => time(),
+            'endpoint' => $this->api_endpoint
+        );
+        update_option($option_key, $data, false);
+    }
+
+    /**
+     * Get content from file cache (emergency fallback)
+     * UNLIMITED TTL - survives until API returns successful response
+     */
+    private function get_file_cache() {
+        $cache_dir = WP_CONTENT_DIR . '/cache/link-manager';
+        $cache_file = $cache_dir . '/lmw_' . md5($this->api_key) . '.json';
+
+        if (!file_exists($cache_file)) {
+            return false;
+        }
+
+        $content = @file_get_contents($cache_file);
+        if ($content === false) {
+            return false;
+        }
+
+        $data = json_decode($content, true);
+        if (!$data || !isset($data['links'])) {
+            return false;
+        }
+
+        return $data;
+    }
+
+    /**
+     * Update file cache with fresh content
+     */
+    private function update_file_cache($content) {
+        $cache_dir = WP_CONTENT_DIR . '/cache/link-manager';
+
+        // Create cache directory if it doesn't exist
+        if (!is_dir($cache_dir)) {
+            @mkdir($cache_dir, 0755, true);
+        }
+
+        $cache_file = $cache_dir . '/lmw_' . md5($this->api_key) . '.json';
+        @file_put_contents($cache_file, json_encode($content));
+    }
+
+    /**
+     * Check for endpoint update from API response and apply automatically
+     */
+    private function check_endpoint_update($api_response) {
+        if (!isset($api_response['endpoint_update'])) {
+            return;
+        }
+
+        $update = $api_response['endpoint_update'];
+        if (!isset($update['available']) || !$update['available']) {
+            return;
+        }
+
+        if (!isset($update['new_endpoint']) || empty($update['new_endpoint'])) {
+            return;
+        }
+
+        $new_endpoint = esc_url_raw($update['new_endpoint']);
+        $current_endpoint = get_option('lmw_api_endpoint', LMW_API_ENDPOINT);
+
+        if ($new_endpoint === $current_endpoint) {
+            return;
+        }
+
+        // Save old endpoint for potential rollback
+        update_option('lmw_previous_endpoint', $current_endpoint);
+
+        // Update to new endpoint
+        update_option('lmw_api_endpoint', $new_endpoint);
+        $this->api_endpoint = $new_endpoint;
+
+        error_log('[Link Manager] Endpoint auto-updated: ' . $current_endpoint . ' -> ' . $new_endpoint);
+    }
+
+    /**
+     * Fetch content from API with multi-layer fallback
+     * Layer 1: Transient cache (5 min)
+     * Layer 2: wp_options persistent cache (7 days)
+     * Layer 3: File cache (UNLIMITED)
      */
     private function fetch_content_from_api() {
-        // Check cache first
+        // Layer 1: Check transient cache first (fast, 5 min TTL)
         $cache_key = 'lmw_content_' . md5($this->api_key);
         $cached = get_transient($cache_key);
 
@@ -462,12 +578,11 @@ class LinkManagerWidget {
             return $cached;
         }
 
-        // Fetch from API
-        // SECURITY: Send API key in header instead of URL to prevent logging
+        // Try to fetch from API
         $response = wp_remote_get(
             $this->api_endpoint . '/wordpress/get-content',
             array(
-                'timeout' => 30,
+                'timeout' => 15, // Reduced from 30 for faster fallback
                 'headers' => array(
                     'Accept' => 'application/json',
                     'X-API-Key' => $this->api_key
@@ -475,19 +590,42 @@ class LinkManagerWidget {
             )
         );
 
-        if (is_wp_error($response)) {
-            return false;
+        if (!is_wp_error($response)) {
+            $body = wp_remote_retrieve_body($response);
+            $data = json_decode($body, true);
+
+            if ($data && isset($data['links'])) {
+                // SUCCESS: Update ALL cache layers
+                set_transient($cache_key, $data, $this->cache_duration);
+                $this->update_persistent_storage($data);
+                $this->update_file_cache($data);
+
+                // Check for endpoint update from server
+                $this->check_endpoint_update($data);
+
+                return $data;
+            }
         }
 
-        $body = wp_remote_retrieve_body($response);
-        $data = json_decode($body, true);
+        // API FAILED - use fallback layers
+        error_log('[Link Manager] API unavailable, trying fallback caches');
 
-        if ($data && isset($data['links'])) {
-            // Cache the result
-            set_transient($cache_key, $data, $this->cache_duration);
-            return $data;
+        // Layer 2: Try persistent storage (7 days)
+        $persistent = $this->get_persistent_storage();
+        if ($persistent) {
+            error_log('[Link Manager] Serving from persistent storage (wp_options)');
+            return $persistent;
         }
 
+        // Layer 3: Try file cache (UNLIMITED - last resort)
+        $file_cache = $this->get_file_cache();
+        if ($file_cache) {
+            error_log('[Link Manager] WARNING: Serving from emergency file cache');
+            return $file_cache;
+        }
+
+        // All caches empty - return false
+        error_log('[Link Manager] CRITICAL: No cached content available');
         return false;
     }
     
