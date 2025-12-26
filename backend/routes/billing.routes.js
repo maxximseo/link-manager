@@ -573,10 +573,11 @@ router.get('/statistics/placements', authMiddleware, async (req, res) => {
     const spendingResult = await dbQuery(
       `SELECT
         COALESCE(SUM(ABS(amount)) FILTER (WHERE type = 'purchase'), 0) as purchases,
-        COALESCE(SUM(ABS(amount)) FILTER (WHERE type IN ('renewal', 'auto_renewal')), 0) as renewals
+        COALESCE(SUM(ABS(amount)) FILTER (WHERE type IN ('renewal', 'auto_renewal')), 0) as renewals,
+        COALESCE(SUM(ABS(amount)) FILTER (WHERE type IN ('slot_rental', 'slot_rental_renewal')), 0) as rentals
       FROM transactions
       WHERE user_id = $1
-        AND type IN ('purchase', 'renewal', 'auto_renewal')
+        AND type IN ('purchase', 'renewal', 'auto_renewal', 'slot_rental', 'slot_rental_renewal')
         AND created_at >= NOW() - INTERVAL '${interval}'`,
       [userId]
     );
