@@ -3241,7 +3241,7 @@ const cancelSlotRental = async (ownerId, rentalId) => {
 
     // Get rental
     const rentalResult = await client.query(
-      `SELECT r.*, s.site_name, t.username as tenant_username
+      `SELECT r.*, s.site_name, s.site_url, s.api_key, t.username as tenant_username
        FROM site_slot_rentals r
        JOIN sites s ON r.site_id = s.id
        JOIN users t ON r.tenant_id = t.id
