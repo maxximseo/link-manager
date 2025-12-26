@@ -1254,6 +1254,91 @@ const calculateSiteRevenue = async (siteId, userId) => {
   }
 };
 
+/**
+ * Broadcast new API endpoint to all sites
+ * Creates pending endpoint update records for all sites
+ * Plugins will receive the update on next API call
+ */
+const broadcastEndpoint = async (newEndpoint) => {
+  try {
+    // Validate endpoint URL
+    try {
+      new URL(newEndpoint);
+    } catch {
+      throw new Error('Invalid endpoint URL');
+    }
+
+    // Get all sites
+    const sites = await query('SELECT id FROM sites');
+
+    if (sites.rows.length === 0) {
+      return { updated: 0, message: 'No sites found' };
+    }
+
+    // Create/update endpoint update records for all sites
+    let updated = 0;
+    for (const site of sites.rows) {
+      await query(
+        `INSERT INTO site_endpoint_updates (site_id, new_endpoint, status)
+         VALUES ($1, $2, 'pending')
+         ON CONFLICT (site_id) DO UPDATE SET
+           new_endpoint = $2,
+           status = 'pending',
+           created_at = NOW(),
+           confirmed_at = NULL`,
+        [site.id, newEndpoint]
+      );
+      updated++;
+    }
+
+    logger.info('Broadcast endpoint update', {
+      newEndpoint,
+      sitesUpdated: updated
+    });
+
+    return {
+      updated,
+      message: `Endpoint update queued for ${updated} sites`
+    };
+  } catch (error) {
+    logger.error('Broadcast endpoint error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get endpoint migration status (how many sites confirmed)
+ */
+const getEndpointMigrationStatus = async () => {
+  try {
+    const result = await query(
+      `SELECT
+         COUNT(*) FILTER (WHERE status = 'pending') as pending,
+         COUNT(*) FILTER (WHERE status = 'confirmed') as confirmed,
+         COUNT(*) as total,
+         new_endpoint
+       FROM site_endpoint_updates
+       GROUP BY new_endpoint
+       ORDER BY MAX(created_at) DESC
+       LIMIT 1`
+    );
+
+    if (result.rows.length === 0) {
+      return { pending: 0, confirmed: 0, total: 0, new_endpoint: null };
+    }
+
+    return {
+      pending: parseInt(result.rows[0].pending),
+      confirmed: parseInt(result.rows[0].confirmed),
+      total: parseInt(result.rows[0].total),
+      new_endpoint: result.rows[0].new_endpoint
+    };
+  } catch (error) {
+    logger.error('Get endpoint migration status error:', error);
+    throw error;
+  }
+};
+
 module.exports = {
   getUserSites,
   getMarketplaceSites,
