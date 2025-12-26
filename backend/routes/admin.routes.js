@@ -812,20 +812,21 @@ router.post('/bulk-update-placement-status', async (req, res) => {
  */
 router.post('/broadcast-endpoint', generalLimiter, async (req, res) => {
   try {
-    const { new_endpoint } = req.body;
+    // Support both newEndpoint (frontend) and new_endpoint (API consistency)
+    const newEndpoint = req.body.newEndpoint || req.body.new_endpoint;
 
-    if (!new_endpoint) {
-      return res.status(400).json({ error: 'new_endpoint is required' });
+    if (!newEndpoint) {
+      return res.status(400).json({ error: 'newEndpoint is required' });
     }
 
     // Validate URL format
     try {
-      new URL(new_endpoint);
+      new URL(newEndpoint);
     } catch {
       return res.status(400).json({ error: 'Invalid endpoint URL format' });
     }
 
-    const result = await siteService.broadcastEndpoint(new_endpoint);
+    const result = await siteService.broadcastEndpoint(newEndpoint);
 
     res.json({
       success: true,
