@@ -1595,6 +1595,7 @@ const translations = {
     sidebarAdminSitesModeration: 'Site moderation',
     sidebarAdminPromo: 'Promo Codes',
     sidebarAdminWithdrawals: 'Withdrawals',
+    sidebarAdminMigration: 'API Migration',
 
     // Time ago
     timeJustNow: 'just now',
