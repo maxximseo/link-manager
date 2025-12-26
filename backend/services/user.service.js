@@ -19,7 +19,7 @@ const getProfile = async (userId) => {
               GREATEST(0, COALESCE(ABS((
                 SELECT SUM(amount)
                 FROM transactions t
-                WHERE t.user_id = u.id AND t.type IN ('purchase', 'renewal')
+                WHERE t.user_id = u.id AND t.type IN ('purchase', 'renewal', 'slot_rental', 'slot_rental_renewal')
               )), 0) - COALESCE((
                 SELECT SUM(amount)
                 FROM transactions t
