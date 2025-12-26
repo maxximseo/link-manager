@@ -3587,6 +3587,45 @@ const rejectSlotRental = async (tenantId, rentalId) => {
 };
 
 /**
+ * Log rental action to history JSONB field
+ * @param {object} client - Database client (transaction)
+ * @param {number} rentalId - Rental ID
+ * @param {string} action - Action type (created, approved, rejected, cancelled, renewed)
+ * @param {number} actorId - User ID who performed action
+ * @param {string} actorRole - Role (owner, tenant, admin)
+ * @param {string} oldStatus - Previous status
+ * @param {string} newStatus - New status
+ * @param {object} metadata - Additional metadata (optional)
+ */
+const logRentalAction = async (
+  client,
+  rentalId,
+  action,
+  actorId,
+  actorRole,
+  oldStatus,
+  newStatus,
+  metadata = {}
+) => {
+  const entry = {
+    action,
+    actor_id: actorId,
+    actor_role: actorRole,
+    old_status: oldStatus,
+    new_status: newStatus,
+    timestamp: new Date().toISOString(),
+    ...metadata
+  };
+
+  await client.query(
+    `UPDATE site_slot_rentals
+     SET history = COALESCE(history, '[]'::jsonb) || $1::jsonb
+     WHERE id = $2`,
+    [JSON.stringify([entry]), rentalId]
+  );
+};
+
+/**
  * Get available slots for rental on a site
  * Takes into account: used_links + reserved slots in active/pending rentals
  * @param {number} siteId - Site ID
