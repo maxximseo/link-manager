@@ -4,10 +4,12 @@
  */
 
 const path = require('path');
+const fs = require('fs');
+
+// Load .env from backend directory
 require('dotenv').config({ path: path.join(__dirname, '..', 'backend', '.env') });
 
 const { Client } = require('pg');
-const fs = require('fs');
 
 async function runMigration() {
   const client = new Client({
