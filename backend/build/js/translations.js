@@ -751,6 +751,7 @@ const translations = {
     sidebarAdminSitesModeration: 'Модерация сайтов',
     sidebarAdminPromo: 'Промокоды',
     sidebarAdminWithdrawals: 'Выводы',
+    sidebarAdminMigration: 'Миграция API',
 
     // Time ago
     timeJustNow: 'только что',
