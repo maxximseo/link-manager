@@ -2697,7 +2697,7 @@
                     </td>
                     <td>
                         <div class="action-buttons">
-                            <button class="action-btn action-rental" onclick="openCreateRentalModal(${s.id})" title="Сдать в аренду" style="color: #7c3aed;">
+                            <button class="action-btn action-rental" onclick="event.stopPropagation(); openCreateRentalModal(${s.id})" title="Сдать в аренду" style="color: #7c3aed;">
                                 <i class="bi bi-key"></i>
                             </button>
                             <button class="action-btn action-edit" onclick="editSite(${s.id})" title="Настройки">
