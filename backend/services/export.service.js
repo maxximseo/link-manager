@@ -236,7 +236,7 @@ const exportAdminRevenue = async (startDate, endDate, format = 'csv') => {
       LEFT JOIN placements p ON t.placement_id = p.id
       LEFT JOIN projects pr ON p.project_id = pr.id
       LEFT JOIN sites s ON p.site_id = s.id
-      WHERE t.type IN ('purchase', 'renewal', 'auto_renewal', 'slot_rental', 'slot_rental_renewal')
+      WHERE t.type IN ('purchase', 'renewal', 'auto_renewal', 'slot_rental', 'slot_rental_renewal', 'slot_rental_income')
         AND t.created_at BETWEEN $1 AND $2
       ORDER BY t.created_at DESC
     `,
