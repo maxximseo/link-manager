@@ -2905,6 +2905,18 @@ const createSlotRental = async (ownerId, siteId, tenantUsername, slotsCount, pri
         siteId
       ]);
 
+      // Log rental creation
+      await logRentalAction(
+        client,
+        rentalResult.rows[0].id,
+        'created',
+        ownerId,
+        'admin',
+        null,
+        'active',
+        { slotsCount, totalPrice, tenantUsername: tenant.username }
+      );
+
       // Notifications for admin-created rental
       await client.query(
         `INSERT INTO notifications (user_id, type, title, message, metadata, created_at)
