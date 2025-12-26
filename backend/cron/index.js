@@ -37,6 +37,9 @@ function initCronJobs() {
     // Initialize expired placements cleanup cron (daily at 01:00 UTC)
     initExpiredPlacementsCleanupCron();
 
+    // Initialize rental expiration cron (every 15 minutes)
+    initRentalExpirationCron();
+
     logger.info('All cron jobs initialized successfully');
   } catch (error) {
     logger.error('Failed to initialize cron jobs', {
