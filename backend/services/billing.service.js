@@ -3627,6 +3627,22 @@ const rejectSlotRental = async (tenantId, rentalId) => {
   try {
     await client.query('BEGIN');
 
+    // Get rental with site data before updating
+    const rentalCheck = await client.query(
+      `SELECT r.*, s.site_url, s.api_key, s.site_name
+       FROM site_slot_rentals r
+       JOIN sites s ON r.site_id = s.id
+       WHERE r.id = $1 AND r.tenant_id = $2 AND r.status = 'pending_approval'`,
+      [rentalId, tenantId]
+    );
+
+    if (rentalCheck.rows.length === 0) {
+      throw new Error('Аренда не найдена или уже обработана');
+    }
+
+    const siteData = rentalCheck.rows[0];
+
+    // Now update the rental status
     const result = await client.query(
       `UPDATE site_slot_rentals
        SET status = 'rejected', updated_at = NOW()
@@ -3634,10 +3650,6 @@ const rejectSlotRental = async (tenantId, rentalId) => {
        RETURNING *`,
       [rentalId, tenantId]
     );
-
-    if (result.rows.length === 0) {
-      throw new Error('Аренда не найдена или уже обработана');
-    }
 
     const rental = result.rows[0];
 
