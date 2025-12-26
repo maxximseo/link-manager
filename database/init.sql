@@ -92,6 +92,17 @@ CREATE TABLE placement_content (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 9. site_endpoint_updates (for bulk API endpoint migration)
+CREATE TABLE site_endpoint_updates (
+    id SERIAL PRIMARY KEY,
+    site_id INTEGER NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
+    new_endpoint VARCHAR(500) NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    confirmed_at TIMESTAMP,
+    CONSTRAINT unique_site_endpoint_update UNIQUE (site_id)
+);
+
 -- Indexes
 CREATE INDEX idx_projects_user ON projects(user_id);
 CREATE INDEX idx_sites_user ON sites(user_id);
