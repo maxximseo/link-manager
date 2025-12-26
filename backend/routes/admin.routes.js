@@ -130,7 +130,7 @@ router.post(
     body('amount')
       .isFloat({ min: -10000, max: 10000 })
       .withMessage('Amount must be between -$10,000 and $10,000'),
-    body('reason').isString().trim().notEmpty().withMessage('Reason is required')
+    body('reason').optional().isString().trim()
   ],
   validateRequest,
   async (req, res) => {
