@@ -139,7 +139,7 @@ const getRevenueBreakdown = async (startDate, endDate, groupBy = 'day') => {
         SUM(ABS(amount)) as total_amount
       FROM transactions
       WHERE created_at BETWEEN $1 AND $2
-        AND type IN ('purchase', 'renewal', 'auto_renewal')
+        AND type IN ('purchase', 'renewal', 'auto_renewal', 'slot_rental', 'slot_rental_renewal')
       GROUP BY period, type
       ORDER BY period DESC, type
     `,
