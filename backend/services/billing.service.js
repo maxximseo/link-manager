@@ -3268,6 +3268,18 @@ const cancelSlotRental = async (ownerId, rentalId) => {
       rentalId
     ]);
 
+    // Log cancellation
+    await logRentalAction(
+      client,
+      rentalId,
+      'cancelled',
+      ownerId,
+      'owner',
+      rental.status,
+      'cancelled',
+      { refundAmount: rental.total_price, tenantUsername: rental.tenant_username }
+    );
+
     // Release reserved slots
     await client.query(`UPDATE sites SET used_links = used_links - $1, updated_at = NOW() WHERE id = $2`, [
       rental.slots_count,
