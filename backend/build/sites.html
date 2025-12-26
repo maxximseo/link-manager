@@ -3656,32 +3656,54 @@ ${'='.repeat(50)}`;
         });
 
         // Open create rental modal
-        function openCreateRentalModal(siteId) {
+        async function openCreateRentalModal(siteId) {
             const site = window.sites.find(s => s.id === siteId);
             if (!site) {
                 showNotification('Сайт не найден', 'error');
                 return;
             }
 
-            // Calculate available slots
-            const availableSlots = site.max_links - site.used_links;
+            try {
+                // Get available slots from server (considers reserved slots in other rentals)
+                const token = getToken();
+                const response = await fetch(`/api/rentals/${siteId}/available?mode=owner`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
 
-            if (availableSlots <= 0) {
-                showNotification('Нет доступных слотов для аренды', 'warning');
-                return;
+                if (!response.ok) {
+                    throw new Error('Failed to get available slots');
+                }
+
+                const result = await response.json();
+                const slotsData = result.data;
+                const availableSlots = slotsData.available_slots;
+
+                if (availableSlots <= 0) {
+                    showNotification(
+                        `Нет доступных слотов для аренды. Занято: ${slotsData.used_links} размещений + ${slotsData.reserved_slots} в аренде из ${slotsData.max_links}`,
+                        'warning'
+                    );
+                    return;
+                }
+
+                // Fill modal
+                document.getElementById('rentalSiteId').value = siteId;
+                document.getElementById('rentalSiteName').textContent = site.site_name || site.site_url;
+                document.getElementById('rentalAvailableSlots').textContent =
+                    `${availableSlots} из ${site.max_links}${slotsData.reserved_slots > 0 ? ` (в аренде: ${slotsData.reserved_slots})` : ''}`;
+                document.getElementById('rentalSlotsCount').max = availableSlots;
+                document.getElementById('rentalSlotsCount').value = Math.min(1, availableSlots);
+                document.getElementById('rentalPricePerSlot').value = site.price_link || 25.00;
+                document.getElementById('rentalTenantUsername').value = '';
+
+                updateRentalCalc();
+                createRentalModal.show();
+            } catch (error) {
+                console.error('Error opening rental modal:', error);
+                showNotification('Ошибка при получении данных о слотах', 'error');
             }
-
-            // Fill modal
-            document.getElementById('rentalSiteId').value = siteId;
-            document.getElementById('rentalSiteName').textContent = site.site_name || site.site_url;
-            document.getElementById('rentalAvailableSlots').textContent = `${availableSlots} из ${site.max_links}`;
-            document.getElementById('rentalSlotsCount').max = availableSlots;
-            document.getElementById('rentalSlotsCount').value = Math.min(1, availableSlots);
-            document.getElementById('rentalPricePerSlot').value = site.price_link || 25.00;
-            document.getElementById('rentalTenantUsername').value = '';
-
-            updateRentalCalc();
-            createRentalModal.show();
         }
 
         // Update rental calculation
