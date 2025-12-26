@@ -149,16 +149,16 @@ async function loadMultiPeriodRevenue() {
 
         // Update revenue cards
         document.getElementById('revenueDay').textContent = parseFloat(data.day.total || 0).toFixed(2);
-        document.getElementById('transactionsDay').textContent = parseInt(data.day.purchases || 0) + parseInt(data.day.renewals || 0);
+        document.getElementById('transactionsDay').textContent = parseInt(data.day.purchases || 0) + parseInt(data.day.renewals || 0) + parseInt(data.day.rentals || 0);
 
         document.getElementById('revenueWeek').textContent = parseFloat(data.week.total || 0).toFixed(2);
-        document.getElementById('transactionsWeek').textContent = parseInt(data.week.purchases || 0) + parseInt(data.week.renewals || 0);
+        document.getElementById('transactionsWeek').textContent = parseInt(data.week.purchases || 0) + parseInt(data.week.renewals || 0) + parseInt(data.week.rentals || 0);
 
         document.getElementById('revenueMonth').textContent = parseFloat(data.month.total || 0).toFixed(2);
-        document.getElementById('transactionsMonth').textContent = parseInt(data.month.purchases || 0) + parseInt(data.month.renewals || 0);
+        document.getElementById('transactionsMonth').textContent = parseInt(data.month.purchases || 0) + parseInt(data.month.renewals || 0) + parseInt(data.month.rentals || 0);
 
         document.getElementById('revenueYear').textContent = parseFloat(data.year.total || 0).toFixed(2);
-        document.getElementById('transactionsYear').textContent = parseInt(data.year.purchases || 0) + parseInt(data.year.renewals || 0);
+        document.getElementById('transactionsYear').textContent = parseInt(data.year.purchases || 0) + parseInt(data.year.renewals || 0) + parseInt(data.year.rentals || 0);
 
     } catch (error) {
         console.error('Failed to load multi-period revenue:', error);
