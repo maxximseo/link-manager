@@ -561,6 +561,45 @@ class LinkManagerWidget {
         $this->api_endpoint = $new_endpoint;
 
         error_log('[Link Manager] Endpoint auto-updated: ' . $current_endpoint . ' -> ' . $new_endpoint);
+
+        // Confirm update to the OLD endpoint (so server knows we received the migration)
+        $this->confirm_endpoint_update($current_endpoint);
+    }
+
+    /**
+     * Confirm endpoint update to the server
+     * Called after plugin successfully updates to new endpoint
+     */
+    private function confirm_endpoint_update($old_endpoint) {
+        $response = wp_remote_post(
+            $old_endpoint . '/wordpress/confirm-endpoint-update',
+            array(
+                'timeout' => 10,
+                'headers' => array(
+                    'Content-Type' => 'application/json',
+                    'X-API-Key' => $this->api_key
+                ),
+                'body' => json_encode(array(
+                    'api_key' => $this->api_key
+                ))
+            )
+        );
+
+        if (is_wp_error($response)) {
+            error_log('[Link Manager] Failed to confirm endpoint update: ' . $response->get_error_message());
+            return false;
+        }
+
+        $body = wp_remote_retrieve_body($response);
+        $data = json_decode($body, true);
+
+        if (isset($data['success']) && $data['success']) {
+            error_log('[Link Manager] Endpoint update confirmed to server');
+            return true;
+        }
+
+        error_log('[Link Manager] Endpoint update confirmation failed: ' . print_r($data, true));
+        return false;
     }
 
     /**
