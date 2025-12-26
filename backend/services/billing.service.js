@@ -2919,6 +2919,9 @@ const createSlotRental = async (ownerId, siteId, tenantUsername, slotsCount, pri
 
       await client.query('COMMIT');
 
+      // Invalidate cache for this site (slots changed)
+      await cache.clearRentalCache(siteId);
+
       logger.info('Slot rental created by admin (immediate activation)', {
         rentalId: rentalResult.rows[0].id,
         ownerId,
