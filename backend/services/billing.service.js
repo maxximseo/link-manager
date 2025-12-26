@@ -465,7 +465,31 @@ const purchasePlacement = async ({
     }
 
     // 4. CRITICAL FIX (BUG #5): Check site quotas BEFORE creating placement (with lock to prevent race condition)
-    if (type === 'link' && site.used_links >= site.max_links) {
+    // But if user has active rental with available slots, they can use those instead
+    let userRentalSlots = null;
+    if (hasActiveRental && type === 'link') {
+      const rentalResult = await client.query(
+        `SELECT id, slots_count, slots_used FROM site_slot_rentals
+         WHERE site_id = $1 AND tenant_id = $2 AND status = 'active' AND expires_at > NOW()
+         FOR UPDATE`,
+        [siteId, userId]
+      );
+      if (rentalResult.rows.length > 0) {
+        userRentalSlots = rentalResult.rows[0];
+      }
+    }
+
+    // If user has rental with available slots, skip site limit check
+    if (userRentalSlots && userRentalSlots.slots_used < userRentalSlots.slots_count) {
+      // User will use rental slot - check is passed
+      logger.info('User using rental slot', {
+        userId,
+        siteId,
+        rentalId: userRentalSlots.id,
+        slotsUsed: userRentalSlots.slots_used,
+        slotsTotal: userRentalSlots.slots_count
+      });
+    } else if (type === 'link' && site.used_links >= site.max_links) {
       throw new Error(
         `Site "${site.site_name}" has reached its link limit (${site.used_links}/${site.max_links} used). ` +
           `Cannot create new link placement.`
