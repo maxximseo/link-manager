@@ -3584,6 +3584,13 @@ const rejectSlotRental = async (tenantId, rentalId) => {
  * @param {number} userId - User ID (must be site owner)
  */
 const getAvailableSlots = async (siteId, userId) => {
+  // Try cache first (60 second TTL)
+  const cacheKey = `rental:available:site:${siteId}`;
+  const cached = await cache.get(cacheKey);
+  if (cached && cached.userId === userId) {
+    return cached.data;
+  }
+
   const client = await pool.connect();
   try {
     // 1. Get site data and verify ownership
@@ -3616,13 +3623,18 @@ const getAvailableSlots = async (siteId, userId) => {
     // 4. Calculate available slots
     const availableSlots = Math.max(0, site.max_links - site.used_links - reservedSlots);
 
-    return {
+    const result = {
       max_links: site.max_links,
       used_links: site.used_links,
       reserved_slots: reservedSlots,
       available_slots: availableSlots,
       site_name: site.site_name || site.site_url
     };
+
+    // Cache result with 60 second TTL
+    await cache.set(cacheKey, { userId, data: result }, 60);
+
+    return result;
   } finally {
     client.release();
   }
