@@ -512,6 +512,53 @@ const updatePlacementWithPostId = async (siteId, articleId, wordpressPostId) => 
   }
 };
 
+/**
+ * Get pending endpoint update for a site by API key
+ * Returns update info if site has a pending endpoint migration
+ */
+const getEndpointUpdate = async (apiKey) => {
+  try {
+    const result = await query(
+      `SELECT seu.new_endpoint, seu.created_at
+       FROM site_endpoint_updates seu
+       JOIN sites s ON seu.site_id = s.id
+       WHERE s.api_key = $1 AND seu.status = $2`,
+      [apiKey, 'pending']
+    );
+
+    if (result.rows.length === 0) {
+      return null;
+    }
+
+    return {
+      available: true,
+      new_endpoint: result.rows[0].new_endpoint
+    };
+  } catch (error) {
+    logger.error('Error getting endpoint update:', error);
+    return null;
+  }
+};
+
+/**
+ * Mark endpoint update as confirmed for a site
+ */
+const confirmEndpointUpdate = async (apiKey) => {
+  try {
+    await query(
+      `UPDATE site_endpoint_updates seu
+       SET status = 'confirmed', confirmed_at = NOW()
+       FROM sites s
+       WHERE seu.site_id = s.id AND s.api_key = $1 AND seu.status = 'pending'`,
+      [apiKey]
+    );
+    return true;
+  } catch (error) {
+    logger.error('Error confirming endpoint update:', error);
+    return false;
+  }
+};
+
 module.exports = {
   getContentByApiKey,
   getContentByDomain,
@@ -523,5 +570,8 @@ module.exports = {
   getArticleById,
   updatePlacementWithPostId,
   // Exported for reuse in site.controller.js SSRF protection
-  validateExternalUrl
+  validateExternalUrl,
+  // Endpoint migration
+  getEndpointUpdate,
+  confirmEndpointUpdate
 };
