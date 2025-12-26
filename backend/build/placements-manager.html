@@ -360,6 +360,19 @@
             cursor: not-allowed;
         }
 
+        /* Rental badge */
+        .rental-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #8b5cf6, #6366f1);
+            color: white;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+        }
+
         /* Type badge */
         .type-badge {
             display: inline-block;
@@ -1315,7 +1328,7 @@
             tbody.innerHTML = paginatedPlacements.map(p => {
                 const isSelected = selectedIds.has(p.id);
                 const expiryDays = p.expires_at ? Math.ceil((new Date(p.expires_at) - new Date()) / (1000 * 60 * 60 * 24)) : null;
-                const canRenew = p.type === 'link' && p.status === 'placed';
+                const canRenew = p.type === 'link' && p.status === 'placed' && !p.is_rental;
 
                 return `
                     <tr class="${isSelected ? 'selected' : ''}" onclick="toggleSelect(${p.id})">
@@ -1351,7 +1364,8 @@
                         </td>
                         <td class="col-price"><span class="price-cell">$${parseFloat(p.final_price || 0).toFixed(2)}</span></td>
                         <td class="col-autorenewal text-center" onclick="event.stopPropagation()">
-                            ${p.type === 'link' ? `
+                            ${p.is_rental ? `<span class="rental-badge">Аренда</span>` :
+                              p.type === 'link' ? `
                                 <label class="autorenewal-switch">
                                     <input type="checkbox" ${p.auto_renewal ? 'checked' : ''} onchange="toggleAutoRenewal(${p.id}, this.checked)">
                                     <span class="autorenewal-slider"></span>
