@@ -106,6 +106,27 @@ async function processExpiredRentals() {
         metadata: { rental_id: rental.id, ...notificationData }
       });
 
+      // Send webhook to WordPress site (optional - won't break if fails)
+      if (rental.api_key) {
+        const webhookResult = await wordpressRentalService.notifyRentalStatusChange(
+          rental.site_url,
+          rental.api_key,
+          {
+            id: rental.id,
+            slot_type: rental.slot_type,
+            slot_count: rental.slot_count,
+            tenant_id: rental.tenant_id,
+            expires_at: rental.expires_at,
+            status: 'expired'
+          },
+          'expired'
+        );
+
+        if (!webhookResult.success) {
+          logger.warn(`[Cron] WordPress webhook failed for expired rental ${rental.id}`);
+        }
+      }
+
       logger.info(
         `[Cron] Expired rental ${rental.id}: Released ${rental.slot_count} ${rental.slot_type} slots on site ${rental.site_id}`
       );
