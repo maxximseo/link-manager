@@ -846,7 +846,10 @@ router.post('/broadcast-endpoint', generalLimiter, async (req, res) => {
 router.get('/endpoint-migration-status', generalLimiter, async (req, res) => {
   try {
     const status = await siteService.getEndpointMigrationStatus();
-    res.json(status);
+    res.json({
+      success: true,
+      data: status
+    });
   } catch (error) {
     logger.error('Get endpoint migration status error:', error);
     res.status(500).json({ error: 'Failed to get migration status', details: error.message });
