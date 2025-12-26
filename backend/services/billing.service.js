@@ -3458,7 +3458,7 @@ const approveSlotRental = async (tenantId, rentalId) => {
     const reservedCheck = await client.query(
       `SELECT COALESCE(SUM(slots_count), 0) as reserved_slots
        FROM site_slot_rentals
-       WHERE site_id = $1 AND status = 'active' AND id != $2`,
+       WHERE site_id = $1 AND status IN ('active', 'pending_approval', 'pending_payment') AND id != $2`,
       [rental.site_id, rentalId]
     );
     const reservedSlots = parseInt(reservedCheck.rows[0].reserved_slots) || 0;
