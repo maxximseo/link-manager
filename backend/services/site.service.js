@@ -77,12 +77,13 @@ const getUserSites = async (userId, page = 0, limit = 0, recalculate = false) =>
   }
 };
 
-// Get marketplace sites (public sites + user's own sites)
+// Get marketplace sites (public sites + user's own sites + rented sites)
 const getMarketplaceSites = async userId => {
   try {
     // Return sites that are either:
     // 1. Public (is_public = TRUE), OR
-    // 2. Owned by the requesting user (user_id = userId)
+    // 2. Owned by the requesting user (user_id = userId), OR
+    // 3. Rented by the requesting user (active rental exists)
     // Note: Don't expose api_key for sites user doesn't own
     const result = await query(
       `
@@ -99,10 +100,35 @@ const getMarketplaceSites = async userId => {
         CASE
           WHEN s.user_id = $1 THEN s.api_key
           ELSE NULL
-        END as api_key
+        END as api_key,
+        -- Check if current user has active rental on this site
+        EXISTS(
+          SELECT 1 FROM site_slot_rentals r
+          WHERE r.site_id = s.id
+          AND r.tenant_id = $1
+          AND r.status = 'active'
+          AND r.expires_at > NOW()
+        ) AS user_has_rental
       FROM sites s
-      WHERE s.is_public = TRUE OR s.user_id = $1
-      ORDER BY s.created_at DESC
+      WHERE s.is_public = TRUE
+         OR s.user_id = $1
+         OR EXISTS(
+           SELECT 1 FROM site_slot_rentals r
+           WHERE r.site_id = s.id
+           AND r.tenant_id = $1
+           AND r.status = 'active'
+           AND r.expires_at > NOW()
+         )
+      ORDER BY
+        -- Rented sites first for the user
+        EXISTS(
+          SELECT 1 FROM site_slot_rentals r
+          WHERE r.site_id = s.id
+          AND r.tenant_id = $1
+          AND r.status = 'active'
+          AND r.expires_at > NOW()
+        ) DESC,
+        s.created_at DESC
     `,
       [userId]
     );
@@ -111,7 +137,8 @@ const getMarketplaceSites = async userId => {
       userId,
       totalSites: result.rows.length,
       publicSites: result.rows.filter(s => s.is_public).length,
-      ownedSites: result.rows.filter(s => s.user_id === userId).length
+      ownedSites: result.rows.filter(s => s.user_id === userId).length,
+      rentedSites: result.rows.filter(s => s.user_has_rental).length
     });
 
     return result.rows;
