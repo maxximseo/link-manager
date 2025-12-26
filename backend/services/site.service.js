@@ -1230,14 +1230,17 @@ const calculateSiteRevenue = async (siteId, userId) => {
           AND r.created_at >= NOW() - INTERVAL '365 days'
       ),
       placement_income AS (
-        -- Доход от продажи ссылок и статей
-        -- КРИТИЧНО: используем placements.purchase_transaction_id -> transactions.id
-        SELECT COALESCE(SUM(ABS(t.amount)), 0) as amount
+        -- Доход от продажи ссылок и статей на этом сайте
+        -- Считаем final_price из placements где сайт принадлежит владельцу
+        -- и покупатель НЕ является владельцем (т.е. другие пользователи купили)
+        SELECT COALESCE(SUM(p.final_price), 0) as amount
         FROM placements p
-        JOIN transactions t ON p.purchase_transaction_id = t.id
+        JOIN sites s ON p.site_id = s.id
         WHERE p.site_id = $1
-          AND t.type = 'purchase'
-          AND t.created_at >= NOW() - INTERVAL '365 days'
+          AND s.user_id = $2
+          AND p.user_id != $2
+          AND p.status = 'placed'
+          AND p.purchased_at >= NOW() - INTERVAL '365 days'
       )
       SELECT
         (SELECT amount FROM rental_income) +
