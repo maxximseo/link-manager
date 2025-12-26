@@ -2972,6 +2972,18 @@ const createSlotRental = async (ownerId, siteId, tenantUsername, slotsCount, pri
       ]
     );
 
+    // Log rental creation
+    await logRentalAction(
+      client,
+      rentalResult.rows[0].id,
+      'created',
+      ownerId,
+      'owner',
+      null,
+      'pending_approval',
+      { slotsCount, totalPrice, tenantUsername: tenant.username }
+    );
+
     // Notification for tenant about pending request
     await client.query(
       `INSERT INTO notifications (user_id, type, title, message, metadata, created_at)
