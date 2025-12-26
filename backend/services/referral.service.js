@@ -32,7 +32,7 @@ const getReferralStats = async (userId) => {
         (SELECT COUNT(*) FROM users WHERE referred_by_user_id = $1) as total_referrals,
         (SELECT COUNT(*) FROM users ref WHERE ref.referred_by_user_id = $1 AND (
           SELECT COALESCE(ABS(SUM(t.amount)), 0) FROM transactions t
-          WHERE t.user_id = ref.id AND t.type IN ('purchase', 'renewal')
+          WHERE t.user_id = ref.id AND t.type IN ('purchase', 'renewal', 'slot_rental', 'slot_rental_renewal')
         ) > 0) as active_referrals,
         (SELECT COALESCE(SUM(commission_amount), 0) FROM referral_transactions WHERE referrer_id = $1 AND status = 'credited') as pending_balance,
         (SELECT COALESCE(SUM(amount), 0) FROM referral_withdrawals WHERE user_id = $1 AND status = 'completed') as total_withdrawn
