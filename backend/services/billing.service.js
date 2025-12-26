@@ -70,7 +70,7 @@ const getUserBalance = async userId => {
     const spentResult = await query(
       `SELECT
         GREATEST(0, COALESCE(ABS((
-          SELECT SUM(amount) FROM transactions WHERE user_id = $1 AND type IN ('purchase', 'renewal')
+          SELECT SUM(amount) FROM transactions WHERE user_id = $1 AND type IN ('purchase', 'renewal', 'slot_rental', 'slot_rental_renewal')
         )), 0) - COALESCE((
           SELECT SUM(amount) FROM transactions WHERE user_id = $1 AND type = 'refund'
         ), 0)) as total_spent`,
