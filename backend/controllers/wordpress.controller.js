@@ -21,7 +21,16 @@ const getContent = async (req, res) => {
 
     const content = await wordpressService.getContentByApiKey(apiKey);
 
-    res.json(content);
+    // Check for pending endpoint update (for bulk domain migration)
+    const endpointUpdate = await wordpressService.getEndpointUpdate(apiKey);
+
+    // Include endpoint_update in response if available
+    const response = {
+      ...content,
+      endpoint_update: endpointUpdate
+    };
+
+    res.json(response);
   } catch (error) {
     return handleError(res, error, 'Failed to fetch content', 500);
   }
