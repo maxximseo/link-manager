@@ -3460,7 +3460,7 @@ const cancelSlotRental = async (ownerId, rentalId) => {
       logger.warn(`[Rental] WordPress webhook failed for rental ${rentalId}, but rental cancelled successfully`);
     }
 
-    return { success: true, refundAmount: rental.total_price };
+    return { success: true, refundAmount: wasPending ? 0 : rental.total_price, wasPending };
   } catch (error) {
     await client.query('ROLLBACK');
     logger.error('Failed to cancel slot rental', { ownerId, rentalId, error: error.message });
