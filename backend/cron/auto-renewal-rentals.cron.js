@@ -37,8 +37,8 @@ async function processAutoRenewalRentals() {
         r.total_price,
         r.expires_at,
         r.auto_renewal,
-        s.name as site_name,
-        s.url as site_url,
+        s.site_name,
+        s.site_url,
         t.balance as tenant_balance,
         t.username as tenant_username,
         o.username as owner_username
