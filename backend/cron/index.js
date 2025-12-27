@@ -41,6 +41,9 @@ function initCronJobs() {
     // Initialize rental expiration cron (every 15 minutes)
     initRentalExpirationCron();
 
+    // Initialize rental auto-renewal cron (daily at 08:00 UTC)
+    initAutoRenewalRentalsCron();
+
     logger.info('All cron jobs initialized successfully');
   } catch (error) {
     logger.error('Failed to initialize cron jobs', {
