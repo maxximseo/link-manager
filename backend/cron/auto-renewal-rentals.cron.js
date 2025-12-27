@@ -235,7 +235,7 @@ async function sendExpirationReminders() {
         r.slots_count,
         r.slot_type,
         r.expires_at,
-        s.name as site_name
+        s.site_name
       FROM site_slot_rentals r
       JOIN sites s ON s.id = r.site_id
       WHERE r.status = 'active'
