@@ -244,7 +244,6 @@
                                 <th data-i18n="siteColumn">Сайт</th>
                                 <th class="text-center" data-i18n="statusColumn">Статус</th>
                                 <th class="text-center" data-i18n="homepageLinks">Главные</th>
-                                <th class="text-center" data-i18n="guestPosts">Гест-посты</th>
                                 <th class="text-center" data-i18n="expiresColumn">Истекает</th>
                                 <th class="text-center" data-i18n="autoRenewal">Продление</th>
                                 <th class="text-center seo-metric-th">DR</th>
@@ -472,12 +471,6 @@
                 renewalCell = `<td class="text-center"><span class="text-muted">—</span></td>`;
             }
 
-            // Guest posts info
-            const maxArticles = rental.max_articles || 0;
-            const guestPostsCell = maxArticles > 0
-                ? `<span class="text-muted">0/${maxArticles}</span>`
-                : '<span class="text-muted">—</span>';
-
             return `
                 <tr class="${rowClass}">
                     <td>
@@ -495,7 +488,6 @@
                             </div>
                         </div>
                     </td>
-                    <td>${guestPostsCell}</td>
                     <td><span class="date-text">${expiresDate}</span></td>
                     ${renewalCell}
                     <td class="text-center seo-metric-td">${rental.dr || 0}</td>
