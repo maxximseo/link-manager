@@ -3,7 +3,7 @@ const pool = require('../config/database');
 class Placement {
   static async getAll(userId, limit, offset) {
     const result = await pool.query(
-      `SELECT p.*, pr.name as project_name, s.name as site_name, s.url as site_url
+      `SELECT p.*, pr.name as project_name, s.site_name, s.site_url
        FROM placements p
        JOIN projects pr ON p.project_id = pr.id
        JOIN sites s ON p.site_id = s.id
