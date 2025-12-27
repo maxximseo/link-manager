@@ -3407,33 +3407,39 @@ const cancelSlotRental = async (ownerId, rentalId) => {
       ]);
     }
 
-    // Create refund transactions
-    await client.query(
-      `INSERT INTO transactions (user_id, type, amount, description, metadata, created_at)
-       VALUES ($1, 'slot_rental_refund', $2, $3, $4, NOW())`,
-      [
-        rental.tenant_id,
-        rental.total_price,
-        `Возврат за отменённую аренду ${rental.slots_count} слотов на ${rental.site_name}`,
-        JSON.stringify({ rentalId, reason: 'cancelled_by_owner' })
-      ]
-    );
+    // Create refund transactions (only if active rental was cancelled)
+    if (!wasPending) {
+      await client.query(
+        `INSERT INTO transactions (user_id, type, amount, description, metadata, created_at)
+         VALUES ($1, 'slot_rental_refund', $2, $3, $4, NOW())`,
+        [
+          rental.tenant_id,
+          rental.total_price,
+          `Возврат за отменённую аренду ${rental.slots_count} слотов на ${rental.site_name}`,
+          JSON.stringify({ rentalId, reason: 'cancelled_by_owner' })
+        ]
+      );
+    }
 
-    // Notification to tenant
+    // Notification to tenant (different message for pending vs active)
+    const notificationMessage = wasPending
+      ? `Владелец отменил запрос на аренду ${rental.slots_count} слотов на ${rental.site_name}.`
+      : `Владелец отменил аренду ${rental.slots_count} слотов на ${rental.site_name}. Средства возвращены на баланс.`;
+
     await client.query(
       `INSERT INTO notifications (user_id, type, title, message, metadata, created_at)
        VALUES ($1, 'slot_rental_cancelled', $2, $3, $4, NOW())`,
       [
         rental.tenant_id,
-        'Аренда отменена',
-        `Владелец отменил аренду ${rental.slots_count} слотов на ${rental.site_name}. Средства возвращены на баланс.`,
-        JSON.stringify({ rentalId, refundAmount: rental.total_price })
+        wasPending ? 'Запрос на аренду отменён' : 'Аренда отменена',
+        notificationMessage,
+        JSON.stringify({ rentalId, refundAmount: wasPending ? 0 : rental.total_price, wasPending })
       ]
     );
 
     await client.query('COMMIT');
 
-    logger.info('Slot rental cancelled', { rentalId, ownerId, refundAmount: rental.total_price });
+    logger.info('Slot rental cancelled', { rentalId, ownerId, wasPending, refundAmount: wasPending ? 0 : rental.total_price });
 
     // Send webhook to WordPress site (optional - won't break if fails)
     const webhookResult = await wordpressRentalService.notifyRentalStatusChange(
