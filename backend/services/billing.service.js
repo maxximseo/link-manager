@@ -3906,7 +3906,9 @@ const getAvailableSlots = async (siteId, userId) => {
       throw new Error('Только владелец сайта может просматривать доступные слоты');
     }
 
-    // 3. Count slots reserved in rentals (active + pending approval/payment)
+    // 3. Count slots reserved in rentals (for display purposes only)
+    // NOTE: These slots are ALREADY included in used_links (reserved at rental creation)
+    // We query this separately just to show the breakdown to the user
     const rentalsResult = await client.query(
       `SELECT COALESCE(SUM(slots_count), 0) as reserved_slots
        FROM site_slot_rentals
@@ -3917,12 +3919,14 @@ const getAvailableSlots = async (siteId, userId) => {
     const reservedSlots = parseInt(rentalsResult.rows[0].reserved_slots) || 0;
 
     // 4. Calculate available slots
-    const availableSlots = Math.max(0, site.max_links - site.used_links - reservedSlots);
+    // CRITICAL: used_links ALREADY includes reserved slots from rentals
+    // So we simply subtract used_links from max_links (no double-counting!)
+    const availableSlots = Math.max(0, site.max_links - site.used_links);
 
     const result = {
       max_links: site.max_links,
       used_links: site.used_links,
-      reserved_slots: reservedSlots,
+      reserved_slots: reservedSlots, // For display: how many of used_links are from rentals
       available_slots: availableSlots,
       site_name: site.site_name || site.site_url
     };
