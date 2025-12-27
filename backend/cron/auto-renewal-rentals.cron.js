@@ -93,9 +93,9 @@ async function processAutoRenewalRentals() {
         continue;
       }
 
-      // Calculate new expiration date (30 days from current expiration)
+      // Calculate new expiration date (RENTAL_PERIOD_DAYS from current expiration)
       const newExpiresAt = new Date(rental.expires_at);
-      newExpiresAt.setDate(newExpiresAt.getDate() + 30);
+      newExpiresAt.setDate(newExpiresAt.getDate() + RENTAL_PERIOD_DAYS);
 
       // Deduct from tenant balance
       await client.query(
