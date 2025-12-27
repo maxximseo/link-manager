@@ -3155,6 +3155,18 @@ const renewSlotRental = async (tenantId, rentalId) => {
       [newExpiresAt, rentalId]
     );
 
+    // 5.1 CRITICAL: Extend all linked placements via rental_placements
+    const placementUpdateResult = await client.query(
+      `UPDATE placements p
+       SET expires_at = $1, updated_at = NOW()
+       FROM rental_placements rp
+       WHERE rp.placement_id = p.id
+         AND rp.rental_id = $2
+       RETURNING p.id`,
+      [newExpiresAt, rentalId]
+    );
+    const extendedPlacements = placementUpdateResult.rowCount;
+
     // 6. Create transactions
     await client.query(
       `INSERT INTO transactions (user_id, type, amount, balance_before, balance_after, description, metadata, created_at)
