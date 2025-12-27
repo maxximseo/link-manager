@@ -123,7 +123,7 @@ async function processAutoRenewalRentals() {
             rental_id: rental.id,
             site_id: rental.site_id,
             slot_count: rental.slots_count,
-            slot_type: rental.slot_type,
+            slot_type: slotType,
             auto_renewal: true
           })
         ]
@@ -140,7 +140,7 @@ async function processAutoRenewalRentals() {
             rental_id: rental.id,
             site_id: rental.site_id,
             slot_count: rental.slots_count,
-            slot_type: rental.slot_type,
+            slot_type: slotType,
             auto_renewal: true
           })
         ]
