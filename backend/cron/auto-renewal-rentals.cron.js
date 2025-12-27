@@ -76,7 +76,7 @@ async function processAutoRenewalRentals() {
           userId: rental.tenant_id,
           type: 'rental_renewal_failed',
           title: 'Недостаточно средств для продления аренды',
-          message: `Не удалось продлить аренду ${rental.slot_count} слотов на сайте "${rental.site_name}". Необходимо $${totalPrice.toFixed(2)}, на балансе $${tenantBalance.toFixed(2)}. Пополните баланс до ${new Date(rental.expires_at).toLocaleDateString('ru-RU')}.`,
+          message: `Не удалось продлить аренду ${rental.slots_count} слотов на сайте "${rental.site_name}". Необходимо $${totalPrice.toFixed(2)}, на балансе $${tenantBalance.toFixed(2)}. Пополните баланс до ${new Date(rental.expires_at).toLocaleDateString('ru-RU')}.`,
           metadata: {
             rental_id: rental.id,
             required: totalPrice,
@@ -117,7 +117,7 @@ async function processAutoRenewalRentals() {
           JSON.stringify({
             rental_id: rental.id,
             site_id: rental.site_id,
-            slot_count: rental.slot_count,
+            slot_count: rental.slots_count,
             slot_type: rental.slot_type,
             auto_renewal: true
           })
@@ -134,7 +134,7 @@ async function processAutoRenewalRentals() {
           JSON.stringify({
             rental_id: rental.id,
             site_id: rental.site_id,
-            slot_count: rental.slot_count,
+            slot_count: rental.slots_count,
             slot_type: rental.slot_type,
             auto_renewal: true
           })
@@ -178,7 +178,7 @@ async function processAutoRenewalRentals() {
         userId: rental.tenant_id,
         type: 'rental_renewed',
         title: 'Аренда продлена',
-        message: `Аренда ${rental.slot_count} слотов на сайте "${rental.site_name}" автоматически продлена до ${newExpiresAt.toLocaleDateString('ru-RU')}. Списано $${totalPrice.toFixed(2)}.${extendedPlacements > 0 ? ` Продлено ${extendedPlacements} размещений.` : ''}`,
+        message: `Аренда ${rental.slots_count} слотов на сайте "${rental.site_name}" автоматически продлена до ${newExpiresAt.toLocaleDateString('ru-RU')}. Списано $${totalPrice.toFixed(2)}.${extendedPlacements > 0 ? ` Продлено ${extendedPlacements} размещений.` : ''}`,
         metadata: {
           rental_id: rental.id,
           new_expires_at: newExpiresAt.toISOString(),
@@ -255,7 +255,7 @@ async function sendExpirationReminders() {
         userId: rental.tenant_id,
         type: 'rental_expiring_soon',
         title: 'Аренда скоро истекает',
-        message: `Аренда ${rental.slot_count} слотов на сайте "${rental.site_name}" истекает ${new Date(rental.expires_at).toLocaleDateString('ru-RU')}. Включите автопродление или продлите вручную.`,
+        message: `Аренда ${rental.slots_count} слотов на сайте "${rental.site_name}" истекает ${new Date(rental.expires_at).toLocaleDateString('ru-RU')}. Включите автопродление или продлите вручную.`,
         metadata: {
           rental_id: rental.id,
           expires_at: rental.expires_at
