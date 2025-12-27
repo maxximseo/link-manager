@@ -19,6 +19,7 @@ async function cleanupExpiredPlacements() {
     await client.query('BEGIN');
 
     // Find all expired placements (expires_at < NOW() and status = 'placed')
+    // IMPORTANT: Exclude placements linked to active rentals (they are managed by rental lifecycle)
     const expiredResult = await client.query(`
       SELECT p.id, p.user_id, p.site_id, p.project_id, p.type, p.expires_at,
              s.site_name, pr.name as project_name
@@ -28,6 +29,12 @@ async function cleanupExpiredPlacements() {
       WHERE p.status = 'placed'
         AND p.expires_at IS NOT NULL
         AND p.expires_at < NOW()
+        AND NOT EXISTS (
+          SELECT 1 FROM rental_placements rp
+          JOIN site_slot_rentals ssr ON rp.rental_id = ssr.id
+          WHERE rp.placement_id = p.id
+            AND ssr.status IN ('active', 'pending_approval')
+        )
     `);
 
     const expiredPlacements = expiredResult.rows;
