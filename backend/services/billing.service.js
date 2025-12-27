@@ -2846,21 +2846,15 @@ const createSlotRental = async (ownerId, siteId, tenantUsername, slotsCount, pri
       throw new Error('Нельзя сдать сайт в аренду самому себе');
     }
 
-    // 3. Check available slots (considering reserved slots in other rentals)
-    const reservedResult = await client.query(
-      `SELECT COALESCE(SUM(slots_count), 0) as reserved_slots
-       FROM site_slot_rentals
-       WHERE site_id = $1 AND status IN ('active', 'pending_approval', 'pending_payment')`,
-      [siteId]
-    );
-
-    const reservedSlots = parseInt(reservedResult.rows[0].reserved_slots) || 0;
-    const availableSlots = site.max_links - site.used_links - reservedSlots;
+    // 3. Check available slots
+    // NOTE: used_links now includes ALL reserved slots (from placements AND pending/active rentals)
+    // So we simply check: max_links - used_links >= slotsCount
+    const availableSlots = site.max_links - site.used_links;
 
     if (slotsCount > availableSlots) {
       throw new Error(
-        `Доступно только ${availableSlots} свободных слотов. ` +
-        `Занято: ${site.used_links} размещений + ${reservedSlots} в аренде из ${site.max_links}`
+        `Доступно только ${availableSlots} свободных слотов из ${site.max_links}. ` +
+        `Занято: ${site.used_links}`
       );
     }
 
