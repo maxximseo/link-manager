@@ -113,7 +113,9 @@ async function processExpiredRentals() {
       );
 
       // 4. Decrement used slots on site (for slots + deleted placements)
-      const slotColumn = rental.slot_type === 'link' ? 'used_links' : 'used_articles';
+      // NOTE: slot_type column doesn't exist in DB - rentals are always for links
+      const slotType = rental.slot_type || 'link';
+      const slotColumn = slotType === 'link' ? 'used_links' : 'used_articles';
       const totalSlotsToRelease = rental.slots_count;
       await client.query(
         `UPDATE sites
