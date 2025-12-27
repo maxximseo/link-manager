@@ -178,7 +178,7 @@ async function processExpiredRentals() {
           rental.api_key,
           {
             id: rental.id,
-            slot_type: rental.slot_type,
+            slot_type: slotType,
             slot_count: rental.slots_count,
             tenant_id: rental.tenant_id,
             expires_at: rental.expires_at,
