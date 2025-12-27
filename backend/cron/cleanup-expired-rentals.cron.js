@@ -46,7 +46,64 @@ async function processExpiredRentals() {
     logger.info(`[Cron] Processing ${expiredRentals.rows.length} expired rentals`);
 
     for (const rental of expiredRentals.rows) {
-      // 1. Update rental status to expired
+      // 1. Get linked placements before deletion (for quota restoration)
+      const linkedPlacements = await client.query(
+        `SELECT p.id, p.type, p.site_id
+         FROM placements p
+         JOIN rental_placements rp ON rp.placement_id = p.id
+         WHERE rp.rental_id = $1`,
+        [rental.id]
+      );
+
+      // 2. Delete placement_content for linked placements
+      if (linkedPlacements.rows.length > 0) {
+        const placementIds = linkedPlacements.rows.map((p) => p.id);
+
+        // Get content IDs for usage_count restoration
+        const contentResult = await client.query(
+          `SELECT placement_id, link_id, article_id
+           FROM placement_content
+           WHERE placement_id = ANY($1)`,
+          [placementIds]
+        );
+
+        // Restore usage_count for links and articles
+        for (const content of contentResult.rows) {
+          if (content.link_id) {
+            await client.query(
+              `UPDATE project_links
+               SET usage_count = GREATEST(0, usage_count - 1)
+               WHERE id = $1`,
+              [content.link_id]
+            );
+          }
+          if (content.article_id) {
+            await client.query(
+              `UPDATE project_articles
+               SET usage_count = GREATEST(0, usage_count - 1)
+               WHERE id = $1`,
+              [content.article_id]
+            );
+          }
+        }
+
+        // Delete placement_content
+        await client.query(`DELETE FROM placement_content WHERE placement_id = ANY($1)`, [
+          placementIds
+        ]);
+
+        // Delete rental_placements (junction table)
+        await client.query(`DELETE FROM rental_placements WHERE rental_id = $1`, [rental.id]);
+
+        // Delete placements
+        await client.query(`DELETE FROM placements WHERE id = ANY($1)`, [placementIds]);
+
+        logger.info(
+          `[Cron] Deleted ${placementIds.length} rental placements for expired rental ${rental.id}`
+        );
+      }
+
+      // 3. Update rental status to expired
       await client.query(
         `UPDATE site_slot_rentals
          SET status = 'expired',
@@ -55,17 +112,18 @@ async function processExpiredRentals() {
         [rental.id]
       );
 
-      // 2. Decrement used slots on site
+      // 4. Decrement used slots on site (for slots + deleted placements)
       const slotColumn = rental.slot_type === 'link' ? 'used_links' : 'used_articles';
+      const totalSlotsToRelease = rental.slot_count;
       await client.query(
         `UPDATE sites
          SET ${slotColumn} = GREATEST(0, ${slotColumn} - $1),
              updated_at = CURRENT_TIMESTAMP
          WHERE id = $2`,
-        [rental.slot_count, rental.site_id]
+        [totalSlotsToRelease, rental.site_id]
       );
 
-      // 3. Log history action
+      // 5. Log history action
       await client.query(
         `UPDATE site_slot_rentals
          SET history = COALESCE(history, '[]'::jsonb) || jsonb_build_object(
