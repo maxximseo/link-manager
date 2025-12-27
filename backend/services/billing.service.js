@@ -3362,9 +3362,12 @@ const cancelSlotRental = async (ownerId, rentalId) => {
       throw new Error(`Нельзя отменить аренду: использовано ${rental.slots_used} слотов`);
     }
 
-    if (rental.status !== 'active') {
-      throw new Error('Можно отменить только активную аренду');
+    // Allow cancelling both active and pending_approval rentals
+    if (!['active', 'pending_approval'].includes(rental.status)) {
+      throw new Error('Можно отменить только активную или ожидающую подтверждения аренду');
     }
+
+    const wasPending = rental.status === 'pending_approval';
 
     // Update rental status
     await client.query(`UPDATE site_slot_rentals SET status = 'cancelled', updated_at = NOW() WHERE id = $1`, [
@@ -3380,26 +3383,29 @@ const cancelSlotRental = async (ownerId, rentalId) => {
       'owner',
       rental.status,
       'cancelled',
-      { refundAmount: rental.total_price, tenantUsername: rental.tenant_username }
+      { refundAmount: wasPending ? 0 : rental.total_price, tenantUsername: rental.tenant_username }
     );
 
-    // Release reserved slots
-    await client.query(`UPDATE sites SET used_links = used_links - $1, updated_at = NOW() WHERE id = $2`, [
+    // Release reserved slots (both pending and active rentals reserve slots)
+    await client.query(`UPDATE sites SET used_links = GREATEST(0, used_links - $1), updated_at = NOW() WHERE id = $2`, [
       rental.slots_count,
       rental.site_id
     ]);
 
-    // Refund tenant
-    await client.query(`UPDATE users SET balance = balance + $1, updated_at = NOW() WHERE id = $2`, [
-      rental.total_price,
-      rental.tenant_id
-    ]);
+    // Only refund if rental was active (payment was made)
+    if (!wasPending) {
+      // Refund tenant
+      await client.query(`UPDATE users SET balance = balance + $1, updated_at = NOW() WHERE id = $2`, [
+        rental.total_price,
+        rental.tenant_id
+      ]);
 
-    // Deduct from owner
-    await client.query(`UPDATE users SET balance = balance - $1, updated_at = NOW() WHERE id = $2`, [
-      rental.total_price,
-      ownerId
-    ]);
+      // Deduct from owner
+      await client.query(`UPDATE users SET balance = balance - $1, updated_at = NOW() WHERE id = $2`, [
+        rental.total_price,
+        ownerId
+      ]);
+    }
 
     // Create refund transactions
     await client.query(
