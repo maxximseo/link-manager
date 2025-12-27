@@ -3662,10 +3662,10 @@ const approveSlotRental = async (tenantId, rentalId) => {
     // NOTE: Slots are already reserved when pending rental was created in createSlotRental()
     // No need to reserve again here - this prevents double-counting of used_links
 
-    // Activate rental
+    // Activate rental (use configured rental period, not hardcoded 365 days)
     await client.query(
       `UPDATE site_slot_rentals
-       SET status = 'active', starts_at = NOW(), expires_at = NOW() + INTERVAL '365 days', updated_at = NOW()
+       SET status = 'active', starts_at = NOW(), expires_at = NOW() + INTERVAL '${RENTAL_PRICING.RENTAL_PERIOD_DAYS} days', updated_at = NOW()
        WHERE id = $1`,
       [rentalId]
     );
