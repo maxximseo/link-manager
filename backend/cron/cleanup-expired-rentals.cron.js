@@ -193,7 +193,7 @@ async function processExpiredRentals() {
       }
 
       logger.info(
-        `[Cron] Expired rental ${rental.id}: Released ${rental.slots_count} ${rental.slot_type} slots on site ${rental.site_id}`
+        `[Cron] Expired rental ${rental.id}: Released ${rental.slots_count} ${slotType} slots on site ${rental.site_id}`
       );
     }
 
