@@ -71,6 +71,8 @@ async function processAutoRenewalRentals() {
     for (const rental of renewalCandidates.rows) {
       const totalPrice = parseFloat(rental.total_price);
       const tenantBalance = parseFloat(rental.tenant_balance);
+      // NOTE: slot_type column doesn't exist in DB - rentals are always for links
+      const slotType = rental.slot_type || 'link';
 
       // Check if tenant has sufficient balance
       if (tenantBalance < totalPrice) {
