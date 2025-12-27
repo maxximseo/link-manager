@@ -27,8 +27,8 @@ async function processExpiredRentals() {
         r.slot_type,
         r.slots_count,
         r.expires_at,
-        s.name as site_name,
-        s.url as site_url,
+        s.site_name,
+        s.site_url,
         s.api_key
       FROM site_slot_rentals r
       JOIN sites s ON s.id = r.site_id
