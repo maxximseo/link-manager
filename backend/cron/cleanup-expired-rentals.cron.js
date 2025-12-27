@@ -25,7 +25,7 @@ async function processExpiredRentals() {
         r.owner_id,
         r.tenant_id,
         r.slot_type,
-        r.slot_count,
+        r.slots_count,
         r.expires_at,
         s.name as site_name,
         s.url as site_url,
