@@ -146,7 +146,7 @@ async function processExpiredRentals() {
         site_name: rental.site_name,
         site_url: rental.site_url,
         slot_count: rental.slots_count,
-        slot_type: rental.slot_type === 'link' ? 'ссылок' : 'статей',
+        slot_type: slotType === 'link' ? 'ссылок' : 'статей',
         deleted_placements: deletedPlacementsCount
       };
 
