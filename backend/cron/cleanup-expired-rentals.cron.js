@@ -138,20 +138,25 @@ async function processExpiredRentals() {
         [rental.slot_count, rental.slot_type, rental.id]
       );
 
-      // 4. Create notifications for owner and tenant
+      // 6. Create notifications for owner and tenant
+      const deletedPlacementsCount = linkedPlacements.rows.length;
       const notificationData = {
         site_name: rental.site_name,
         site_url: rental.site_url,
         slot_count: rental.slot_count,
-        slot_type: rental.slot_type === 'link' ? 'ссылок' : 'статей'
+        slot_type: rental.slot_type === 'link' ? 'ссылок' : 'статей',
+        deleted_placements: deletedPlacementsCount
       };
+
+      const placementsDeletedMessage =
+        deletedPlacementsCount > 0 ? ` Удалено ${deletedPlacementsCount} размещений.` : '';
 
       // Notify site owner
       await notificationService.create({
         userId: rental.owner_id,
         type: 'rental_expired_owner',
         title: 'Аренда завершена',
-        message: `Аренда ${notificationData.slot_count} ${notificationData.slot_type} на сайте "${notificationData.site_name}" истекла. Слоты освобождены.`,
+        message: `Аренда ${notificationData.slot_count} ${notificationData.slot_type} на сайте "${notificationData.site_name}" истекла. Слоты освобождены.${placementsDeletedMessage}`,
         metadata: { rental_id: rental.id, ...notificationData }
       });
 
@@ -160,7 +165,7 @@ async function processExpiredRentals() {
         userId: rental.tenant_id,
         type: 'rental_expired_tenant',
         title: 'Аренда завершена',
-        message: `Аренда ${notificationData.slot_count} ${notificationData.slot_type} на сайте "${notificationData.site_name}" истекла.`,
+        message: `Аренда ${notificationData.slot_count} ${notificationData.slot_type} на сайте "${notificationData.site_name}" истекла.${placementsDeletedMessage}`,
         metadata: { rental_id: rental.id, ...notificationData }
       });
 
