@@ -32,7 +32,7 @@ async function processAutoRenewalRentals() {
         r.owner_id,
         r.tenant_id,
         r.slot_type,
-        r.slot_count,
+        r.slots_count,
         r.price_per_slot,
         r.total_price,
         r.expires_at,
