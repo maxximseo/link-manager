@@ -135,7 +135,7 @@ async function processExpiredRentals() {
            )
          )::jsonb
          WHERE id = $3`,
-        [rental.slot_count, rental.slot_type, rental.id]
+        [rental.slots_count, rental.slot_type, rental.id]
       );
 
       // 6. Create notifications for owner and tenant
@@ -143,7 +143,7 @@ async function processExpiredRentals() {
       const notificationData = {
         site_name: rental.site_name,
         site_url: rental.site_url,
-        slot_count: rental.slot_count,
+        slot_count: rental.slots_count,
         slot_type: rental.slot_type === 'link' ? 'ссылок' : 'статей',
         deleted_placements: deletedPlacementsCount
       };
@@ -177,7 +177,7 @@ async function processExpiredRentals() {
           {
             id: rental.id,
             slot_type: rental.slot_type,
-            slot_count: rental.slot_count,
+            slot_count: rental.slots_count,
             tenant_id: rental.tenant_id,
             expires_at: rental.expires_at,
             status: 'expired'
@@ -191,7 +191,7 @@ async function processExpiredRentals() {
       }
 
       logger.info(
-        `[Cron] Expired rental ${rental.id}: Released ${rental.slot_count} ${rental.slot_type} slots on site ${rental.site_id}`
+        `[Cron] Expired rental ${rental.id}: Released ${rental.slots_count} ${rental.slot_type} slots on site ${rental.site_id}`
       );
     }
 
