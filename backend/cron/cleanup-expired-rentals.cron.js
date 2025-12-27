@@ -114,7 +114,7 @@ async function processExpiredRentals() {
 
       // 4. Decrement used slots on site (for slots + deleted placements)
       const slotColumn = rental.slot_type === 'link' ? 'used_links' : 'used_articles';
-      const totalSlotsToRelease = rental.slot_count;
+      const totalSlotsToRelease = rental.slots_count;
       await client.query(
         `UPDATE sites
          SET ${slotColumn} = GREATEST(0, ${slotColumn} - $1),
