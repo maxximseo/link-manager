@@ -53,7 +53,7 @@ async function processAutoRenewalRentals() {
         AND r.auto_renewal = true
         AND r.expires_at < NOW() + INTERVAL '1 day'
         AND r.expires_at > NOW()
-      FOR UPDATE OF r, t
+      FOR UPDATE OF r, t, o
     `);
 
     if (renewalCandidates.rows.length === 0) {
