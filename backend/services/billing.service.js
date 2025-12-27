@@ -2269,21 +2269,31 @@ const deleteAndRefundPlacement = async (placementId, userId, userRole = 'user') 
 
     const { link_ids, article_ids, link_count, article_count } = contentResult.rows[0];
 
+    // Delete rental_placements record if exists (before deleting placement)
+    if (isRentalPlacement) {
+      await client.query('DELETE FROM rental_placements WHERE placement_id = $1', [placementId]);
+    }
+
     // Delete placement (cascade will delete placement_content)
     await client.query('DELETE FROM placements WHERE id = $1', [placementId]);
 
     // Update site quotas
-    if (parseInt(link_count, 10) > 0) {
-      await client.query(
-        'UPDATE sites SET used_links = GREATEST(0, used_links - $1) WHERE id = $2',
-        [link_count, placement.site_id]
-      );
-    }
-    if (parseInt(article_count, 10) > 0) {
-      await client.query(
-        'UPDATE sites SET used_articles = GREATEST(0, used_articles - $1) WHERE id = $2',
-        [article_count, placement.site_id]
-      );
+    // CRITICAL: For rental placements, site.used_links was reserved at rental creation,
+    // NOT incremented at placement creation. So we DON'T decrement here for rental placements.
+    // The slots will be released when the rental expires/is cancelled.
+    if (!isRentalPlacement) {
+      if (parseInt(link_count, 10) > 0) {
+        await client.query(
+          'UPDATE sites SET used_links = GREATEST(0, used_links - $1) WHERE id = $2',
+          [link_count, placement.site_id]
+        );
+      }
+      if (parseInt(article_count, 10) > 0) {
+        await client.query(
+          'UPDATE sites SET used_articles = GREATEST(0, used_articles - $1) WHERE id = $2',
+          [article_count, placement.site_id]
+        );
+      }
     }
 
     // Decrement usage_count for links (batch UPDATE - 1 query instead of N)
