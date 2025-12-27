@@ -3623,28 +3623,23 @@ const approveSlotRental = async (tenantId, rentalId) => {
       throw new Error(`Недостаточно средств. Требуется: $${totalPrice.toFixed(2)}, на балансе: $${tenantBalance.toFixed(2)}`);
     }
 
-    // Re-check available slots before approving (in case other rentals were approved meanwhile)
+    // Re-check available slots before approving
+    // NOTE: Since pending rentals now reserve slots in used_links at creation time,
+    // we just need to verify the site still has room (no separate reservedSlots calculation needed)
     const siteCheck = await client.query(
       'SELECT max_links, used_links FROM sites WHERE id = $1',
       [rental.site_id]
     );
     const site = siteCheck.rows[0];
 
-    // Count already reserved slots (excluding current rental)
-    const reservedCheck = await client.query(
-      `SELECT COALESCE(SUM(slots_count), 0) as reserved_slots
-       FROM site_slot_rentals
-       WHERE site_id = $1 AND status IN ('active', 'pending_approval', 'pending_payment') AND id != $2`,
-      [rental.site_id, rentalId]
-    );
-    const reservedSlots = parseInt(reservedCheck.rows[0].reserved_slots) || 0;
-    const availableSlots = site.max_links - site.used_links - reservedSlots;
-
-    if (rental.slots_count > availableSlots) {
+    // Slots for THIS rental are already in used_links (reserved at creation)
+    // So we check if current used_links <= max_links (it should be, since we reserved at creation)
+    // This is a sanity check in case max_links was reduced after rental creation
+    if (site.used_links > site.max_links) {
       throw new Error(
-        `Недостаточно свободных слотов для одобрения. ` +
-        `Доступно ${availableSlots}, запрошено ${rental.slots_count}. ` +
-        `Занято: ${site.used_links} размещений + ${reservedSlots} в активных арендах из ${site.max_links}`
+        `Лимит слотов сайта был уменьшен после создания запроса на аренду. ` +
+        `Занято: ${site.used_links} из ${site.max_links}. ` +
+        `Попросите владельца увеличить лимит или отклоните аренду.`
       );
     }
 
