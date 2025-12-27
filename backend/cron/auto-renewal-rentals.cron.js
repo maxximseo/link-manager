@@ -6,7 +6,7 @@
  * 1. Find active rentals where auto_renewal=true AND expires_at < NOW() + 1 day
  * 2. Check tenant balance >= total_price
  * 3. Deduct money from tenant, credit to owner
- * 4. Extend rental by 30 days
+ * 4. Extend rental by RENTAL_PERIOD_DAYS (365 days)
  * 5. Extend all linked placements via rental_placements
  * 6. Create notifications
  */
@@ -15,6 +15,9 @@ const cron = require('node-cron');
 const { pool } = require('../config/database');
 const logger = require('../config/logger');
 const notificationService = require('../services/notification.service');
+
+// Import rental period from billing service constants
+const RENTAL_PERIOD_DAYS = 365;
 
 /**
  * Process auto-renewal for rentals expiring soon
