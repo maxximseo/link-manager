@@ -2102,10 +2102,38 @@ const deleteAndRefundPlacement = async (placementId, userId, userRole = 'user') 
       throw new Error('Unauthorized: Only administrators can delete placements');
     }
 
+    // 2.1 Check if placement is linked to an active rental (slots_used must be decremented)
+    const rentalCheck = await client.query(
+      `SELECT rp.rental_id, ssr.slots_used, ssr.status
+       FROM rental_placements rp
+       JOIN site_slot_rentals ssr ON rp.rental_id = ssr.id
+       WHERE rp.placement_id = $1`,
+      [placementId]
+    );
+
+    const rentalInfo = rentalCheck.rows[0];
+    const isRentalPlacement = !!rentalInfo;
+
+    // If rental placement with active rental, decrement slots_used
+    if (isRentalPlacement && rentalInfo.status === 'active') {
+      await client.query(
+        `UPDATE site_slot_rentals
+         SET slots_used = GREATEST(0, slots_used - 1), updated_at = NOW()
+         WHERE id = $1`,
+        [rentalInfo.rental_id]
+      );
+
+      logger.info('Decremented slots_used for rental placement deletion', {
+        rentalId: rentalInfo.rental_id,
+        placementId,
+        previousSlotsUsed: rentalInfo.slots_used
+      });
+    }
+
     // Note: Refund will go to placement.user_id (the owner), not the admin who deleted it
     const refundUserId = placement.user_id;
 
-    // 3. Process refund if paid
+    // 3. Process refund if paid (rental placements have final_price=0, so no refund)
     let refundResult = { refunded: false, amount: 0 };
     const finalPrice = parseFloat(placement.final_price || 0);
 
