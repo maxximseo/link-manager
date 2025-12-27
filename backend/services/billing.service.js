@@ -3201,14 +3201,16 @@ const renewSlotRental = async (tenantId, rentalId) => {
     );
 
     // 7. Notifications
+    const placementsMessage =
+      extendedPlacements > 0 ? ` Продлено ${extendedPlacements} размещений.` : '';
     await client.query(
       `INSERT INTO notifications (user_id, type, title, message, metadata, created_at)
        VALUES ($1, 'slot_rental_renewed', $2, $3, $4, NOW())`,
       [
         tenantId,
         'Аренда продлена',
-        `Аренда ${rental.slots_count} слотов на ${rental.site_name || rental.site_url} продлена до ${newExpiresAt.toLocaleDateString('ru-RU')}`,
-        JSON.stringify({ rentalId, newExpiresAt })
+        `Аренда ${rental.slots_count} слотов на ${rental.site_name || rental.site_url} продлена до ${newExpiresAt.toLocaleDateString('ru-RU')}.${placementsMessage}`,
+        JSON.stringify({ rentalId, newExpiresAt, extendedPlacements })
       ]
     );
 
@@ -3218,7 +3220,8 @@ const renewSlotRental = async (tenantId, rentalId) => {
       rentalId,
       tenantId,
       renewalPrice,
-      newExpiresAt
+      newExpiresAt,
+      extendedPlacements
     });
 
     return {
