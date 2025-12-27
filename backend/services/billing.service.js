@@ -3053,6 +3053,13 @@ const createSlotRental = async (ownerId, siteId, tenantUsername, slotsCount, pri
       ]
     );
 
+    // CRITICAL: Reserve slots on site even for pending rentals to prevent race conditions
+    // Slots are released if tenant rejects the rental
+    await client.query(`UPDATE sites SET used_links = used_links + $1, updated_at = NOW() WHERE id = $2`, [
+      slotsCount,
+      siteId
+    ]);
+
     // Log rental creation
     await logRentalAction(
       client,
