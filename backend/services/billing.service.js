@@ -3774,6 +3774,12 @@ const rejectSlotRental = async (tenantId, rentalId) => {
 
     const rental = result.rows[0];
 
+    // CRITICAL: Release reserved slots on site when pending rental is rejected
+    await client.query(
+      `UPDATE sites SET used_links = GREATEST(0, used_links - $1), updated_at = NOW() WHERE id = $2`,
+      [rental.slots_count, rental.site_id]
+    );
+
     // Log rejection
     await logRentalAction(
       client,
@@ -3783,7 +3789,7 @@ const rejectSlotRental = async (tenantId, rentalId) => {
       'tenant',
       'pending_approval',
       'rejected',
-      { ownerUsername: rental.owner_username }
+      { ownerUsername: rental.owner_username, slotsReleased: rental.slots_count }
     );
 
     // Notify owner about rejection
