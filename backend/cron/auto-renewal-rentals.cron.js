@@ -232,7 +232,7 @@ async function sendExpirationReminders() {
       SELECT
         r.id,
         r.tenant_id,
-        r.slot_count,
+        r.slots_count,
         r.slot_type,
         r.expires_at,
         s.name as site_name
