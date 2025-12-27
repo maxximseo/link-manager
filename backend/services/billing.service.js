@@ -3648,11 +3648,8 @@ const approveSlotRental = async (tenantId, rentalId) => {
       rental.owner_id
     ]);
 
-    // Reserve slots on site
-    await client.query('UPDATE sites SET used_links = used_links + $1, updated_at = NOW() WHERE id = $2', [
-      rental.slots_count,
-      rental.site_id
-    ]);
+    // NOTE: Slots are already reserved when pending rental was created in createSlotRental()
+    // No need to reserve again here - this prevents double-counting of used_links
 
     // Activate rental
     await client.query(
