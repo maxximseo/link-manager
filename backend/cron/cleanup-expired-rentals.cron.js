@@ -137,7 +137,7 @@ async function processExpiredRentals() {
            )
          )::jsonb
          WHERE id = $3`,
-        [rental.slots_count, rental.slot_type, rental.id]
+        [rental.slots_count, slotType, rental.id]
       );
 
       // 6. Create notifications for owner and tenant
