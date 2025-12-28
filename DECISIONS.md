@@ -793,6 +793,7 @@ if (process.env.DB_HOST?.includes('ondigitalocean.com')) {  // Removed in v2.6.9
 9. **Optimization approach** → Check [OPTIMIZATION_PRINCIPLES.md](OPTIMIZATION_PRINCIPLES.md)
 10. **Public sites access** → Check [ADR-020](ADR.md#adr-020-admin-only-public-site-control)
 11. **Database provider** → Check [ADR-030](ADR.md#adr-030-database-migration-from-digitalocean-to-supabase), [ADR-032](ADR.md#adr-032-complete-removal-of-digitalocean-database-references)
+12. **Slot rentals** → Check [ADR-039](ADR.md#adr-039-p2p-site-slot-rentals-system)
 
 ---
 
@@ -920,3 +921,107 @@ When creating or updating modal dialogs, use the Figma-style design system:
 ```
 
 **Reason**: When modal header has icon + title + subtitle, close button should align to top-right corner, not vertically centered.
+
+---
+
+## Slot Rentals Patterns (v2.8.0+)
+
+### ✅ Slots Reserved at Rental Creation, NOT Approval
+
+```javascript
+// ✅ CORRECT - Reserve slots when creating pending rental
+await client.query(`
+  UPDATE sites
+  SET used_links = used_links + $1
+  WHERE id = $2
+`, [slotsCount, siteId]);
+
+// Then create rental with status = 'pending_approval'
+
+// ❌ WRONG - Wait until approval to reserve
+// This causes race condition: multiple pending rentals can exceed max_links
+```
+
+**See**: [ADR-039](ADR.md#adr-039-p2p-site-slot-rentals-system)
+
+---
+
+### ✅ slot_type Column Does NOT Exist - Always Use Fallback
+
+```javascript
+// ✅ CORRECT - Use fallback for non-existent column
+const slotType = rental.slot_type || 'link';
+const slotColumn = slotType === 'link' ? 'used_links' : 'used_articles';
+
+// ❌ WRONG - Access undefined directly
+if (rental.slot_type === 'link') { ... }  // undefined === 'link' is FALSE!
+```
+
+**Reason**: `slot_type` column was never added to DB. Rentals only work for links.
+
+---
+
+### ✅ Don't Decrement used_links When Deleting Rental Placements
+
+```javascript
+// ✅ CORRECT - Check if rental placement before decrementing
+const isRentalPlacement = placementResult.rows[0]?.rental_id != null;
+
+if (!isRentalPlacement) {
+  await client.query(`
+    UPDATE sites SET used_links = used_links - 1 WHERE id = $1
+  `, [siteId]);
+}
+
+// ❌ WRONG - Always decrement (causes double-release)
+await client.query(`
+  UPDATE sites SET used_links = used_links - 1 WHERE id = $1
+`, [siteId]);
+```
+
+**Reason**: Slots for rental placements are released when rental expires/cancels, not when individual placement is deleted.
+
+---
+
+### ✅ Protect Rental Placements from Expiration Cron
+
+```sql
+-- ✅ CORRECT - Add NOT EXISTS check
+WHERE p.expires_at < NOW()
+  AND NOT EXISTS (
+    SELECT 1 FROM rental_placements rp
+    JOIN site_slot_rentals ssr ON ssr.id = rp.rental_id
+    WHERE rp.placement_id = p.id
+      AND ssr.status = 'active'
+  )
+
+-- ❌ WRONG - Delete all expired placements
+WHERE p.expires_at < NOW()  -- Will delete active rental placements!
+```
+
+**Location**: `backend/cron/cleanup-expired-placements.cron.js`
+
+---
+
+### ✅ Guest Posts Column Removed from Rentals UI
+
+```html
+<!-- ❌ WRONG - Show guest posts for rentals -->
+<th data-i18n="guestPosts">Гест-посты</th>
+<td>0/30</td>  <!-- Misleading! -->
+
+<!-- ✅ CORRECT - Rentals are links-only -->
+<!-- No guest posts column at all -->
+```
+
+**Reason**: Rentals work ONLY for link slots. Showing "0/30" for articles misleads users into thinking articles are available through rental.
+
+**See**: [CHANGELOG v2.8.2](CHANGELOG.md)
+
+---
+
+### When in Doubt About Rentals
+
+1. **Slot counts** → Check [ADR-039](ADR.md#adr-039-p2p-site-slot-rentals-system)
+2. **Cron jobs** → Check [RUNBOOK.md#slot-rental-operations](RUNBOOK.md#slot-rental-operations-v280)
+3. **API endpoints** → Check [API_REFERENCE.md#rentals](API_REFERENCE.md#rentals-slot-rentals)

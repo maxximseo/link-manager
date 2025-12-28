@@ -2676,6 +2676,12 @@ The following major architectural decisions govern this codebase:
     - Resend.com API for transactional emails
     - Domain: serparium.com with SMTP fallback
 
+39. **[ADR-039: P2P Site Slot Rentals System](ADR.md#adr-039-p2p-site-slot-rentals-system)**
+    - P2P slot rental system for site monetization
+    - Slots reserved at creation (not approval) to prevent race conditions
+    - Links only (no articles through rental)
+    - Auto-renewal cron at 08:00 UTC daily
+
 ### When to Consult ADR
 
 **Before making these changes, read relevant ADRs**:
@@ -2699,6 +2705,7 @@ The following major architectural decisions govern this codebase:
 - ✅ Payment integration → ADR-036
 - ✅ Session/token management → ADR-002, ADR-037
 - ✅ Email/notifications → ADR-038
+- ✅ Slot rentals system → ADR-039
 
 **ADR Review Schedule**:
 - **Last Review**: December 2025
