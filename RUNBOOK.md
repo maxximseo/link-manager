@@ -18,6 +18,10 @@ This document contains step-by-step procedures for common operational tasks in t
 6. [Backup & Recovery](#backup--recovery)
 7. [Monitoring & Alerts](#monitoring--alerts)
 8. [Security Incidents](#security-incidents)
+9. [Cron Jobs](#cron-jobs)
+   - [Rental Auto-Renewal Job](#rental-auto-renewal-job-v280)
+   - [Rental Expiration Job](#rental-expiration-job-v280)
+10. [Slot Rental Operations](#slot-rental-operations-v280)
 
 ---
 
@@ -1220,6 +1224,224 @@ du -sh backend/logs/*.log | sort -h
 
 ---
 
+### Rental Auto-Renewal Job (v2.8.0+)
+
+**Schedule**: Daily at 08:00 UTC
+**File**: `backend/cron/auto-renewal-rentals.cron.js`
+
+**Purpose**: Auto-renew rentals expiring within 24 hours if tenant has sufficient balance.
+
+```bash
+# Manual run
+node -e "
+const { processAutoRenewalRentals, sendExpirationReminders } = require('./backend/cron/auto-renewal-rentals.cron.js');
+processAutoRenewalRentals().then(console.log);
+sendExpirationReminders().then(console.log);
+"
+
+# Check rentals due for renewal
+psql -d linkmanager -c "
+SELECT id, tenant_id, total_price, expires_at, auto_renewal
+FROM site_slot_rentals
+WHERE status = 'active'
+  AND auto_renewal = true
+  AND expires_at < NOW() + INTERVAL '1 day'
+  AND expires_at > NOW();
+"
+
+# Check renewal logs
+grep "auto-renewal" backend/logs/combined-*.log | tail -20
+```
+
+**Expected outcome**:
+- Tenant balance deducted by `total_price`
+- Owner balance credited by `total_price`
+- Rental `expires_at` extended by 365 days
+- All linked placements extended by 365 days
+- Notifications sent to both parties
+
+---
+
+### Rental Expiration Job (v2.8.0+)
+
+**Schedule**: Every 15 minutes
+**File**: `backend/cron/cleanup-expired-rentals.cron.js`
+
+**Purpose**: Mark expired rentals as 'expired', release slots, delete linked placements.
+
+```bash
+# Manual run
+node -e "
+const { processExpiredRentals } = require('./backend/cron/cleanup-expired-rentals.cron.js');
+processExpiredRentals().then(console.log);
+"
+
+# Check expired rentals
+psql -d linkmanager -c "
+SELECT id, site_id, tenant_id, slots_count, expires_at
+FROM site_slot_rentals
+WHERE status = 'active' AND expires_at < NOW();
+"
+
+# Check expiration logs
+grep "Expired rental" backend/logs/combined-*.log | tail -20
+```
+
+**CRITICAL**: This job also deletes all placements linked via `rental_placements` table and restores `sites.used_links`.
+
+---
+
+### Placement Cleanup Protection (v2.8.0+)
+
+**File**: `backend/cron/cleanup-expired-placements.cron.js`
+
+**IMPORTANT**: This job has been updated to PROTECT rental placements from accidental deletion.
+
+```sql
+-- Protection clause (added to WHERE)
+AND NOT EXISTS (
+  SELECT 1 FROM rental_placements rp
+  JOIN site_slot_rentals ssr ON ssr.id = rp.rental_id
+  WHERE rp.placement_id = p.id
+    AND ssr.status = 'active'
+)
+```
+
+Placements linked to **active** rentals will NOT be deleted by the expiration cron, even if their own `expires_at` has passed.
+
+---
+
+## Slot Rental Operations (v2.8.0+)
+
+### Check Rental Status
+
+```bash
+# All active rentals for a site
+psql -d linkmanager -c "
+SELECT r.id, r.tenant_id, u.username, r.slots_count, r.slots_used, r.total_price, r.expires_at
+FROM site_slot_rentals r
+JOIN users u ON u.id = r.tenant_id
+WHERE r.site_id = 123 AND r.status = 'active';
+"
+
+# Available slots for rent
+psql -d linkmanager -c "
+SELECT s.id, s.site_name, s.max_links, s.used_links,
+       s.max_links - s.used_links as available
+FROM sites s
+WHERE s.id = 123;
+"
+```
+
+---
+
+### Force Expire Rental
+
+**When to use**: Emergency release of slots, dispute resolution.
+
+```bash
+# Manually expire a rental
+psql -d linkmanager -c "
+UPDATE site_slot_rentals
+SET status = 'expired', updated_at = NOW()
+WHERE id = 123;
+"
+
+# Release slots on site
+psql -d linkmanager -c "
+UPDATE sites
+SET used_links = used_links - (SELECT slots_count FROM site_slot_rentals WHERE id = 123)
+WHERE id = (SELECT site_id FROM site_slot_rentals WHERE id = 123);
+"
+
+# Delete linked placements
+psql -d linkmanager -c "
+DELETE FROM placement_content WHERE placement_id IN (
+  SELECT placement_id FROM rental_placements WHERE rental_id = 123
+);
+DELETE FROM placements WHERE id IN (
+  SELECT placement_id FROM rental_placements WHERE rental_id = 123
+);
+DELETE FROM rental_placements WHERE rental_id = 123;
+"
+```
+
+---
+
+### Migrate Rental to Different Tenant
+
+**When to use**: Business transfer, account consolidation.
+
+```bash
+# Step 1: Update tenant_id
+psql -d linkmanager -c "
+UPDATE site_slot_rentals
+SET tenant_id = NEW_TENANT_ID, updated_at = NOW()
+WHERE id = RENTAL_ID;
+"
+
+# Step 2: Update linked placements owner
+psql -d linkmanager -c "
+UPDATE placements
+SET user_id = NEW_TENANT_ID, updated_at = NOW()
+WHERE id IN (SELECT placement_id FROM rental_placements WHERE rental_id = RENTAL_ID);
+"
+
+# Step 3: Notify both parties (via admin panel or direct notification insert)
+```
+
+---
+
+### Audit Rental Slot Counts
+
+**When to use**: Verify slot accounting is correct, investigate discrepancies.
+
+```bash
+# Compare reserved vs used slots
+psql -d linkmanager -c "
+SELECT r.id, r.slots_count as reserved, r.slots_used as used,
+       (SELECT COUNT(*) FROM rental_placements rp WHERE rp.rental_id = r.id) as actual_placements
+FROM site_slot_rentals r
+WHERE r.status = 'active';
+"
+
+# Check site used_links vs sum of active rentals
+psql -d linkmanager -c "
+SELECT s.id, s.site_name, s.used_links,
+       COALESCE(SUM(r.slots_count), 0) as rented_slots,
+       s.used_links - COALESCE(SUM(r.slots_count), 0) as direct_placements
+FROM sites s
+LEFT JOIN site_slot_rentals r ON r.site_id = s.id AND r.status IN ('active', 'pending_approval')
+GROUP BY s.id, s.site_name, s.used_links;
+"
+```
+
+---
+
+### Bulk Cancel Rentals (Emergency)
+
+**When to use**: Site being removed, owner account issue.
+
+```bash
+# Cancel all active rentals for a site
+psql -d linkmanager -c "
+-- Step 1: Get total slots to release
+SELECT SUM(slots_count) FROM site_slot_rentals WHERE site_id = 123 AND status = 'active';
+
+-- Step 2: Update all rentals to cancelled
+UPDATE site_slot_rentals
+SET status = 'cancelled', updated_at = NOW()
+WHERE site_id = 123 AND status IN ('active', 'pending_approval');
+
+-- Step 3: Release all slots at once
+UPDATE sites SET used_links = 0 WHERE id = 123;
+"
+
+# Note: This does NOT refund tenants automatically. Process refunds manually.
+```
+
+---
+
 ## Emergency Contacts
 
 | Role | Name | Contact | Timezone |
@@ -1266,6 +1488,8 @@ du -sh backend/logs/*.log | sort -h
 | 2025-11-27 | Added admin-only public sites security procedure | Development Team |
 | 2025-12-03 | Added Frontend JavaScript Errors troubleshooting (ADR-021) | Development Team |
 | 2025-12-03 | Added Encrypted Backup System documentation (DO Spaces + AES-256) | Development Team |
+| 2025-12-27 | Added Slot Rental Operations section (v2.8.0+) | Claude Code |
+| 2025-12-27 | Added Rental Auto-Renewal and Expiration cron documentation | Claude Code |
 
 ---
 

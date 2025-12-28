@@ -7,6 +7,174 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.8.2] - 2025-12-27
+
+### 🎨 UI Fix: Remove Misleading Guest Posts Column from Rentals
+
+#### Problem
+The rentals page (`rentals.html`) displayed a "Гест-посты" (Guest Posts) column showing "0/30" which misled users into thinking guest posts could be obtained through slot rentals.
+
+#### Root Cause
+- Slot rentals work **ONLY for links** (no `slot_type` column in `site_slot_rentals` table)
+- Guest posts (articles) are **NEVER available** through rentals
+- The column showed site's `max_articles` capacity, which is irrelevant for rental tenants
+
+#### Solution
+**Completely removed** the Guest Posts column from `backend/build/rentals.html`:
+- Removed `<th data-i18n="guestPosts">` header
+- Removed `let showGuestPostsColumn` variable
+- Removed guest posts cell generation code
+- Removed column visibility toggle logic
+
+#### Files Changed
+- `backend/build/rentals.html` - 8 deletions
+
+---
+
+## [2.8.1] - 2025-12-26
+
+### 🔧 Critical Fixes: Rental System Deep Audit
+
+Comprehensive audit and fixes for the P2P slot rental system after extensive testing.
+
+#### Issues Fixed
+
+| Issue | Problem | Fix |
+|-------|---------|-----|
+| Race condition | `createSlotRental()` didn't reserve slots for pending rentals | Added `used_links += slots_count` at creation |
+| Slot leak on reject | `rejectSlotRental()` didn't release reserved slots | Added `used_links -= slots_count` |
+| Double reservation | `approveSlotRental()` re-reserved already reserved slots | Removed duplicate reservation |
+| Pending cancel | `cancelSlotRental()` only worked for active rentals | Extended to support pending_approval |
+| Column name typo | Used `slot_count` instead of `slots_count` | Fixed in all cron files |
+| Double slot counting | `getAvailableSlots()` double-counted reserved slots | Simplified to use only `used_links` |
+| Double slot release | `deleteAndRefundPlacement()` decremented `used_links` for rental placements | Added `isRentalPlacement` check |
+| SQL column names | Used `s.name`, `s.url` instead of `s.site_name`, `s.site_url` | Fixed in all files |
+| Renewal period | Auto-renewal used 30 days instead of 365 | Fixed to use `RENTAL_PERIOD_DAYS` constant |
+| Missing slot_type | Code accessed non-existent `slot_type` column | Added `|| 'link'` fallback |
+| FOR UPDATE lock | Auto-renewal didn't lock owner record | Added owner to `FOR UPDATE OF r, t, o` |
+
+#### Database Migration
+```sql
+-- Add updated_at columns (if missing)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE sites ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+```
+
+#### Files Changed
+- `backend/services/billing.service.js` - Main rental logic
+- `backend/cron/auto-renewal-rentals.cron.js` - Auto-renewal fixes
+- `backend/cron/cleanup-expired-rentals.cron.js` - Expiration handling
+- `backend/cron/cleanup-expired-placements.cron.js` - Rental protection
+- `backend/models/Placement.js` - Column name fixes
+
+---
+
+## [2.8.0] - 2025-12-25
+
+### 🏠 Major Feature: P2P Site Slot Rentals
+
+Complete P2P rental system allowing site owners to rent link slots to other users.
+
+#### Architecture Overview
+```
+Owner creates rental → Tenant receives notification → Tenant approves/pays → Slots reserved
+                                                                              ↓
+                                                        Tenant places links using rented slots
+                                                                              ↓
+                                                        Monthly auto-renewal or expiration
+```
+
+#### New Database Tables
+
+**`site_slot_rentals`** - Main rental records:
+```sql
+CREATE TABLE site_slot_rentals (
+    id SERIAL PRIMARY KEY,
+    site_id INTEGER NOT NULL REFERENCES sites(id),
+    owner_id INTEGER NOT NULL REFERENCES users(id),
+    tenant_id INTEGER NOT NULL REFERENCES users(id),
+    slots_count INTEGER NOT NULL,
+    slots_used INTEGER DEFAULT 0,
+    price_per_slot DECIMAL(10,2) NOT NULL,
+    total_price DECIMAL(10,2) NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending_approval',
+    expires_at TIMESTAMP,
+    auto_renewal BOOLEAN DEFAULT false,
+    history JSONB DEFAULT '[]',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**`rental_placements`** - Links rentals to placements:
+```sql
+CREATE TABLE rental_placements (
+    id SERIAL PRIMARY KEY,
+    rental_id INTEGER NOT NULL REFERENCES site_slot_rentals(id),
+    placement_id INTEGER NOT NULL REFERENCES placements(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+#### New API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/rentals` | POST | Create rental (owner) |
+| `/api/rentals` | GET | Get user's rentals (role=owner/tenant) |
+| `/api/rentals/:siteId/available` | GET | Check available slots |
+| `/api/rentals/:id/approve` | POST | Approve rental (tenant) |
+| `/api/rentals/:id/reject` | POST | Reject rental (tenant) |
+| `/api/rentals/:id/renew` | POST | Renew rental (tenant) |
+| `/api/rentals/:id` | DELETE | Cancel rental (owner) |
+| `/api/rentals/:id/auto-renewal` | PATCH | Toggle auto-renewal |
+| `/api/rentals/site/:siteId` | GET | Get site's rentals (owner) |
+
+#### New Cron Jobs
+
+| Job | Schedule | Purpose |
+|-----|----------|---------|
+| `auto-renewal-rentals.cron.js` | 08:00 UTC daily | Auto-renew expiring rentals |
+| `cleanup-expired-rentals.cron.js` | Every 15 minutes | Process expired rentals |
+
+#### Slot Flow Architecture
+```
+sites.used_links - Total reserved slots (incremented at rental creation)
+    ↓
+site_slot_rentals.slots_used - Used slots within rental (incremented at placement creation)
+```
+
+**CRITICAL**: Rental placements do NOT increment `sites.used_links` - they use slots already reserved by the rental.
+
+#### New Frontend Pages
+- `backend/build/rentals.html` - Tenant's rental management page
+
+#### Files Created
+- `backend/controllers/rental.controller.js`
+- `backend/routes/rental.routes.js`
+- `backend/cron/auto-renewal-rentals.cron.js`
+- `backend/cron/cleanup-expired-rentals.cron.js`
+- `database/migrate_slot_rentals.sql`
+- `database/migrate_rental_statuses.sql`
+
+#### Files Modified
+- `backend/services/billing.service.js` - Added 15+ rental functions
+- `backend/cron/index.js` - Registered new cron jobs
+- `backend/cron/cleanup-expired-placements.cron.js` - Added rental protection
+
+#### Constants
+| Constant | Value | Usage |
+|----------|-------|-------|
+| `RENTAL_PERIOD_DAYS` | 365 | Rental duration |
+| `RENEWAL_DISCOUNT` | 30% | Discount on renewal |
+
+#### Migration Required
+```bash
+node database/run_slot_rentals_migration.js
+```
+
+---
+
 ## [2.6.12] - 2025-12-16
 
 ### 💳 Feature: CryptoCloud Payment Integration

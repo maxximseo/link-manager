@@ -2982,6 +2982,150 @@ const transport = initTransporter();
 
 ---
 
+## ADR-039: P2P Site Slot Rentals System
+
+**Status**: ✅ ACTIVE
+**Date**: December 2025
+
+### Context
+Site owners want to monetize unused link slots by renting them to other users. Need a P2P rental system that:
+- Allows owners to offer slots for rent
+- Supports approval workflow for non-admin owners
+- Handles automatic billing and renewals
+- Protects rental placements from expiration cron
+
+### Decision
+Implement **P2P Slot Rental System** with separate tracking of reserved vs used slots.
+
+### Architecture
+
+**Slot Flow (CRITICAL)**:
+```
+sites.used_links = Total slots occupied (owned + rented)
+                       ↓
+              Reserved at rental creation
+                       ↓
+site_slot_rentals.slots_used = Placements within rental
+                       ↓
+              Incremented when tenant creates placement
+```
+
+**Key Invariant**: `sites.used_links` is incremented when rental is CREATED (even pending), not when placement is created. This prevents race conditions where multiple renters could claim the same slots.
+
+**Rental Lifecycle**:
+```
+Owner creates rental → pending_approval (slots reserved in used_links)
+                              ↓
+                    Tenant approves → active (payment processed)
+                              OR
+                    Tenant rejects → rejected (slots released)
+                              OR
+                    Owner cancels → cancelled (slots released)
+                              ↓
+                    Active rental → placements created (slots_used++)
+                              ↓
+                    Auto-renewal OR expiration
+```
+
+### Database Schema
+
+**Table: `site_slot_rentals`**:
+```sql
+CREATE TABLE site_slot_rentals (
+    id SERIAL PRIMARY KEY,
+    site_id INTEGER NOT NULL REFERENCES sites(id),
+    owner_id INTEGER NOT NULL REFERENCES users(id),
+    tenant_id INTEGER NOT NULL REFERENCES users(id),
+    slots_count INTEGER NOT NULL,        -- Reserved slots
+    slots_used INTEGER DEFAULT 0,        -- Actually used for placements
+    price_per_slot DECIMAL(10,2) NOT NULL,
+    total_price DECIMAL(10,2) NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending_approval',
+    expires_at TIMESTAMP,
+    auto_renewal BOOLEAN DEFAULT false,
+    history JSONB DEFAULT '[]',          -- Audit trail
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**Table: `rental_placements`** (junction):
+```sql
+CREATE TABLE rental_placements (
+    id SERIAL PRIMARY KEY,
+    rental_id INTEGER NOT NULL REFERENCES site_slot_rentals(id),
+    placement_id INTEGER NOT NULL REFERENCES placements(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Critical Design Decisions
+
+**1. Slots Reserved at Creation (not Approval)**
+- Prevents race condition where multiple pending rentals claim same slots
+- Even `pending_approval` rentals reserve slots in `sites.used_links`
+- Released only on reject/cancel
+
+**2. Links Only - No Articles**
+- Rentals work ONLY for link slots
+- `slot_type` column does NOT exist in database
+- All code uses fallback: `rental.slot_type || 'link'`
+- Guest posts column REMOVED from rentals.html (v2.8.2)
+
+**3. Rental Period = 365 Days**
+- Constant: `RENTAL_PERIOD_DAYS = 365`
+- Both manual renewal and auto-renewal use same period
+
+**4. Rental Placements Protected**
+- `cleanup-expired-placements.cron.js` uses `NOT EXISTS` check
+- Placements linked to active rentals are NEVER deleted by expiration cron
+- Only deleted when rental itself expires
+
+### Cron Jobs
+
+| Cron | Schedule | Purpose |
+|------|----------|---------|
+| `auto-renewal-rentals` | 0 8 * * * (08:00 UTC) | Auto-renew rentals expiring within 24h |
+| `cleanup-expired-rentals` | */15 * * * * (every 15 min) | Expire rentals past expires_at |
+
+### API Endpoints
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| POST | `/api/rentals` | Create rental (owner) |
+| GET | `/api/rentals` | Get user's rentals (role filter) |
+| GET | `/api/rentals/:siteId/available` | Check available slots |
+| POST | `/api/rentals/:id/approve` | Approve rental (tenant) |
+| POST | `/api/rentals/:id/reject` | Reject rental (tenant) |
+| POST | `/api/rentals/:id/renew` | Manual renewal (tenant) |
+| DELETE | `/api/rentals/:id` | Cancel rental (owner) |
+| PATCH | `/api/rentals/:id/auto-renewal` | Toggle auto-renewal |
+| GET | `/api/rentals/site/:siteId` | Get site's rentals (owner) |
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `backend/services/billing.service.js` | Core rental logic (createSlotRental, approveSlotRental, etc.) |
+| `backend/controllers/rental.controller.js` | HTTP handlers |
+| `backend/routes/rental.routes.js` | Route definitions |
+| `backend/cron/auto-renewal-rentals.cron.js` | Auto-renewal processing |
+| `backend/cron/cleanup-expired-rentals.cron.js` | Expiration handling |
+| `backend/cron/cleanup-expired-placements.cron.js` | Rental placement protection |
+| `backend/build/rentals.html` | Tenant rentals UI |
+| `backend/build/sites.html` | Owner rental creation modal |
+
+### Consequences
+- ✅ P2P monetization of unused slots
+- ✅ Race-condition-free slot reservation
+- ✅ Automatic renewal with balance check
+- ✅ Full audit trail in history JSONB
+- ✅ Rental placements protected from accidental deletion
+- ⚠️ Articles NOT supported (links only)
+- ⚠️ Requires migration: `run_slot_rentals_migration.js`
+
+---
+
 ## Decision Review Process
 
 ADRs should be reviewed when:

@@ -4,7 +4,7 @@ Complete reference for all API endpoints in Link Manager system.
 
 **Base URL**: `http://localhost:3003/api` (development)
 **Production URL**: `https://shark-app-9kv6u.ondigitalocean.app/api`
-**API Version**: 2.6.12
+**API Version**: 2.8.2
 **Last Updated**: December 2025
 
 ---
@@ -16,13 +16,14 @@ Complete reference for all API endpoints in Link Manager system.
 3. [Sites](#sites)
 4. [Placements](#placements)
 5. [Billing](#billing)
-6. [Payments (CryptoCloud)](#payments-cryptocloud)
-7. [WordPress Integration](#wordpress-integration)
-8. [Static PHP Sites](#static-php-sites)
-9. [Admin](#admin)
-10. [Webhooks](#webhooks)
-11. [Error Codes](#error-codes)
-12. [Rate Limits](#rate-limits)
+6. [Rentals (Slot Rentals)](#rentals-slot-rentals)
+7. [Payments (CryptoCloud)](#payments-cryptocloud)
+8. [WordPress Integration](#wordpress-integration)
+9. [Static PHP Sites](#static-php-sites)
+10. [Admin](#admin)
+11. [Webhooks](#webhooks)
+12. [Error Codes](#error-codes)
+13. [Rate Limits](#rate-limits)
 
 ---
 
@@ -1071,6 +1072,318 @@ ID,Project,Site,Type,Status,Price,Purchased,Published,Expires
 
 ---
 
+## Rentals (Slot Rentals)
+
+P2P slot rental system endpoints. Allows site owners to rent out link slots to other users.
+
+**Version**: 2.8.0+
+**Rate Limit**: 100 requests per minute
+
+### POST /api/rentals
+
+Create a new slot rental (owner creates for tenant).
+
+**Request**:
+```json
+{
+  "siteId": 123,
+  "tenantUsername": "johndoe",
+  "slotsCount": 5,
+  "pricePerSlot": 10.00
+}
+```
+
+**Note**: `tenantUsername` can be either username OR email address.
+
+**Response** (201 Created) - Admin owner (immediate activation):
+```json
+{
+  "id": 456,
+  "site_id": 123,
+  "owner_id": 1,
+  "tenant_id": 42,
+  "slots_count": 5,
+  "slots_used": 0,
+  "price_per_slot": "10.00",
+  "total_price": "50.00",
+  "status": "active",
+  "expires_at": "2026-12-27T10:00:00.000Z",
+  "auto_renewal": false,
+  "created_at": "2025-12-27T10:00:00.000Z"
+}
+```
+
+**Response** (201 Created) - Non-admin owner (pending approval):
+```json
+{
+  "id": 456,
+  "status": "pending_approval",
+  ...
+}
+```
+
+**Error** (400 Bad Request):
+```json
+{
+  "error": "Недостаточно свободных слотов"
+}
+```
+
+---
+
+### GET /api/rentals
+
+Get user's rentals (as owner or tenant).
+
+**Query Parameters**:
+| Param | Type | Description |
+|-------|------|-------------|
+| `role` | string | `owner` or `tenant` (required) |
+
+**Response** (200 OK):
+```json
+{
+  "rentals": [
+    {
+      "id": 456,
+      "site_id": 123,
+      "site_name": "example.com",
+      "site_url": "https://example.com",
+      "owner_id": 1,
+      "owner_username": "admin",
+      "tenant_id": 42,
+      "tenant_username": "johndoe",
+      "slots_count": 5,
+      "slots_used": 2,
+      "price_per_slot": "10.00",
+      "total_price": "50.00",
+      "status": "active",
+      "expires_at": "2026-12-27T10:00:00.000Z",
+      "auto_renewal": false,
+      "max_links": 100,
+      "used_links": 45
+    }
+  ]
+}
+```
+
+---
+
+### GET /api/rentals/:siteId/available
+
+Check available slots for rent on a site.
+
+**Response** (200 OK):
+```json
+{
+  "siteId": 123,
+  "siteName": "example.com",
+  "maxLinks": 100,
+  "usedLinks": 45,
+  "availableSlots": 55
+}
+```
+
+---
+
+### POST /api/rentals/:id/approve
+
+Approve a pending rental (tenant only).
+
+**Preconditions**:
+- Rental status must be `pending_approval`
+- Current user must be the tenant
+- Tenant must have sufficient balance
+
+**Response** (200 OK):
+```json
+{
+  "message": "Аренда подтверждена",
+  "rental": {
+    "id": 456,
+    "status": "active",
+    "expires_at": "2026-12-27T10:00:00.000Z"
+  },
+  "newBalance": 450.00,
+  "amountCharged": 50.00
+}
+```
+
+**Error** (400 Bad Request):
+```json
+{
+  "error": "Недостаточно средств на балансе"
+}
+```
+
+---
+
+### POST /api/rentals/:id/reject
+
+Reject a pending rental (tenant only).
+
+**Preconditions**:
+- Rental status must be `pending_approval`
+- Current user must be the tenant
+
+**Response** (200 OK):
+```json
+{
+  "message": "Аренда отклонена",
+  "rental": {
+    "id": 456,
+    "status": "rejected"
+  }
+}
+```
+
+**Side Effect**: Reserved slots are released back to site's `used_links`.
+
+---
+
+### POST /api/rentals/:id/renew
+
+Manually renew an active rental (tenant only).
+
+**Request**:
+```json
+{
+  "periods": 1
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "message": "Аренда продлена",
+  "rental": {
+    "id": 456,
+    "expires_at": "2027-12-27T10:00:00.000Z"
+  },
+  "amountCharged": 35.00,
+  "discount": 0.30,
+  "newBalance": 415.00
+}
+```
+
+**Note**: Manual renewal includes 30% discount.
+
+---
+
+### DELETE /api/rentals/:id
+
+Cancel a rental (owner only).
+
+**Preconditions**:
+- Current user must be the owner
+- Rental status must be `active` or `pending_approval`
+
+**Response** (200 OK) - Active rental:
+```json
+{
+  "message": "Аренда отменена",
+  "refunded": true,
+  "refundAmount": 45.00,
+  "tenantNewBalance": 495.00
+}
+```
+
+**Response** (200 OK) - Pending rental:
+```json
+{
+  "message": "Аренда отменена",
+  "refunded": false
+}
+```
+
+**Side Effect**:
+- Active rentals: Tenant receives prorated refund, slots released
+- Pending rentals: Just slots released (no payment was made)
+
+---
+
+### PATCH /api/rentals/:id/auto-renewal
+
+Toggle auto-renewal for a rental.
+
+**Request**:
+```json
+{
+  "autoRenewal": true
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "message": "Автопродление включено",
+  "rental": {
+    "id": 456,
+    "auto_renewal": true
+  }
+}
+```
+
+---
+
+### GET /api/rentals/site/:siteId
+
+Get all rentals for a specific site (owner only).
+
+**Response** (200 OK):
+```json
+{
+  "rentals": [
+    {
+      "id": 456,
+      "tenant_id": 42,
+      "tenant_username": "johndoe",
+      "slots_count": 5,
+      "slots_used": 2,
+      "status": "active",
+      "expires_at": "2026-12-27T10:00:00.000Z"
+    }
+  ]
+}
+```
+
+---
+
+### Rental Status Flow
+
+```
+pending_approval → approve → active → (expires) → expired
+                ↘ reject → rejected
+
+active → (owner cancel) → cancelled (with refund)
+pending_approval → (owner cancel) → cancelled (no refund)
+```
+
+---
+
+### Rental Placement Creation
+
+Tenants create placements using rented slots through the standard placement API:
+
+```http
+POST /api/billing/purchase
+{
+  "projectId": 123,
+  "siteId": 456,
+  "type": "link",
+  "contentIds": [789],
+  "rentalId": 999
+}
+```
+
+When `rentalId` is provided:
+- Placement is linked to the rental
+- `site_slot_rentals.slots_used` is incremented
+- Placement `expires_at` matches rental `expires_at`
+- No cost is charged (already paid in rental)
+
+---
+
 ## Payments (CryptoCloud)
 
 Cryptocurrency payment endpoints for balance deposits via CryptoCloud.plus.
@@ -1743,6 +2056,9 @@ const projects = await projectsResponse.json();
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.8.2 | 2025-12-27 | Removed guest posts column from rentals UI |
+| 2.8.1 | 2025-12-26 | Critical fixes for rental system (11 issues) |
+| 2.8.0 | 2025-12-25 | Added P2P Slot Rentals API (9 new endpoints) |
 | 2.5.0 | 2025-01-23 | Added extended fields support, removed anchor uniqueness |
 | 2.4.0 | 2024-11-25 | Added bulk registration API |
 | 2.3.0 | 2024-11-17 | Added billing system API |
