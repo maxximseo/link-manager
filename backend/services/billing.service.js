@@ -2821,13 +2821,17 @@ const RENTAL_PRICING = {
  * @param {string} tenantUsername - Username of the tenant
  * @param {number} slotsCount - Number of slots to rent
  * @param {number} pricePerSlot - Price per slot (optional, defaults to site price or $25)
+ * @param {string} startsAt - Custom start date (optional, defaults to now) - can be backdated
+ * @param {boolean} skipFirstPayment - Skip first payment (optional, defaults to false) - charge only on renewal
  */
 const createSlotRental = async (
   ownerId,
   siteId,
   tenantUsername,
   slotsCount,
-  pricePerSlot = null
+  pricePerSlot = null,
+  startsAt = null,
+  skipFirstPayment = false
 ) => {
   const client = await pool.connect();
 
