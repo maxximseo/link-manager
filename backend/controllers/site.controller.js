@@ -478,6 +478,49 @@ const deleteToken = async (req, res) => {
   }
 };
 
+// ============================================================================
+// Site Moderation Controllers
+// ============================================================================
+
+// Request public sale (submit site for moderation)
+const requestPublicSale = async (req, res) => {
+  try {
+    // Validate siteId
+    const siteId = parseInt(req.params.id, 10);
+    if (isNaN(siteId) || siteId <= 0) {
+      return res.status(400).json({ error: 'Invalid site ID' });
+    }
+
+    const userId = req.user.id;
+    const site = await siteService.requestPublicSale(siteId, userId);
+
+    res.json({
+      success: true,
+      message: 'Сайт отправлен на модерацию. Вы получите уведомление о решении.',
+      data: site
+    });
+  } catch (error) {
+    logger.error('Request public sale error:', error);
+
+    // Handle specific error cases
+    if (
+      error.message.includes('не найден') ||
+      error.message.includes('доступ запрещён')
+    ) {
+      return res.status(404).json({ error: error.message });
+    }
+
+    if (
+      error.message.includes('уже одобрен') ||
+      error.message.includes('уже находится')
+    ) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.status(500).json({ error: 'Не удалось отправить сайт на модерацию' });
+  }
+};
+
 module.exports = {
   getSites,
   getSite,
@@ -490,5 +533,7 @@ module.exports = {
   generateToken,
   registerFromWordPress,
   getTokens,
-  deleteToken
+  deleteToken,
+  // Site moderation controllers
+  requestPublicSale
 };

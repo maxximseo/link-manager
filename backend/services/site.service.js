@@ -216,16 +216,16 @@ const createSite = async (data, userRole = null) => {
     }
 
     const site_name = site_url;
-    const finalIsPublic = is_public !== undefined ? is_public : false; // Default to private
+    // Site always starts as private (is_public = false)
+    // User must explicitly request public sale to trigger moderation
+    const finalIsPublic = false;
     const finalAvailableForPurchase =
       available_for_purchase !== undefined ? available_for_purchase : true; // Default to available
 
-    // Admin sites are auto-approved, others go to pending
-    const isAdmin = userRole === 'admin';
-    const finalModerationStatus = isAdmin ? 'approved' : 'pending';
-
+    // All sites start without moderation status (NULL = private)
+    // moderation_status will be set to 'pending' when user requests public sale
     const result = await query(
-      'INSERT INTO sites (site_url, site_name, api_key, site_type, user_id, max_links, max_articles, used_links, used_articles, allow_articles, is_public, available_for_purchase, price_link, price_article, moderation_status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *',
+      'INSERT INTO sites (site_url, site_name, api_key, site_type, user_id, max_links, max_articles, used_links, used_articles, allow_articles, is_public, available_for_purchase, price_link, price_article) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *',
       [
         site_url,
         site_name,
@@ -240,8 +240,7 @@ const createSite = async (data, userRole = null) => {
         finalIsPublic,
         finalAvailableForPurchase,
         price_link !== undefined ? price_link : null,
-        price_article !== undefined ? price_article : null,
-        finalModerationStatus
+        price_article !== undefined ? price_article : null
       ]
     );
 
@@ -341,6 +340,25 @@ const updateSite = async (siteId, userId, data, userRole = null) => {
     if (site_type === 'static_php') {
       finalMaxArticles = 0;
       finalAllowArticles = false;
+    }
+
+    // Check if non-admin user is trying to enable is_public
+    // Only allow if site has been approved for public sale
+    if (is_public === true && !isAdmin) {
+      const checkModerationResult = await query(
+        'SELECT moderation_status FROM sites WHERE id = $1 AND user_id = $2',
+        [siteId, userId]
+      );
+
+      if (checkModerationResult.rows.length > 0) {
+        const currentModerationStatus = checkModerationResult.rows[0].moderation_status;
+        if (currentModerationStatus !== 'approved') {
+          throw new Error(
+            'Для публикации сайта необходимо пройти модерацию. ' +
+              'Нажмите кнопку "На продажу" чтобы отправить сайт на проверку.'
+          );
+        }
+      }
     }
 
     // Check if we need to update limits_changed_at (only for non-admin users changing limits)
@@ -1063,6 +1081,77 @@ const bulkUpdateSiteParams = async (parameter, updates) => {
 // ============================================================================
 
 /**
+ * Request public sale approval for a site
+ * Triggers moderation workflow - sets status to 'pending'
+ * @param {number} siteId - Site ID
+ * @param {number} userId - Owner user ID
+ * @returns {Object} Updated site
+ */
+const requestPublicSale = async (siteId, userId) => {
+  try {
+    // Check ownership and get current site data
+    const siteResult = await query(
+      'SELECT * FROM sites WHERE id = $1 AND user_id = $2',
+      [siteId, userId]
+    );
+
+    if (siteResult.rows.length === 0) {
+      throw new Error('Сайт не найден или доступ запрещён');
+    }
+
+    const site = siteResult.rows[0];
+
+    // Already approved - user can toggle is_public freely
+    if (site.moderation_status === 'approved') {
+      throw new Error('Сайт уже одобрен для публичной продажи. Используйте переключатель публичности.');
+    }
+
+    // Already pending
+    if (site.moderation_status === 'pending') {
+      throw new Error('Сайт уже находится на модерации. Пожалуйста, ожидайте решения администратора.');
+    }
+
+    // Submit for moderation
+    const result = await query(
+      `UPDATE sites
+       SET moderation_status = 'pending',
+           rejection_reason = NULL
+       WHERE id = $1 AND user_id = $2
+       RETURNING *`,
+      [siteId, userId]
+    );
+
+    logger.info('Site submitted for public sale approval', {
+      siteId,
+      userId,
+      siteName: site.site_name
+    });
+
+    // Create notification for all admins
+    try {
+      await query(
+        `INSERT INTO notifications (user_id, type, title, message, metadata)
+         SELECT u.id, 'moderation_request', 'Новый сайт на модерацию',
+                $1, $2
+         FROM users u WHERE u.role = 'admin'`,
+        [
+          `Сайт "${site.site_name}" ожидает проверки для публичной продажи`,
+          JSON.stringify({ site_id: siteId, site_url: site.site_url, owner_id: userId })
+        ]
+      );
+    } catch (notifError) {
+      // Don't fail the main operation if notification fails
+      logger.warn('Failed to create admin notification for moderation request', { error: notifError.message });
+    }
+
+    return result.rows[0];
+  } catch (error) {
+    logger.error('Request public sale error:', error);
+    throw error;
+  }
+};
+
+/**
  * Get sites pending moderation (for admin panel)
  */
 const getSitesForModeration = async () => {
@@ -1083,8 +1172,12 @@ const getSitesForModeration = async () => {
 
 /**
  * Approve site for public marketplace
+ * Sets is_public = true automatically and notifies owner
+ * @param {number} siteId - Site ID
+ * @param {number} adminId - Admin user ID (for audit)
+ * @returns {Object} Updated site
  */
-const approveSite = async (siteId) => {
+const approveSite = async (siteId, adminId = null) => {
   try {
     const result = await query(
       `UPDATE sites
@@ -1097,7 +1190,23 @@ const approveSite = async (siteId) => {
     );
 
     if (result.rows.length > 0) {
-      logger.info('Site approved', { siteId, siteName: result.rows[0].site_name });
+      const site = result.rows[0];
+      logger.info('Site approved for public sale', { siteId, adminId, siteName: site.site_name });
+
+      // Notify site owner
+      try {
+        await query(
+          `INSERT INTO notifications (user_id, type, title, message, metadata)
+           VALUES ($1, 'site_approved', 'Сайт одобрен!', $2, $3)`,
+          [
+            site.user_id,
+            `Ваш сайт "${site.site_name}" одобрен для публичной продажи и уже доступен покупателям.`,
+            JSON.stringify({ site_id: siteId, site_url: site.site_url })
+          ]
+        );
+      } catch (notifError) {
+        logger.warn('Failed to create owner notification for site approval', { error: notifError.message });
+      }
     }
 
     return result.rows[0] || null;
@@ -1109,8 +1218,13 @@ const approveSite = async (siteId) => {
 
 /**
  * Reject site from public marketplace
+ * Notifies owner with rejection reason
+ * @param {number} siteId - Site ID
+ * @param {string} reason - Rejection reason
+ * @param {number} adminId - Admin user ID (for audit)
+ * @returns {Object} Updated site
  */
-const rejectSite = async (siteId, reason = null) => {
+const rejectSite = async (siteId, reason = null, adminId = null) => {
   try {
     const result = await query(
       `UPDATE sites
@@ -1123,7 +1237,24 @@ const rejectSite = async (siteId, reason = null) => {
     );
 
     if (result.rows.length > 0) {
-      logger.info('Site rejected', { siteId, siteName: result.rows[0].site_name, reason });
+      const site = result.rows[0];
+      logger.info('Site rejected from public sale', { siteId, adminId, siteName: site.site_name, reason });
+
+      // Notify site owner
+      try {
+        const reasonText = reason ? ` Причина: ${reason}` : ' Причина не указана.';
+        await query(
+          `INSERT INTO notifications (user_id, type, title, message, metadata)
+           VALUES ($1, 'site_rejected', 'Сайт отклонён', $2, $3)`,
+          [
+            site.user_id,
+            `Ваш сайт "${site.site_name}" отклонён для публичной продажи.${reasonText} Вы можете исправить замечания и подать повторную заявку.`,
+            JSON.stringify({ site_id: siteId, site_url: site.site_url, reason })
+          ]
+        );
+      } catch (notifError) {
+        logger.warn('Failed to create owner notification for site rejection', { error: notifError.message });
+      }
     }
 
     return result.rows[0] || null;
@@ -1362,6 +1493,7 @@ module.exports = {
   bulkUpdateSiteParams,
   getSitesWithZeroParam,
   // Site moderation methods
+  requestPublicSale,
   getSitesForModeration,
   approveSite,
   rejectSite,

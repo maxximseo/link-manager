@@ -50,4 +50,7 @@ router.delete('/:id', generalLimiter, siteController.deleteSite);
 // Special operations
 router.post('/recalculate-stats', generalLimiter, siteController.recalculateStats);
 
+// Site moderation routes
+router.post('/:id/request-public-sale', generalLimiter, siteController.requestPublicSale);
+
 module.exports = router;
