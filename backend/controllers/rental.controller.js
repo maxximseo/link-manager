@@ -13,7 +13,7 @@ const logger = require('../config/logger');
 const createRental = async (req, res) => {
   try {
     const ownerId = req.user.id;
-    const { siteId, tenantUsername, slotsCount, pricePerSlot } = req.body;
+    const { siteId, tenantUsername, slotsCount, pricePerSlot, startsAt, skipFirstPayment } = req.body;
 
     // Validate required fields
     if (!siteId || !tenantUsername || !slotsCount) {
