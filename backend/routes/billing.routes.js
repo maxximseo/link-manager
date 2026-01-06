@@ -216,10 +216,7 @@ router.post(
     body('autoRenewal').optional().isBoolean().withMessage('Auto renewal must be boolean'),
     body('useRentalSlot').optional().isBoolean().withMessage('Use rental slot must be boolean'),
     // SECURITY: Optional idempotency key to prevent duplicate purchases
-    body('idempotencyKey')
-      .optional()
-      .isUUID()
-      .withMessage('Idempotency key must be a valid UUID')
+    body('idempotencyKey').optional().isUUID().withMessage('Idempotency key must be a valid UUID')
   ],
   validateRequest,
   async (req, res) => {
@@ -522,7 +519,10 @@ router.get('/statistics/spending', authMiddleware, async (req, res) => {
       }
     });
   } catch (error) {
-    logger.error('Failed to get spending statistics', { userId: req.user.id, error: error.message });
+    logger.error('Failed to get spending statistics', {
+      userId: req.user.id,
+      error: error.message
+    });
     res.status(500).json({ error: 'Failed to get spending statistics' });
   }
 });
@@ -602,7 +602,10 @@ router.get('/statistics/placements', authMiddleware, async (req, res) => {
       }
     });
   } catch (error) {
-    logger.error('Failed to get placement statistics', { userId: req.user.id, error: error.message });
+    logger.error('Failed to get placement statistics', {
+      userId: req.user.id,
+      error: error.message
+    });
     res.status(500).json({ error: 'Failed to get placement statistics' });
   }
 });
@@ -618,7 +621,7 @@ router.get('/statistics/timeline', authMiddleware, async (req, res) => {
     const { query: dbQuery } = require('../config/database');
 
     // Calculate date range
-    let startDate = new Date();
+    const startDate = new Date();
     let groupBy = 'day';
 
     switch (period) {

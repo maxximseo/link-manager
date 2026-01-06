@@ -117,12 +117,22 @@ async function testSitesTable() {
     });
 
     addResult('Pagination wrapper exists', paginationStyles.wrapperExists);
-    addResult('Pagination wrapper has gray background (#f9fafb)', paginationStyles.wrapperBg === 'rgb(249, 250, 251)');
+    addResult(
+      'Pagination wrapper has gray background (#f9fafb)',
+      paginationStyles.wrapperBg === 'rgb(249, 250, 251)'
+    );
     addResult('Limit select exists', paginationStyles.limitSelectExists);
     addResult('Limit select default is 100', paginationStyles.limitSelectValue === '100');
     addResult('Pagination info exists', paginationStyles.paginationInfoExists);
-    addResult('Pagination info shows text', paginationStyles.paginationInfoText && paginationStyles.paginationInfoText.includes('Показано'));
-    addResult('Prev/Next buttons exist', paginationStyles.prevBtnExists && paginationStyles.nextBtnExists);
+    addResult(
+      'Pagination info shows text',
+      paginationStyles.paginationInfoText &&
+        paginationStyles.paginationInfoText.includes('Показано')
+    );
+    addResult(
+      'Prev/Next buttons exist',
+      paginationStyles.prevBtnExists && paginationStyles.nextBtnExists
+    );
 
     // 6. Take screenshot
     console.log('\n5️⃣ Taking screenshots...');
@@ -183,7 +193,6 @@ async function testSitesTable() {
       fullPage: true
     });
     console.log('   📸 Full page screenshot saved: sites-table-full.png');
-
   } catch (error) {
     console.error('\n❌ Test error:', error.message);
     await page.screenshot({

@@ -1047,13 +1047,19 @@ describe('batchPurchasePlacements', () => {
       if (callCount % 20 === 6)
         return Promise.resolve({
           rows: [
-            { id: 1, project_id: 1, usage_count: 0, usage_limit: 999, status: 'active', anchor_text: 'Test' }
+            {
+              id: 1,
+              project_id: 1,
+              usage_count: 0,
+              usage_limit: 999,
+              status: 'active',
+              anchor_text: 'Test'
+            }
           ]
         }); // Content
       if (callCount % 20 === 7) return Promise.resolve({}); // UPDATE user
       if (callCount % 20 === 8) return Promise.resolve({ rows: [{ id: 100 }] }); // INSERT transaction
-      if (callCount % 20 === 9)
-        return Promise.resolve({ rows: [{ id: 200, status: 'pending' }] }); // INSERT placement
+      if (callCount % 20 === 9) return Promise.resolve({ rows: [{ id: 200, status: 'pending' }] }); // INSERT placement
       if (callCount % 20 === 10) return Promise.resolve({}); // INSERT placement_content
       if (callCount % 20 === 11) return Promise.resolve({}); // UPDATE usage_count
       if (callCount % 20 === 12) return Promise.resolve({}); // UPDATE site quotas
@@ -1128,7 +1134,9 @@ describe('batchDeletePlacements', () => {
       .mockResolvedValueOnce({}) // UPDATE user
       .mockResolvedValueOnce({}) // INSERT refund transaction
       .mockResolvedValueOnce({}) // INSERT audit_log (refund)
-      .mockResolvedValueOnce({ rows: [{ link_ids: [1], article_ids: [], link_count: '1', article_count: '0' }] }) // SELECT content
+      .mockResolvedValueOnce({
+        rows: [{ link_ids: [1], article_ids: [], link_count: '1', article_count: '0' }]
+      }) // SELECT content
       .mockResolvedValueOnce({}) // DELETE placement
       .mockResolvedValueOnce({}) // UPDATE site quotas
       .mockResolvedValueOnce({}) // UPDATE project_links
@@ -1173,13 +1181,27 @@ describe('batchDeletePlacements', () => {
     mockClient.query
       .mockResolvedValueOnce({}) // BEGIN
       .mockResolvedValueOnce({
-        rows: [{ id: 1, user_id: 2, final_price: '25.00', site_id: 1, type: 'link', site_name: 'Site', project_name: 'Project' }]
+        rows: [
+          {
+            id: 1,
+            user_id: 2,
+            final_price: '25.00',
+            site_id: 1,
+            type: 'link',
+            site_name: 'Site',
+            project_name: 'Project'
+          }
+        ]
       })
-      .mockResolvedValueOnce({ rows: [{ id: 2, balance: '100.00', total_spent: '50.00', current_discount: 0 }] })
+      .mockResolvedValueOnce({
+        rows: [{ id: 2, balance: '100.00', total_spent: '50.00', current_discount: 0 }]
+      })
       .mockResolvedValueOnce({})
       .mockResolvedValueOnce({})
       .mockResolvedValueOnce({})
-      .mockResolvedValueOnce({ rows: [{ link_ids: [1], article_ids: [], link_count: '1', article_count: '0' }] })
+      .mockResolvedValueOnce({
+        rows: [{ link_ids: [1], article_ids: [], link_count: '1', article_count: '0' }]
+      })
       .mockResolvedValueOnce({})
       .mockResolvedValueOnce({})
       .mockResolvedValueOnce({})

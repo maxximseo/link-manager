@@ -85,7 +85,9 @@ const changePassword = async (req, res) => {
 
     // Check if new password is same as current
     if (current_password === new_password) {
-      return res.status(400).json({ error: 'New password must be different from current password' });
+      return res
+        .status(400)
+        .json({ error: 'New password must be different from current password' });
     }
 
     const result = await userService.changePassword(userId, current_password, new_password);

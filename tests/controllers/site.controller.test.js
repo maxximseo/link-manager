@@ -410,7 +410,9 @@ describe('Site Controller', () => {
       await siteController.recalculateStats(mockReq, mockRes);
 
       expect(siteService.recalculateSiteStats).toHaveBeenCalledWith(1);
-      expect(mockRes.json).toHaveBeenCalledWith({ message: 'Site statistics recalculated successfully' });
+      expect(mockRes.json).toHaveBeenCalledWith({
+        message: 'Site statistics recalculated successfully'
+      });
     });
 
     it('should return 500 on service error', async () => {
@@ -466,11 +468,13 @@ describe('Site Controller', () => {
         max_uses: 10,
         expires_at: undefined
       });
-      expect(mockRes.json).toHaveBeenCalledWith(expect.objectContaining({
-        success: true,
-        token: 'reg_abc123',
-        id: 1
-      }));
+      expect(mockRes.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: true,
+          token: 'reg_abc123',
+          id: 1
+        })
+      );
     });
 
     it('should use default max_uses when not provided', async () => {
@@ -694,7 +698,9 @@ describe('Site Controller', () => {
       await siteController.updateSite(mockReq, mockRes);
 
       expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({ error: 'Max articles must be a positive number' });
+      expect(mockRes.json).toHaveBeenCalledWith({
+        error: 'Max articles must be a positive number'
+      });
     });
 
     it('should return 400 for invalid allow_articles type', async () => {
@@ -704,7 +710,9 @@ describe('Site Controller', () => {
       await siteController.updateSite(mockReq, mockRes);
 
       expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({ error: 'Allow articles must be a boolean value' });
+      expect(mockRes.json).toHaveBeenCalledWith({
+        error: 'Allow articles must be a boolean value'
+      });
     });
 
     it('should return 400 for invalid is_public type for admin', async () => {
@@ -725,7 +733,9 @@ describe('Site Controller', () => {
       await siteController.updateSite(mockReq, mockRes);
 
       expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({ error: 'available_for_purchase must be a boolean value' });
+      expect(mockRes.json).toHaveBeenCalledWith({
+        error: 'available_for_purchase must be a boolean value'
+      });
     });
 
     it('should return 404 if site not found', async () => {
@@ -768,7 +778,9 @@ describe('Site Controller', () => {
       await siteController.createSite(mockReq, mockRes);
 
       expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({ error: 'available_for_purchase must be a boolean value' });
+      expect(mockRes.json).toHaveBeenCalledWith({
+        error: 'available_for_purchase must be a boolean value'
+      });
     });
 
     it('should return 400 for invalid URL that throws in URL constructor', async () => {

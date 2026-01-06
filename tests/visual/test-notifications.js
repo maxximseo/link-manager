@@ -51,7 +51,10 @@ async function testNotifications() {
     console.log(`   Badge count: ${badgeCount}\n`);
 
     // Take screenshot before
-    await page.screenshot({ path: `${CONFIG.screenshotDir}/notifications-1-before.png`, fullPage: false });
+    await page.screenshot({
+      path: `${CONFIG.screenshotDir}/notifications-1-before.png`,
+      fullPage: false
+    });
     console.log('   📸 Screenshot saved: notifications-1-before.png\n');
 
     // Step 3: Open notification dropdown
@@ -60,7 +63,10 @@ async function testNotifications() {
     await sleep(500);
 
     // Take screenshot of open dropdown
-    await page.screenshot({ path: `${CONFIG.screenshotDir}/notifications-2-dropdown-open.png`, fullPage: false });
+    await page.screenshot({
+      path: `${CONFIG.screenshotDir}/notifications-2-dropdown-open.png`,
+      fullPage: false
+    });
     console.log('   📸 Screenshot saved: notifications-2-dropdown-open.png\n');
 
     // Step 4: Get header count text before marking as read
@@ -81,13 +87,18 @@ async function testNotifications() {
     }
 
     // Take screenshot after
-    await page.screenshot({ path: `${CONFIG.screenshotDir}/notifications-3-after-mark-read.png`, fullPage: false });
+    await page.screenshot({
+      path: `${CONFIG.screenshotDir}/notifications-3-after-mark-read.png`,
+      fullPage: false
+    });
     console.log('   📸 Screenshot saved: notifications-3-after-mark-read.png\n');
 
     // Step 6: Verify badge is hidden
     console.log('📝 Step 6: Verifying badge is hidden...');
     const badgeAfter = await page.$('#notificationBadge');
-    const badgeVisibleAfter = badgeAfter ? await badgeAfter.evaluate(el => el.style.display !== 'none') : false;
+    const badgeVisibleAfter = badgeAfter
+      ? await badgeAfter.evaluate(el => el.style.display !== 'none')
+      : false;
     console.log(`   Badge visible after: ${badgeVisibleAfter}`);
 
     // Step 7: Verify header count text
@@ -103,12 +114,15 @@ async function testNotifications() {
       await sleep(500);
 
       // Check if dropdown is still open
-      const dropdownOpen = await page.$('.notification-dropdown.show') !== null;
+      const dropdownOpen = (await page.$('.notification-dropdown.show')) !== null;
       console.log(`   Dropdown still open after text selection: ${dropdownOpen}\n`);
     }
 
     // Take final screenshot
-    await page.screenshot({ path: `${CONFIG.screenshotDir}/notifications-4-text-selection.png`, fullPage: false });
+    await page.screenshot({
+      path: `${CONFIG.screenshotDir}/notifications-4-text-selection.png`,
+      fullPage: false
+    });
     console.log('   📸 Screenshot saved: notifications-4-text-selection.png\n');
 
     // Summary
@@ -117,7 +131,9 @@ async function testNotifications() {
     console.log('═══════════════════════════════════════════');
     console.log(`   Initial badge count: ${badgeCount}`);
     console.log(`   Badge hidden after mark read: ${!badgeVisibleAfter ? '✅ YES' : '❌ NO'}`);
-    console.log(`   Header text updated: ${headerTextAfter === 'Все прочитано' ? '✅ YES' : '❌ NO'}`);
+    console.log(
+      `   Header text updated: ${headerTextAfter === 'Все прочитано' ? '✅ YES' : '❌ NO'}`
+    );
     console.log('═══════════════════════════════════════════\n');
 
     // Check for console errors
@@ -134,10 +150,12 @@ async function testNotifications() {
     } else {
       console.log('✅ No console errors detected\n');
     }
-
   } catch (error) {
     console.error('❌ Test failed:', error.message);
-    await page.screenshot({ path: `${CONFIG.screenshotDir}/notifications-error.png`, fullPage: true });
+    await page.screenshot({
+      path: `${CONFIG.screenshotDir}/notifications-error.png`,
+      fullPage: true
+    });
     console.log('   📸 Error screenshot saved: notifications-error.png');
   } finally {
     await browser.close();

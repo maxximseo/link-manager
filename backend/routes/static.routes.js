@@ -27,8 +27,7 @@ function isValidDomain(domain) {
 
   // RFC 1123 compliant regex (allows digits in first position, unlike RFC 952)
   // Each label: 1-63 chars, alphanumeric or hyphen, must start/end with alphanumeric
-  const domainRegex =
-    /^(?!-)(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
+  const domainRegex = /^(?!-)(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
 
   if (!domainRegex.test(domain)) {
     return false;
@@ -47,7 +46,11 @@ function isValidDomain(domain) {
   ];
 
   const normalizedDomain = domain.toLowerCase();
-  if (blockedDomains.some(blocked => normalizedDomain === blocked || normalizedDomain.endsWith('.' + blocked))) {
+  if (
+    blockedDomains.some(
+      blocked => normalizedDomain === blocked || normalizedDomain.endsWith('.' + blocked)
+    )
+  ) {
     return false;
   }
 

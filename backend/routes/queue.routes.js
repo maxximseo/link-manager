@@ -174,7 +174,10 @@ router.get(
       allJobs.sort((a, b) => b.timestamp - a.timestamp);
 
       // Apply pagination
-      const paginatedJobs = allJobs.slice(parseInt(offset, 10), parseInt(offset, 10) + parseInt(limit, 10));
+      const paginatedJobs = allJobs.slice(
+        parseInt(offset, 10),
+        parseInt(offset, 10) + parseInt(limit, 10)
+      );
 
       const formattedJobs = await Promise.all(
         paginatedJobs.map(async job => ({

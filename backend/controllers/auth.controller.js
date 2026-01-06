@@ -79,7 +79,9 @@ const login = async (req, res) => {
           'Попытка входа админа с неразрешённого IP',
           `Пользователь "${result.user.username}" попытался войти с IP ${clientIP}. IP не в белом списке.`,
           { username: result.user.username, ip: clientIP, timestamp: new Date().toISOString() }
-        ).catch(err => logger.error('Failed to notify about blocked admin login', { err: err.message }));
+        ).catch(err =>
+          logger.error('Failed to notify about blocked admin login', { err: err.message })
+        );
 
         // SECURITY: Return generic error to not reveal IP restriction exists
         return res.status(401).json({ error: 'Invalid credentials' });

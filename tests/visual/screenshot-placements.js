@@ -79,7 +79,9 @@ async function takeScreenshots() {
 
       // Find sections within the unified card
       const sections = card.querySelectorAll('.placements-unified-section');
-      const sectionWithBorder = card.querySelector('.placements-unified-section.section-with-border');
+      const sectionWithBorder = card.querySelector(
+        '.placements-unified-section.section-with-border'
+      );
 
       let borderBottomInfo = 'N/A';
       if (sectionWithBorder) {
@@ -184,7 +186,6 @@ async function takeScreenshots() {
       const stats = fs.statSync(path.join(SCREENSHOT_DIR, file));
       console.log(`   - ${file} (${Math.round(stats.size / 1024)}KB)`);
     });
-
   } catch (error) {
     console.error('❌ Error during visual test:', error.message);
 

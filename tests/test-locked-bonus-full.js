@@ -95,11 +95,7 @@ async function main() {
       ORDER BY column_name
     `);
 
-    const expectedColumns = [
-      'locked_bonus',
-      'locked_bonus_unlock_amount',
-      'locked_bonus_unlocked'
-    ];
+    const expectedColumns = ['locked_bonus', 'locked_bonus_unlock_amount', 'locked_bonus_unlocked'];
 
     const foundColumns = columns.map(c => c.column_name);
     const allColumnsExist = expectedColumns.every(c => foundColumns.includes(c));
@@ -195,11 +191,7 @@ async function main() {
         );
       }
     } else {
-      logTest(
-        'Регистрация с рефералом',
-        false,
-        `Ошибка: ${JSON.stringify(regWithRefResult.data)}`
-      );
+      logTest('Регистрация с рефералом', false, `Ошибка: ${JSON.stringify(regWithRefResult.data)}`);
     }
 
     // ============================================================
@@ -225,7 +217,11 @@ async function main() {
         const hasLockedBonus = 'lockedBonus' in balanceData;
         const hasUnlockAmount = 'unlockAmount' in balanceData;
 
-        logTest('API возвращает lockedBonus', hasLockedBonus, `lockedBonus = ${balanceData.lockedBonus}`);
+        logTest(
+          'API возвращает lockedBonus',
+          hasLockedBonus,
+          `lockedBonus = ${balanceData.lockedBonus}`
+        );
 
         logTest(
           'API возвращает unlockAmount',
@@ -314,7 +310,9 @@ async function main() {
       const alreadyUnlocked = userState[0].locked_bonus_unlocked;
       const depositAmount = 100; // Simulated deposit
 
-      console.log(`   Проверка условий: lockedBonus=${lockedBonus}, unlockAmount=${unlockAmount}, depositAmount=${depositAmount}`);
+      console.log(
+        `   Проверка условий: lockedBonus=${lockedBonus}, unlockAmount=${unlockAmount}, depositAmount=${depositAmount}`
+      );
 
       if (lockedBonus > 0 && !alreadyUnlocked && depositAmount >= unlockAmount) {
         // Unlock the bonus (simulating billing.service.js logic)
@@ -417,7 +415,10 @@ async function main() {
     console.log('-'.repeat(60));
 
     // Delete test notifications first (foreign key)
-    await dbQuery(`DELETE FROM notifications WHERE user_id IN (SELECT id FROM users WHERE username LIKE $1)`, [`${TEST_PREFIX}%`]);
+    await dbQuery(
+      `DELETE FROM notifications WHERE user_id IN (SELECT id FROM users WHERE username LIKE $1)`,
+      [`${TEST_PREFIX}%`]
+    );
 
     // Delete test users
     const deleted = await dbQuery(`DELETE FROM users WHERE username LIKE $1 RETURNING username`, [
@@ -441,10 +442,12 @@ async function main() {
 
     if (failed > 0) {
       console.log('\n❌ ПРОВАЛЕНЫ:');
-      testResults.filter(t => !t.passed).forEach(t => {
-        console.log(`   - ${t.name}`);
-        if (t.details) console.log(`     ${t.details}`);
-      });
+      testResults
+        .filter(t => !t.passed)
+        .forEach(t => {
+          console.log(`   - ${t.name}`);
+          if (t.details) console.log(`     ${t.details}`);
+        });
     }
 
     console.log('\n');

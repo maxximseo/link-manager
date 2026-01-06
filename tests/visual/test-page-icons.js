@@ -14,14 +14,54 @@ const CONFIG = {
 };
 
 const PAGES_TO_TEST = [
-  { url: '/dashboard.html', name: 'Dashboard', expectedIcon: 'folder2', expectedGradient: 'gradient-blue-indigo' },
-  { url: '/sites.html', name: 'Sites', expectedIcon: 'globe2', expectedGradient: 'gradient-green-teal' },
-  { url: '/placements.html', name: 'Placements', expectedIcon: 'cart-check-fill', expectedGradient: 'gradient-purple-pink' },
-  { url: '/placements-manager.html', name: 'Placements Manager', expectedIcon: 'link-45deg', expectedGradient: 'gradient-purple-pink' },
-  { url: '/balance.html', name: 'Balance', expectedIcon: 'wallet2', expectedGradient: 'gradient-yellow-orange' },
-  { url: '/profile.html', name: 'Profile', expectedIcon: 'person-circle', expectedGradient: 'gradient-blue-indigo' },
-  { url: '/statistics.html', name: 'Statistics', expectedIcon: 'bar-chart-line', expectedGradient: 'gradient-green-teal' },
-  { url: '/referrals.html', name: 'Referrals', expectedIcon: 'people', expectedGradient: 'gradient-purple-pink' }
+  {
+    url: '/dashboard.html',
+    name: 'Dashboard',
+    expectedIcon: 'folder2',
+    expectedGradient: 'gradient-blue-indigo'
+  },
+  {
+    url: '/sites.html',
+    name: 'Sites',
+    expectedIcon: 'globe2',
+    expectedGradient: 'gradient-green-teal'
+  },
+  {
+    url: '/placements.html',
+    name: 'Placements',
+    expectedIcon: 'cart-check-fill',
+    expectedGradient: 'gradient-purple-pink'
+  },
+  {
+    url: '/placements-manager.html',
+    name: 'Placements Manager',
+    expectedIcon: 'link-45deg',
+    expectedGradient: 'gradient-purple-pink'
+  },
+  {
+    url: '/balance.html',
+    name: 'Balance',
+    expectedIcon: 'wallet2',
+    expectedGradient: 'gradient-yellow-orange'
+  },
+  {
+    url: '/profile.html',
+    name: 'Profile',
+    expectedIcon: 'person-circle',
+    expectedGradient: 'gradient-blue-indigo'
+  },
+  {
+    url: '/statistics.html',
+    name: 'Statistics',
+    expectedIcon: 'bar-chart-line',
+    expectedGradient: 'gradient-green-teal'
+  },
+  {
+    url: '/referrals.html',
+    name: 'Referrals',
+    expectedIcon: 'people',
+    expectedGradient: 'gradient-purple-pink'
+  }
 ];
 
 function sleep(ms) {
@@ -121,11 +161,12 @@ async function testPageIcons() {
         await header.screenshot({
           path: `tests/visual/screenshots/icon-${pageInfo.name.toLowerCase().replace(/\s+/g, '-')}.png`
         });
-        console.log(`   Screenshot saved: icon-${pageInfo.name.toLowerCase().replace(/\s+/g, '-')}.png`);
+        console.log(
+          `   Screenshot saved: icon-${pageInfo.name.toLowerCase().replace(/\s+/g, '-')}.png`
+        );
       }
       console.log('');
     }
-
   } catch (error) {
     console.error('\nTest error:', error.message);
     await page.screenshot({

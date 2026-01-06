@@ -137,25 +137,28 @@ const createSite = async (req, res) => {
       }
     }
 
-    const site = await siteService.createSite({
-      site_url: site_url.trim(),
-      api_key,
-      max_links,
-      max_articles,
-      site_type,
-      allow_articles,
-      is_public,
-      available_for_purchase,
-      price_link:
-        price_link !== undefined && price_link !== null && price_link !== ''
-          ? parseFloat(price_link)
-          : null,
-      price_article:
-        price_article !== undefined && price_article !== null && price_article !== ''
-          ? parseFloat(price_article)
-          : null,
-      userId: req.user.id
-    }, req.user.role); // Pass user role for auto-approve logic
+    const site = await siteService.createSite(
+      {
+        site_url: site_url.trim(),
+        api_key,
+        max_links,
+        max_articles,
+        site_type,
+        allow_articles,
+        is_public,
+        available_for_purchase,
+        price_link:
+          price_link !== undefined && price_link !== null && price_link !== ''
+            ? parseFloat(price_link)
+            : null,
+        price_article:
+          price_article !== undefined && price_article !== null && price_article !== ''
+            ? parseFloat(price_article)
+            : null,
+        userId: req.user.id
+      },
+      req.user.role
+    ); // Pass user role for auto-approve logic
 
     res.json({ data: site });
   } catch (error) {
@@ -245,25 +248,30 @@ const updateSite = async (req, res) => {
       }
     }
 
-    const site = await siteService.updateSite(siteId, userId, {
-      site_url,
-      site_name,
-      api_key,
-      max_links,
-      max_articles,
-      site_type,
-      allow_articles,
-      is_public,
-      available_for_purchase,
-      price_link:
-        price_link !== undefined && price_link !== null && price_link !== ''
-          ? parseFloat(price_link)
-          : undefined,
-      price_article:
-        price_article !== undefined && price_article !== null && price_article !== ''
-          ? parseFloat(price_article)
-          : undefined
-    }, req.user.role); // Pass user role for 6-month cooldown check
+    const site = await siteService.updateSite(
+      siteId,
+      userId,
+      {
+        site_url,
+        site_name,
+        api_key,
+        max_links,
+        max_articles,
+        site_type,
+        allow_articles,
+        is_public,
+        available_for_purchase,
+        price_link:
+          price_link !== undefined && price_link !== null && price_link !== ''
+            ? parseFloat(price_link)
+            : undefined,
+        price_article:
+          price_article !== undefined && price_article !== null && price_article !== ''
+            ? parseFloat(price_article)
+            : undefined
+      },
+      req.user.role
+    ); // Pass user role for 6-month cooldown check
 
     if (!site) {
       return res.status(404).json({ error: 'Site not found' });
@@ -503,17 +511,11 @@ const requestPublicSale = async (req, res) => {
     logger.error('Request public sale error:', error);
 
     // Handle specific error cases
-    if (
-      error.message.includes('не найден') ||
-      error.message.includes('доступ запрещён')
-    ) {
+    if (error.message.includes('не найден') || error.message.includes('доступ запрещён')) {
       return res.status(404).json({ error: error.message });
     }
 
-    if (
-      error.message.includes('уже одобрен') ||
-      error.message.includes('уже находится')
-    ) {
+    if (error.message.includes('уже одобрен') || error.message.includes('уже находится')) {
       return res.status(400).json({ error: error.message });
     }
 

@@ -13,7 +13,7 @@ const MINIMUM_WITHDRAWAL_AMOUNT = 200; // $200 minimum withdrawal
  * Validate TRC20 wallet address format
  * TRC20 addresses start with 'T' and are 34 characters long (Base58)
  */
-const isValidTRC20Address = (address) => {
+const isValidTRC20Address = address => {
   if (!address || typeof address !== 'string') return false;
   return /^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(address);
 };
@@ -21,7 +21,7 @@ const isValidTRC20Address = (address) => {
 /**
  * Get referral statistics for a user
  */
-const getReferralStats = async (userId) => {
+const getReferralStats = async userId => {
   try {
     // Active referrals = users who have spent money (calculated from transactions, not cached field)
     const result = await query(
@@ -195,7 +195,9 @@ const updateReferralCode = async (userId, newCode) => {
   try {
     // Validate code format
     if (!newCode || !/^[a-zA-Z0-9_-]{3,30}$/.test(newCode)) {
-      throw new Error('Invalid referral code format. Use 3-30 characters: letters, numbers, underscores, hyphens.');
+      throw new Error(
+        'Invalid referral code format. Use 3-30 characters: letters, numbers, underscores, hyphens.'
+      );
     }
 
     // Check if code is already taken (case-insensitive)
@@ -209,10 +211,7 @@ const updateReferralCode = async (userId, newCode) => {
     }
 
     // Update code
-    await query(
-      'UPDATE users SET referral_code = $1 WHERE id = $2',
-      [newCode, userId]
-    );
+    await query('UPDATE users SET referral_code = $1 WHERE id = $2', [newCode, userId]);
 
     logger.info('Referral code updated', { userId, newCode });
 
@@ -250,7 +249,9 @@ const withdrawToBalance = async (userId, amount = null) => {
 
     // Validate
     if (referralBalance < MINIMUM_WITHDRAWAL_AMOUNT) {
-      throw new Error(`Minimum withdrawal amount is $${MINIMUM_WITHDRAWAL_AMOUNT}. Your referral balance: $${referralBalance.toFixed(2)}`);
+      throw new Error(
+        `Minimum withdrawal amount is $${MINIMUM_WITHDRAWAL_AMOUNT}. Your referral balance: $${referralBalance.toFixed(2)}`
+      );
     }
 
     if (withdrawalAmount > referralBalance) {
@@ -265,10 +266,11 @@ const withdrawToBalance = async (userId, amount = null) => {
     const newReferralBalance = referralBalance - withdrawalAmount;
     const newMainBalance = parseFloat(user.balance) + withdrawalAmount;
 
-    await client.query(
-      'UPDATE users SET referral_balance = $1, balance = $2 WHERE id = $3',
-      [newReferralBalance, newMainBalance, userId]
-    );
+    await client.query('UPDATE users SET referral_balance = $1, balance = $2 WHERE id = $3', [
+      newReferralBalance,
+      newMainBalance,
+      userId
+    ]);
 
     // Create withdrawal record
     await client.query(
@@ -324,10 +326,7 @@ const withdrawToBalance = async (userId, amount = null) => {
  */
 const getReferralLink = async (userId, baseUrl = 'https://serparium.com') => {
   try {
-    const result = await query(
-      'SELECT referral_code FROM users WHERE id = $1',
-      [userId]
-    );
+    const result = await query('SELECT referral_code FROM users WHERE id = $1', [userId]);
 
     if (result.rows.length === 0 || !result.rows[0].referral_code) {
       throw new Error('User not found or no referral code');
@@ -348,7 +347,7 @@ const getReferralLink = async (userId, baseUrl = 'https://serparium.com') => {
 /**
  * Validate referral code (for registration)
  */
-const validateReferralCode = async (code) => {
+const validateReferralCode = async code => {
   try {
     if (!code) {
       return { valid: false, error: 'Referral code is required' };
@@ -378,7 +377,7 @@ const validateReferralCode = async (code) => {
 /**
  * Get user's saved USDT TRC20 wallet address
  */
-const getWallet = async (userId) => {
+const getWallet = async userId => {
   try {
     const result = await query(
       'SELECT usdt_wallet, usdt_wallet_updated_at FROM users WHERE id = $1',
@@ -425,7 +424,9 @@ const saveWallet = async (userId, walletAddress) => {
   try {
     // Validate wallet format
     if (!isValidTRC20Address(walletAddress)) {
-      throw new Error('Invalid TRC20 wallet address format. Must start with T and be 34 characters long.');
+      throw new Error(
+        'Invalid TRC20 wallet address format. Must start with T and be 34 characters long.'
+      );
     }
 
     // Check if wallet was recently updated (1 month cooldown)
@@ -454,10 +455,10 @@ const saveWallet = async (userId, walletAddress) => {
     }
 
     // Update wallet and timestamp
-    await query(
-      'UPDATE users SET usdt_wallet = $1, usdt_wallet_updated_at = NOW() WHERE id = $2',
-      [walletAddress, userId]
-    );
+    await query('UPDATE users SET usdt_wallet = $1, usdt_wallet_updated_at = NOW() WHERE id = $2', [
+      walletAddress,
+      userId
+    ]);
 
     logger.info('Wallet address saved', { userId, wallet: walletAddress });
 
@@ -472,7 +473,7 @@ const saveWallet = async (userId, walletAddress) => {
  * Withdraw referral balance to external USDT TRC20 wallet
  * Creates a pending withdrawal request that requires admin approval
  */
-const withdrawToWallet = async (userId) => {
+const withdrawToWallet = async userId => {
   const client = await pool.connect();
 
   try {
@@ -511,7 +512,9 @@ const withdrawToWallet = async (userId) => {
     );
 
     if (pendingResult.rows.length > 0) {
-      throw new Error('You already have a pending wallet withdrawal request. Please wait for it to be processed.');
+      throw new Error(
+        'You already have a pending wallet withdrawal request. Please wait for it to be processed.'
+      );
     }
 
     // Deduct from referral balance
@@ -643,12 +646,12 @@ const getPendingWithdrawals = async ({ page = 1, limit = 50, status = null }) =>
        GROUP BY status`
     );
     const statusCounts = {};
-    statusCountResult.rows.forEach((row) => {
+    statusCountResult.rows.forEach(row => {
       statusCounts[row.status] = parseInt(row.count, 10);
     });
 
     return {
-      data: result.rows.map((w) => ({
+      data: result.rows.map(w => ({
         id: w.id,
         userId: w.user_id,
         username: w.username,
@@ -777,10 +780,10 @@ const rejectWithdrawal = async (withdrawalId, adminId, comment) => {
     }
 
     // Return balance to user
-    await client.query(
-      'UPDATE users SET referral_balance = referral_balance + $1 WHERE id = $2',
-      [withdrawal.amount, withdrawal.user_id]
-    );
+    await client.query('UPDATE users SET referral_balance = referral_balance + $1 WHERE id = $2', [
+      withdrawal.amount,
+      withdrawal.user_id
+    ]);
 
     // Update withdrawal status
     await client.query(
@@ -845,15 +848,16 @@ const getWithdrawalHistory = async (userId, { page = 1, limit = 50 }) => {
       [userId, limit, offset]
     );
 
-    const countResult = await query('SELECT COUNT(*) as count FROM referral_withdrawals WHERE user_id = $1', [
-      userId
-    ]);
+    const countResult = await query(
+      'SELECT COUNT(*) as count FROM referral_withdrawals WHERE user_id = $1',
+      [userId]
+    );
 
     const total = parseInt(countResult.rows[0].count, 10);
     const totalPages = Math.ceil(total / limit);
 
     return {
-      data: result.rows.map((w) => ({
+      data: result.rows.map(w => ({
         id: w.id,
         amount: parseFloat(w.amount),
         status: w.status,

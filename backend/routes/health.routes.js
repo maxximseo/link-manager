@@ -326,19 +326,24 @@ async function checkAnomaliesAndAlert() {
   // Calculate average response time
   const avgResponseTime =
     requestMetrics.responseTimes.length > 0
-      ? requestMetrics.responseTimes.reduce((a, b) => a + b, 0) / requestMetrics.responseTimes.length
+      ? requestMetrics.responseTimes.reduce((a, b) => a + b, 0) /
+        requestMetrics.responseTimes.length
       : 0;
 
   // Check response time
   if (avgResponseTime > THRESHOLDS.AVG_RESPONSE_TIME_MS) {
-    anomalies.push(`Высокое время ответа: ${Math.round(avgResponseTime)}ms (порог: ${THRESHOLDS.AVG_RESPONSE_TIME_MS}ms)`);
+    anomalies.push(
+      `Высокое время ответа: ${Math.round(avgResponseTime)}ms (порог: ${THRESHOLDS.AVG_RESPONSE_TIME_MS}ms)`
+    );
   }
 
   // Check error rate
   if (requestMetrics.total > 100) {
     const errorRate = (requestMetrics.errors.count / requestMetrics.total) * 100;
     if (errorRate > THRESHOLDS.ERROR_RATE_PERCENT) {
-      anomalies.push(`Высокий процент ошибок: ${errorRate.toFixed(1)}% (порог: ${THRESHOLDS.ERROR_RATE_PERCENT}%)`);
+      anomalies.push(
+        `Высокий процент ошибок: ${errorRate.toFixed(1)}% (порог: ${THRESHOLDS.ERROR_RATE_PERCENT}%)`
+      );
     }
   }
 
@@ -346,12 +351,16 @@ async function checkAnomaliesAndAlert() {
   const memUsage = process.memoryUsage();
   const heapUsedPercent = (memUsage.heapUsed / memUsage.heapTotal) * 100;
   if (heapUsedPercent > THRESHOLDS.MEMORY_USAGE_PERCENT) {
-    anomalies.push(`Высокое использование памяти: ${heapUsedPercent.toFixed(1)}% (порог: ${THRESHOLDS.MEMORY_USAGE_PERCENT}%)`);
+    anomalies.push(
+      `Высокое использование памяти: ${heapUsedPercent.toFixed(1)}% (порог: ${THRESHOLDS.MEMORY_USAGE_PERCENT}%)`
+    );
   }
 
   // Check database pool
   if (pool.waitingCount > THRESHOLDS.DB_WAITING_CONNECTIONS) {
-    anomalies.push(`Много ожидающих DB соединений: ${pool.waitingCount} (порог: ${THRESHOLDS.DB_WAITING_CONNECTIONS})`);
+    anomalies.push(
+      `Много ожидающих DB соединений: ${pool.waitingCount} (порог: ${THRESHOLDS.DB_WAITING_CONNECTIONS})`
+    );
   }
 
   // Check Redis

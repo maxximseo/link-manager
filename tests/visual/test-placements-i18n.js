@@ -46,10 +46,9 @@ async function testPlacementsI18n() {
     await page.click('button[type="submit"]');
 
     // Wait for redirect to dashboard (SPA-style navigation)
-    await page.waitForFunction(
-      () => window.location.pathname.includes('dashboard'),
-      { timeout: 15000 }
-    );
+    await page.waitForFunction(() => window.location.pathname.includes('dashboard'), {
+      timeout: 15000
+    });
     await new Promise(r => setTimeout(r, 1000)); // Wait for page to settle
     console.log('   Logged in successfully\n');
   } catch (error) {
@@ -66,22 +65,32 @@ async function testPlacementsI18n() {
       localStorage.removeItem('lang');
     });
 
-    await page.goto(`${CONFIG.baseUrl}/placements.html`, { waitUntil: 'networkidle0', timeout: 15000 });
+    await page.goto(`${CONFIG.baseUrl}/placements.html`, {
+      waitUntil: 'networkidle0',
+      timeout: 15000
+    });
     await new Promise(r => setTimeout(r, 1500)); // Wait for translations to apply
 
     const lang = await page.$eval('html', el => el.getAttribute('lang') || 'ru');
     const pageTitle = await page.title();
 
     // Check for Russian text elements
-    const projectSelectionTitle = await page.$eval('[data-i18n="projectSelection"]', el => el.textContent).catch(() => 'NOT FOUND');
-    const contentTypeTitle = await page.$eval('[data-i18n="contentType"]', el => el.textContent).catch(() => 'NOT FOUND');
+    const projectSelectionTitle = await page
+      .$eval('[data-i18n="projectSelection"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
+    const contentTypeTitle = await page
+      .$eval('[data-i18n="contentType"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
 
     console.log(`   Page title: ${pageTitle}`);
     console.log(`   Lang attribute: ${lang}`);
     console.log(`   Project Selection: ${projectSelectionTitle}`);
     console.log(`   Content Type: ${contentTypeTitle}`);
 
-    await page.screenshot({ path: path.join(CONFIG.screenshotDir, 'placements-ru.png'), fullPage: true });
+    await page.screenshot({
+      path: path.join(CONFIG.screenshotDir, 'placements-ru.png'),
+      fullPage: true
+    });
     console.log('   Screenshot saved: placements-ru.png');
 
     if (projectSelectionTitle.includes('Выбор') && contentTypeTitle.includes('Тип')) {
@@ -90,7 +99,12 @@ async function testPlacementsI18n() {
       console.log('   PASS\n');
     } else {
       results.failed++;
-      results.tests.push({ name: 'Russian Placements Page', status: 'FAIL', projectSelectionTitle, contentTypeTitle });
+      results.tests.push({
+        name: 'Russian Placements Page',
+        status: 'FAIL',
+        projectSelectionTitle,
+        contentTypeTitle
+      });
       console.log('   FAIL\n');
     }
   } catch (error) {
@@ -114,9 +128,15 @@ async function testPlacementsI18n() {
     const pageTitle = await page.title();
 
     // Check for English text elements
-    const projectSelectionTitle = await page.$eval('[data-i18n="projectSelection"]', el => el.textContent).catch(() => 'NOT FOUND');
-    const contentTypeTitle = await page.$eval('[data-i18n="contentType"]', el => el.textContent).catch(() => 'NOT FOUND');
-    const availableSitesTitle = await page.$eval('[data-i18n="availableSites"]', el => el.textContent).catch(() => 'NOT FOUND');
+    const projectSelectionTitle = await page
+      .$eval('[data-i18n="projectSelection"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
+    const contentTypeTitle = await page
+      .$eval('[data-i18n="contentType"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
+    const availableSitesTitle = await page
+      .$eval('[data-i18n="availableSites"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
 
     console.log(`   Page title: ${pageTitle}`);
     console.log(`   Lang attribute: ${lang}`);
@@ -124,16 +144,29 @@ async function testPlacementsI18n() {
     console.log(`   Content Type: ${contentTypeTitle}`);
     console.log(`   Available Sites: ${availableSitesTitle}`);
 
-    await page.screenshot({ path: path.join(CONFIG.screenshotDir, 'placements-en.png'), fullPage: true });
+    await page.screenshot({
+      path: path.join(CONFIG.screenshotDir, 'placements-en.png'),
+      fullPage: true
+    });
     console.log('   Screenshot saved: placements-en.png');
 
-    if (projectSelectionTitle.includes('Project') && contentTypeTitle.includes('Content') && availableSitesTitle.includes('Available')) {
+    if (
+      projectSelectionTitle.includes('Project') &&
+      contentTypeTitle.includes('Content') &&
+      availableSitesTitle.includes('Available')
+    ) {
       results.passed++;
       results.tests.push({ name: 'English Placements Page', status: 'PASS' });
       console.log('   PASS\n');
     } else {
       results.failed++;
-      results.tests.push({ name: 'English Placements Page', status: 'FAIL', projectSelectionTitle, contentTypeTitle, availableSitesTitle });
+      results.tests.push({
+        name: 'English Placements Page',
+        status: 'FAIL',
+        projectSelectionTitle,
+        contentTypeTitle,
+        availableSitesTitle
+      });
       console.log('   FAIL\n');
     }
   } catch (error) {
@@ -145,15 +178,24 @@ async function testPlacementsI18n() {
   // Test 3: Publication Settings in English
   console.log('Test 3: Publication Settings (English)');
   try {
-    const publicationSettingsTitle = await page.$eval('[data-i18n="publicationSettings"]', el => el.textContent).catch(() => 'NOT FOUND');
-    const publishImmediately = await page.$eval('[data-i18n="publishImmediately"]', el => el.textContent).catch(() => 'NOT FOUND');
-    const delayedPublication = await page.$eval('[data-i18n="delayedPublication"]', el => el.textContent).catch(() => 'NOT FOUND');
+    const publicationSettingsTitle = await page
+      .$eval('[data-i18n="publicationSettings"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
+    const publishImmediately = await page
+      .$eval('[data-i18n="publishImmediately"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
+    const delayedPublication = await page
+      .$eval('[data-i18n="delayedPublication"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
 
     console.log(`   Publication Settings: ${publicationSettingsTitle}`);
     console.log(`   Publish Immediately: ${publishImmediately}`);
     console.log(`   Delayed Publication: ${delayedPublication}`);
 
-    if (publicationSettingsTitle.includes('Publication') && publishImmediately.includes('immediately')) {
+    if (
+      publicationSettingsTitle.includes('Publication') &&
+      publishImmediately.includes('immediately')
+    ) {
       results.passed++;
       results.tests.push({ name: 'Publication Settings EN', status: 'PASS' });
       console.log('   PASS\n');
@@ -171,9 +213,15 @@ async function testPlacementsI18n() {
   // Test 4: Zone Cards in English
   console.log('Test 4: Zone Cards (English)');
   try {
-    const fastZone = await page.$eval('[data-i18n="fast"]', el => el.textContent).catch(() => 'NOT FOUND');
-    const mediumZone = await page.$eval('[data-i18n="medium"]', el => el.textContent).catch(() => 'NOT FOUND');
-    const slowZone = await page.$eval('[data-i18n="slow"]', el => el.textContent).catch(() => 'NOT FOUND');
+    const fastZone = await page
+      .$eval('[data-i18n="fast"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
+    const mediumZone = await page
+      .$eval('[data-i18n="medium"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
+    const slowZone = await page
+      .$eval('[data-i18n="slow"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
 
     console.log(`   Fast zone: ${fastZone}`);
     console.log(`   Medium zone: ${mediumZone}`);
@@ -197,15 +245,25 @@ async function testPlacementsI18n() {
   // Test 5: Whitelist/Blacklist Cards in English
   console.log('Test 5: Whitelist/Blacklist Cards (English)');
   try {
-    const whitelistTitle = await page.$eval('[data-i18n="whitelistTitle"]', el => el.textContent).catch(() => 'NOT FOUND');
-    const blacklistTitle = await page.$eval('[data-i18n="blacklistTitle"]', el => el.textContent).catch(() => 'NOT FOUND');
-    const whitelistDesc = await page.$eval('[data-i18n="whitelistDesc"]', el => el.textContent).catch(() => 'NOT FOUND');
+    const whitelistTitle = await page
+      .$eval('[data-i18n="whitelistTitle"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
+    const blacklistTitle = await page
+      .$eval('[data-i18n="blacklistTitle"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
+    const whitelistDesc = await page
+      .$eval('[data-i18n="whitelistDesc"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
 
     console.log(`   Whitelist title: ${whitelistTitle}`);
     console.log(`   Blacklist title: ${blacklistTitle}`);
     console.log(`   Whitelist desc: ${whitelistDesc}`);
 
-    if (whitelistTitle === 'Whitelist' && blacklistTitle === 'Blacklist' && whitelistDesc.includes('quick access')) {
+    if (
+      whitelistTitle === 'Whitelist' &&
+      blacklistTitle === 'Blacklist' &&
+      whitelistDesc.includes('quick access')
+    ) {
       results.passed++;
       results.tests.push({ name: 'Whitelist/Blacklist EN', status: 'PASS' });
       console.log('   PASS\n');
@@ -231,8 +289,12 @@ async function testPlacementsI18n() {
     await new Promise(r => setTimeout(r, 1500));
 
     const lang = await page.$eval('html', el => el.getAttribute('lang') || 'ru');
-    const projectSelectionTitle = await page.$eval('[data-i18n="projectSelection"]', el => el.textContent).catch(() => 'NOT FOUND');
-    const fastZone = await page.$eval('[data-i18n="fast"]', el => el.textContent).catch(() => 'NOT FOUND');
+    const projectSelectionTitle = await page
+      .$eval('[data-i18n="projectSelection"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
+    const fastZone = await page
+      .$eval('[data-i18n="fast"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
 
     console.log(`   Lang attribute: ${lang}`);
     console.log(`   Project Selection: ${projectSelectionTitle}`);
@@ -244,7 +306,12 @@ async function testPlacementsI18n() {
       console.log('   PASS\n');
     } else {
       results.failed++;
-      results.tests.push({ name: 'Switch to Russian', status: 'FAIL', projectSelectionTitle, fastZone });
+      results.tests.push({
+        name: 'Switch to Russian',
+        status: 'FAIL',
+        projectSelectionTitle,
+        fastZone
+      });
       console.log('   FAIL\n');
     }
   } catch (error) {

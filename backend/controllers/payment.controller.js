@@ -161,9 +161,7 @@ const handleCryptoCloudWebhook = async (req, res) => {
 const getPaymentConfig = async (req, res) => {
   try {
     // Check if payment system is configured
-    const isConfigured = !!(
-      process.env.CRYPTOCLOUD_API_KEY && process.env.CRYPTOCLOUD_SHOP_ID
-    );
+    const isConfigured = !!(process.env.CRYPTOCLOUD_API_KEY && process.env.CRYPTOCLOUD_SHOP_ID);
 
     res.json({
       enabled: isConfigured,

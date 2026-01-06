@@ -97,7 +97,9 @@ async function testSitesRedesign() {
     addResult('Total sites stat displays number', parseInt(statsValues.total) >= 0);
     addResult('Active sites stat displays number', parseInt(statsValues.active) >= 0);
     addResult('Average DR stat displays number', parseInt(statsValues.avgDR) >= 0);
-    console.log(`   📊 Stats: Total=${statsValues.total}, Active=${statsValues.active}, AvgDR=${statsValues.avgDR}, AvgRD=${statsValues.avgRD}`);
+    console.log(
+      `   📊 Stats: Total=${statsValues.total}, Active=${statsValues.active}, AvgDR=${statsValues.avgDR}, AvgRD=${statsValues.avgRD}`
+    );
 
     // 5. Check table toolbar
     console.log('\n5️⃣ Checking table toolbar...');
@@ -127,7 +129,10 @@ async function testSitesRedesign() {
         borderRadius: style.borderRadius
       };
     });
-    addResult('Gradient button has gradient background', gradientStyle?.background.includes('linear-gradient'));
+    addResult(
+      'Gradient button has gradient background',
+      gradientStyle?.background.includes('linear-gradient')
+    );
 
     // 7. Test filters dropdown
     console.log('\n6️⃣ Testing filters dropdown...');
@@ -178,7 +183,6 @@ async function testSitesRedesign() {
       });
       console.log('   📸 Header screenshot saved: sites-redesign-header.png');
     }
-
   } catch (error) {
     console.error('\n❌ Test error:', error.message);
     await page.screenshot({

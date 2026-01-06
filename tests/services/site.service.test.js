@@ -689,11 +689,13 @@ describe('Error Handling', () => {
 
     it('should force max_articles to 0 for static_php update', async () => {
       mockQuery.mockResolvedValueOnce({
-        rows: [{
-          id: 1,
-          site_type: 'static_php',
-          max_articles: 0
-        }]
+        rows: [
+          {
+            id: 1,
+            site_type: 'static_php',
+            max_articles: 0
+          }
+        ]
       });
 
       const result = await siteService.updateSite(1, 1, {
@@ -706,9 +708,9 @@ describe('Error Handling', () => {
     it('should throw on database error', async () => {
       mockQuery.mockRejectedValue(new Error('Update failed'));
 
-      await expect(
-        siteService.updateSite(1, 1, { max_links: 50 })
-      ).rejects.toThrow('Update failed');
+      await expect(siteService.updateSite(1, 1, { max_links: 50 })).rejects.toThrow(
+        'Update failed'
+      );
     });
   });
 
@@ -730,11 +732,13 @@ describe('getSiteById', () => {
 
   it('should return site by ID', async () => {
     mockQuery.mockResolvedValueOnce({
-      rows: [{
-        id: 1,
-        site_url: 'https://example.com',
-        site_type: 'wordpress'
-      }]
+      rows: [
+        {
+          id: 1,
+          site_url: 'https://example.com',
+          site_type: 'wordpress'
+        }
+      ]
     });
 
     const result = await siteService.getSiteById(1, 1);
@@ -777,11 +781,13 @@ describe('getSiteByUrlForUser', () => {
 
   it('should return site by URL for user', async () => {
     mockQuery.mockResolvedValueOnce({
-      rows: [{
-        id: 1,
-        site_url: 'https://example.com',
-        user_id: 1
-      }]
+      rows: [
+        {
+          id: 1,
+          site_url: 'https://example.com',
+          user_id: 1
+        }
+      ]
     });
 
     const result = await siteService.getSiteByUrlForUser('https://example.com', 1);
@@ -801,9 +807,9 @@ describe('getSiteByUrlForUser', () => {
   it('should throw on database error', async () => {
     mockQuery.mockRejectedValue(new Error('Query failed'));
 
-    await expect(
-      siteService.getSiteByUrlForUser('https://example.com', 1)
-    ).rejects.toThrow('Query failed');
+    await expect(siteService.getSiteByUrlForUser('https://example.com', 1)).rejects.toThrow(
+      'Query failed'
+    );
   });
 });
 
@@ -842,9 +848,7 @@ describe('Registration Tokens - Error Handling', () => {
     it('should throw on database error', async () => {
       mockQuery.mockRejectedValue(new Error('Insert failed'));
 
-      await expect(
-        siteService.generateRegistrationToken(1, {})
-      ).rejects.toThrow('Insert failed');
+      await expect(siteService.generateRegistrationToken(1, {})).rejects.toThrow('Insert failed');
     });
   });
 
@@ -852,9 +856,9 @@ describe('Registration Tokens - Error Handling', () => {
     it('should throw on database error', async () => {
       mockQuery.mockRejectedValue(new Error('Query failed'));
 
-      await expect(
-        siteService.validateRegistrationToken('reg_test')
-      ).rejects.toThrow('Query failed');
+      await expect(siteService.validateRegistrationToken('reg_test')).rejects.toThrow(
+        'Query failed'
+      );
     });
   });
 
@@ -862,9 +866,7 @@ describe('Registration Tokens - Error Handling', () => {
     it('should throw on database error', async () => {
       mockQuery.mockRejectedValue(new Error('Update failed'));
 
-      await expect(
-        siteService.incrementTokenUsage('reg_test')
-      ).rejects.toThrow('Update failed');
+      await expect(siteService.incrementTokenUsage('reg_test')).rejects.toThrow('Update failed');
     });
   });
 

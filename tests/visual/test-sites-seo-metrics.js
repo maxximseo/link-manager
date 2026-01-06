@@ -86,10 +86,7 @@ async function testSitesSeoMetrics() {
     );
     console.log(`   Headers: ${headerCheck.headers.join(', ')}`);
 
-    addResult(
-      'Headers have blue background (#eff6ff)',
-      headerCheck.hasCorrectBackground
-    );
+    addResult('Headers have blue background (#eff6ff)', headerCheck.hasCorrectBackground);
 
     // Check for seo-metric-td classes in body cells
     console.log('\n4. Checking SEO metric data cells...');
@@ -100,10 +97,12 @@ async function testSitesSeoMetrics() {
       return {
         totalCells: seoCells.length,
         cellsPerRow: firstRowCells.length,
-        hasCorrectBackground: firstRowCells.length > 0 && Array.from(firstRowCells).every(c => {
-          const bg = getComputedStyle(c).backgroundColor;
-          return bg.includes('239') && bg.includes('246') && bg.includes('255');
-        })
+        hasCorrectBackground:
+          firstRowCells.length > 0 &&
+          Array.from(firstRowCells).every(c => {
+            const bg = getComputedStyle(c).backgroundColor;
+            return bg.includes('239') && bg.includes('246') && bg.includes('255');
+          })
       };
     });
 
@@ -112,10 +111,7 @@ async function testSitesSeoMetrics() {
       cellCheck.cellsPerRow === 9
     );
 
-    addResult(
-      'Data cells have blue background (#eff6ff)',
-      cellCheck.hasCorrectBackground
-    );
+    addResult('Data cells have blue background (#eff6ff)', cellCheck.hasCorrectBackground);
 
     // Take screenshot
     console.log('\n5. Taking screenshot...');
@@ -124,7 +120,6 @@ async function testSitesSeoMetrics() {
       fullPage: false
     });
     console.log('   Screenshot saved: sites-seo-metrics.png');
-
   } catch (error) {
     console.error('\nTest error:', error.message);
     await page.screenshot({

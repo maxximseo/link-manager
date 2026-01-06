@@ -516,7 +516,7 @@ const updatePlacementWithPostId = async (siteId, articleId, wordpressPostId) => 
  * Get pending endpoint update for a site by API key
  * Returns update info if site has a pending endpoint migration
  */
-const getEndpointUpdate = async (apiKey) => {
+const getEndpointUpdate = async apiKey => {
   try {
     const result = await query(
       `SELECT seu.new_endpoint, seu.created_at
@@ -543,7 +543,7 @@ const getEndpointUpdate = async (apiKey) => {
 /**
  * Mark endpoint update as confirmed for a site
  */
-const confirmEndpointUpdate = async (apiKey) => {
+const confirmEndpointUpdate = async apiKey => {
   try {
     await query(
       `UPDATE site_endpoint_updates seu

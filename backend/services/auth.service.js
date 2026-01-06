@@ -99,7 +99,9 @@ const authenticateUser = async (usernameOrEmail, password) => {
           [newAttempts, lockUntil, user.id]
         );
 
-        logger.warn(`Account locked for user ${usernameOrEmail} after ${newAttempts} failed attempts`);
+        logger.warn(
+          `Account locked for user ${usernameOrEmail} after ${newAttempts} failed attempts`
+        );
 
         return {
           success: false,
@@ -218,7 +220,22 @@ const registerUser = async (username, email, password, referralCode = null) => {
       `INSERT INTO users (username, email, password, role, email_verified, verification_token, verification_token_expires_at, balance, total_spent, current_discount, referral_code, referred_by_user_id, referral_balance, total_referral_earnings)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
        RETURNING id, username, email, role, referral_code`,
-      [username, email, hashedPassword, 'user', false, verificationToken, tokenExpiresAt, 0.0, 0.0, 0, username, referredByUserId, 0.0, 0.0]
+      [
+        username,
+        email,
+        hashedPassword,
+        'user',
+        false,
+        verificationToken,
+        tokenExpiresAt,
+        0.0,
+        0.0,
+        0,
+        username,
+        referredByUserId,
+        0.0,
+        0.0
+      ]
     );
 
     const newUser = result.rows[0];
@@ -228,11 +245,17 @@ const registerUser = async (username, email, password, referralCode = null) => {
     // - Referrer (partner) gets $50 to referral_balance
     // - This new logic supports both referral links and promo codes
 
-    logger.info(`New user registered: ${username}${referredByUserId ? ` (referred by user ID ${referredByUserId})` : ''}`);
+    logger.info(
+      `New user registered: ${username}${referredByUserId ? ` (referred by user ID ${referredByUserId})` : ''}`
+    );
 
     // Send verification email
     if (email) {
-      const emailResult = await emailService.sendVerificationEmail(email, verificationToken, username);
+      const emailResult = await emailService.sendVerificationEmail(
+        email,
+        verificationToken,
+        username
+      );
       if (!emailResult.success) {
         logger.warn(`Failed to send verification email to ${email}: ${emailResult.error}`);
       }

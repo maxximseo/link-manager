@@ -46,10 +46,9 @@ async function testLanguageSwitcher() {
     await page.click('button[type="submit"]');
 
     // Wait for redirect to dashboard (SPA-style navigation)
-    await page.waitForFunction(
-      () => window.location.pathname.includes('dashboard'),
-      { timeout: 15000 }
-    );
+    await page.waitForFunction(() => window.location.pathname.includes('dashboard'), {
+      timeout: 15000
+    });
     await new Promise(r => setTimeout(r, 2000)); // Wait for page to settle
     console.log('   Logged in successfully\n');
   } catch (error) {
@@ -66,7 +65,10 @@ async function testLanguageSwitcher() {
       const buttonText = await page.$eval('.lang-switcher .lang-code', el => el.textContent);
       console.log(`   Found language switcher button with text: ${buttonText}`);
 
-      await page.screenshot({ path: path.join(CONFIG.screenshotDir, 'lang-switcher-dashboard.png'), fullPage: false });
+      await page.screenshot({
+        path: path.join(CONFIG.screenshotDir, 'lang-switcher-dashboard.png'),
+        fullPage: false
+      });
       console.log('   Screenshot saved: lang-switcher-dashboard.png');
 
       results.passed++;
@@ -93,13 +95,21 @@ async function testLanguageSwitcher() {
     await page.reload({ waitUntil: 'networkidle0', timeout: 15000 });
     await new Promise(r => setTimeout(r, 2000));
 
-    const menuItemText = await page.$eval('.nav-menu .menu-item:first-child .menu-label', el => el.textContent);
+    const menuItemText = await page.$eval(
+      '.nav-menu .menu-item:first-child .menu-label',
+      el => el.textContent
+    );
     console.log(`   First menu item: ${menuItemText}`);
 
-    const balanceLabel = await page.$eval('.balance-box .balance-label', el => el.textContent).catch(() => 'NOT FOUND');
+    const balanceLabel = await page
+      .$eval('.balance-box .balance-label', el => el.textContent)
+      .catch(() => 'NOT FOUND');
     console.log(`   Balance label: ${balanceLabel}`);
 
-    await page.screenshot({ path: path.join(CONFIG.screenshotDir, 'lang-switcher-ru.png'), fullPage: true });
+    await page.screenshot({
+      path: path.join(CONFIG.screenshotDir, 'lang-switcher-ru.png'),
+      fullPage: true
+    });
     console.log('   Screenshot saved: lang-switcher-ru.png');
 
     if (menuItemText === 'Проекты' && balanceLabel === 'Баланс') {
@@ -108,7 +118,12 @@ async function testLanguageSwitcher() {
       console.log('   PASS\n');
     } else {
       results.failed++;
-      results.tests.push({ name: 'Russian sidebar menu', status: 'FAIL', menuItemText, balanceLabel });
+      results.tests.push({
+        name: 'Russian sidebar menu',
+        status: 'FAIL',
+        menuItemText,
+        balanceLabel
+      });
       console.log('   FAIL\n');
     }
   } catch (error) {
@@ -127,16 +142,24 @@ async function testLanguageSwitcher() {
     await page.reload({ waitUntil: 'networkidle0', timeout: 15000 });
     await new Promise(r => setTimeout(r, 2000));
 
-    const menuItemText = await page.$eval('.nav-menu .menu-item:first-child .menu-label', el => el.textContent);
+    const menuItemText = await page.$eval(
+      '.nav-menu .menu-item:first-child .menu-label',
+      el => el.textContent
+    );
     console.log(`   First menu item: ${menuItemText}`);
 
-    const balanceLabel = await page.$eval('.balance-box .balance-label', el => el.textContent).catch(() => 'NOT FOUND');
+    const balanceLabel = await page
+      .$eval('.balance-box .balance-label', el => el.textContent)
+      .catch(() => 'NOT FOUND');
     console.log(`   Balance label: ${balanceLabel}`);
 
     const langCode = await page.$eval('.lang-switcher .lang-code', el => el.textContent);
     console.log(`   Language code shown: ${langCode}`);
 
-    await page.screenshot({ path: path.join(CONFIG.screenshotDir, 'lang-switcher-en.png'), fullPage: true });
+    await page.screenshot({
+      path: path.join(CONFIG.screenshotDir, 'lang-switcher-en.png'),
+      fullPage: true
+    });
     console.log('   Screenshot saved: lang-switcher-en.png');
 
     if (menuItemText === 'Projects' && balanceLabel === 'Balance' && langCode === 'EN') {
@@ -145,7 +168,13 @@ async function testLanguageSwitcher() {
       console.log('   PASS\n');
     } else {
       results.failed++;
-      results.tests.push({ name: 'English sidebar menu', status: 'FAIL', menuItemText, balanceLabel, langCode });
+      results.tests.push({
+        name: 'English sidebar menu',
+        status: 'FAIL',
+        menuItemText,
+        balanceLabel,
+        langCode
+      });
       console.log('   FAIL\n');
     }
   } catch (error) {
@@ -215,7 +244,12 @@ async function testLanguageSwitcher() {
       console.log('   PASS\n');
     } else {
       results.failed++;
-      results.tests.push({ name: 'Sidebar footer EN', status: 'FAIL', collapseTitle, settingsText });
+      results.tests.push({
+        name: 'Sidebar footer EN',
+        status: 'FAIL',
+        collapseTitle,
+        settingsText
+      });
       console.log('   FAIL\n');
     }
   } catch (error) {
@@ -234,7 +268,10 @@ async function testLanguageSwitcher() {
     await new Promise(r => setTimeout(r, 2000));
 
     const langCode = await page.$eval('.lang-switcher .lang-code', el => el.textContent);
-    const menuItemText = await page.$eval('.nav-menu .menu-item:first-child .menu-label', el => el.textContent);
+    const menuItemText = await page.$eval(
+      '.nav-menu .menu-item:first-child .menu-label',
+      el => el.textContent
+    );
 
     console.log(`   Language code shown: ${langCode}`);
     console.log(`   First menu item: ${menuItemText}`);
@@ -245,7 +282,12 @@ async function testLanguageSwitcher() {
       console.log('   PASS\n');
     } else {
       results.failed++;
-      results.tests.push({ name: 'Switch back to Russian', status: 'FAIL', langCode, menuItemText });
+      results.tests.push({
+        name: 'Switch back to Russian',
+        status: 'FAIL',
+        langCode,
+        menuItemText
+      });
       console.log('   FAIL\n');
     }
   } catch (error) {

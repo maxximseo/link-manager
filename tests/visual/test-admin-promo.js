@@ -39,7 +39,9 @@ async function test() {
     const totalPromoCodes = await page.$eval('#totalPromoCodes', el => el.textContent);
     const activePromoCodes = await page.$eval('#activePromoCodes', el => el.textContent);
     const totalActivations = await page.$eval('#totalActivations', el => el.textContent);
-    console.log(`   Total: ${totalPromoCodes}, Active: ${activePromoCodes}, Activations: ${totalActivations}`);
+    console.log(
+      `   Total: ${totalPromoCodes}, Active: ${activePromoCodes}, Activations: ${totalActivations}`
+    );
     console.log('   ✅ Statistics cards displayed');
 
     // 4. Test create promo code form
@@ -89,7 +91,6 @@ async function test() {
     console.log('   Create form: ✅ SUCCESS');
     console.log('   Table display: ✅ SUCCESS');
     console.log('═'.repeat(50));
-
   } catch (error) {
     console.error('\n❌ Test failed:', error.message);
     await page.screenshot({ path: 'tests/visual/screenshots/admin-promo-error.png' });

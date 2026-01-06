@@ -46,10 +46,9 @@ async function testSitesI18n() {
     await page.click('button[type="submit"]');
 
     // Wait for redirect to dashboard (SPA-style navigation)
-    await page.waitForFunction(
-      () => window.location.pathname.includes('dashboard'),
-      { timeout: 15000 }
-    );
+    await page.waitForFunction(() => window.location.pathname.includes('dashboard'), {
+      timeout: 15000
+    });
     await new Promise(r => setTimeout(r, 1000)); // Wait for page to settle
     console.log('   Logged in successfully\n');
   } catch (error) {
@@ -81,7 +80,10 @@ async function testSitesI18n() {
     console.log(`   Add site button: ${addSiteBtn}`);
     console.log(`   Filters button: ${filtersBtn}`);
 
-    await page.screenshot({ path: path.join(CONFIG.screenshotDir, 'sites-ru.png'), fullPage: true });
+    await page.screenshot({
+      path: path.join(CONFIG.screenshotDir, 'sites-ru.png'),
+      fullPage: true
+    });
     console.log('   Screenshot saved: sites-ru.png');
 
     if (lang === 'ru' && addSiteBtn.includes('Добавить') && filtersBtn.includes('Фильтры')) {
@@ -90,7 +92,13 @@ async function testSitesI18n() {
       console.log('   PASS\n');
     } else {
       results.failed++;
-      results.tests.push({ name: 'Russian Sites Page', status: 'FAIL', lang, addSiteBtn, filtersBtn });
+      results.tests.push({
+        name: 'Russian Sites Page',
+        status: 'FAIL',
+        lang,
+        addSiteBtn,
+        filtersBtn
+      });
       console.log('   FAIL\n');
     }
   } catch (error) {
@@ -124,16 +132,30 @@ async function testSitesI18n() {
     console.log(`   Filters button: ${filtersBtn}`);
     console.log(`   Export button: ${exportBtn}`);
 
-    await page.screenshot({ path: path.join(CONFIG.screenshotDir, 'sites-en.png'), fullPage: true });
+    await page.screenshot({
+      path: path.join(CONFIG.screenshotDir, 'sites-en.png'),
+      fullPage: true
+    });
     console.log('   Screenshot saved: sites-en.png');
 
-    if (lang === 'en' && addSiteBtn.includes('Add') && filtersBtn.includes('Filter') && exportBtn.includes('Export')) {
+    if (
+      lang === 'en' &&
+      addSiteBtn.includes('Add') &&
+      filtersBtn.includes('Filter') &&
+      exportBtn.includes('Export')
+    ) {
       results.passed++;
       results.tests.push({ name: 'English Sites Page', status: 'PASS' });
       console.log('   PASS\n');
     } else {
       results.failed++;
-      results.tests.push({ name: 'English Sites Page', status: 'FAIL', lang, addSiteBtn, filtersBtn });
+      results.tests.push({
+        name: 'English Sites Page',
+        status: 'FAIL',
+        lang,
+        addSiteBtn,
+        filtersBtn
+      });
       console.log('   FAIL\n');
     }
   } catch (error) {
@@ -153,7 +175,11 @@ async function testSitesI18n() {
     console.log(`   Token label: ${tokenLabel}`);
     console.log(`   Max uses label: ${maxUsesLabel}`);
 
-    if (bulkTitle.includes('Bulk') && tokenLabel.includes('Token') && maxUsesLabel.includes('Max')) {
+    if (
+      bulkTitle.includes('Bulk') &&
+      tokenLabel.includes('Token') &&
+      maxUsesLabel.includes('Max')
+    ) {
       results.passed++;
       results.tests.push({ name: 'Bulk Registration EN', status: 'PASS' });
       console.log('   PASS\n');
@@ -187,14 +213,22 @@ async function testSitesI18n() {
     console.log(`   Cancel button: ${cancelBtn}`);
     console.log(`   Save button: ${saveBtn}`);
 
-    await page.screenshot({ path: path.join(CONFIG.screenshotDir, 'sites-modal-en.png'), fullPage: true });
+    await page.screenshot({
+      path: path.join(CONFIG.screenshotDir, 'sites-modal-en.png'),
+      fullPage: true
+    });
     console.log('   Screenshot saved: sites-modal-en.png');
 
     // Close modal
     await page.click('.btn-close');
     await new Promise(r => setTimeout(r, 300));
 
-    if (siteTypeLabel.includes('Site type') && siteNameLabel.includes('Site name') && cancelBtn === 'Cancel' && saveBtn === 'Save') {
+    if (
+      siteTypeLabel.includes('Site type') &&
+      siteNameLabel.includes('Site name') &&
+      cancelBtn === 'Cancel' &&
+      saveBtn === 'Save'
+    ) {
       results.passed++;
       results.tests.push({ name: 'Create Modal EN', status: 'PASS' });
       console.log('   PASS\n');
@@ -259,13 +293,21 @@ async function testSitesI18n() {
     console.log(`   Cancel button: ${cancelBtn}`);
     console.log(`   Save button: ${saveBtn}`);
 
-    await page.screenshot({ path: path.join(CONFIG.screenshotDir, 'sites-modal-ru.png'), fullPage: true });
+    await page.screenshot({
+      path: path.join(CONFIG.screenshotDir, 'sites-modal-ru.png'),
+      fullPage: true
+    });
     console.log('   Screenshot saved: sites-modal-ru.png');
 
     // Close modal
     await page.click('.btn-close');
 
-    if (siteTypeLabel.includes('Тип') && siteNameLabel.includes('Название') && cancelBtn === 'Отмена' && saveBtn === 'Сохранить') {
+    if (
+      siteTypeLabel.includes('Тип') &&
+      siteNameLabel.includes('Название') &&
+      cancelBtn === 'Отмена' &&
+      saveBtn === 'Сохранить'
+    ) {
       results.passed++;
       results.tests.push({ name: 'Create Modal RU', status: 'PASS' });
       console.log('   PASS\n');

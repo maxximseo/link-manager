@@ -50,58 +50,79 @@ async function cleanupExpiredPlacements() {
     const placementIds = expiredPlacements.map(p => p.id);
 
     // Get content IDs before deletion for quota restoration
-    const contentResult = await client.query(`
+    const contentResult = await client.query(
+      `
       SELECT placement_id, link_id, article_id
       FROM placement_content
       WHERE placement_id = ANY($1)
-    `, [placementIds]);
+    `,
+      [placementIds]
+    );
 
     // Restore usage_count for links and articles
     for (const content of contentResult.rows) {
       if (content.link_id) {
-        await client.query(`
+        await client.query(
+          `
           UPDATE project_links
           SET usage_count = GREATEST(0, usage_count - 1)
           WHERE id = $1
-        `, [content.link_id]);
+        `,
+          [content.link_id]
+        );
       }
       if (content.article_id) {
-        await client.query(`
+        await client.query(
+          `
           UPDATE project_articles
           SET usage_count = GREATEST(0, usage_count - 1)
           WHERE id = $1
-        `, [content.article_id]);
+        `,
+          [content.article_id]
+        );
       }
     }
 
     // Restore site quotas
     for (const placement of expiredPlacements) {
       if (placement.type === 'link') {
-        await client.query(`
+        await client.query(
+          `
           UPDATE sites
           SET used_links = GREATEST(0, used_links - 1)
           WHERE id = $1
-        `, [placement.site_id]);
+        `,
+          [placement.site_id]
+        );
       } else if (placement.type === 'article') {
-        await client.query(`
+        await client.query(
+          `
           UPDATE sites
           SET used_articles = GREATEST(0, used_articles - 1)
           WHERE id = $1
-        `, [placement.site_id]);
+        `,
+          [placement.site_id]
+        );
       }
     }
 
     // Delete placement_content records
-    await client.query(`
+    await client.query(
+      `
       DELETE FROM placement_content
       WHERE placement_id = ANY($1)
-    `, [placementIds]);
+    `,
+      [placementIds]
+    );
 
     // Delete placements
-    await client.query(`
+    await client.query(
+      `
       DELETE FROM placements
       WHERE id = ANY($1)
-    `, [placementIds]);
+    `,
+      [placementIds]
+    );
 
     // Send notifications to users about deleted placements
     const notificationValues = [];
@@ -117,16 +138,23 @@ async function cleanupExpiredPlacements() {
         'placement_expired',
         'Размещение истекло',
         `Размещение #${placement.id} на сайте "${placement.site_name}" (проект "${placement.project_name}") истекло ${new Date(placement.expires_at).toLocaleDateString('ru-RU')} и было удалено из системы.`,
-        JSON.stringify({ placement_id: placement.id, site_id: placement.site_id, project_id: placement.project_id })
+        JSON.stringify({
+          placement_id: placement.id,
+          site_id: placement.site_id,
+          project_id: placement.project_id
+        })
       );
       paramIndex += 5;
     }
 
     if (notificationValues.length > 0) {
-      await client.query(`
+      await client.query(
+        `
         INSERT INTO notifications (user_id, type, title, message, metadata)
         VALUES ${notificationValues.join(', ')}
-      `, notificationParams);
+      `,
+        notificationParams
+      );
     }
 
     await client.query('COMMIT');
@@ -137,7 +165,6 @@ async function cleanupExpiredPlacements() {
     });
 
     return { deleted: expiredPlacements.length, placementIds };
-
   } catch (error) {
     await client.query('ROLLBACK');
     logger.error('Expired placements cleanup failed', {

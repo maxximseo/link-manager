@@ -25,7 +25,7 @@ if (process.env.SENTRY_DSN) {
         return null;
       }
       return event;
-    },
+    }
   });
 
   console.log('✅ Sentry initialized');

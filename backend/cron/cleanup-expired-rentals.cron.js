@@ -57,7 +57,7 @@ async function processExpiredRentals() {
 
       // 2. Delete placement_content for linked placements
       if (linkedPlacements.rows.length > 0) {
-        const placementIds = linkedPlacements.rows.map((p) => p.id);
+        const placementIds = linkedPlacements.rows.map(p => p.id);
 
         // Get content IDs for usage_count restoration
         const contentResult = await client.query(

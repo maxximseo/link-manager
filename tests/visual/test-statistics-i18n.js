@@ -46,10 +46,9 @@ async function testStatisticsI18n() {
     await page.click('button[type="submit"]');
 
     // Wait for redirect to dashboard (SPA-style navigation)
-    await page.waitForFunction(
-      () => window.location.pathname.includes('dashboard'),
-      { timeout: 15000 }
-    );
+    await page.waitForFunction(() => window.location.pathname.includes('dashboard'), {
+      timeout: 15000
+    });
     await new Promise(r => setTimeout(r, 1000)); // Wait for page to settle
     console.log('   Logged in successfully\n');
   } catch (error) {
@@ -66,17 +65,27 @@ async function testStatisticsI18n() {
       localStorage.removeItem('lang');
     });
 
-    await page.goto(`${CONFIG.baseUrl}/statistics.html`, { waitUntil: 'networkidle0', timeout: 15000 });
+    await page.goto(`${CONFIG.baseUrl}/statistics.html`, {
+      waitUntil: 'networkidle0',
+      timeout: 15000
+    });
     await new Promise(r => setTimeout(r, 2000)); // Wait for translations to apply
 
     // Check for Russian text elements
-    const statisticsTitle = await page.$eval('[data-i18n="statisticsTitle"]', el => el.textContent).catch(() => 'NOT FOUND');
-    const periodWeek = await page.$eval('[data-i18n="periodWeek"]', el => el.textContent).catch(() => 'NOT FOUND');
+    const statisticsTitle = await page
+      .$eval('[data-i18n="statisticsTitle"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
+    const periodWeek = await page
+      .$eval('[data-i18n="periodWeek"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
 
     console.log(`   Statistics title: ${statisticsTitle}`);
     console.log(`   Period week: ${periodWeek}`);
 
-    await page.screenshot({ path: path.join(CONFIG.screenshotDir, 'statistics-ru.png'), fullPage: true });
+    await page.screenshot({
+      path: path.join(CONFIG.screenshotDir, 'statistics-ru.png'),
+      fullPage: true
+    });
     console.log('   Screenshot saved: statistics-ru.png');
 
     if (statisticsTitle.includes('Статистика') && periodWeek.includes('Неделя')) {
@@ -85,7 +94,12 @@ async function testStatisticsI18n() {
       console.log('   PASS\n');
     } else {
       results.failed++;
-      results.tests.push({ name: 'Russian Statistics Page', status: 'FAIL', statisticsTitle, periodWeek });
+      results.tests.push({
+        name: 'Russian Statistics Page',
+        status: 'FAIL',
+        statisticsTitle,
+        periodWeek
+      });
       console.log('   FAIL\n');
     }
   } catch (error) {
@@ -106,24 +120,42 @@ async function testStatisticsI18n() {
     await new Promise(r => setTimeout(r, 2000)); // Wait for translations to apply
 
     // Check for English text elements
-    const statisticsTitle = await page.$eval('[data-i18n="statisticsTitle"]', el => el.textContent).catch(() => 'NOT FOUND');
-    const periodWeek = await page.$eval('[data-i18n="periodWeek"]', el => el.textContent).catch(() => 'NOT FOUND');
-    const periodDay = await page.$eval('[data-i18n="periodDay"]', el => el.textContent).catch(() => 'NOT FOUND');
+    const statisticsTitle = await page
+      .$eval('[data-i18n="statisticsTitle"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
+    const periodWeek = await page
+      .$eval('[data-i18n="periodWeek"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
+    const periodDay = await page
+      .$eval('[data-i18n="periodDay"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
 
     console.log(`   Statistics title: ${statisticsTitle}`);
     console.log(`   Period week: ${periodWeek}`);
     console.log(`   Period day: ${periodDay}`);
 
-    await page.screenshot({ path: path.join(CONFIG.screenshotDir, 'statistics-en.png'), fullPage: true });
+    await page.screenshot({
+      path: path.join(CONFIG.screenshotDir, 'statistics-en.png'),
+      fullPage: true
+    });
     console.log('   Screenshot saved: statistics-en.png');
 
-    if (statisticsTitle.includes('Statistics') && periodWeek.includes('Week') && periodDay.includes('Day')) {
+    if (
+      statisticsTitle.includes('Statistics') &&
+      periodWeek.includes('Week') &&
+      periodDay.includes('Day')
+    ) {
       results.passed++;
       results.tests.push({ name: 'English Statistics Page', status: 'PASS' });
       console.log('   PASS\n');
     } else {
       results.failed++;
-      results.tests.push({ name: 'English Statistics Page', status: 'FAIL', statisticsTitle, periodWeek });
+      results.tests.push({
+        name: 'English Statistics Page',
+        status: 'FAIL',
+        statisticsTitle,
+        periodWeek
+      });
       console.log('   FAIL\n');
     }
   } catch (error) {
@@ -135,8 +167,12 @@ async function testStatisticsI18n() {
   // Test 3: Spending Cards in English
   console.log('Test 3: Spending Cards (English)');
   try {
-    const spendingDay = await page.$eval('[data-i18n="spendingDay"]', el => el.textContent).catch(() => 'NOT FOUND');
-    const spendingMonth = await page.$eval('[data-i18n="spendingMonth"]', el => el.textContent).catch(() => 'NOT FOUND');
+    const spendingDay = await page
+      .$eval('[data-i18n="spendingDay"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
+    const spendingMonth = await page
+      .$eval('[data-i18n="spendingMonth"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
 
     console.log(`   Spending day: ${spendingDay}`);
     console.log(`   Spending month: ${spendingMonth}`);
@@ -159,13 +195,20 @@ async function testStatisticsI18n() {
   // Test 4: Placements Stats Section in English
   console.log('Test 4: Placements Stats Section (English)');
   try {
-    const placementsStatsTitle = await page.$eval('[data-i18n="placementsStatsTitle"]', el => el.textContent).catch(() => 'NOT FOUND');
-    const totalPlacementsStat = await page.$eval('[data-i18n="totalPlacementsStat"]', el => el.textContent).catch(() => 'NOT FOUND');
+    const placementsStatsTitle = await page
+      .$eval('[data-i18n="placementsStatsTitle"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
+    const totalPlacementsStat = await page
+      .$eval('[data-i18n="totalPlacementsStat"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
 
     console.log(`   Placements stats title: ${placementsStatsTitle}`);
     console.log(`   Total placements stat: ${totalPlacementsStat}`);
 
-    if (placementsStatsTitle.includes('Placement Statistics') && totalPlacementsStat.includes('Total placements')) {
+    if (
+      placementsStatsTitle.includes('Placement Statistics') &&
+      totalPlacementsStat.includes('Total placements')
+    ) {
       results.passed++;
       results.tests.push({ name: 'Placements Stats EN', status: 'PASS' });
       console.log('   PASS\n');
@@ -183,13 +226,20 @@ async function testStatisticsI18n() {
   // Test 5: Balance Summary Section in English
   console.log('Test 5: Balance Summary Section (English)');
   try {
-    const balanceSummaryTitle = await page.$eval('[data-i18n="balanceSummaryTitle"]', el => el.textContent).catch(() => 'NOT FOUND');
-    const currentBalanceStat = await page.$eval('[data-i18n="currentBalanceStat"]', el => el.textContent).catch(() => 'NOT FOUND');
+    const balanceSummaryTitle = await page
+      .$eval('[data-i18n="balanceSummaryTitle"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
+    const currentBalanceStat = await page
+      .$eval('[data-i18n="currentBalanceStat"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
 
     console.log(`   Balance summary title: ${balanceSummaryTitle}`);
     console.log(`   Current balance stat: ${currentBalanceStat}`);
 
-    if (balanceSummaryTitle.includes('Balance Summary') && currentBalanceStat.includes('Current balance')) {
+    if (
+      balanceSummaryTitle.includes('Balance Summary') &&
+      currentBalanceStat.includes('Current balance')
+    ) {
       results.passed++;
       results.tests.push({ name: 'Balance Summary EN', status: 'PASS' });
       console.log('   PASS\n');
@@ -214,19 +264,31 @@ async function testStatisticsI18n() {
     await page.reload({ waitUntil: 'networkidle0', timeout: 15000 });
     await new Promise(r => setTimeout(r, 2000));
 
-    const statisticsTitle = await page.$eval('[data-i18n="statisticsTitle"]', el => el.textContent).catch(() => 'NOT FOUND');
-    const placementsStatsTitle = await page.$eval('[data-i18n="placementsStatsTitle"]', el => el.textContent).catch(() => 'NOT FOUND');
+    const statisticsTitle = await page
+      .$eval('[data-i18n="statisticsTitle"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
+    const placementsStatsTitle = await page
+      .$eval('[data-i18n="placementsStatsTitle"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
 
     console.log(`   Statistics title: ${statisticsTitle}`);
     console.log(`   Placements stats title: ${placementsStatsTitle}`);
 
-    if (statisticsTitle.includes('Статистика') && placementsStatsTitle.includes('Статистика размещений')) {
+    if (
+      statisticsTitle.includes('Статистика') &&
+      placementsStatsTitle.includes('Статистика размещений')
+    ) {
       results.passed++;
       results.tests.push({ name: 'Switch to Russian', status: 'PASS' });
       console.log('   PASS\n');
     } else {
       results.failed++;
-      results.tests.push({ name: 'Switch to Russian', status: 'FAIL', statisticsTitle, placementsStatsTitle });
+      results.tests.push({
+        name: 'Switch to Russian',
+        status: 'FAIL',
+        statisticsTitle,
+        placementsStatsTitle
+      });
       console.log('   FAIL\n');
     }
   } catch (error) {

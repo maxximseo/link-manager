@@ -45,9 +45,7 @@ async function testWebhook() {
       console.log('   ✅ WordPress site received webhook successfully!');
       console.log('   Response:', JSON.stringify(result.response, null, 2));
     } else {
-      console.log(
-        '   ⚠️  Webhook failed (this is OK if plugin not updated on WordPress site)'
-      );
+      console.log('   ⚠️  Webhook failed (this is OK if plugin not updated on WordPress site)');
       console.log('   Error:', result.error);
       if (result.status) {
         console.log('   HTTP Status:', result.status);
@@ -72,7 +70,7 @@ async function testWebhook() {
 }
 
 // Run test
-testWebhook().catch((error) => {
+testWebhook().catch(error => {
   console.error('Fatal error:', error);
   process.exit(1);
 });

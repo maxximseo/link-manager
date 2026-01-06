@@ -4,7 +4,8 @@ const path = require('path');
 
 // Read credentials from .credentials.local
 const credentialsPath = path.join(__dirname, '../../.credentials.local');
-const credentials = fs.readFileSync(credentialsPath, 'utf-8')
+const credentials = fs
+  .readFileSync(credentialsPath, 'utf-8')
   .split('\n')
   .find(line => line.includes('Admin:'))
   ?.split('Admin:')[1]
@@ -97,7 +98,10 @@ async function testRentalModal() {
     });
 
     if (headerStyles) {
-      console.log('   Header background:', headerStyles.backgroundImage.includes('gradient') ? '✅ Gradient applied' : '❌ No gradient');
+      console.log(
+        '   Header background:',
+        headerStyles.backgroundImage.includes('gradient') ? '✅ Gradient applied' : '❌ No gradient'
+      );
       console.log('   Padding:', headerStyles.padding);
     }
 
@@ -124,13 +128,18 @@ async function testRentalModal() {
     });
 
     if (iconStyles) {
-      console.log('   Icon background:', iconStyles.backgroundImage.includes('gradient') ? '✅ Orange gradient' : '❌ No gradient');
+      console.log(
+        '   Icon background:',
+        iconStyles.backgroundImage.includes('gradient') ? '✅ Orange gradient' : '❌ No gradient'
+      );
       console.log('   Border radius:', iconStyles.borderRadius);
     }
 
     // Take screenshot of calculation box
     console.log('\n📊 Checking calculation box...');
-    const calcBoxElement = await page.$('#createRentalModal div[style*="background: linear-gradient(135deg, #f0fdf4"]');
+    const calcBoxElement = await page.$(
+      '#createRentalModal div[style*="background: linear-gradient(135deg, #f0fdf4"]'
+    );
     if (calcBoxElement) {
       await calcBoxElement.screenshot({
         path: path.join(SCREENSHOT_DIR, 'rental-modal-calc-box.png')
@@ -165,8 +174,16 @@ async function testRentalModal() {
     });
 
     if (footerButtons) {
-      console.log('   Save button:', footerButtons.save.backgroundImage.includes('gradient') ? '✅ Gradient button' : '❌ No gradient');
-      console.log('   Cancel button:', footerButtons.cancel.border.includes('rgb') ? '✅ Styled border' : '❌ No border');
+      console.log(
+        '   Save button:',
+        footerButtons.save.backgroundImage.includes('gradient')
+          ? '✅ Gradient button'
+          : '❌ No gradient'
+      );
+      console.log(
+        '   Cancel button:',
+        footerButtons.cancel.border.includes('rgb') ? '✅ Styled border' : '❌ No border'
+      );
     }
 
     // Take screenshot of footer
@@ -188,7 +205,6 @@ async function testRentalModal() {
     console.log('   Info block with gradient: ✅ Applied');
     console.log('═══════════════════════════════════════════');
     console.log('\n✅ All screenshots saved to tests/visual/screenshots/\n');
-
   } catch (error) {
     console.error('❌ Test failed:', error.message);
 

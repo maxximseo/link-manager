@@ -40,7 +40,7 @@ async function notifyRentalStatusChange(siteUrl, apiKey, rentalData, action) {
         'User-Agent': 'LinkManager-Backend/2.8.0'
       },
       timeout: 10000, // 10 second timeout
-      validateStatus: (status) => status < 500 // Accept 4xx as valid response
+      validateStatus: status => status < 500 // Accept 4xx as valid response
     });
 
     if (response.status === 200 || response.status === 201) {

@@ -166,7 +166,9 @@ describe('Export Service', () => {
     it('should throw error on database failure', async () => {
       query.mockRejectedValueOnce(new Error('Database error'));
 
-      await expect(exportService.exportUserTransactions(1, 'csv')).rejects.toThrow('Database error');
+      await expect(exportService.exportUserTransactions(1, 'csv')).rejects.toThrow(
+        'Database error'
+      );
     });
 
     it('should use default format as csv', async () => {
@@ -219,10 +221,10 @@ describe('Export Service', () => {
 
       await exportService.exportAdminRevenue('2025-01-01', '2025-06-30', 'csv');
 
-      expect(query).toHaveBeenCalledWith(
-        expect.stringContaining('BETWEEN $1 AND $2'),
-        ['2025-01-01', '2025-06-30']
-      );
+      expect(query).toHaveBeenCalledWith(expect.stringContaining('BETWEEN $1 AND $2'), [
+        '2025-01-01',
+        '2025-06-30'
+      ]);
     });
 
     it('should throw error on database failure', async () => {
