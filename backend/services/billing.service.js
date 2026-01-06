@@ -2920,87 +2920,96 @@ const createSlotRental = async (
     const expiresAt = new Date(rentalStartsAt);
     expiresAt.setDate(expiresAt.getDate() + RENTAL_PRICING.RENTAL_PERIOD_DAYS);
 
-    // ADMIN OWNER: Create immediately active rental with payment
+    // ADMIN OWNER: Create immediately active rental
     if (isAdminOwner) {
-      // Check tenant balance
-      const tenantBalance = parseFloat(tenant.balance);
-      if (tenantBalance < totalPrice) {
-        throw new Error(
-          `Недостаточно средств у арендатора. Требуется: $${totalPrice.toFixed(2)}, доступно: $${tenantBalance.toFixed(2)}`
+      let tenantTxId = null;
+      let tenantBalance = parseFloat(tenant.balance);
+      let newTenantBalance = tenantBalance;
+      let ownerBalance = 0;
+      let newOwnerBalance = 0;
+
+      // Only process payment if skipFirstPayment is FALSE
+      if (!skipFirstPayment) {
+        // Check tenant balance
+        if (tenantBalance < totalPrice) {
+          throw new Error(
+            `Недостаточно средств у арендатора. Требуется: $${totalPrice.toFixed(2)}, доступно: $${tenantBalance.toFixed(2)}`
+          );
+        }
+
+        // Get owner balance
+        const ownerResult = await client.query(`SELECT balance FROM users WHERE id = $1 FOR UPDATE`, [
+          ownerId
+        ]);
+        ownerBalance = parseFloat(ownerResult.rows[0].balance);
+
+        // Deduct from tenant
+        newTenantBalance = tenantBalance - totalPrice;
+        await client.query(
+          `UPDATE users SET balance = $1, total_spent = total_spent + $2, updated_at = NOW() WHERE id = $3`,
+          [newTenantBalance, totalPrice, tenant.id]
+        );
+
+        // Pay owner (P2P transfer)
+        newOwnerBalance = ownerBalance + totalPrice;
+        await client.query(`UPDATE users SET balance = $1, updated_at = NOW() WHERE id = $2`, [
+          newOwnerBalance,
+          ownerId
+        ]);
+
+        // Create tenant transaction (debit)
+        const tenantTxResult = await client.query(
+          `INSERT INTO transactions (
+            user_id, type, amount, balance_before, balance_after, description, metadata, created_at
+          ) VALUES ($1, 'slot_rental', $2, $3, $4, $5, $6, NOW()) RETURNING id`,
+          [
+            tenant.id,
+            -totalPrice,
+            tenantBalance,
+            newTenantBalance,
+            `Аренда ${slotsCount} слотов на ${site.site_name || site.site_url} (${RENTAL_PRICING.RENTAL_PERIOD_DAYS} дней)`,
+            JSON.stringify({
+              siteId,
+              siteName: site.site_name || site.site_url,
+              slotsCount,
+              pricePerSlot: finalPricePerSlot,
+              ownerId,
+              ownerUsername: site.owner_username
+            })
+          ]
+        );
+        tenantTxId = tenantTxResult.rows[0].id;
+
+        // Create owner transaction (credit)
+        await client.query(
+          `INSERT INTO transactions (
+            user_id, type, amount, balance_before, balance_after, description, metadata, created_at
+          ) VALUES ($1, 'slot_rental_income', $2, $3, $4, $5, $6, NOW())`,
+          [
+            ownerId,
+            totalPrice,
+            ownerBalance,
+            newOwnerBalance,
+            `Доход от аренды ${slotsCount} слотов на ${site.site_name || site.site_url}`,
+            JSON.stringify({
+              siteId,
+              slotsCount,
+              tenantId: tenant.id,
+              tenantUsername: tenant.username,
+              pricePerSlot: finalPricePerSlot
+            })
+          ]
         );
       }
 
-      // Get owner balance
-      const ownerResult = await client.query(`SELECT balance FROM users WHERE id = $1 FOR UPDATE`, [
-        ownerId
-      ]);
-      const ownerBalance = parseFloat(ownerResult.rows[0].balance);
-
-      // Deduct from tenant
-      const newTenantBalance = tenantBalance - totalPrice;
-      await client.query(
-        `UPDATE users SET balance = $1, total_spent = total_spent + $2, updated_at = NOW() WHERE id = $3`,
-        [newTenantBalance, totalPrice, tenant.id]
-      );
-
-      // Pay owner (P2P transfer)
-      const newOwnerBalance = ownerBalance + totalPrice;
-      await client.query(`UPDATE users SET balance = $1, updated_at = NOW() WHERE id = $2`, [
-        newOwnerBalance,
-        ownerId
-      ]);
-
-      // Create tenant transaction (debit)
-      const tenantTxResult = await client.query(
-        `INSERT INTO transactions (
-          user_id, type, amount, balance_before, balance_after, description, metadata, created_at
-        ) VALUES ($1, 'slot_rental', $2, $3, $4, $5, $6, NOW()) RETURNING id`,
-        [
-          tenant.id,
-          -totalPrice,
-          tenantBalance,
-          newTenantBalance,
-          `Аренда ${slotsCount} слотов на ${site.site_name || site.site_url} (${RENTAL_PRICING.RENTAL_PERIOD_DAYS} дней)`,
-          JSON.stringify({
-            siteId,
-            siteName: site.site_name || site.site_url,
-            slotsCount,
-            pricePerSlot: finalPricePerSlot,
-            ownerId,
-            ownerUsername: site.owner_username
-          })
-        ]
-      );
-
-      // Create owner transaction (credit)
-      await client.query(
-        `INSERT INTO transactions (
-          user_id, type, amount, balance_before, balance_after, description, metadata, created_at
-        ) VALUES ($1, 'slot_rental_income', $2, $3, $4, $5, $6, NOW())`,
-        [
-          ownerId,
-          totalPrice,
-          ownerBalance,
-          newOwnerBalance,
-          `Доход от аренды ${slotsCount} слотов на ${site.site_name || site.site_url}`,
-          JSON.stringify({
-            siteId,
-            slotsCount,
-            tenantId: tenant.id,
-            tenantUsername: tenant.username,
-            pricePerSlot: finalPricePerSlot
-          })
-        ]
-      );
-
-      // Create ACTIVE rental record
+      // Create ACTIVE rental record (with custom start date)
       const rentalResult = await client.query(
         `INSERT INTO site_slot_rentals (
           site_id, owner_id, tenant_id, slots_count, slots_used,
           price_per_slot, total_price, discount_applied,
           starts_at, expires_at, status, payment_transaction_id,
           created_at, updated_at
-        ) VALUES ($1, $2, $3, $4, 0, $5, $6, 0, NOW(), $7, 'active', $8, NOW(), NOW())
+        ) VALUES ($1, $2, $3, $4, 0, $5, $6, 0, $7, $8, 'active', $9, NOW(), NOW())
         RETURNING *`,
         [
           siteId,
@@ -3009,8 +3018,9 @@ const createSlotRental = async (
           slotsCount,
           finalPricePerSlot,
           totalPrice,
+          rentalStartsAt,
           expiresAt,
-          tenantTxResult.rows[0].id
+          tenantTxId
         ]
       );
 
