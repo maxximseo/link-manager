@@ -3039,18 +3039,22 @@ const createSlotRental = async (
         'admin',
         null,
         'active',
-        { slotsCount, totalPrice, tenantUsername: tenant.username }
+        { slotsCount, totalPrice, tenantUsername: tenant.username, skipFirstPayment, startsAt: rentalStartsAt }
       );
 
       // Notifications for admin-created rental
+      const notificationMsg = skipFirstPayment
+        ? `Вам назначена аренда ${slotsCount} слотов на ${site.site_name || site.site_url} до ${expiresAt.toLocaleDateString('ru-RU')}. Оплата не списана - списание произойдёт при продлении.`
+        : `Вы арендовали ${slotsCount} слотов на ${site.site_name || site.site_url} до ${expiresAt.toLocaleDateString('ru-RU')}. Можно размещать ссылки!`;
+
       await client.query(
         `INSERT INTO notifications (user_id, type, title, message, metadata, created_at)
          VALUES ($1, 'slot_rental_purchased', $2, $3, $4, NOW())`,
         [
           tenant.id,
           'Аренда слотов оформлена',
-          `Вы арендовали ${slotsCount} слотов на ${site.site_name || site.site_url} до ${expiresAt.toLocaleDateString('ru-RU')}. Можно размещать ссылки!`,
-          JSON.stringify({ rentalId: rentalResult.rows[0].id, expiresAt })
+          notificationMsg,
+          JSON.stringify({ rentalId: rentalResult.rows[0].id, expiresAt, skipFirstPayment })
         ]
       );
 
@@ -3065,7 +3069,9 @@ const createSlotRental = async (
         tenantId: tenant.id,
         siteId,
         slotsCount,
-        totalPrice
+        totalPrice,
+        skipFirstPayment,
+        startsAt: rentalStartsAt
       });
 
       return {
@@ -3073,7 +3079,8 @@ const createSlotRental = async (
         rental: rentalResult.rows[0],
         tenantNewBalance: newTenantBalance,
         ownerNewBalance: newOwnerBalance,
-        status: 'active'
+        status: 'active',
+        skipFirstPayment
       };
     }
 
