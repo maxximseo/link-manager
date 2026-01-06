@@ -2915,8 +2915,9 @@ const createSlotRental = async (
       pricePerSlot || site.price_link || RENTAL_PRICING.DEFAULT_PRICE_PER_SLOT;
     const totalPrice = finalPricePerSlot * slotsCount;
 
-    // 6. Calculate expiry date
-    const expiresAt = new Date();
+    // 6. Calculate start and expiry dates (support custom start date, can be backdated)
+    const rentalStartsAt = startsAt ? new Date(startsAt) : new Date();
+    const expiresAt = new Date(rentalStartsAt);
     expiresAt.setDate(expiresAt.getDate() + RENTAL_PRICING.RENTAL_PERIOD_DAYS);
 
     // ADMIN OWNER: Create immediately active rental with payment
