@@ -2683,8 +2683,24 @@
                                    ${s.is_public === true ? 'checked' : ''}
                                    onchange="toggleSiteField(${s.id}, 'is_public', this.checked)">
                         </div>
+                        ` : s.moderation_status === 'approved' ? `
+                        <div class="form-check form-switch d-inline-block">
+                            <input class="form-check-input" type="checkbox" role="switch"
+                                   id="isPublic_${s.id}"
+                                   ${s.is_public === true ? 'checked' : ''}
+                                   onchange="toggleSiteField(${s.id}, 'is_public', this.checked)">
+                        </div>
+                        ` : s.moderation_status === 'pending' ? `
+                        <span class="badge bg-warning text-dark">На модерации</span>
+                        ` : s.moderation_status === 'rejected' ? `
+                        <span class="badge bg-danger" title="${escapeHtml(s.rejection_reason || 'Причина не указана')}">Отклонён</span>
+                        <button class="btn btn-sm btn-link p-0 ms-1" onclick="event.stopPropagation(); requestPublicSale(${s.id})" title="Подать повторно">
+                            <i class="bi bi-arrow-repeat text-primary"></i>
+                        </button>
                         ` : `
-                        <span class="badge ${s.is_public === true ? 'bg-success' : 'bg-secondary'}">${s.is_public === true ? 'Да' : 'Нет'}</span>
+                        <button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation(); requestPublicSale(${s.id})">
+                            <i class="bi bi-globe2 me-1"></i>На продажу
+                        </button>
                         `}
                     </td>
                     <td class="text-center">
