@@ -46,7 +46,9 @@ const createRental = async (req, res) => {
       parseInt(siteId),
       tenantUsername.trim(),
       slots,
-      price
+      price,
+      startsAt || null,
+      skipFirstPayment || false
     );
 
     res.status(201).json({
