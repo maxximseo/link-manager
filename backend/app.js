@@ -29,7 +29,13 @@ const helmetConfig = {
       ? {
           directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'", 'cdn.jsdelivr.net', 'cdnjs.cloudflare.com', 'unpkg.com'], // Allow Bootstrap & other CDN scripts
+            scriptSrc: [
+              "'self'",
+              "'unsafe-inline'",
+              'cdn.jsdelivr.net',
+              'cdnjs.cloudflare.com',
+              'unpkg.com'
+            ], // Allow Bootstrap & other CDN scripts
             scriptSrcAttr: ["'unsafe-inline'"], // Allow inline event handlers (onclick, onchange, etc.)
             styleSrc: ["'self'", "'unsafe-inline'", 'cdn.jsdelivr.net', 'cdnjs.cloudflare.com'], // Allow inline styles for Bootstrap
             imgSrc: ["'self'", 'data:', 'https:'], // Allow images from any HTTPS source

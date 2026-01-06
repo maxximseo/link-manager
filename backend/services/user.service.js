@@ -10,7 +10,7 @@ const logger = require('../config/logger');
 /**
  * Get user profile by user ID
  */
-const getProfile = async (userId) => {
+const getProfile = async userId => {
   try {
     // Calculate total_spent from transactions: (purchase + renewal) - refunds
     const result = await query(
@@ -58,10 +58,10 @@ const updateProfile = async (userId, { email, display_name }) => {
   try {
     // Check if email is being changed and if it's already taken
     if (email !== undefined && email !== null && email !== '') {
-      const emailCheck = await query(
-        'SELECT id FROM users WHERE email = $1 AND id != $2',
-        [email, userId]
-      );
+      const emailCheck = await query('SELECT id FROM users WHERE email = $1 AND id != $2', [
+        email,
+        userId
+      ]);
 
       if (emailCheck.rows.length > 0) {
         return {
@@ -110,10 +110,7 @@ const updateProfile = async (userId, { email, display_name }) => {
 const changePassword = async (userId, currentPassword, newPassword) => {
   try {
     // Get current password hash
-    const result = await query(
-      'SELECT password FROM users WHERE id = $1',
-      [userId]
-    );
+    const result = await query('SELECT password FROM users WHERE id = $1', [userId]);
 
     if (result.rows.length === 0) {
       return {
@@ -139,10 +136,10 @@ const changePassword = async (userId, currentPassword, newPassword) => {
     const hashedPassword = await bcrypt.hash(newPassword, bcryptRounds);
 
     // Update password
-    await query(
-      'UPDATE users SET password = $1, updated_at = NOW() WHERE id = $2',
-      [hashedPassword, userId]
-    );
+    await query('UPDATE users SET password = $1, updated_at = NOW() WHERE id = $2', [
+      hashedPassword,
+      userId
+    ]);
 
     logger.info(`Password changed for user ID ${userId}`);
 

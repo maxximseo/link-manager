@@ -42,12 +42,27 @@ router.post(
   createLimiter,
   projectController.addProjectLinksBulk
 );
-router.delete('/:id/links/:linkId', authMiddleware, apiLimiter, projectController.deleteProjectLink);
+router.delete(
+  '/:id/links/:linkId',
+  authMiddleware,
+  apiLimiter,
+  projectController.deleteProjectLink
+);
 
 // Project articles routes
 router.get('/:id/articles', authMiddleware, apiLimiter, projectController.getProjectArticles);
 router.post('/:id/articles', authMiddleware, createLimiter, projectController.addProjectArticle);
-router.put('/:id/articles/:articleId', authMiddleware, apiLimiter, projectController.updateProjectArticle);
-router.delete('/:id/articles/:articleId', authMiddleware, apiLimiter, projectController.deleteProjectArticle);
+router.put(
+  '/:id/articles/:articleId',
+  authMiddleware,
+  apiLimiter,
+  projectController.updateProjectArticle
+);
+router.delete(
+  '/:id/articles/:articleId',
+  authMiddleware,
+  apiLimiter,
+  projectController.deleteProjectArticle
+);
 
 module.exports = router;

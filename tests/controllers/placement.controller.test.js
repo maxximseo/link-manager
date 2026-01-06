@@ -381,9 +381,7 @@ describe('Placement Controller', () => {
     it('should return 404 if placement not found', async () => {
       mockReq.params = { id: '999' };
       mockReq.user = { id: 1, role: 'admin' };
-      billingService.deleteAndRefundPlacement.mockRejectedValue(
-        new Error('Placement not found')
-      );
+      billingService.deleteAndRefundPlacement.mockRejectedValue(new Error('Placement not found'));
 
       await placementController.deletePlacement(mockReq, mockRes);
 
@@ -681,9 +679,7 @@ describe('Placement Controller', () => {
 
     it('should return 404 if placement not found', async () => {
       mockReq.params = { id: '999' };
-      billingService.publishScheduledPlacement.mockRejectedValue(
-        new Error('Placement not found')
-      );
+      billingService.publishScheduledPlacement.mockRejectedValue(new Error('Placement not found'));
 
       await placementController.publishScheduledPlacement(mockReq, mockRes);
 

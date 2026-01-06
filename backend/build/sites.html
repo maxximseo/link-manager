@@ -2635,7 +2635,7 @@
                     <td class="text-center seo-metric-td text-muted">${trafficValue}</td>
                     <td class="text-center text-muted">${geoValue}</td>
                     <td class="text-center">
-                        ${getStatusBadge(s.moderation_status)}
+                        ${getStatusBadge(s.moderation_status, s.rejection_reason)}
                     </td>
                     <td class="text-center">
                         ${typeBadge}
@@ -3273,16 +3273,17 @@
         }
 
         // Get moderation status badge HTML
-        function getStatusBadge(status) {
+        // All working sites show "Активен" except pending/rejected
+        function getStatusBadge(status, rejectionReason = null) {
             switch(status) {
-                case 'approved':
-                    return `<div class="status-approved"><i class="bi bi-check-circle-fill"></i> ${t('siteStatusActive')}</div>`;
                 case 'pending':
                     return `<div class="status-pending"><i class="bi bi-clock"></i> ${t('siteStatusPending')}</div>`;
                 case 'rejected':
-                    return `<div class="status-rejected"><i class="bi bi-x-circle-fill"></i> ${t('siteStatusRejected')}</div>`;
+                    const reasonTooltip = rejectionReason ? ` title="${escapeHtml(rejectionReason)}"` : '';
+                    return `<div class="status-rejected"${reasonTooltip}><i class="bi bi-x-circle-fill"></i> ${t('siteStatusRejected')}</div>`;
                 default:
-                    return '<span class="text-muted">—</span>';
+                    // approved, null, or any other status = "Активен" (site is working)
+                    return `<div class="status-approved"><i class="bi bi-check-circle-fill"></i> ${t('siteStatusActive')}</div>`;
             }
         }
 
@@ -3502,6 +3503,34 @@ ${'='.repeat(50)}`;
             row.classList.remove('table-danger');
             if (site.available_for_purchase === false) {
                 row.classList.add('table-danger');
+            }
+        }
+
+        // Запрос на публичную продажу (отправка на модерацию)
+        async function requestPublicSale(siteId) {
+            if (!confirm('Отправить сайт на модерацию для публичной продажи?\n\nПосле одобрения администратором сайт станет доступен для покупки другими пользователями.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/sites/${siteId}/request-public-sale`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${getToken()}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'Ошибка при отправке на модерацию');
+                }
+
+                showNotification(result.message || 'Сайт отправлен на модерацию', 'success');
+                await loadSites(); // Перезагрузить таблицу
+            } catch (error) {
+                showNotification(error.message, 'error');
             }
         }
 

@@ -41,7 +41,9 @@ async function testHtmlContext() {
 
     // Load page
     console.log('2️⃣ Загрузка проекта rezat.ru...');
-    await page.goto(CONFIG.baseUrl + '/project-detail.html?id=' + CONFIG.projectId, { waitUntil: 'networkidle2' });
+    await page.goto(CONFIG.baseUrl + '/project-detail.html?id=' + CONFIG.projectId, {
+      waitUntil: 'networkidle2'
+    });
     await sleep(3000);
     console.log('   ✅ Страница загружена\n');
 
@@ -68,10 +70,12 @@ async function testHtmlContext() {
 
           // Проверяем наличие .anchor-highlight
           const hasHighlight = htmlContextCell?.querySelector('.anchor-highlight') !== null;
-          const highlightText = htmlContextCell?.querySelector('.anchor-highlight')?.textContent || '';
+          const highlightText =
+            htmlContextCell?.querySelector('.anchor-highlight')?.textContent || '';
 
           // Проверяем наличие <a href тегов в отображаемом тексте
-          const hasVisibleATag = textContent.includes('<a href') || textContent.includes('&lt;a href');
+          const hasVisibleATag =
+            textContent.includes('<a href') || textContent.includes('&lt;a href');
 
           results.push({
             row: i + 1,
@@ -94,7 +98,9 @@ async function testHtmlContext() {
       console.log(`      Текст в ячейке: "${cell.textContent}..."`);
       console.log(`      Есть .anchor-highlight: ${cell.hasHighlight ? '✅ ДА' : '❌ НЕТ'}`);
       console.log(`      Текст в highlight: "${cell.highlightText}"`);
-      console.log(`      Видны HTML теги (<a href): ${cell.hasVisibleATag ? '❌ ДА - ПРОБЛЕМА!' : '✅ НЕТ - ОК'}`);
+      console.log(
+        `      Видны HTML теги (<a href): ${cell.hasVisibleATag ? '❌ ДА - ПРОБЛЕМА!' : '✅ НЕТ - ОК'}`
+      );
       console.log(`      innerHTML: ${cell.innerHTMLPreview}...`);
       console.log('');
     });
@@ -127,7 +133,6 @@ async function testHtmlContext() {
     } else {
       console.log('\n⚠️ ПРОБЛЕМА: HTML контекст отображается неправильно');
     }
-
   } catch (error) {
     console.error('❌ Ошибка:', error.message);
   } finally {

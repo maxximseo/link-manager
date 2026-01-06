@@ -121,11 +121,12 @@ async function testModalWidth() {
     if (modalWidth && modalWidth.actualWidth >= 700) {
       console.log(`✅ PASS: Modal width is ${modalWidth.actualWidth}px (expected ~720px)`);
     } else {
-      console.log(`❌ FAIL: Modal width is ${modalWidth?.actualWidth || 'unknown'}px (expected ~720px)`);
+      console.log(
+        `❌ FAIL: Modal width is ${modalWidth?.actualWidth || 'unknown'}px (expected ~720px)`
+      );
       console.log('   CSS rule:', cssRule);
       console.log('   Inline style:', inlineStyle);
     }
-
   } catch (error) {
     console.error('❌ Test failed:', error.message);
   } finally {

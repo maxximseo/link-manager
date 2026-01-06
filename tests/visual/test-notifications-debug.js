@@ -118,7 +118,6 @@ async function testNotificationsDebug() {
       console.log(`   Display: ${display}`);
       console.log(`   Text: ${text}`);
     }
-
   } catch (error) {
     console.error('❌ Test failed:', error.message);
   } finally {

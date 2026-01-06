@@ -51,7 +51,8 @@ const getUserBalance = async userId => {
       );
       if (lockedResult.rows.length > 0) {
         lockedBonus = parseFloat(lockedResult.rows[0].locked_bonus) || 0;
-        lockedBonusUnlockAmount = parseFloat(lockedResult.rows[0].locked_bonus_unlock_amount) || 100;
+        lockedBonusUnlockAmount =
+          parseFloat(lockedResult.rows[0].locked_bonus_unlock_amount) || 100;
         lockedBonusUnlocked = lockedResult.rows[0].locked_bonus_unlocked || false;
       }
     } catch (lockedErr) {
@@ -161,7 +162,13 @@ const getDiscountTiers = async () => {
  * @param {number|null} adminId - Admin ID if deposit is made by admin
  * @param {string|null} promoCode - Optional promo code for bonus activation
  */
-const addBalance = async (userId, amount, description = 'Пополнение баланса', adminId = null, promoCode = null) => {
+const addBalance = async (
+  userId,
+  amount,
+  description = 'Пополнение баланса',
+  adminId = null,
+  promoCode = null
+) => {
   const client = await pool.connect();
 
   try {
@@ -908,7 +915,9 @@ const purchasePlacement = async ({
     const typeLabel = type === 'link' ? 'ссылка' : 'статья';
 
     // Build notification message with content details
-    const priceText = isRentedPlacement ? 'Бесплатно (аренда)' : `Списано $${finalPrice.toFixed(2)}`;
+    const priceText = isRentedPlacement
+      ? 'Бесплатно (аренда)'
+      : `Списано $${finalPrice.toFixed(2)}`;
     let userNotificationMessage;
     if (type === 'link' && contentData.url) {
       userNotificationMessage = `Ссылка "${contentData.url}" → "${site.site_url}". ${priceText}.`;
@@ -2691,10 +2700,7 @@ const batchDeletePlacements = async (userId, userRole, placementIds) => {
 const createReferralCommission = async (userId, transactionId, placementId, purchaseAmount) => {
   try {
     // Get user's referrer (if any)
-    const userResult = await query(
-      'SELECT referred_by_user_id FROM users WHERE id = $1',
-      [userId]
-    );
+    const userResult = await query('SELECT referred_by_user_id FROM users WHERE id = $1', [userId]);
 
     if (userResult.rows.length === 0 || !userResult.rows[0].referred_by_user_id) {
       // User has no referrer, skip
@@ -2727,7 +2733,15 @@ const createReferralCommission = async (userId, transactionId, placementId, purc
           referrer_id, referee_id, original_transaction_id, placement_id,
           transaction_amount, commission_rate, commission_amount, status
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'credited')`,
-        [referrerId, userId, transactionId, placementId, purchaseAmount, commissionRate, commissionAmount]
+        [
+          referrerId,
+          userId,
+          transactionId,
+          placementId,
+          purchaseAmount,
+          commissionRate,
+          commissionAmount
+        ]
       );
 
       // Update referrer's balances
@@ -2808,7 +2822,13 @@ const RENTAL_PRICING = {
  * @param {number} slotsCount - Number of slots to rent
  * @param {number} pricePerSlot - Price per slot (optional, defaults to site price or $25)
  */
-const createSlotRental = async (ownerId, siteId, tenantUsername, slotsCount, pricePerSlot = null) => {
+const createSlotRental = async (
+  ownerId,
+  siteId,
+  tenantUsername,
+  slotsCount,
+  pricePerSlot = null
+) => {
   const client = await pool.connect();
 
   try {
@@ -2864,7 +2884,7 @@ const createSlotRental = async (ownerId, siteId, tenantUsername, slotsCount, pri
     if (slotsCount > availableSlots) {
       throw new Error(
         `Доступно только ${availableSlots} свободных слотов из ${site.max_links}. ` +
-        `Занято: ${site.used_links}`
+          `Занято: ${site.used_links}`
       );
     }
 
@@ -2878,14 +2898,17 @@ const createSlotRental = async (ownerId, siteId, tenantUsername, slotsCount, pri
     if (existingRental.rows.length > 0) {
       const status = existingRental.rows[0].status;
       if (status === 'active') {
-        throw new Error(`У пользователя "${tenantUsername}" уже есть активная аренда на этом сайте`);
+        throw new Error(
+          `У пользователя "${tenantUsername}" уже есть активная аренда на этом сайте`
+        );
       } else {
         throw new Error(`У пользователя "${tenantUsername}" уже есть ожидающий запрос на аренду`);
       }
     }
 
     // 5. Calculate price (owner sets the price, NO tenant discount applied here)
-    const finalPricePerSlot = pricePerSlot || site.price_link || RENTAL_PRICING.DEFAULT_PRICE_PER_SLOT;
+    const finalPricePerSlot =
+      pricePerSlot || site.price_link || RENTAL_PRICING.DEFAULT_PRICE_PER_SLOT;
     const totalPrice = finalPricePerSlot * slotsCount;
 
     // 6. Calculate expiry date
@@ -2903,7 +2926,9 @@ const createSlotRental = async (ownerId, siteId, tenantUsername, slotsCount, pri
       }
 
       // Get owner balance
-      const ownerResult = await client.query(`SELECT balance FROM users WHERE id = $1 FOR UPDATE`, [ownerId]);
+      const ownerResult = await client.query(`SELECT balance FROM users WHERE id = $1 FOR UPDATE`, [
+        ownerId
+      ]);
       const ownerBalance = parseFloat(ownerResult.rows[0].balance);
 
       // Deduct from tenant
@@ -2985,10 +3010,10 @@ const createSlotRental = async (ownerId, siteId, tenantUsername, slotsCount, pri
       );
 
       // Reserve slots on site
-      await client.query(`UPDATE sites SET used_links = used_links + $1, updated_at = NOW() WHERE id = $2`, [
-        slotsCount,
-        siteId
-      ]);
+      await client.query(
+        `UPDATE sites SET used_links = used_links + $1, updated_at = NOW() WHERE id = $2`,
+        [slotsCount, siteId]
+      );
 
       // Log rental creation
       await logRentalAction(
@@ -3046,23 +3071,15 @@ const createSlotRental = async (ownerId, siteId, tenantUsername, slotsCount, pri
         created_at, updated_at
       ) VALUES ($1, $2, $3, $4, 0, $5, $6, 0, NULL, $7, 'pending_approval', NULL, NOW(), NOW())
       RETURNING *`,
-      [
-        siteId,
-        ownerId,
-        tenant.id,
-        slotsCount,
-        finalPricePerSlot,
-        totalPrice,
-        expiresAt
-      ]
+      [siteId, ownerId, tenant.id, slotsCount, finalPricePerSlot, totalPrice, expiresAt]
     );
 
     // CRITICAL: Reserve slots on site even for pending rentals to prevent race conditions
     // Slots are released if tenant rejects the rental
-    await client.query(`UPDATE sites SET used_links = used_links + $1, updated_at = NOW() WHERE id = $2`, [
-      slotsCount,
-      siteId
-    ]);
+    await client.query(
+      `UPDATE sites SET used_links = used_links + $1, updated_at = NOW() WHERE id = $2`,
+      [slotsCount, siteId]
+    );
 
     // Log rental creation
     await logRentalAction(
@@ -3374,9 +3391,10 @@ const cancelSlotRental = async (ownerId, rentalId) => {
     const wasPending = rental.status === 'pending_approval';
 
     // Update rental status
-    await client.query(`UPDATE site_slot_rentals SET status = 'cancelled', updated_at = NOW() WHERE id = $1`, [
-      rentalId
-    ]);
+    await client.query(
+      `UPDATE site_slot_rentals SET status = 'cancelled', updated_at = NOW() WHERE id = $1`,
+      [rentalId]
+    );
 
     // Log cancellation
     await logRentalAction(
@@ -3391,24 +3409,24 @@ const cancelSlotRental = async (ownerId, rentalId) => {
     );
 
     // Release reserved slots (both pending and active rentals reserve slots)
-    await client.query(`UPDATE sites SET used_links = GREATEST(0, used_links - $1), updated_at = NOW() WHERE id = $2`, [
-      rental.slots_count,
-      rental.site_id
-    ]);
+    await client.query(
+      `UPDATE sites SET used_links = GREATEST(0, used_links - $1), updated_at = NOW() WHERE id = $2`,
+      [rental.slots_count, rental.site_id]
+    );
 
     // Only refund if rental was active (payment was made)
     if (!wasPending) {
       // Refund tenant
-      await client.query(`UPDATE users SET balance = balance + $1, updated_at = NOW() WHERE id = $2`, [
-        rental.total_price,
-        rental.tenant_id
-      ]);
+      await client.query(
+        `UPDATE users SET balance = balance + $1, updated_at = NOW() WHERE id = $2`,
+        [rental.total_price, rental.tenant_id]
+      );
 
       // Deduct from owner
-      await client.query(`UPDATE users SET balance = balance - $1, updated_at = NOW() WHERE id = $2`, [
-        rental.total_price,
-        ownerId
-      ]);
+      await client.query(
+        `UPDATE users SET balance = balance - $1, updated_at = NOW() WHERE id = $2`,
+        [rental.total_price, ownerId]
+      );
     }
 
     // Create refund transactions (only if active rental was cancelled)
@@ -3443,7 +3461,12 @@ const cancelSlotRental = async (ownerId, rentalId) => {
 
     await client.query('COMMIT');
 
-    logger.info('Slot rental cancelled', { rentalId, ownerId, wasPending, refundAmount: wasPending ? 0 : rental.total_price });
+    logger.info('Slot rental cancelled', {
+      rentalId,
+      ownerId,
+      wasPending,
+      refundAmount: wasPending ? 0 : rental.total_price
+    });
 
     // Send webhook to WordPress site (optional - won't break if fails)
     const webhookResult = await wordpressRentalService.notifyRentalStatusChange(
@@ -3461,7 +3484,9 @@ const cancelSlotRental = async (ownerId, rentalId) => {
     );
 
     if (!webhookResult.success) {
-      logger.warn(`[Rental] WordPress webhook failed for rental ${rentalId}, but rental cancelled successfully`);
+      logger.warn(
+        `[Rental] WordPress webhook failed for rental ${rentalId}, but rental cancelled successfully`
+      );
     }
 
     return { success: true, refundAmount: wasPending ? 0 : rental.total_price, wasPending };
@@ -3624,16 +3649,17 @@ const approveSlotRental = async (tenantId, rentalId) => {
     const tenantBalance = parseFloat(balanceResult.rows[0].balance);
 
     if (tenantBalance < totalPrice) {
-      throw new Error(`Недостаточно средств. Требуется: $${totalPrice.toFixed(2)}, на балансе: $${tenantBalance.toFixed(2)}`);
+      throw new Error(
+        `Недостаточно средств. Требуется: $${totalPrice.toFixed(2)}, на балансе: $${tenantBalance.toFixed(2)}`
+      );
     }
 
     // Re-check available slots before approving
     // NOTE: Since pending rentals now reserve slots in used_links at creation time,
     // we just need to verify the site still has room (no separate reservedSlots calculation needed)
-    const siteCheck = await client.query(
-      'SELECT max_links, used_links FROM sites WHERE id = $1',
-      [rental.site_id]
-    );
+    const siteCheck = await client.query('SELECT max_links, used_links FROM sites WHERE id = $1', [
+      rental.site_id
+    ]);
     const site = siteCheck.rows[0];
 
     // Slots for THIS rental are already in used_links (reserved at creation)
@@ -3642,22 +3668,22 @@ const approveSlotRental = async (tenantId, rentalId) => {
     if (site.used_links > site.max_links) {
       throw new Error(
         `Лимит слотов сайта был уменьшен после создания запроса на аренду. ` +
-        `Занято: ${site.used_links} из ${site.max_links}. ` +
-        `Попросите владельца увеличить лимит или отклоните аренду.`
+          `Занято: ${site.used_links} из ${site.max_links}. ` +
+          `Попросите владельца увеличить лимит или отклоните аренду.`
       );
     }
 
     // Deduct from tenant
-    await client.query('UPDATE users SET balance = balance - $1, updated_at = NOW() WHERE id = $2', [
-      totalPrice,
-      tenantId
-    ]);
+    await client.query(
+      'UPDATE users SET balance = balance - $1, updated_at = NOW() WHERE id = $2',
+      [totalPrice, tenantId]
+    );
 
     // Credit to owner
-    await client.query('UPDATE users SET balance = balance + $1, updated_at = NOW() WHERE id = $2', [
-      totalPrice,
-      rental.owner_id
-    ]);
+    await client.query(
+      'UPDATE users SET balance = balance + $1, updated_at = NOW() WHERE id = $2',
+      [totalPrice, rental.owner_id]
+    );
 
     // NOTE: Slots are already reserved when pending rental was created in createSlotRental()
     // No need to reserve again here - this prevents double-counting of used_links
@@ -3693,7 +3719,11 @@ const approveSlotRental = async (tenantId, rentalId) => {
     await client.query(
       `INSERT INTO transactions (user_id, type, amount, description, created_at)
        VALUES ($1, 'slot_rental_income', $2, $3, NOW())`,
-      [rental.owner_id, totalPrice, `Доход от аренды ${rental.slots_count} слотов на ${rental.site_name}`]
+      [
+        rental.owner_id,
+        totalPrice,
+        `Доход от аренды ${rental.slots_count} слотов на ${rental.site_name}`
+      ]
     );
 
     // Create notification for owner
@@ -3734,7 +3764,9 @@ const approveSlotRental = async (tenantId, rentalId) => {
     );
 
     if (!webhookResult.success) {
-      logger.warn(`[Rental] WordPress webhook failed for rental ${rentalId}, but rental approved successfully`);
+      logger.warn(
+        `[Rental] WordPress webhook failed for rental ${rentalId}, but rental approved successfully`
+      );
     }
 
     return { rentalId, approved: true };
@@ -3832,7 +3864,9 @@ const rejectSlotRental = async (tenantId, rentalId) => {
     );
 
     if (!webhookResult.success) {
-      logger.warn(`[Rental] WordPress webhook failed for rental ${rentalId}, but rental rejected successfully`);
+      logger.warn(
+        `[Rental] WordPress webhook failed for rental ${rentalId}, but rental rejected successfully`
+      );
     }
 
     return { rentalId, rejected: true };

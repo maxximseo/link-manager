@@ -39,6 +39,10 @@ router.post('/verify', publicApiLimiter, wordpressController.verifyConnection);
 router.post('/content', wordpressLimiter, wordpressController.handleContent);
 
 // Endpoint migration - confirm that plugin has applied new endpoint
-router.post('/confirm-endpoint-update', publicApiLimiter, wordpressController.confirmEndpointUpdate);
+router.post(
+  '/confirm-endpoint-update',
+  publicApiLimiter,
+  wordpressController.confirmEndpointUpdate
+);
 
 module.exports = router;

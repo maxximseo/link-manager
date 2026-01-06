@@ -46,10 +46,9 @@ async function testProjectDetailI18n() {
     await page.click('button[type="submit"]');
 
     // Wait for redirect to dashboard (SPA-style navigation)
-    await page.waitForFunction(
-      () => window.location.pathname.includes('dashboard'),
-      { timeout: 15000 }
-    );
+    await page.waitForFunction(() => window.location.pathname.includes('dashboard'), {
+      timeout: 15000
+    });
     await new Promise(r => setTimeout(r, 1000)); // Wait for page to settle
     console.log('   Logged in successfully\n');
   } catch (error) {
@@ -61,7 +60,10 @@ async function testProjectDetailI18n() {
   // First, get a project ID from the dashboard
   let projectId = null;
   try {
-    await page.goto(`${CONFIG.baseUrl}/dashboard.html`, { waitUntil: 'networkidle0', timeout: 15000 });
+    await page.goto(`${CONFIG.baseUrl}/dashboard.html`, {
+      waitUntil: 'networkidle0',
+      timeout: 15000
+    });
     await new Promise(r => setTimeout(r, 2000));
 
     // Find a project link to get its ID
@@ -95,17 +97,27 @@ async function testProjectDetailI18n() {
       localStorage.removeItem('lang');
     });
 
-    await page.goto(`${CONFIG.baseUrl}/project-detail.html?id=${projectId}`, { waitUntil: 'networkidle0', timeout: 15000 });
+    await page.goto(`${CONFIG.baseUrl}/project-detail.html?id=${projectId}`, {
+      waitUntil: 'networkidle0',
+      timeout: 15000
+    });
     await new Promise(r => setTimeout(r, 2000)); // Wait for translations to apply
 
     // Check for Russian text elements
-    const backToProjects = await page.$eval('[data-i18n="backToProjects"]', el => el.textContent).catch(() => 'NOT FOUND');
-    const linkTypesTitle = await page.$eval('[data-i18n="linkTypesTitle"]', el => el.textContent).catch(() => 'NOT FOUND');
+    const backToProjects = await page
+      .$eval('[data-i18n="backToProjects"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
+    const linkTypesTitle = await page
+      .$eval('[data-i18n="linkTypesTitle"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
 
     console.log(`   Back to projects: ${backToProjects}`);
     console.log(`   Link types title: ${linkTypesTitle}`);
 
-    await page.screenshot({ path: path.join(CONFIG.screenshotDir, 'project-detail-ru.png'), fullPage: true });
+    await page.screenshot({
+      path: path.join(CONFIG.screenshotDir, 'project-detail-ru.png'),
+      fullPage: true
+    });
     console.log('   Screenshot saved: project-detail-ru.png');
 
     if (backToProjects.includes('Назад') && linkTypesTitle.includes('Типы')) {
@@ -114,12 +126,21 @@ async function testProjectDetailI18n() {
       console.log('   PASS\n');
     } else {
       results.failed++;
-      results.tests.push({ name: 'Russian Project Detail Page', status: 'FAIL', backToProjects, linkTypesTitle });
+      results.tests.push({
+        name: 'Russian Project Detail Page',
+        status: 'FAIL',
+        backToProjects,
+        linkTypesTitle
+      });
       console.log('   FAIL\n');
     }
   } catch (error) {
     results.failed++;
-    results.tests.push({ name: 'Russian Project Detail Page', status: 'ERROR', error: error.message });
+    results.tests.push({
+      name: 'Russian Project Detail Page',
+      status: 'ERROR',
+      error: error.message
+    });
     console.log(`   ERROR: ${error.message}\n`);
   }
 
@@ -135,37 +156,63 @@ async function testProjectDetailI18n() {
     await new Promise(r => setTimeout(r, 2000)); // Wait for translations to apply
 
     // Check for English text elements
-    const backToProjects = await page.$eval('[data-i18n="backToProjects"]', el => el.textContent).catch(() => 'NOT FOUND');
-    const linkTypesTitle = await page.$eval('[data-i18n="linkTypesTitle"]', el => el.textContent).catch(() => 'NOT FOUND');
-    const projectLinks = await page.$eval('[data-i18n="projectLinks"]', el => el.textContent).catch(() => 'NOT FOUND');
+    const backToProjects = await page
+      .$eval('[data-i18n="backToProjects"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
+    const linkTypesTitle = await page
+      .$eval('[data-i18n="linkTypesTitle"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
+    const projectLinks = await page
+      .$eval('[data-i18n="projectLinks"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
 
     console.log(`   Back to projects: ${backToProjects}`);
     console.log(`   Link types title: ${linkTypesTitle}`);
     console.log(`   Project links tab: ${projectLinks}`);
 
-    await page.screenshot({ path: path.join(CONFIG.screenshotDir, 'project-detail-en.png'), fullPage: true });
+    await page.screenshot({
+      path: path.join(CONFIG.screenshotDir, 'project-detail-en.png'),
+      fullPage: true
+    });
     console.log('   Screenshot saved: project-detail-en.png');
 
-    if (backToProjects.includes('Back') && linkTypesTitle.includes('Link Types') && projectLinks.includes('Project links')) {
+    if (
+      backToProjects.includes('Back') &&
+      linkTypesTitle.includes('Link Types') &&
+      projectLinks.includes('Project links')
+    ) {
       results.passed++;
       results.tests.push({ name: 'English Project Detail Page', status: 'PASS' });
       console.log('   PASS\n');
     } else {
       results.failed++;
-      results.tests.push({ name: 'English Project Detail Page', status: 'FAIL', backToProjects, linkTypesTitle });
+      results.tests.push({
+        name: 'English Project Detail Page',
+        status: 'FAIL',
+        backToProjects,
+        linkTypesTitle
+      });
       console.log('   FAIL\n');
     }
   } catch (error) {
     results.failed++;
-    results.tests.push({ name: 'English Project Detail Page', status: 'ERROR', error: error.message });
+    results.tests.push({
+      name: 'English Project Detail Page',
+      status: 'ERROR',
+      error: error.message
+    });
     console.log(`   ERROR: ${error.message}\n`);
   }
 
   // Test 3: Link Types Section in English
   console.log('Test 3: Link Types Section (English)');
   try {
-    const homepageTitle = await page.$eval('[data-i18n="homepageTitle"]', el => el.textContent).catch(() => 'NOT FOUND');
-    const articleTitle = await page.$eval('[data-i18n="articleTitle"]', el => el.textContent).catch(() => 'NOT FOUND');
+    const homepageTitle = await page
+      .$eval('[data-i18n="homepageTitle"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
+    const articleTitle = await page
+      .$eval('[data-i18n="articleTitle"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
 
     console.log(`   Homepage title: ${homepageTitle}`);
     console.log(`   Article title: ${articleTitle}`);
@@ -188,8 +235,12 @@ async function testProjectDetailI18n() {
   // Test 4: Toolbar Buttons in English
   console.log('Test 4: Toolbar Buttons (English)');
   try {
-    const bulkImport = await page.$eval('[data-i18n="bulkImport"]', el => el.textContent).catch(() => 'NOT FOUND');
-    const addLink = await page.$eval('[data-i18n="addLink"]', el => el.textContent).catch(() => 'NOT FOUND');
+    const bulkImport = await page
+      .$eval('[data-i18n="bulkImport"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
+    const addLink = await page
+      .$eval('[data-i18n="addLink"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
 
     console.log(`   Bulk import: ${bulkImport}`);
     console.log(`   Add link: ${addLink}`);
@@ -212,7 +263,9 @@ async function testProjectDetailI18n() {
   // Test 5: Tab Buttons in English
   console.log('Test 5: Tab Buttons (English)');
   try {
-    const projectArticles = await page.$eval('[data-i18n="projectArticles"]', el => el.textContent).catch(() => 'NOT FOUND');
+    const projectArticles = await page
+      .$eval('[data-i18n="projectArticles"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
 
     console.log(`   Project articles: ${projectArticles}`);
 
@@ -241,8 +294,12 @@ async function testProjectDetailI18n() {
     await page.reload({ waitUntil: 'networkidle0', timeout: 15000 });
     await new Promise(r => setTimeout(r, 2000));
 
-    const backToProjects = await page.$eval('[data-i18n="backToProjects"]', el => el.textContent).catch(() => 'NOT FOUND');
-    const linkTypesTitle = await page.$eval('[data-i18n="linkTypesTitle"]', el => el.textContent).catch(() => 'NOT FOUND');
+    const backToProjects = await page
+      .$eval('[data-i18n="backToProjects"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
+    const linkTypesTitle = await page
+      .$eval('[data-i18n="linkTypesTitle"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
 
     console.log(`   Back to projects: ${backToProjects}`);
     console.log(`   Link types title: ${linkTypesTitle}`);
@@ -253,7 +310,12 @@ async function testProjectDetailI18n() {
       console.log('   PASS\n');
     } else {
       results.failed++;
-      results.tests.push({ name: 'Switch to Russian', status: 'FAIL', backToProjects, linkTypesTitle });
+      results.tests.push({
+        name: 'Switch to Russian',
+        status: 'FAIL',
+        backToProjects,
+        linkTypesTitle
+      });
       console.log('   FAIL\n');
     }
   } catch (error) {

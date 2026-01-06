@@ -46,7 +46,10 @@ async function testLandingPages() {
     console.log(`   Lang attribute: ${lang}`);
     console.log(`   Hero text contains Russian: ${heroText.includes('Управляйте')}`);
 
-    await page.screenshot({ path: path.join(CONFIG.screenshotDir, 'landing-ru.png'), fullPage: true });
+    await page.screenshot({
+      path: path.join(CONFIG.screenshotDir, 'landing-ru.png'),
+      fullPage: true
+    });
     console.log('   📸 Screenshot saved: landing-ru.png');
 
     if (heroText.includes('Управляйте') && lang === 'ru') {
@@ -70,10 +73,15 @@ async function testLandingPages() {
     await page.goto(`${CONFIG.baseUrl}/en`, { waitUntil: 'networkidle0', timeout: 10000 });
 
     // Wait for translations to apply
-    await page.waitForFunction(() => {
-      const hero = document.querySelector('.hero-title');
-      return hero && hero.textContent.includes('Manage');
-    }, { timeout: 5000 }).catch(() => {});
+    await page
+      .waitForFunction(
+        () => {
+          const hero = document.querySelector('.hero-title');
+          return hero && hero.textContent.includes('Manage');
+        },
+        { timeout: 5000 }
+      )
+      .catch(() => {});
 
     const heroText = await page.$eval('.hero-title', el => el.textContent);
     const lang = await page.$eval('html', el => el.getAttribute('lang'));
@@ -81,7 +89,10 @@ async function testLandingPages() {
     console.log(`   Lang attribute: ${lang}`);
     console.log(`   Hero text contains English: ${heroText.includes('Manage')}`);
 
-    await page.screenshot({ path: path.join(CONFIG.screenshotDir, 'landing-en.png'), fullPage: true });
+    await page.screenshot({
+      path: path.join(CONFIG.screenshotDir, 'landing-en.png'),
+      fullPage: true
+    });
     console.log('   📸 Screenshot saved: landing-en.png');
 
     if (heroText.includes('Manage') && lang === 'en') {
@@ -105,8 +116,8 @@ async function testLandingPages() {
     await page.goto(`${CONFIG.baseUrl}/login`, { waitUntil: 'networkidle0', timeout: 10000 });
 
     const title = await page.title();
-    const hasUsernameField = await page.$('#username') !== null;
-    const hasPasswordField = await page.$('#password') !== null;
+    const hasUsernameField = (await page.$('#username')) !== null;
+    const hasPasswordField = (await page.$('#password')) !== null;
     const submitText = await page.$eval('.login-form button[type="submit"]', el => el.textContent);
 
     console.log(`   Title: ${title}`);
@@ -114,7 +125,10 @@ async function testLandingPages() {
     console.log(`   Has password field: ${hasPasswordField}`);
     console.log(`   Submit button text: ${submitText.trim()}`);
 
-    await page.screenshot({ path: path.join(CONFIG.screenshotDir, 'login-ru.png'), fullPage: true });
+    await page.screenshot({
+      path: path.join(CONFIG.screenshotDir, 'login-ru.png'),
+      fullPage: true
+    });
     console.log('   📸 Screenshot saved: login-ru.png');
 
     if (hasUsernameField && hasPasswordField && submitText.includes('Войти')) {
@@ -138,10 +152,15 @@ async function testLandingPages() {
     await page.goto(`${CONFIG.baseUrl}/en/login`, { waitUntil: 'networkidle0', timeout: 10000 });
 
     // Wait for translations to apply
-    await page.waitForFunction(() => {
-      const btn = document.querySelector('.login-form button[type="submit"]');
-      return btn && btn.textContent.includes('Login');
-    }, { timeout: 5000 }).catch(() => {});
+    await page
+      .waitForFunction(
+        () => {
+          const btn = document.querySelector('.login-form button[type="submit"]');
+          return btn && btn.textContent.includes('Login');
+        },
+        { timeout: 5000 }
+      )
+      .catch(() => {});
 
     const submitText = await page.$eval('.login-form button[type="submit"]', el => el.textContent);
     const lang = await page.$eval('html', el => el.getAttribute('lang'));
@@ -149,7 +168,10 @@ async function testLandingPages() {
     console.log(`   Lang attribute: ${lang}`);
     console.log(`   Submit button text: ${submitText}`);
 
-    await page.screenshot({ path: path.join(CONFIG.screenshotDir, 'login-en.png'), fullPage: true });
+    await page.screenshot({
+      path: path.join(CONFIG.screenshotDir, 'login-en.png'),
+      fullPage: true
+    });
     console.log('   📸 Screenshot saved: login-en.png');
 
     if (submitText.includes('Login') && lang === 'en') {
@@ -237,7 +259,8 @@ async function testLandingPages() {
   console.log('═══════════════════════════════════════════');
 
   results.tests.forEach(t => {
-    const icon = t.status === 'PASS' ? '✅' : t.status === 'FAIL' ? '❌' : t.status === 'ERROR' ? '⚠️' : '⏭️';
+    const icon =
+      t.status === 'PASS' ? '✅' : t.status === 'FAIL' ? '❌' : t.status === 'ERROR' ? '⚠️' : '⏭️';
     console.log(`   ${icon} ${t.name}: ${t.status}`);
   });
 

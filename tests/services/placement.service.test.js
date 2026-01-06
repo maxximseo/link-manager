@@ -749,9 +749,7 @@ describe('getUserPlacements - Cache and Error Handling', () => {
 
     const result = await placementService.getUserPlacements(1, 1, 10);
 
-    expect(cacheService.get).toHaveBeenCalledWith(
-      expect.stringContaining('placements:user:1')
-    );
+    expect(cacheService.get).toHaveBeenCalledWith(expect.stringContaining('placements:user:1'));
     expect(result).toEqual(cachedData);
     expect(mockQuery).not.toHaveBeenCalled();
   });
@@ -774,9 +772,7 @@ describe('getPlacementById - Error Handling', () => {
   it('should handle database error in getPlacementById', async () => {
     mockQuery.mockRejectedValue(new Error('Query failed'));
 
-    await expect(placementService.getPlacementById(1, 1)).rejects.toThrow(
-      'Query failed'
-    );
+    await expect(placementService.getPlacementById(1, 1)).rejects.toThrow('Query failed');
   });
 });
 
@@ -788,9 +784,7 @@ describe('getStatistics - Error Handling', () => {
   it('should handle database error in getStatistics', async () => {
     mockQuery.mockRejectedValue(new Error('Statistics query failed'));
 
-    await expect(placementService.getStatistics(1)).rejects.toThrow(
-      'Statistics query failed'
-    );
+    await expect(placementService.getStatistics(1)).rejects.toThrow('Statistics query failed');
   });
 });
 
@@ -872,9 +866,7 @@ describe('getAvailableSites - Additional Tests', () => {
   it('should handle database error in getAvailableSites', async () => {
     mockQuery.mockRejectedValue(new Error('Sites query failed'));
 
-    await expect(placementService.getAvailableSites(1, 1)).rejects.toThrow(
-      'Sites query failed'
-    );
+    await expect(placementService.getAvailableSites(1, 1)).rejects.toThrow('Sites query failed');
   });
 });
 
@@ -1241,9 +1233,7 @@ describe('createPlacement - WordPress Publishing', () => {
   });
 
   it('should rollback when all articles fail to publish', async () => {
-    wordpressService.publishArticle = jest.fn().mockRejectedValue(
-      new Error('WordPress API error')
-    );
+    wordpressService.publishArticle = jest.fn().mockRejectedValue(new Error('WordPress API error'));
 
     mockClient.query
       .mockResolvedValueOnce({}) // BEGIN

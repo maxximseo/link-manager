@@ -75,7 +75,9 @@ async function deepTest() {
     console.log('STEP 2: Check initial state');
     console.log('═══════════════════════════════════════════\n');
     let badge = await page.$('#notificationBadge');
-    let badgeVisible = badge ? await badge.evaluate(el => window.getComputedStyle(el).display !== 'none') : false;
+    let badgeVisible = badge
+      ? await badge.evaluate(el => window.getComputedStyle(el).display !== 'none')
+      : false;
     let badgeCount = badge ? await badge.evaluate(el => el.textContent) : '0';
     console.log(`Badge visible: ${badgeVisible}`);
     console.log(`Badge count: ${badgeCount}\n`);
@@ -102,8 +104,9 @@ async function deepTest() {
       // Click and wait for the API call to complete
       await Promise.all([
         page.waitForResponse(
-          (response) =>
-            response.url().includes('/api/notifications/mark-all-read') && response.status() === 200,
+          response =>
+            response.url().includes('/api/notifications/mark-all-read') &&
+            response.status() === 200,
           { timeout: 10000 }
         ),
         markAllBtn.click()
@@ -119,7 +122,9 @@ async function deepTest() {
     console.log('STEP 4: Check state after marking');
     console.log('═══════════════════════════════════════════\n');
     badge = await page.$('#notificationBadge');
-    badgeVisible = badge ? await badge.evaluate(el => window.getComputedStyle(el).display !== 'none') : false;
+    badgeVisible = badge
+      ? await badge.evaluate(el => window.getComputedStyle(el).display !== 'none')
+      : false;
     console.log(`Badge visible after mark: ${badgeVisible}`);
     console.log(`Expected: false (badge should be hidden)\n`);
 
@@ -136,7 +141,9 @@ async function deepTest() {
     console.log('STEP 6: Check state after reload');
     console.log('═══════════════════════════════════════════\n');
     badge = await page.$('#notificationBadge');
-    badgeVisible = badge ? await badge.evaluate(el => window.getComputedStyle(el).display !== 'none') : false;
+    badgeVisible = badge
+      ? await badge.evaluate(el => window.getComputedStyle(el).display !== 'none')
+      : false;
     badgeCount = badge ? await badge.evaluate(el => el.textContent) : '0';
     console.log(`Badge visible after reload: ${badgeVisible}`);
     console.log(`Badge count after reload: ${badgeCount}`);
@@ -157,7 +164,6 @@ async function deepTest() {
       console.log('   3. API /api/notifications?unread=true filters correctly');
     }
     console.log('═══════════════════════════════════════════\n');
-
   } catch (error) {
     console.error('❌ Test failed:', error.message);
   } finally {

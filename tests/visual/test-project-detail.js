@@ -148,7 +148,6 @@ async function testProjectDetailRedesign() {
       console.log('   - 3 stat cards:', statCards.count === 3 ? '✓' : '✗');
       console.log('   - Modern tabs:', tabsStyle.tabsExist ? '✓' : '✗');
     }
-
   } catch (error) {
     console.error('❌ Test failed:', error.message);
   } finally {

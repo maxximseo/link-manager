@@ -24,7 +24,15 @@ const getUserPlacements = async (userId, page = 0, limit = 0, filters = {}) => {
     const safePage = page > 0 ? Math.max(1, parseInt(page, 10) || 1) : 0;
 
     // Validate status against whitelist to prevent injection
-    const allowedStatuses = ['pending', 'pending_approval', 'placed', 'failed', 'expired', 'rejected', 'scheduled'];
+    const allowedStatuses = [
+      'pending',
+      'pending_approval',
+      'placed',
+      'failed',
+      'expired',
+      'rejected',
+      'scheduled'
+    ];
     const safeStatus = status && allowedStatuses.includes(status) ? status : null;
 
     // Check cache first (2 minutes TTL for placements list)
@@ -33,7 +41,12 @@ const getUserPlacements = async (userId, page = 0, limit = 0, filters = {}) => {
     const cached = await cache.get(cacheKey);
 
     if (cached) {
-      logger.debug('Placements served from cache', { userId, page: safePage, limit: safeLimit, filters });
+      logger.debug('Placements served from cache', {
+        userId,
+        page: safePage,
+        limit: safeLimit,
+        filters
+      });
       return cached;
     }
 
@@ -558,7 +571,10 @@ const createPlacement = async data => {
     if (site.api_key) {
       await cache.del(`wp:content:${site.api_key}`);
     }
-    logger.debug('Cache invalidated after placement creation', { userId, siteApiKey: site.api_key });
+    logger.debug('Cache invalidated after placement creation', {
+      userId,
+      siteApiKey: site.api_key
+    });
 
     return placement;
   } catch (error) {
@@ -675,7 +691,8 @@ const getAvailableSites = async (projectId, userId) => {
       can_place_link:
         parseInt(site.project_links_on_site || 0, 10) === 0 && site.used_links < site.max_links,
       can_place_article:
-        parseInt(site.project_articles_on_site || 0, 10) === 0 && site.used_articles < site.max_articles
+        parseInt(site.project_articles_on_site || 0, 10) === 0 &&
+        site.used_articles < site.max_articles
     }));
 
     return sitesWithAvailability;

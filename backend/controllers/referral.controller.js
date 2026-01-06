@@ -68,7 +68,10 @@ const getTransactions = async (req, res) => {
     const result = await referralService.getReferralTransactions(req.user.id, { page, limit });
     res.json({ success: true, ...result });
   } catch (error) {
-    logger.error('Failed to get referral transactions', { userId: req.user.id, error: error.message });
+    logger.error('Failed to get referral transactions', {
+      userId: req.user.id,
+      error: error.message
+    });
     res.status(500).json({ error: 'Failed to get referral transactions' });
   }
 };
@@ -91,7 +94,10 @@ const updateCode = async (req, res) => {
     logger.error('Failed to update referral code', { userId: req.user.id, error: error.message });
 
     // Return user-friendly error messages
-    if (error.message.includes('already taken') || error.message.includes('Invalid referral code format')) {
+    if (
+      error.message.includes('already taken') ||
+      error.message.includes('Invalid referral code format')
+    ) {
       return res.status(400).json({ error: error.message });
     }
 
@@ -110,7 +116,10 @@ const withdraw = async (req, res) => {
     const result = await referralService.withdrawToBalance(req.user.id, amount || null);
     res.json({ success: true, data: result });
   } catch (error) {
-    logger.error('Failed to withdraw referral balance', { userId: req.user.id, error: error.message });
+    logger.error('Failed to withdraw referral balance', {
+      userId: req.user.id,
+      error: error.message
+    });
 
     // Return user-friendly error messages for validation errors
     if (error.message.includes('Minimum') || error.message.includes('Insufficient')) {
@@ -143,7 +152,10 @@ const validateCode = async (req, res) => {
       }
     });
   } catch (error) {
-    logger.error('Failed to validate referral code', { code: req.params.code, error: error.message });
+    logger.error('Failed to validate referral code', {
+      code: req.params.code,
+      error: error.message
+    });
     res.status(500).json({ error: 'Failed to validate referral code' });
   }
 };
@@ -256,7 +268,10 @@ const approveWithdrawal = async (req, res) => {
     const result = await referralService.approveWithdrawal(parseInt(id, 10), req.user.id);
     res.json({ success: true, data: result });
   } catch (error) {
-    logger.error('Failed to approve withdrawal', { withdrawalId: req.params.id, error: error.message });
+    logger.error('Failed to approve withdrawal', {
+      withdrawalId: req.params.id,
+      error: error.message
+    });
 
     if (error.message.includes('not found') || error.message.includes('Cannot approve')) {
       return res.status(400).json({ error: error.message });
@@ -278,7 +293,10 @@ const rejectWithdrawal = async (req, res) => {
     const result = await referralService.rejectWithdrawal(parseInt(id, 10), req.user.id, comment);
     res.json({ success: true, data: result });
   } catch (error) {
-    logger.error('Failed to reject withdrawal', { withdrawalId: req.params.id, error: error.message });
+    logger.error('Failed to reject withdrawal', {
+      withdrawalId: req.params.id,
+      error: error.message
+    });
 
     if (error.message.includes('not found') || error.message.includes('Cannot reject')) {
       return res.status(400).json({ error: error.message });

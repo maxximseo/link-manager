@@ -41,7 +41,9 @@ async function testBulkImportPreview() {
 
     // Navigate to project detail
     console.log('2️⃣ Loading project page...');
-    await page.goto(CONFIG.baseUrl + '/project-detail.html?id=' + CONFIG.projectId, { waitUntil: 'networkidle2' });
+    await page.goto(CONFIG.baseUrl + '/project-detail.html?id=' + CONFIG.projectId, {
+      waitUntil: 'networkidle2'
+    });
     await sleep(2000);
     console.log('   ✅ Page loaded\n');
 
@@ -97,13 +99,19 @@ Another valid link about <a href="https://example.com/review/">online reviews</a
       const backBtn = document.querySelector('#bulkPreviewModal .modal-footer button:first-child');
 
       // Check for green checkmark circles
-      const greenCircles = document.querySelectorAll('#bulkPreviewContent [style*="background: #22c55e"]');
+      const greenCircles = document.querySelectorAll(
+        '#bulkPreviewContent [style*="background: #22c55e"]'
+      );
 
       // Check for anchor highlight (blue + underline)
-      const anchorHighlights = document.querySelectorAll('#bulkPreviewContent [style*="color: #2563eb"][style*="underline"]');
+      const anchorHighlights = document.querySelectorAll(
+        '#bulkPreviewContent [style*="color: #2563eb"][style*="underline"]'
+      );
 
       // Check for pink anchor text
-      const pinkAnchors = document.querySelectorAll('#bulkPreviewContent [style*="color: #db2777"]');
+      const pinkAnchors = document.querySelectorAll(
+        '#bulkPreviewContent [style*="color: #db2777"]'
+      );
 
       // Check valid links count
       const validCountHeader = document.querySelector('#validLinksCountHeader')?.textContent;
@@ -141,14 +149,20 @@ Another valid link about <a href="https://example.com/review/">online reviews</a
     console.log('═══════════════════════════════════════════════════════════');
 
     const tests = [
-      { name: 'Modal has rounded corners (1rem)', pass: modalStyles.modalBorderRadius === '16px' || modalStyles.modalBorderRadius === '1rem' },
+      {
+        name: 'Modal has rounded corners (1rem)',
+        pass: modalStyles.modalBorderRadius === '16px' || modalStyles.modalBorderRadius === '1rem'
+      },
       { name: 'Header is white', pass: modalStyles.headerBg === 'rgb(255, 255, 255)' },
       { name: 'Footer is gray (#f9fafb)', pass: modalStyles.footerBg === 'rgb(249, 250, 251)' },
       { name: 'Import button has gradient', pass: modalStyles.importBtnBg?.includes('gradient') },
       { name: 'Green checkmark circles present', pass: modalStyles.greenCirclesCount > 0 },
       { name: 'Anchor highlights (blue+underline)', pass: modalStyles.anchorHighlightsCount > 0 },
       { name: 'Pink anchor texts present', pass: modalStyles.pinkAnchorsCount > 0 },
-      { name: 'Valid count matches (header & footer)', pass: modalStyles.validCountHeader === modalStyles.validCountFooter }
+      {
+        name: 'Valid count matches (header & footer)',
+        pass: modalStyles.validCountHeader === modalStyles.validCountFooter
+      }
     ];
 
     let passed = 0;
@@ -173,7 +187,6 @@ Another valid link about <a href="https://example.com/review/">online reviews</a
     } else {
       console.log('\n⚠️ Some tests failed. Check screenshots for details.');
     }
-
   } catch (error) {
     console.error('❌ Test failed:', error.message);
 

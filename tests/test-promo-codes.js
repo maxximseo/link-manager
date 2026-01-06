@@ -95,12 +95,9 @@ async function runTests() {
   // Test 4: Validate promo code
   console.log('\n📋 Test 4: Validate Promo Code (GET /api/promo/validate)');
   try {
-    const response = await fetch(
-      `${BASE_URL}/api/promo/validate?code=${testCode}`,
-      {
-        headers: { Authorization: `Bearer ${token}` }
-      }
-    );
+    const response = await fetch(`${BASE_URL}/api/promo/validate?code=${testCode}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
     const data = await response.json();
     console.log('   Status:', response.status);
     if (data.valid) {
@@ -119,12 +116,9 @@ async function runTests() {
   // Test 5: Validate non-existent promo code
   console.log('\n📋 Test 5: Validate Non-Existent Code');
   try {
-    const response = await fetch(
-      `${BASE_URL}/api/promo/validate?code=INVALID_CODE_XYZ`,
-      {
-        headers: { Authorization: `Bearer ${token}` }
-      }
-    );
+    const response = await fetch(`${BASE_URL}/api/promo/validate?code=INVALID_CODE_XYZ`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
     const data = await response.json();
     console.log('   Status:', response.status);
     if (!data.valid) {
@@ -160,12 +154,9 @@ async function runTests() {
   // Test 7: Verify deactivation
   console.log('\n📋 Test 7: Verify Deactivation (should be invalid)');
   try {
-    const response = await fetch(
-      `${BASE_URL}/api/promo/validate?code=${testCode}`,
-      {
-        headers: { Authorization: `Bearer ${token}` }
-      }
-    );
+    const response = await fetch(`${BASE_URL}/api/promo/validate?code=${testCode}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
     const data = await response.json();
     console.log('   Status:', response.status);
     if (!data.valid) {

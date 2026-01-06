@@ -91,13 +91,18 @@ async function connectWithRetry() {
           maxRetries,
           error: error.message
         });
-        throw new Error(`Database connection failed after ${maxRetries} attempts: ${error.message}`);
+        throw new Error(
+          `Database connection failed after ${maxRetries} attempts: ${error.message}`
+        );
       }
 
-      logger.warn(`Database connection attempt ${attempt}/${maxRetries} failed, retrying in ${delay}ms...`, {
-        error: error.message,
-        nextDelay: `${delay}ms`
-      });
+      logger.warn(
+        `Database connection attempt ${attempt}/${maxRetries} failed, retrying in ${delay}ms...`,
+        {
+          error: error.message,
+          nextDelay: `${delay}ms`
+        }
+      );
 
       await new Promise(resolve => setTimeout(resolve, delay));
     }

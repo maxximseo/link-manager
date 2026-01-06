@@ -95,18 +95,24 @@ function initDatabaseBackupCron() {
 
   // Schedule: At 00:00 and 12:00 every day
   // Cron expression: minute hour day month weekday
-  cron.schedule('0 0,12 * * *', async () => {
-    try {
-      await runFullBackup();
-    } catch (error) {
-      // Error already logged in runFullBackup
-      // Could add alerting here (Slack, email, etc.)
+  cron.schedule(
+    '0 0,12 * * *',
+    async () => {
+      try {
+        await runFullBackup();
+      } catch (error) {
+        // Error already logged in runFullBackup
+        // Could add alerting here (Slack, email, etc.)
+      }
+    },
+    {
+      timezone: 'UTC'
     }
-  }, {
-    timezone: 'UTC'
-  });
+  );
 
-  logger.info('Full backup cron initialized (database + files, every 12 hours at 00:00 and 12:00 UTC)');
+  logger.info(
+    'Full backup cron initialized (database + files, every 12 hours at 00:00 and 12:00 UTC)'
+  );
 }
 
 /**

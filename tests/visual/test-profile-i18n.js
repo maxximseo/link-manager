@@ -46,10 +46,9 @@ async function testProfileI18n() {
     await page.click('button[type="submit"]');
 
     // Wait for redirect to dashboard (SPA-style navigation)
-    await page.waitForFunction(
-      () => window.location.pathname.includes('dashboard'),
-      { timeout: 15000 }
-    );
+    await page.waitForFunction(() => window.location.pathname.includes('dashboard'), {
+      timeout: 15000
+    });
     await new Promise(r => setTimeout(r, 1000)); // Wait for page to settle
     console.log('   Logged in successfully\n');
   } catch (error) {
@@ -66,17 +65,27 @@ async function testProfileI18n() {
       localStorage.removeItem('lang');
     });
 
-    await page.goto(`${CONFIG.baseUrl}/profile.html`, { waitUntil: 'networkidle0', timeout: 15000 });
+    await page.goto(`${CONFIG.baseUrl}/profile.html`, {
+      waitUntil: 'networkidle0',
+      timeout: 15000
+    });
     await new Promise(r => setTimeout(r, 2000)); // Wait for translations to apply
 
     // Check for Russian text elements
-    const profileInfoTitle = await page.$eval('[data-i18n="profileInfoTitle"]', el => el.textContent).catch(() => 'NOT FOUND');
-    const changePasswordTitle = await page.$eval('[data-i18n="changePasswordTitle"]', el => el.textContent).catch(() => 'NOT FOUND');
+    const profileInfoTitle = await page
+      .$eval('[data-i18n="profileInfoTitle"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
+    const changePasswordTitle = await page
+      .$eval('[data-i18n="changePasswordTitle"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
 
     console.log(`   Profile info title: ${profileInfoTitle}`);
     console.log(`   Change password title: ${changePasswordTitle}`);
 
-    await page.screenshot({ path: path.join(CONFIG.screenshotDir, 'profile-ru.png'), fullPage: true });
+    await page.screenshot({
+      path: path.join(CONFIG.screenshotDir, 'profile-ru.png'),
+      fullPage: true
+    });
     console.log('   Screenshot saved: profile-ru.png');
 
     if (profileInfoTitle.includes('Информация') && changePasswordTitle.includes('Смена')) {
@@ -85,7 +94,12 @@ async function testProfileI18n() {
       console.log('   PASS\n');
     } else {
       results.failed++;
-      results.tests.push({ name: 'Russian Profile Page', status: 'FAIL', profileInfoTitle, changePasswordTitle });
+      results.tests.push({
+        name: 'Russian Profile Page',
+        status: 'FAIL',
+        profileInfoTitle,
+        changePasswordTitle
+      });
       console.log('   FAIL\n');
     }
   } catch (error) {
@@ -106,24 +120,42 @@ async function testProfileI18n() {
     await new Promise(r => setTimeout(r, 2000)); // Wait for translations to apply
 
     // Check for English text elements
-    const profileInfoTitle = await page.$eval('[data-i18n="profileInfoTitle"]', el => el.textContent).catch(() => 'NOT FOUND');
-    const changePasswordTitle = await page.$eval('[data-i18n="changePasswordTitle"]', el => el.textContent).catch(() => 'NOT FOUND');
-    const saveChangesBtn = await page.$eval('[data-i18n="saveChangesBtn"]', el => el.textContent).catch(() => 'NOT FOUND');
+    const profileInfoTitle = await page
+      .$eval('[data-i18n="profileInfoTitle"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
+    const changePasswordTitle = await page
+      .$eval('[data-i18n="changePasswordTitle"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
+    const saveChangesBtn = await page
+      .$eval('[data-i18n="saveChangesBtn"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
 
     console.log(`   Profile info title: ${profileInfoTitle}`);
     console.log(`   Change password title: ${changePasswordTitle}`);
     console.log(`   Save changes button: ${saveChangesBtn}`);
 
-    await page.screenshot({ path: path.join(CONFIG.screenshotDir, 'profile-en.png'), fullPage: true });
+    await page.screenshot({
+      path: path.join(CONFIG.screenshotDir, 'profile-en.png'),
+      fullPage: true
+    });
     console.log('   Screenshot saved: profile-en.png');
 
-    if (profileInfoTitle.includes('Profile') && changePasswordTitle.includes('Change password') && saveChangesBtn.includes('Save')) {
+    if (
+      profileInfoTitle.includes('Profile') &&
+      changePasswordTitle.includes('Change password') &&
+      saveChangesBtn.includes('Save')
+    ) {
       results.passed++;
       results.tests.push({ name: 'English Profile Page', status: 'PASS' });
       console.log('   PASS\n');
     } else {
       results.failed++;
-      results.tests.push({ name: 'English Profile Page', status: 'FAIL', profileInfoTitle, changePasswordTitle });
+      results.tests.push({
+        name: 'English Profile Page',
+        status: 'FAIL',
+        profileInfoTitle,
+        changePasswordTitle
+      });
       console.log('   FAIL\n');
     }
   } catch (error) {
@@ -135,15 +167,25 @@ async function testProfileI18n() {
   // Test 3: Form Labels in English
   console.log('Test 3: Form Labels (English)');
   try {
-    const usernameLabel = await page.$eval('[data-i18n="usernameLabel"]', el => el.textContent).catch(() => 'NOT FOUND');
-    const emailLabel = await page.$eval('[data-i18n="emailLabel"]', el => el.textContent).catch(() => 'NOT FOUND');
-    const displayNameLabel = await page.$eval('[data-i18n="displayNameLabel"]', el => el.textContent).catch(() => 'NOT FOUND');
+    const usernameLabel = await page
+      .$eval('[data-i18n="usernameLabel"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
+    const emailLabel = await page
+      .$eval('[data-i18n="emailLabel"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
+    const displayNameLabel = await page
+      .$eval('[data-i18n="displayNameLabel"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
 
     console.log(`   Username label: ${usernameLabel}`);
     console.log(`   Email label: ${emailLabel}`);
     console.log(`   Display name label: ${displayNameLabel}`);
 
-    if (usernameLabel.includes('Username') && emailLabel.includes('Email') && displayNameLabel.includes('Display name')) {
+    if (
+      usernameLabel.includes('Username') &&
+      emailLabel.includes('Email') &&
+      displayNameLabel.includes('Display name')
+    ) {
       results.passed++;
       results.tests.push({ name: 'Form Labels EN', status: 'PASS' });
       console.log('   PASS\n');
@@ -161,8 +203,12 @@ async function testProfileI18n() {
   // Test 4: Account Info Section in English
   console.log('Test 4: Account Info Section (English)');
   try {
-    const accountInfoTitle = await page.$eval('[data-i18n="accountInfoTitle"]', el => el.textContent).catch(() => 'NOT FOUND');
-    const userIdLabel = await page.$eval('[data-i18n="userIdLabel"]', el => el.textContent).catch(() => 'NOT FOUND');
+    const accountInfoTitle = await page
+      .$eval('[data-i18n="accountInfoTitle"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
+    const userIdLabel = await page
+      .$eval('[data-i18n="userIdLabel"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
 
     console.log(`   Account info title: ${accountInfoTitle}`);
     console.log(`   User ID label: ${userIdLabel}`);
@@ -185,7 +231,9 @@ async function testProfileI18n() {
   // Test 5: Logout Button in English
   console.log('Test 5: Logout Button (English)');
   try {
-    const logoutBtn = await page.$eval('[data-i18n="logoutBtn"]', el => el.textContent).catch(() => 'NOT FOUND');
+    const logoutBtn = await page
+      .$eval('[data-i18n="logoutBtn"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
 
     console.log(`   Logout button: ${logoutBtn}`);
 
@@ -214,8 +262,12 @@ async function testProfileI18n() {
     await page.reload({ waitUntil: 'networkidle0', timeout: 15000 });
     await new Promise(r => setTimeout(r, 2000));
 
-    const profileInfoTitle = await page.$eval('[data-i18n="profileInfoTitle"]', el => el.textContent).catch(() => 'NOT FOUND');
-    const accountInfoTitle = await page.$eval('[data-i18n="accountInfoTitle"]', el => el.textContent).catch(() => 'NOT FOUND');
+    const profileInfoTitle = await page
+      .$eval('[data-i18n="profileInfoTitle"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
+    const accountInfoTitle = await page
+      .$eval('[data-i18n="accountInfoTitle"]', el => el.textContent)
+      .catch(() => 'NOT FOUND');
 
     console.log(`   Profile info title: ${profileInfoTitle}`);
     console.log(`   Account info title: ${accountInfoTitle}`);
@@ -226,7 +278,12 @@ async function testProfileI18n() {
       console.log('   PASS\n');
     } else {
       results.failed++;
-      results.tests.push({ name: 'Switch to Russian', status: 'FAIL', profileInfoTitle, accountInfoTitle });
+      results.tests.push({
+        name: 'Switch to Russian',
+        status: 'FAIL',
+        profileInfoTitle,
+        accountInfoTitle
+      });
       console.log('   FAIL\n');
     }
   } catch (error) {

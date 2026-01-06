@@ -639,10 +639,14 @@ describe('Project Controller', () => {
 
       await projectController.addProjectArticle(mockReq, mockRes);
 
-      expect(projectService.addProjectArticle).toHaveBeenCalledWith('1', 1, expect.objectContaining({
-        title: 'New Article',
-        content: 'Article content here'
-      }));
+      expect(projectService.addProjectArticle).toHaveBeenCalledWith(
+        '1',
+        1,
+        expect.objectContaining({
+          title: 'New Article',
+          content: 'Article content here'
+        })
+      );
       expect(mockRes.json).toHaveBeenCalledWith(mockArticle);
     });
 
@@ -697,10 +701,15 @@ describe('Project Controller', () => {
 
       await projectController.updateProjectArticle(mockReq, mockRes);
 
-      expect(projectService.updateProjectArticle).toHaveBeenCalledWith('1', '10', 1, expect.objectContaining({
-        title: 'Updated Title',
-        content: 'Updated content'
-      }));
+      expect(projectService.updateProjectArticle).toHaveBeenCalledWith(
+        '1',
+        '10',
+        1,
+        expect.objectContaining({
+          title: 'Updated Title',
+          content: 'Updated content'
+        })
+      );
       expect(mockRes.json).toHaveBeenCalledWith(mockArticle);
     });
 
@@ -737,7 +746,9 @@ describe('Project Controller', () => {
       await projectController.deleteProjectArticle(mockReq, mockRes);
 
       expect(projectService.deleteProjectArticle).toHaveBeenCalledWith('1', '10', 1);
-      expect(mockRes.json).toHaveBeenCalledWith({ message: 'Project article deleted successfully' });
+      expect(mockRes.json).toHaveBeenCalledWith({
+        message: 'Project article deleted successfully'
+      });
     });
 
     it('should return 404 if article not found in project', async () => {
@@ -774,7 +785,9 @@ describe('Project Controller', () => {
 
       await projectController.deleteProjectArticle(mockReq, mockRes);
 
-      expect(mockRes.json).toHaveBeenCalledWith({ message: 'Project article deleted successfully' });
+      expect(mockRes.json).toHaveBeenCalledWith({
+        message: 'Project article deleted successfully'
+      });
     });
 
     it('should return 500 on service error', async () => {

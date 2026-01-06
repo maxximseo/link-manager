@@ -17,7 +17,7 @@ async function testTimestamps() {
 
   // Get notifications
   const notifsRes = await fetch(`${baseUrl}/api/notifications?limit=3`, {
-    headers: { 'Authorization': `Bearer ${token}` }
+    headers: { Authorization: `Bearer ${token}` }
   });
 
   const result = await notifsRes.json();
@@ -39,7 +39,9 @@ async function testTimestamps() {
       console.log(`   created_at raw: ${n.created_at}`);
       console.log(`   created_at parsed: ${createdAt.toString()}`);
       console.log(`   Diff: ${diffMins} min (${diffHours} hours)`);
-      console.log(`   JS calculation says: ${diffHours > 0 ? diffHours + ' ч назад' : diffMins + ' мин назад'}`);
+      console.log(
+        `   JS calculation says: ${diffHours > 0 ? diffHours + ' ч назад' : diffMins + ' мин назад'}`
+      );
     });
   }
 

@@ -789,6 +789,7 @@ const translations = {
     siteStatusActive: 'Активен',
     siteStatusPending: 'На проверке',
     siteStatusRejected: 'Отклонён',
+    siteStatusPrivate: 'Приватный',
 
     // Balance page - discount tiers
     tierStandard: 'Стандарт',
@@ -1633,6 +1634,7 @@ const translations = {
     siteStatusActive: 'Active',
     siteStatusPending: 'Under review',
     siteStatusRejected: 'Rejected',
+    siteStatusPrivate: 'Private',
 
     // Balance page - discount tiers
     tierStandard: 'Standard',

@@ -59,7 +59,9 @@ async function testLinkEdit() {
 
     // 2. Load project page
     console.log('\n2️⃣ Loading project page...');
-    await page.goto(CONFIG.baseUrl + '/project-detail.html?id=' + CONFIG.projectId, { waitUntil: 'networkidle2' });
+    await page.goto(CONFIG.baseUrl + '/project-detail.html?id=' + CONFIG.projectId, {
+      waitUntil: 'networkidle2'
+    });
     await sleep(3000);
     addResult('Project page loaded', true);
 
@@ -160,7 +162,7 @@ async function testLinkEdit() {
     await sleep(2000);
 
     // Check if anchor text updated in table
-    const anchorInTable = await page.evaluate((expectedAnchor) => {
+    const anchorInTable = await page.evaluate(expectedAnchor => {
       const cells = document.querySelectorAll('.modern-table tbody td');
       for (const cell of cells) {
         if (cell.textContent.includes(expectedAnchor.substring(0, 20))) {
@@ -181,19 +183,26 @@ async function testLinkEdit() {
 
     // 9. Verify via API
     console.log('\n9️⃣ Verifying via API...');
-    const apiResponse = await page.evaluate(async (projectId, linkId) => {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/projects/${projectId}/links`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await response.json();
-      const link = data.find(l => l.id === linkId);
-      return link;
-    }, CONFIG.projectId, CONFIG.testLinkId);
+    const apiResponse = await page.evaluate(
+      async (projectId, linkId) => {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/projects/${projectId}/links`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await response.json();
+        const link = data.find(l => l.id === linkId);
+        return link;
+      },
+      CONFIG.projectId,
+      CONFIG.testLinkId
+    );
 
     if (apiResponse) {
       addResult('API returns updated anchor', apiResponse.anchor_text.includes('тестовый анкор'));
-      addResult('API returns updated html_context', apiResponse.html_context && apiResponse.html_context.includes('Тестовый HTML контекст'));
+      addResult(
+        'API returns updated html_context',
+        apiResponse.html_context && apiResponse.html_context.includes('Тестовый HTML контекст')
+      );
       addResult('API returns updated_at timestamp', !!apiResponse.updated_at);
     } else {
       addResult('API verification', false, 'Link not found in response');
@@ -201,24 +210,28 @@ async function testLinkEdit() {
 
     // 10. Restore original data
     console.log('\n🔄 Restoring original data...');
-    await page.evaluate(async (projectId, linkId) => {
-      const token = localStorage.getItem('token');
-      await fetch(`/api/projects/${projectId}/links/${linkId}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          url: 'https://example.com/titanium-knife',
-          anchor_text: 'перочинный нож титановый',
-          html_context: 'Легкий перочинный нож титановый отличается прочностью среди перочинных ножей.',
-          usage_limit: 1
-        })
-      });
-    }, CONFIG.projectId, CONFIG.testLinkId);
+    await page.evaluate(
+      async (projectId, linkId) => {
+        const token = localStorage.getItem('token');
+        await fetch(`/api/projects/${projectId}/links/${linkId}`, {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            url: 'https://example.com/titanium-knife',
+            anchor_text: 'перочинный нож титановый',
+            html_context:
+              'Легкий перочинный нож титановый отличается прочностью среди перочинных ножей.',
+            usage_limit: 1
+          })
+        });
+      },
+      CONFIG.projectId,
+      CONFIG.testLinkId
+    );
     console.log('   ✅ Original data restored');
-
   } catch (error) {
     console.error('\n❌ Test error:', error.message);
     await page.screenshot({

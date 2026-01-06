@@ -160,7 +160,10 @@ router.patch('/mark-all-read', authMiddleware, apiLimiter, async (req, res) => {
     try {
       await cache.delPattern(`notifications:${req.user.id}:*`);
     } catch (cacheError) {
-      logger.warn('Failed to clear notification cache', { userId: req.user.id, error: cacheError.message });
+      logger.warn('Failed to clear notification cache', {
+        userId: req.user.id,
+        error: cacheError.message
+      });
     }
 
     res.json({

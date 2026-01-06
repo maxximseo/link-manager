@@ -46,10 +46,9 @@ async function testDashboardI18n() {
     await page.click('button[type="submit"]');
 
     // Wait for redirect to dashboard (SPA-style navigation)
-    await page.waitForFunction(
-      () => window.location.pathname.includes('dashboard'),
-      { timeout: 15000 }
-    );
+    await page.waitForFunction(() => window.location.pathname.includes('dashboard'), {
+      timeout: 15000
+    });
     await new Promise(r => setTimeout(r, 1000)); // Wait for page to settle
     console.log('   Logged in successfully\n');
   } catch (error) {
@@ -66,7 +65,10 @@ async function testDashboardI18n() {
       localStorage.removeItem('lang');
     });
 
-    await page.goto(`${CONFIG.baseUrl}/dashboard.html`, { waitUntil: 'networkidle0', timeout: 15000 });
+    await page.goto(`${CONFIG.baseUrl}/dashboard.html`, {
+      waitUntil: 'networkidle0',
+      timeout: 15000
+    });
     await new Promise(r => setTimeout(r, 1000)); // Wait for translations to apply
 
     const pageTitle = await page.title();
@@ -81,7 +83,10 @@ async function testDashboardI18n() {
     console.log(`   Create button: ${createBtnText}`);
     console.log(`   Projects list header: ${projectsListText}`);
 
-    await page.screenshot({ path: path.join(CONFIG.screenshotDir, 'dashboard-ru.png'), fullPage: true });
+    await page.screenshot({
+      path: path.join(CONFIG.screenshotDir, 'dashboard-ru.png'),
+      fullPage: true
+    });
     console.log('   Screenshot saved: dashboard-ru.png');
 
     if (lang === 'ru' && createBtnText.includes('Создать') && projectsListText.includes('Список')) {
@@ -90,7 +95,13 @@ async function testDashboardI18n() {
       console.log('   PASS\n');
     } else {
       results.failed++;
-      results.tests.push({ name: 'Russian Dashboard', status: 'FAIL', lang, createBtnText, projectsListText });
+      results.tests.push({
+        name: 'Russian Dashboard',
+        status: 'FAIL',
+        lang,
+        createBtnText,
+        projectsListText
+      });
       console.log('   FAIL\n');
     }
   } catch (error) {
@@ -122,16 +133,30 @@ async function testDashboardI18n() {
     console.log(`   Projects list header: ${projectsListText}`);
     console.log(`   Total projects label: ${totalProjectsText}`);
 
-    await page.screenshot({ path: path.join(CONFIG.screenshotDir, 'dashboard-en.png'), fullPage: true });
+    await page.screenshot({
+      path: path.join(CONFIG.screenshotDir, 'dashboard-en.png'),
+      fullPage: true
+    });
     console.log('   Screenshot saved: dashboard-en.png');
 
-    if (lang === 'en' && createBtnText.includes('Create') && projectsListText.includes('Projects') && totalProjectsText.includes('Total')) {
+    if (
+      lang === 'en' &&
+      createBtnText.includes('Create') &&
+      projectsListText.includes('Projects') &&
+      totalProjectsText.includes('Total')
+    ) {
       results.passed++;
       results.tests.push({ name: 'English Dashboard', status: 'PASS' });
       console.log('   PASS\n');
     } else {
       results.failed++;
-      results.tests.push({ name: 'English Dashboard', status: 'FAIL', lang, createBtnText, projectsListText });
+      results.tests.push({
+        name: 'English Dashboard',
+        status: 'FAIL',
+        lang,
+        createBtnText,
+        projectsListText
+      });
       console.log('   FAIL\n');
     }
   } catch (error) {
@@ -153,7 +178,12 @@ async function testDashboardI18n() {
     console.log(`   Spent header: ${spentHeader}`);
     console.log(`   Placed header: ${placedHeader}`);
 
-    if (projectHeader === 'Project' && createdHeader === 'Created' && spentHeader === 'Spent' && placedHeader === 'Placed') {
+    if (
+      projectHeader === 'Project' &&
+      createdHeader === 'Created' &&
+      spentHeader === 'Spent' &&
+      placedHeader === 'Placed'
+    ) {
       results.passed++;
       results.tests.push({ name: 'Table Headers EN', status: 'PASS' });
       console.log('   PASS\n');
@@ -203,14 +233,21 @@ async function testDashboardI18n() {
   console.log('Test 5: Stats Cards Labels (Russian)');
   try {
     const totalSitesText = await page.$eval('[data-i18n="totalSites"]', el => el.textContent);
-    const totalPlacementsText = await page.$eval('[data-i18n="totalPlacements"]', el => el.textContent);
+    const totalPlacementsText = await page.$eval(
+      '[data-i18n="totalPlacements"]',
+      el => el.textContent
+    );
     const scheduledText = await page.$eval('[data-i18n="scheduled"]', el => el.textContent);
 
     console.log(`   Total sites: ${totalSitesText}`);
     console.log(`   Total placements: ${totalPlacementsText}`);
     console.log(`   Scheduled: ${scheduledText}`);
 
-    if (totalSitesText.includes('сайтов') && totalPlacementsText.includes('размещений') && scheduledText.includes('Запланировано')) {
+    if (
+      totalSitesText.includes('сайтов') &&
+      totalPlacementsText.includes('размещений') &&
+      scheduledText.includes('Запланировано')
+    ) {
       results.passed++;
       results.tests.push({ name: 'Stats Cards RU', status: 'PASS' });
       console.log('   PASS\n');
@@ -242,13 +279,21 @@ async function testDashboardI18n() {
     console.log(`   Cancel button: ${cancelBtn}`);
     console.log(`   Save button: ${saveBtn}`);
 
-    await page.screenshot({ path: path.join(CONFIG.screenshotDir, 'dashboard-modal-ru.png'), fullPage: true });
+    await page.screenshot({
+      path: path.join(CONFIG.screenshotDir, 'dashboard-modal-ru.png'),
+      fullPage: true
+    });
     console.log('   Screenshot saved: dashboard-modal-ru.png');
 
     // Close modal
     await page.click('.btn-close');
 
-    if (modalTitle.includes('Создать') && projectNameLabel.includes('Название') && cancelBtn === 'Отмена' && saveBtn === 'Сохранить') {
+    if (
+      modalTitle.includes('Создать') &&
+      projectNameLabel.includes('Название') &&
+      cancelBtn === 'Отмена' &&
+      saveBtn === 'Сохранить'
+    ) {
       results.passed++;
       results.tests.push({ name: 'Modal RU', status: 'PASS' });
       console.log('   PASS\n');

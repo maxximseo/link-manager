@@ -3,10 +3,7 @@
  * Fail-fast approach: server should crash at startup if config is wrong
  */
 
-const REQUIRED_VARS = [
-  'DATABASE_URL',
-  'JWT_SECRET'
-];
+const REQUIRED_VARS = ['DATABASE_URL', 'JWT_SECRET'];
 
 const OPTIONAL_WARNINGS = [
   { key: 'SENTRY_DSN', message: 'Sentry not configured - error tracking disabled' },

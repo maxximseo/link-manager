@@ -118,7 +118,7 @@ const createDepositInvoice = async (userId, amount, email = null) => {
  * @param {string} token - JWT token from webhook
  * @returns {Object} { valid: boolean, data?: object, error?: string }
  */
-const verifyWebhookSignature = (token) => {
+const verifyWebhookSignature = token => {
   const secretKey = process.env.CRYPTOCLOUD_SECRET_KEY;
 
   if (!secretKey) {
@@ -142,7 +142,7 @@ const verifyWebhookSignature = (token) => {
  * @param {Object} webhookData - Webhook payload
  * @returns {Object} Processing result
  */
-const processWebhook = async (webhookData) => {
+const processWebhook = async webhookData => {
   const { status, invoice_id, amount_crypto, currency, order_id, token } = webhookData;
 
   logger.info('Processing CryptoCloud webhook', {
@@ -162,10 +162,9 @@ const processWebhook = async (webhookData) => {
   }
 
   // Find invoice in database
-  const invoiceResult = await query(
-    'SELECT * FROM payment_invoices WHERE order_id = $1',
-    [order_id]
-  );
+  const invoiceResult = await query('SELECT * FROM payment_invoices WHERE order_id = $1', [
+    order_id
+  ]);
 
   if (invoiceResult.rows.length === 0) {
     logger.warn('Invoice not found for webhook', { orderId: order_id });
@@ -282,7 +281,7 @@ const markInvoiceCancelled = async (invoiceId, status) => {
  * @param {string} orderId - Order ID
  * @returns {Object|null} Invoice record
  */
-const getInvoiceByOrderId = async (orderId) => {
+const getInvoiceByOrderId = async orderId => {
   const result = await query('SELECT * FROM payment_invoices WHERE order_id = $1', [orderId]);
   return result.rows[0] || null;
 };
@@ -348,7 +347,7 @@ const getUserPayments = async (userId, page = 1, limit = 20) => {
   const total = parseInt(countResult.rows[0].count, 10);
 
   return {
-    payments: paymentsResult.rows.map((p) => ({
+    payments: paymentsResult.rows.map(p => ({
       id: p.id,
       orderId: p.order_id,
       amount: parseFloat(p.amount),
@@ -396,7 +395,7 @@ const cancelExpiredInvoices = async () => {
  * @param {number} userId - User ID
  * @returns {Array} List of pending invoices
  */
-const getPendingInvoices = async (userId) => {
+const getPendingInvoices = async userId => {
   const result = await query(
     `
     SELECT id, order_id, amount, payment_link, expires_at, created_at
@@ -410,7 +409,7 @@ const getPendingInvoices = async (userId) => {
     [userId]
   );
 
-  return result.rows.map((p) => ({
+  return result.rows.map(p => ({
     id: p.id,
     orderId: p.order_id,
     amount: parseFloat(p.amount),

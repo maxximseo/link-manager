@@ -37,7 +37,7 @@ async function testReferralsPage() {
     console.log('\n1. Logging in via API...');
     await page.goto(`${CONFIG.baseUrl}/login.html`, { waitUntil: 'networkidle0' });
 
-    const loginResponse = await page.evaluate(async (credentials) => {
+    const loginResponse = await page.evaluate(async credentials => {
       const resp = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -50,7 +50,7 @@ async function testReferralsPage() {
     }, CONFIG.credentials);
 
     if (loginResponse.token) {
-      await page.evaluate((token) => {
+      await page.evaluate(token => {
         localStorage.setItem('token', token);
       }, loginResponse.token);
       console.log('   Login successful');
@@ -84,14 +84,28 @@ async function testReferralsPage() {
 
     // Check stat cards (4 expected)
     const statCards = await page.$$('.ref-stat-card');
-    console.log('   Stat cards (.ref-stat-card):', statCards.length === 4 ? `✅ Found ${statCards.length}` : `❌ Expected 4, found ${statCards.length}`);
+    console.log(
+      '   Stat cards (.ref-stat-card):',
+      statCards.length === 4
+        ? `✅ Found ${statCards.length}`
+        : `❌ Expected 4, found ${statCards.length}`
+    );
 
     // Check each color variant
     const greenCard = await page.$('.ref-stat-card.green');
     const blueCard = await page.$('.ref-stat-card.blue');
     const cyanCard = await page.$('.ref-stat-card.cyan');
     const amberCard = await page.$('.ref-stat-card.amber');
-    console.log('   Color cards: green:', !!greenCard, 'blue:', !!blueCard, 'cyan:', !!cyanCard, 'amber:', !!amberCard);
+    console.log(
+      '   Color cards: green:',
+      !!greenCard,
+      'blue:',
+      !!blueCard,
+      'cyan:',
+      !!cyanCard,
+      'amber:',
+      !!amberCard
+    );
 
     // Check wallet card
     const walletCardExists = await page.$('.ref-wallet-card');
@@ -99,11 +113,19 @@ async function testReferralsPage() {
 
     // Check withdraw card
     const withdrawCardExists = await page.$('.ref-withdraw-card');
-    console.log('   Withdraw card (.ref-withdraw-card):', withdrawCardExists ? '✅ Found' : '❌ Missing');
+    console.log(
+      '   Withdraw card (.ref-withdraw-card):',
+      withdrawCardExists ? '✅ Found' : '❌ Missing'
+    );
 
     // Check tables
     const tableCards = await page.$$('.ref-table-card');
-    console.log('   Table cards (.ref-table-card):', tableCards.length === 2 ? `✅ Found ${tableCards.length}` : `❌ Expected 2, found ${tableCards.length}`);
+    console.log(
+      '   Table cards (.ref-table-card):',
+      tableCards.length === 2
+        ? `✅ Found ${tableCards.length}`
+        : `❌ Expected 2, found ${tableCards.length}`
+    );
 
     // Check data loaded
     console.log('\n4. Checking data loading...');
@@ -111,13 +133,19 @@ async function testReferralsPage() {
     const referralCode = await page.$eval('#referralCode', el => el.value).catch(() => '');
     console.log('   Referral code:', referralCode || '(empty)');
 
-    const referralBalance = await page.$eval('#referralBalance', el => el.textContent).catch(() => 'N/A');
+    const referralBalance = await page
+      .$eval('#referralBalance', el => el.textContent)
+      .catch(() => 'N/A');
     console.log('   Referral balance: $' + referralBalance);
 
-    const totalEarnings = await page.$eval('#totalEarnings', el => el.textContent).catch(() => 'N/A');
+    const totalEarnings = await page
+      .$eval('#totalEarnings', el => el.textContent)
+      .catch(() => 'N/A');
     console.log('   Total earnings: $' + totalEarnings);
 
-    const totalReferrals = await page.$eval('#totalReferrals', el => el.textContent).catch(() => 'N/A');
+    const totalReferrals = await page
+      .$eval('#totalReferrals', el => el.textContent)
+      .catch(() => 'N/A');
     console.log('   Total referrals:', totalReferrals);
 
     // Test copy button click
@@ -131,7 +159,10 @@ async function testReferralsPage() {
     }
 
     // Take screenshot
-    await page.screenshot({ path: 'tests/visual/screenshots/referrals-redesign.png', fullPage: true });
+    await page.screenshot({
+      path: 'tests/visual/screenshots/referrals-redesign.png',
+      fullPage: true
+    });
     console.log('\n6. Screenshot saved to tests/visual/screenshots/referrals-redesign.png');
 
     // Report console errors
@@ -143,7 +174,6 @@ async function testReferralsPage() {
       console.log('✅ No console errors detected');
     }
     console.log('='.repeat(60));
-
   } catch (e) {
     console.error('Test failed:', e.message);
   } finally {

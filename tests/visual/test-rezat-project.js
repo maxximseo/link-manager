@@ -53,7 +53,9 @@ async function testRezatProject() {
 
     // Load page
     console.log('2️⃣ Loading rezat.ru project...');
-    await page.goto(CONFIG.baseUrl + '/project-detail.html?id=' + CONFIG.projectId, { waitUntil: 'networkidle2' });
+    await page.goto(CONFIG.baseUrl + '/project-detail.html?id=' + CONFIG.projectId, {
+      waitUntil: 'networkidle2'
+    });
     await sleep(3000);
     console.log('   ✅ Page loaded\n');
 
@@ -88,10 +90,14 @@ async function testRezatProject() {
     });
     const hasBlueActiveBg = activeTabStyle?.background === 'rgb(239, 246, 255)'; // #eff6ff
     check('Active tab has light blue background (#eff6ff)', hasBlueActiveBg);
-    console.log(`      Active tab bg: ${activeTabStyle?.background}, color: ${activeTabStyle?.color}`);
+    console.log(
+      `      Active tab bg: ${activeTabStyle?.background}, color: ${activeTabStyle?.color}`
+    );
 
     // Check tab count format - just number, not in badge
-    const tabText = await page.$eval('.pill-tab.active', el => el.textContent.trim()).catch(() => '');
+    const tabText = await page
+      .$eval('.pill-tab.active', el => el.textContent.trim())
+      .catch(() => '');
     const hasCorrectFormat = tabText.includes('(') && tabText.includes(')');
     check('Tab shows count in (N) format', hasCorrectFormat);
     console.log(`      Tab text: "${tabText}"`);
@@ -121,7 +127,8 @@ async function testRezatProject() {
       if (!btn) return null;
       return window.getComputedStyle(btn).backgroundImage;
     });
-    const hasPurplePinkGradient = primaryBtnBg && (primaryBtnBg.includes('139, 92, 246') || primaryBtnBg.includes('8b5cf6'));
+    const hasPurplePinkGradient =
+      primaryBtnBg && (primaryBtnBg.includes('139, 92, 246') || primaryBtnBg.includes('8b5cf6'));
     check('Primary button has purple-pink gradient (#8b5cf6)', hasPurplePinkGradient);
     console.log(`      Primary button bg: ${primaryBtnBg?.substring(0, 80)}...`);
 
@@ -187,9 +194,12 @@ async function testRezatProject() {
         color: style.color
       };
     });
-    const hasMediumAnchor = anchorStyle && (anchorStyle.fontWeight === '500' || anchorStyle.fontWeight === '600');
+    const hasMediumAnchor =
+      anchorStyle && (anchorStyle.fontWeight === '500' || anchorStyle.fontWeight === '600');
     check('Anchor has medium weight (font-weight: 500)', hasMediumAnchor);
-    console.log(`      Anchor style: weight=${anchorStyle?.fontWeight}, color=${anchorStyle?.color}`);
+    console.log(
+      `      Anchor style: weight=${anchorStyle?.fontWeight}, color=${anchorStyle?.color}`
+    );
 
     // Check HTML context has highlighted anchor with .anchor-highlight class
     const hasHighlightedAnchor = await page.evaluate(() => {
@@ -206,13 +216,19 @@ async function testRezatProject() {
     // ========================================
     console.log('\n7️⃣ Checking ACTION BUTTONS...');
 
-    const hasActionBtns = await page.evaluate(() => document.querySelector('.action-btns') !== null);
+    const hasActionBtns = await page.evaluate(
+      () => document.querySelector('.action-btns') !== null
+    );
     check('Compact action buttons present', hasActionBtns);
 
-    const hasEditBtn = await page.evaluate(() => document.querySelector('.action-btn.edit') !== null);
+    const hasEditBtn = await page.evaluate(
+      () => document.querySelector('.action-btn.edit') !== null
+    );
     check('Edit button (.action-btn.edit)', hasEditBtn);
 
-    const hasDeleteBtn = await page.evaluate(() => document.querySelector('.action-btn.delete') !== null);
+    const hasDeleteBtn = await page.evaluate(
+      () => document.querySelector('.action-btn.delete') !== null
+    );
     check('Delete button (.action-btn.delete)', hasDeleteBtn);
 
     // ========================================
@@ -240,7 +256,9 @@ async function testRezatProject() {
     }
 
     console.log('\nPrototype match:');
-    console.log('  • Pill tabs (no gray bg, blue active): ' + (hasNoGrayBg && hasBlueActiveBg ? 'YES' : 'NO'));
+    console.log(
+      '  • Pill tabs (no gray bg, blue active): ' + (hasNoGrayBg && hasBlueActiveBg ? 'YES' : 'NO')
+    );
     console.log('  • Upload icon (not cloud): ' + (hasUploadIcon && !hasCloudIcon ? 'YES' : 'NO'));
     console.log('  • Purple-pink button: ' + (hasPurplePinkGradient ? 'YES' : 'NO'));
     console.log('  • Usage column (N/N): ' + (hasUsageHeader && usageFormat ? 'YES' : 'NO'));
@@ -251,7 +269,6 @@ async function testRezatProject() {
     } else {
       console.log('\n⚠️ SOME TESTS FAILED.');
     }
-
   } catch (error) {
     console.error('❌ Test failed:', error.message);
   } finally {

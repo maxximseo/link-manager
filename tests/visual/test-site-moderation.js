@@ -87,7 +87,9 @@ async function testSiteModeration() {
         total: approvedBadges.length + pendingBadges.length + rejectedBadges.length
       };
     });
-    console.log(`   Found status badges: approved=${statusBadgeCheck.approved}, pending=${statusBadgeCheck.pending}, rejected=${statusBadgeCheck.rejected}`);
+    console.log(
+      `   Found status badges: approved=${statusBadgeCheck.approved}, pending=${statusBadgeCheck.pending}, rejected=${statusBadgeCheck.rejected}`
+    );
     addResult('Status badges rendered in sites table', statusBadgeCheck.total > 0);
 
     // Check for action buttons styling
@@ -101,13 +103,15 @@ async function testSiteModeration() {
       if (editBtns.length > 0) {
         const style = getComputedStyle(editBtns[0]);
         // Check for blue background (#e7f1ff = rgb(231, 241, 255))
-        editStyleOk = style.backgroundColor.includes('231') || style.backgroundColor.includes('241');
+        editStyleOk =
+          style.backgroundColor.includes('231') || style.backgroundColor.includes('241');
       }
 
       if (deleteBtns.length > 0) {
         const style = getComputedStyle(deleteBtns[0]);
         // Check for red background (#ffebee = rgb(255, 235, 238))
-        deleteStyleOk = style.backgroundColor.includes('255') || style.backgroundColor.includes('235');
+        deleteStyleOk =
+          style.backgroundColor.includes('255') || style.backgroundColor.includes('235');
       }
 
       return {
@@ -117,8 +121,13 @@ async function testSiteModeration() {
         deleteStyleOk
       };
     });
-    console.log(`   Action buttons: edit=${actionButtonsCheck.editCount}, delete=${actionButtonsCheck.deleteCount}`);
-    addResult('Action buttons with new styling found', actionButtonsCheck.editCount > 0 && actionButtonsCheck.deleteCount > 0);
+    console.log(
+      `   Action buttons: edit=${actionButtonsCheck.editCount}, delete=${actionButtonsCheck.deleteCount}`
+    );
+    addResult(
+      'Action buttons with new styling found',
+      actionButtonsCheck.editCount > 0 && actionButtonsCheck.deleteCount > 0
+    );
 
     // Take screenshot of sites page
     await page.screenshot({
@@ -150,8 +159,13 @@ async function testSiteModeration() {
     });
 
     console.log(`   Page title contains "Модерация": ${moderationPageCheck.hasTitle}`);
-    console.log(`   Pending count element exists: ${moderationPageCheck.hasPendingCount} (value: ${moderationPageCheck.pendingCountValue})`);
-    addResult('Admin moderation page loaded correctly', moderationPageCheck.hasTitle && moderationPageCheck.hasPendingCount);
+    console.log(
+      `   Pending count element exists: ${moderationPageCheck.hasPendingCount} (value: ${moderationPageCheck.pendingCountValue})`
+    );
+    addResult(
+      'Admin moderation page loaded correctly',
+      moderationPageCheck.hasTitle && moderationPageCheck.hasPendingCount
+    );
 
     // Check for moderation cards
     const moderationCards = await page.evaluate(() => {
@@ -165,7 +179,10 @@ async function testSiteModeration() {
     console.log(`   Moderation cards found: ${moderationCards.count}`);
 
     if (moderationCards.count > 0) {
-      addResult('Moderation cards with approve/reject buttons exist', moderationCards.hasApproveBtn && moderationCards.hasRejectBtn);
+      addResult(
+        'Moderation cards with approve/reject buttons exist',
+        moderationCards.hasApproveBtn && moderationCards.hasRejectBtn
+      );
     } else {
       console.log('   (No pending sites to moderate - empty state)');
       addResult('Empty state displayed correctly', moderationPageCheck.isEmpty);
@@ -182,13 +199,16 @@ async function testSiteModeration() {
     console.log('4. Checking sidebar menu...');
     const sidebarCheck = await page.evaluate(() => {
       // Check both sidebar structures: .sidebar and .offcanvas-body
-      const sidebar = document.querySelector('.sidebar') || document.querySelector('.offcanvas-body');
+      const sidebar =
+        document.querySelector('.sidebar') || document.querySelector('.offcanvas-body');
       if (!sidebar) return { found: false, error: 'No sidebar found' };
 
       const links = sidebar.querySelectorAll('a');
       for (const link of links) {
-        if (link.textContent.includes('Модерация сайтов') ||
-            link.href.includes('admin-sites-moderation')) {
+        if (
+          link.textContent.includes('Модерация сайтов') ||
+          link.href.includes('admin-sites-moderation')
+        ) {
           return {
             found: true,
             href: link.href,
@@ -203,7 +223,6 @@ async function testSiteModeration() {
       console.log(`   Menu item found: "${sidebarCheck.text}"`);
     }
     addResult('Sidebar has "Модерация сайтов" menu item', sidebarCheck.found);
-
   } catch (error) {
     console.error('\nTest error:', error.message);
     await page.screenshot({

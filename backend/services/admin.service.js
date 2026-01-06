@@ -420,7 +420,14 @@ const getAdminPlacements = async (
     const offset = (safePage - 1) * safeLimit;
 
     // Validate status against whitelist
-    const allowedStatuses = ['pending', 'pending_approval', 'placed', 'failed', 'expired', 'rejected'];
+    const allowedStatuses = [
+      'pending',
+      'pending_approval',
+      'placed',
+      'failed',
+      'expired',
+      'rejected'
+    ];
     const safeStatus = status && allowedStatuses.includes(status) ? status : null;
 
     // Validate type against whitelist
@@ -500,7 +507,7 @@ const getMultiPeriodRevenue = async () => {
     const periods = ['day', 'week', 'month', 'year'];
 
     // Execute all queries in parallel to minimize time window for data inconsistency
-    const statsArray = await Promise.all(periods.map((period) => getAdminStats(period)));
+    const statsArray = await Promise.all(periods.map(period => getAdminStats(period)));
 
     // Map results to period keys
     return {
@@ -586,7 +593,10 @@ const refundPlacement = async (placementId, reason, adminId, deleteWordPressPost
         try {
           // Create timeout promise to prevent hanging on slow WordPress sites
           const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('WordPress API timeout after 15 seconds')), WORDPRESS_TIMEOUT)
+            setTimeout(
+              () => reject(new Error('WordPress API timeout after 15 seconds')),
+              WORDPRESS_TIMEOUT
+            )
           );
 
           // Race between actual request and timeout

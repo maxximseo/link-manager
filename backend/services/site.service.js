@@ -18,8 +18,7 @@ const getUserSites = async (userId, page = 0, limit = 0, recalculate = false) =>
     }
 
     // Fetch sites data
-    let sitesQuery =
-      `SELECT s.id, s.user_id, s.site_name, s.site_url, s.api_key, s.site_type, s.max_links, s.max_articles, s.used_links, s.used_articles, s.allow_articles, s.is_public, s.available_for_purchase, s.price_link, s.price_article, s.dr, s.da, s.ref_domains, s.rd_main, s.norm, s.tf, s.cf, s.keywords, s.traffic, s.geo, s.limits_changed_at, s.moderation_status, s.rejection_reason, s.created_at,
+    let sitesQuery = `SELECT s.id, s.user_id, s.site_name, s.site_url, s.api_key, s.site_type, s.max_links, s.max_articles, s.used_links, s.used_articles, s.allow_articles, s.is_public, s.available_for_purchase, s.price_link, s.price_article, s.dr, s.da, s.ref_domains, s.rd_main, s.norm, s.tf, s.cf, s.keywords, s.traffic, s.geo, s.limits_changed_at, s.moderation_status, s.rejection_reason, s.created_at,
       EXISTS(
         SELECT 1 FROM site_slot_rentals r
         WHERE r.site_id = s.id
@@ -51,7 +50,9 @@ const getUserSites = async (userId, page = 0, limit = 0, recalculate = false) =>
     // If pagination is requested, return paginated format
     if (usePagination) {
       // Get total count
-      const countResult = await query('SELECT COUNT(*) FROM sites s WHERE s.user_id = $1', [userId]);
+      const countResult = await query('SELECT COUNT(*) FROM sites s WHERE s.user_id = $1', [
+        userId
+      ]);
       const total = parseInt(countResult.rows[0].count, 10);
       const totalPages = Math.ceil(total / limit);
 
@@ -120,7 +121,9 @@ const getMarketplaceSites = async userId => {
            AND r.expires_at > NOW()
          )
       ORDER BY
-        -- Rented sites first for the user
+        -- User's own sites FIRST
+        CASE WHEN s.user_id = $1 THEN 0 ELSE 1 END,
+        -- Rented sites second
         EXISTS(
           SELECT 1 FROM site_slot_rentals r
           WHERE r.site_id = s.id
@@ -128,6 +131,7 @@ const getMarketplaceSites = async userId => {
           AND r.status = 'active'
           AND r.expires_at > NOW()
         ) DESC,
+        -- Then by creation date
         s.created_at DESC
     `,
       [userId]
@@ -288,7 +292,8 @@ const updateSite = async (siteId, userId, data, userRole = null) => {
 
         // Check if user is actually changing the values (not just sending same values)
         const isChangingLinks = max_links !== undefined && max_links !== currentMaxLinks;
-        const isChangingArticles = max_articles !== undefined && max_articles !== currentMaxArticles;
+        const isChangingArticles =
+          max_articles !== undefined && max_articles !== currentMaxArticles;
 
         if (isChangingLinks || isChangingArticles) {
           // Check if there's a cooldown active
@@ -300,7 +305,7 @@ const updateSite = async (siteId, userId, data, userRole = null) => {
               const daysLeft = Math.ceil((cooldownEnd - new Date()) / (1000 * 60 * 60 * 24));
               throw new Error(
                 `Вы можете изменить лимиты Links/Articles только через ${daysLeft} дн. (раз в ${COOLDOWN_MONTHS} месяцев). ` +
-                `Дата следующего разрешённого изменения: ${cooldownEnd.toLocaleDateString('ru-RU')}`
+                  `Дата следующего разрешённого изменения: ${cooldownEnd.toLocaleDateString('ru-RU')}`
               );
             }
           }
@@ -372,7 +377,8 @@ const updateSite = async (siteId, userId, data, userRole = null) => {
       if (checkResult.rows.length > 0) {
         const current = checkResult.rows[0];
         const isChangingLinks = max_links !== undefined && max_links !== current.max_links;
-        const isChangingArticles = finalMaxArticles !== undefined && finalMaxArticles !== current.max_articles;
+        const isChangingArticles =
+          finalMaxArticles !== undefined && finalMaxArticles !== current.max_articles;
         shouldUpdateLimitsTimestamp = isChangingLinks || isChangingArticles;
       }
     }
@@ -952,7 +958,7 @@ const bulkUpdateSiteParams = async (parameter, updates) => {
 
   // SECURITY: Build column-specific UPDATE queries to avoid dynamic column names in SQL
   // Each case uses a fixed, parameterized query - no string interpolation in SQL
-  const getUpdateQuery = (param) => {
+  const getUpdateQuery = param => {
     const queries = {
       dr: 'UPDATE sites SET dr = $1 WHERE id = $2',
       da: 'UPDATE sites SET da = $1 WHERE id = $2',
@@ -969,7 +975,7 @@ const bulkUpdateSiteParams = async (parameter, updates) => {
   };
 
   // SECURITY: Build column-specific SELECT queries
-  const getSelectQuery = (param) => {
+  const getSelectQuery = param => {
     const queries = {
       dr: `SELECT id, site_url, dr as old_value FROM sites WHERE LOWER(REGEXP_REPLACE(REGEXP_REPLACE(REGEXP_REPLACE(site_url, '^https?://', ''), '^www\\.', ''), '/.*$', '')) = $1 LIMIT 1`,
       da: `SELECT id, site_url, da as old_value FROM sites WHERE LOWER(REGEXP_REPLACE(REGEXP_REPLACE(REGEXP_REPLACE(site_url, '^https?://', ''), '^www\\.', ''), '/.*$', '')) = $1 LIMIT 1`,
@@ -1090,10 +1096,10 @@ const bulkUpdateSiteParams = async (parameter, updates) => {
 const requestPublicSale = async (siteId, userId) => {
   try {
     // Check ownership and get current site data
-    const siteResult = await query(
-      'SELECT * FROM sites WHERE id = $1 AND user_id = $2',
-      [siteId, userId]
-    );
+    const siteResult = await query('SELECT * FROM sites WHERE id = $1 AND user_id = $2', [
+      siteId,
+      userId
+    ]);
 
     if (siteResult.rows.length === 0) {
       throw new Error('Сайт не найден или доступ запрещён');
@@ -1103,12 +1109,16 @@ const requestPublicSale = async (siteId, userId) => {
 
     // Already approved - user can toggle is_public freely
     if (site.moderation_status === 'approved') {
-      throw new Error('Сайт уже одобрен для публичной продажи. Используйте переключатель публичности.');
+      throw new Error(
+        'Сайт уже одобрен для публичной продажи. Используйте переключатель публичности.'
+      );
     }
 
     // Already pending
     if (site.moderation_status === 'pending') {
-      throw new Error('Сайт уже находится на модерации. Пожалуйста, ожидайте решения администратора.');
+      throw new Error(
+        'Сайт уже находится на модерации. Пожалуйста, ожидайте решения администратора.'
+      );
     }
 
     // Submit for moderation
@@ -1141,7 +1151,9 @@ const requestPublicSale = async (siteId, userId) => {
       );
     } catch (notifError) {
       // Don't fail the main operation if notification fails
-      logger.warn('Failed to create admin notification for moderation request', { error: notifError.message });
+      logger.warn('Failed to create admin notification for moderation request', {
+        error: notifError.message
+      });
     }
 
     return result.rows[0];
@@ -1205,7 +1217,9 @@ const approveSite = async (siteId, adminId = null) => {
           ]
         );
       } catch (notifError) {
-        logger.warn('Failed to create owner notification for site approval', { error: notifError.message });
+        logger.warn('Failed to create owner notification for site approval', {
+          error: notifError.message
+        });
       }
     }
 
@@ -1238,7 +1252,12 @@ const rejectSite = async (siteId, reason = null, adminId = null) => {
 
     if (result.rows.length > 0) {
       const site = result.rows[0];
-      logger.info('Site rejected from public sale', { siteId, adminId, siteName: site.site_name, reason });
+      logger.info('Site rejected from public sale', {
+        siteId,
+        adminId,
+        siteName: site.site_name,
+        reason
+      });
 
       // Notify site owner
       try {
@@ -1253,7 +1272,9 @@ const rejectSite = async (siteId, reason = null, adminId = null) => {
           ]
         );
       } catch (notifError) {
-        logger.warn('Failed to create owner notification for site rejection', { error: notifError.message });
+        logger.warn('Failed to create owner notification for site rejection', {
+          error: notifError.message
+        });
       }
     }
 
@@ -1393,7 +1414,7 @@ const calculateSiteRevenue = async (siteId, userId) => {
  * Creates pending endpoint update records for all sites
  * Plugins will receive the update on next API call
  */
-const broadcastEndpoint = async (newEndpoint) => {
+const broadcastEndpoint = async newEndpoint => {
   try {
     // Validate endpoint URL
     try {

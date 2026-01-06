@@ -79,13 +79,19 @@ async function testUnifiedMargins() {
       // Check for duplicate headers
       const headerCheck = await page.evaluate(() => {
         // Sidebar creates header in .main-header
-        const sidebarHeader = document.querySelector('.main-header .page-header-text h1, .main-header h1');
+        const sidebarHeader = document.querySelector(
+          '.main-header .page-header-text h1, .main-header h1'
+        );
 
         // Look for duplicate headers in content area
-        const contentHeaders = document.querySelectorAll('.main-content h1, .main-content .page-header h1');
+        const contentHeaders = document.querySelectorAll(
+          '.main-content h1, .main-content .page-header h1'
+        );
 
         // Count h1 tags in main-content (should be 0 for pages that only need sidebar header)
-        const h1InContent = document.querySelectorAll('.main-content > .container-fluid > h1, .main-content > .container-fluid > div > h1').length;
+        const h1InContent = document.querySelectorAll(
+          '.main-content > .container-fluid > h1, .main-content > .container-fluid > div > h1'
+        ).length;
 
         return {
           hasSidebarHeader: !!sidebarHeader,
@@ -98,12 +104,16 @@ async function testUnifiedMargins() {
       addResult(
         `${pageInfo.name}: No duplicate headers`,
         !headerCheck.duplicateHeadersFound,
-        headerCheck.duplicateHeadersFound ? `Found ${headerCheck.contentH1Count} h1 tags in content` : ''
+        headerCheck.duplicateHeadersFound
+          ? `Found ${headerCheck.contentH1Count} h1 tags in content`
+          : ''
       );
 
       // Check container structure
       const containerCheck = await page.evaluate(() => {
-        const container = document.querySelector('.main-content > .container-fluid, .main-content > .container');
+        const container = document.querySelector(
+          '.main-content > .container-fluid, .main-content > .container'
+        );
         if (!container) return { found: false };
 
         const classes = container.className;
@@ -141,7 +151,6 @@ async function testUnifiedMargins() {
       });
       console.log(`   Screenshot saved: margins-${pageInfo.url.replace(/[\/\.]/g, '-')}.png\n`);
     }
-
   } catch (error) {
     console.error('\nTest error:', error.message);
     await page.screenshot({

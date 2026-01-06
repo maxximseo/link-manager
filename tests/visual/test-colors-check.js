@@ -37,7 +37,9 @@ async function testColors() {
     await page.waitForNavigation({ waitUntil: 'networkidle2' });
 
     // Load page
-    await page.goto(CONFIG.baseUrl + '/project-detail.html?id=' + CONFIG.projectId, { waitUntil: 'networkidle2' });
+    await page.goto(CONFIG.baseUrl + '/project-detail.html?id=' + CONFIG.projectId, {
+      waitUntil: 'networkidle2'
+    });
     await sleep(3000);
 
     // Получаем ВСЕ цвета из первой строки таблицы
@@ -111,7 +113,7 @@ async function testColors() {
     console.log('═══════════════════════════════════════════════════════════\n');
 
     // Функция для конвертации rgb в hex
-    const rgbToHex = (rgb) => {
+    const rgbToHex = rgb => {
       const match = rgb.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
       if (!match) return rgb;
       const [, r, g, b] = match;
@@ -137,7 +139,9 @@ async function testColors() {
       console.log('   Ожидаемый: #4b5563 (серый)\n');
 
       console.log('4️⃣ Подсвеченный анкор в контексте:');
-      console.log(`   Цвет: ${colors.anchorHighlight?.color} (${rgbToHex(colors.anchorHighlight?.color)})`);
+      console.log(
+        `   Цвет: ${colors.anchorHighlight?.color} (${rgbToHex(colors.anchorHighlight?.color)})`
+      );
       console.log(`   Font-weight: ${colors.anchorHighlight?.fontWeight}`);
       console.log(`   Font-size: ${colors.anchorHighlight?.fontSize}`);
       console.log(`   Текст: "${colors.anchorHighlight?.text}"`);
@@ -168,7 +172,6 @@ async function testColors() {
       });
       console.log('📸 Скриншот сохранен: colors-check.png');
     }
-
   } catch (error) {
     console.error('❌ Ошибка:', error.message);
   } finally {

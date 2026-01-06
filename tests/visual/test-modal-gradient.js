@@ -43,7 +43,9 @@ async function testModalGradient() {
     await sleep(2000);
 
     // Get first project link
-    const projectLink = await page.$eval('a[href*="project-detail.html"]', el => el.href).catch(() => null);
+    const projectLink = await page
+      .$eval('a[href*="project-detail.html"]', el => el.href)
+      .catch(() => null);
 
     if (!projectLink) {
       console.log('   ⚠️ No projects found');
@@ -96,7 +98,6 @@ async function testModalGradient() {
       console.log('\n5️⃣ Modal header check:');
       console.log('   Background:', modalHeaderStyle.background?.substring(0, 60) + '...');
       console.log('   Has gradient:', modalHeaderStyle.background?.includes('gradient') || false);
-
     } else {
       console.log('   ⚠️ Add Link button not found');
     }
@@ -105,7 +106,6 @@ async function testModalGradient() {
     console.log('📊 DONE');
     console.log('═══════════════════════════════════════════');
     console.log('Screenshots saved to tests/visual/screenshots/');
-
   } catch (error) {
     console.error('❌ Test failed:', error.message);
   } finally {

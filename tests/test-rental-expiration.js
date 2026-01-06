@@ -49,7 +49,7 @@ async function testExpirationCron() {
 
     console.log('📋 Rentals to be expired:');
     console.log('════════════════════════════════════════════════════════════════');
-    details.rows.forEach((r) => {
+    details.rows.forEach(r => {
       console.log(`  ID: ${r.id}`);
       console.log(`  Site: ${r.site_name} (ID: ${r.site_id})`);
       console.log(`  Slots: ${r.slot_count} ${r.slot_type}`);
@@ -105,7 +105,7 @@ async function testExpirationCron() {
 }
 
 // Run test
-testExpirationCron().catch((error) => {
+testExpirationCron().catch(error => {
   console.error('Fatal error:', error);
   process.exit(1);
 });

@@ -91,7 +91,9 @@ async function processAutoRenewalRentals() {
         });
         notifications++;
         failed++;
-        logger.warn(`[Cron] Auto-renewal failed for rental ${rental.id}: insufficient balance ($${tenantBalance} < $${totalPrice})`);
+        logger.warn(
+          `[Cron] Auto-renewal failed for rental ${rental.id}: insufficient balance ($${tenantBalance} < $${totalPrice})`
+        );
         continue;
       }
 
@@ -215,9 +217,10 @@ async function processAutoRenewalRentals() {
 
     await client.query('COMMIT');
 
-    logger.info(`[Cron] Auto-renewal completed: ${renewed} renewed, ${failed} failed, ${notifications} notifications sent`);
+    logger.info(
+      `[Cron] Auto-renewal completed: ${renewed} renewed, ${failed} failed, ${notifications} notifications sent`
+    );
     return { renewed, failed, notifications };
-
   } catch (error) {
     await client.query('ROLLBACK');
     logger.error('[Cron] Error processing auto-renewal rentals:', error);
@@ -271,7 +274,6 @@ async function sendExpirationReminders() {
 
     logger.info(`[Cron] Sent ${reminders} expiration reminders`);
     return { reminders };
-
   } catch (error) {
     logger.error('[Cron] Error sending expiration reminders:', error);
     return { reminders: 0 };

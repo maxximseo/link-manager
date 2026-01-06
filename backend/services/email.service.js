@@ -46,7 +46,8 @@ function initTransporter() {
  */
 async function sendEmail({ to, subject, text, html }) {
   // Use configured from address with name
-  const fromEmail = process.env.RESEND_FROM_EMAIL || process.env.EMAIL_FROM || 'onboarding@resend.dev';
+  const fromEmail =
+    process.env.RESEND_FROM_EMAIL || process.env.EMAIL_FROM || 'onboarding@resend.dev';
   const fromName = process.env.RESEND_FROM_NAME || 'Serparium';
   const from = `${fromName} <${fromEmail}>`;
 
@@ -296,7 +297,7 @@ async function sendAlertEmail(alertType, title, message, details = {}) {
  */
 async function sendHealthAlert(metrics, anomalies) {
   const title = 'Обнаружены аномалии системы';
-  const anomalyList = anomalies.map((a) => `• ${a}`).join('\n');
+  const anomalyList = anomalies.map(a => `• ${a}`).join('\n');
   const message = `Система обнаружила следующие проблемы:\n\n${anomalyList}`;
 
   return sendAlertEmail('warning', title, message, {
