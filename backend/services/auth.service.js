@@ -62,7 +62,7 @@ const authenticateUser = async (usernameOrEmail, password) => {
     if (!user) {
       return {
         success: false,
-        error: 'Invalid credentials'
+        error: 'Неверные учетные данные'
       };
     }
 
@@ -75,7 +75,7 @@ const authenticateUser = async (usernameOrEmail, password) => {
         const minutesRemaining = Math.ceil((lockExpiry - now) / 60000);
         return {
           success: false,
-          error: `Account is locked due to too many failed login attempts. Try again in ${minutesRemaining} minute(s).`
+          error: `Аккаунт заблокирован из-за слишком многих неудачных попыток. Попробуйте через ${minutesRemaining} мин.`
         };
       } else {
         // Lock expired, reset failed attempts
@@ -105,7 +105,7 @@ const authenticateUser = async (usernameOrEmail, password) => {
 
         return {
           success: false,
-          error: 'Too many failed login attempts. Account locked for 30 minutes.'
+          error: 'Слишком много неудачных попыток. Аккаунт заблокирован на 30 минут.'
         };
       } else {
         // Just increment the counter
@@ -117,7 +117,7 @@ const authenticateUser = async (usernameOrEmail, password) => {
         const attemptsRemaining = 5 - newAttempts;
         return {
           success: false,
-          error: `Invalid credentials. ${attemptsRemaining} attempt(s) remaining before account lock.`
+          error: `Неверные учетные данные. Осталось попыток: ${attemptsRemaining}`
         };
       }
     }
@@ -161,7 +161,7 @@ const authenticateUser = async (usernameOrEmail, password) => {
     logger.error('Authentication service error:', error);
     return {
       success: false,
-      error: 'Database error during authentication'
+      error: 'Ошибка базы данных при авторизации'
     };
   }
 };
