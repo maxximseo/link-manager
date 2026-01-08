@@ -4,13 +4,11 @@
  */
 
 const puppeteer = require('puppeteer');
+const { loadCredentials } = require('../utils/credentials');
 
 const CONFIG = {
   baseUrl: 'http://localhost:3003',
-  credentials: {
-    username: 'maximator',
-    password: '*8NKDb6fXXLVu1h*'
-  }
+  credentials: loadCredentials()
 };
 
 const PAGES_TO_TEST = [

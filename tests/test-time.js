@@ -1,15 +1,17 @@
 /**
  * Test notification timestamps
  */
+const { loadCredentials } = require('./utils/credentials');
 
 async function testTimestamps() {
   const baseUrl = 'http://localhost:3003';
+  const credentials = loadCredentials();
 
   // Login
   const loginRes = await fetch(`${baseUrl}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username: 'maximator', password: '*8NKDb6fXXLVu1h*' })
+    body: JSON.stringify({ username: credentials.username, password: credentials.password })
   });
 
   const { token } = await loginRes.json();

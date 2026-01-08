@@ -1,9 +1,13 @@
+const { loadCredentials } = require('./tests/utils/credentials');
+
 async function test() {
+  const credentials = loadCredentials();
+
   // Login
   const loginResponse = await fetch('http://localhost:3003/api/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username: 'maximator', password: '*8NKDb6fXXLVu1h*' })
+    body: JSON.stringify({ username: credentials.username, password: credentials.password })
   });
 
   const loginData = await loginResponse.json();

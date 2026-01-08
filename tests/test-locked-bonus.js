@@ -4,12 +4,10 @@
 
 const http = require('http');
 const https = require('https');
+const { loadCredentials } = require('./utils/credentials');
 
 const BASE_URL = 'http://localhost:3003';
-const CREDENTIALS = {
-  username: 'maximator',
-  password: '*8NKDb6fXXLVu1h*'
-};
+const CREDENTIALS = loadCredentials();
 
 async function makeRequest(method, path, data = null, token = null) {
   return new Promise((resolve, reject) => {

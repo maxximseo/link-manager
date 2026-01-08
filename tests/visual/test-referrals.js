@@ -2,13 +2,11 @@
  * Visual test for referrals page redesign
  */
 const puppeteer = require('puppeteer');
+const { loadCredentials } = require('../utils/credentials');
 
 const CONFIG = {
   baseUrl: 'http://localhost:3003',
-  credentials: {
-    username: 'maximator',
-    password: '*8NKDb6fXXLVu1h*'
-  }
+  credentials: loadCredentials()
 };
 
 async function testReferralsPage() {

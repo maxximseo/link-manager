@@ -6,14 +6,12 @@
 const puppeteer = require('puppeteer');
 const path = require('path');
 const fs = require('fs');
+const { loadCredentials } = require('../utils/credentials');
 
 const CONFIG = {
   baseUrl: 'http://localhost:3003',
   screenshotDir: path.join(__dirname, 'screenshots'),
-  credentials: {
-    username: 'maximator',
-    password: '*8NKDb6fXXLVu1h*'
-  }
+  credentials: loadCredentials()
 };
 
 // Ensure screenshots directory exists

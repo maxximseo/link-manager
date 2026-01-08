@@ -3,12 +3,10 @@
  * Tests: page loads, create form works, table displays data
  */
 const puppeteer = require('puppeteer');
+const { loadCredentials } = require('../utils/credentials');
 
 const BASE_URL = 'http://localhost:3003';
-const CREDENTIALS = {
-  username: 'maximator',
-  password: '*8NKDb6fXXLVu1h*'
-};
+const CREDENTIALS = loadCredentials();
 
 async function test() {
   console.log('🧪 ADMIN PROMO PAGE TEST\n');

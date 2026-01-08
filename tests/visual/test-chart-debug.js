@@ -2,13 +2,11 @@
  * Debug statistics chart visibility issue
  */
 const puppeteer = require('puppeteer');
+const { loadCredentials } = require('../utils/credentials');
 
 const CONFIG = {
   baseUrl: 'https://shark-app-9kv6u.ondigitalocean.app',
-  credentials: {
-    username: 'maximator',
-    password: '*8NKDb6fXXLVu1h*'
-  }
+  credentials: loadCredentials()
 };
 
 async function testChart() {
