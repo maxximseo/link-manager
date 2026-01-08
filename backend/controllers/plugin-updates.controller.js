@@ -14,8 +14,8 @@ const PLUGIN_INFO = {
   requires_php: '7.2',
   tested: '6.4',
   description:
-    'Display placed links and articles from Link Manager system. Supports automatic updates, multi-layer caching, and flexible content templates.',
-  short_description: 'Links and articles management widget with auto-updates'
+    'Display placed links and articles from Serparium.com. Supports automatic updates, multi-layer caching, and flexible content templates.',
+  short_description: 'Serparium links and articles widget with auto-updates'
 };
 
 // Get the API base URL from environment or use default
