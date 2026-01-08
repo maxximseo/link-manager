@@ -3,7 +3,7 @@
  * Plugin Name: Link Manager Widget Pro
  * Plugin URI: https://github.com/maxximseo/link-manager
  * Description: Display placed links and articles from Link Manager system
- * Version: 2.6.1
+ * Version: 2.7.0
  * Author: Link Manager Team
  * License: GPL v2 or later
  */
@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('LMW_VERSION', '2.6.1');
+define('LMW_VERSION', '2.7.0');
 define('LMW_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('LMW_PLUGIN_PATH', plugin_dir_path(__FILE__));
 
@@ -57,6 +57,11 @@ class LinkManagerWidget {
         
         // REST API endpoints for article creation
         add_action('rest_api_init', array($this, 'register_rest_routes'));
+
+        // Auto-update hooks
+        add_filter('pre_set_site_transient_update_plugins', array($this, 'check_for_plugin_update'));
+        add_filter('plugins_api', array($this, 'get_plugin_update_info'), 10, 3);
+        add_filter('upgrader_post_install', array($this, 'after_plugin_install'), 10, 3);
     }
     
     /**
@@ -259,6 +264,142 @@ class LinkManagerWidget {
      */
     public function enqueue_styles() {
         wp_enqueue_style('lmw-styles', LMW_PLUGIN_URL . 'assets/styles.css', array(), LMW_VERSION);
+    }
+
+    /**
+     * Check for plugin updates
+     * WordPress calls this periodically (every 12 hours)
+     */
+    public function check_for_plugin_update($transient) {
+        if (empty($transient->checked)) {
+            return $transient;
+        }
+
+        // Check cache first (12 hours)
+        $cache_key = 'lmw_update_check';
+        $update_data = get_transient($cache_key);
+
+        if ($update_data === false) {
+            // Call our API to check for updates
+            $response = wp_remote_get(
+                $this->api_endpoint . '/plugin-updates/check',
+                array(
+                    'timeout' => 10,
+                    'headers' => array(
+                        'Accept' => 'application/json'
+                    )
+                )
+            );
+
+            if (!is_wp_error($response)) {
+                $body = wp_remote_retrieve_body($response);
+                $update_data = json_decode($body, true);
+
+                if ($update_data && isset($update_data['new_version'])) {
+                    // Cache for 12 hours
+                    set_transient($cache_key, $update_data, 12 * HOUR_IN_SECONDS);
+                }
+            }
+        }
+
+        // If we have update data and newer version available, add to transient
+        if ($update_data && isset($update_data['new_version'])) {
+            if (version_compare(LMW_VERSION, $update_data['new_version'], '<')) {
+                $plugin_slug = 'link-manager-widget/link-manager-widget.php';
+
+                $transient->response[$plugin_slug] = (object) array(
+                    'id' => 'link-manager-widget',
+                    'slug' => 'link-manager-widget',
+                    'plugin' => $plugin_slug,
+                    'new_version' => $update_data['new_version'],
+                    'url' => $update_data['url'] ?? 'https://github.com/maxximseo/link-manager',
+                    'package' => $update_data['package'],
+                    'icons' => array(),
+                    'banners' => array(),
+                    'requires' => $update_data['requires'] ?? '5.0',
+                    'requires_php' => $update_data['requires_php'] ?? '7.2',
+                    'tested' => $update_data['tested'] ?? '6.4',
+                    'compatibility' => new stdClass()
+                );
+            }
+        }
+
+        return $transient;
+    }
+
+    /**
+     * Get plugin info for "View details" popup
+     */
+    public function get_plugin_update_info($res, $action, $args) {
+        // Only respond for our plugin
+        if ($action !== 'plugin_information') {
+            return $res;
+        }
+
+        if (!isset($args->slug) || $args->slug !== 'link-manager-widget') {
+            return $res;
+        }
+
+        // Call our API to get detailed info
+        $response = wp_remote_get(
+            $this->api_endpoint . '/plugin-updates/info',
+            array(
+                'timeout' => 10,
+                'headers' => array(
+                    'Accept' => 'application/json'
+                )
+            )
+        );
+
+        if (is_wp_error($response)) {
+            return $res;
+        }
+
+        $body = wp_remote_retrieve_body($response);
+        $plugin_info = json_decode($body);
+
+        if ($plugin_info && isset($plugin_info->name)) {
+            return $plugin_info;
+        }
+
+        return $res;
+    }
+
+    /**
+     * After plugin install - fix folder name if needed
+     * WordPress extracts ZIP and may have wrong folder name
+     */
+    public function after_plugin_install($response, $hook_extra, $result) {
+        global $wp_filesystem;
+
+        // Only run for our plugin
+        if (!isset($hook_extra['plugin']) || strpos($hook_extra['plugin'], 'link-manager-widget') === false) {
+            return $response;
+        }
+
+        // Check if the folder needs to be renamed
+        $proper_destination = WP_PLUGIN_DIR . '/link-manager-widget';
+        $current_destination = $result['destination'];
+
+        // If destination doesn't match expected, rename it
+        if ($current_destination !== $proper_destination) {
+            // Remove old folder if exists
+            if ($wp_filesystem->exists($proper_destination)) {
+                $wp_filesystem->delete($proper_destination, true);
+            }
+
+            // Move to correct location
+            $wp_filesystem->move($current_destination, $proper_destination);
+
+            // Update result
+            $result['destination'] = $proper_destination;
+            $result['destination_name'] = 'link-manager-widget';
+        }
+
+        // Clear update cache
+        delete_transient('lmw_update_check');
+
+        return $response;
     }
 
     /**
