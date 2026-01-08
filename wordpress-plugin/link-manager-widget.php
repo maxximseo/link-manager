@@ -3,7 +3,7 @@
  * Plugin Name: Serparium Link Widget
  * Plugin URI: https://serparium.com
  * Description: Display placed links and articles from Serparium.com
- * Version: 2.7.7
+ * Version: 2.7.8
  * Author: NDA Team (SEO is Dead)
  * License: GPL v2 or later
  * Text Domain: link-manager-widget
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('LMW_VERSION', '2.7.7');
+define('LMW_VERSION', '2.7.8');
 define('LMW_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('LMW_PLUGIN_PATH', plugin_dir_path(__FILE__));
 
@@ -454,8 +454,8 @@ class LinkManagerWidget {
     }
 
     /**
-     * After plugin install - fix folder name if needed
-     * WordPress extracts ZIP and may have wrong folder name (e.g., link-manager-widget-main)
+     * After plugin install - clean up and clear cache
+     * ZIP has correct structure (link-manager-widget/), so no folder renaming needed
      */
     public function after_plugin_install($response, $hook_extra, $result) {
         global $wp_filesystem;
@@ -466,6 +466,7 @@ class LinkManagerWidget {
         }
 
         $this->log_debug('after_plugin_install triggered for: ' . ($hook_extra['plugin'] ?? 'unknown'));
+        $this->log_debug('Destination: ' . ($result['destination'] ?? 'unknown'));
 
         // Initialize WP_Filesystem if needed
         if (!$wp_filesystem) {
@@ -474,106 +475,20 @@ class LinkManagerWidget {
             global $wp_filesystem;
         }
 
-        if (!$wp_filesystem) {
-            $this->log_debug('ERROR: WP_Filesystem not available');
-            return $response;
-        }
-
-        $proper_destination = WP_PLUGIN_DIR . '/link-manager-widget';
-        $current_destination = isset($result['destination']) ? $result['destination'] : '';
-
-        $this->log_debug('Current destination: ' . $current_destination);
-        $this->log_debug('Proper destination: ' . $proper_destination);
-
-        // If already in correct location, nothing to do
-        if ($current_destination === $proper_destination && $wp_filesystem->exists($proper_destination)) {
-            $this->log_debug('Plugin already in correct location');
-            delete_transient('lmw_update_check');
-            return $response;
-        }
-
-        // Search for plugin folder with various possible names
-        $possible_folders = array(
-            $current_destination,
-            WP_PLUGIN_DIR . '/link-manager-widget-main',
-            WP_PLUGIN_DIR . '/link-manager-widget-master',
-            WP_PLUGIN_DIR . '/link-manager-widget-develop',
-            WP_PLUGIN_DIR . '/link-manager-widget-v' . LMW_VERSION,
-        );
-
-        // Also scan for any folder matching our pattern
-        $plugin_dirs = glob(WP_PLUGIN_DIR . '/link-manager-widget*', GLOB_ONLYDIR);
-        if ($plugin_dirs) {
-            $possible_folders = array_merge($possible_folders, $plugin_dirs);
-        }
-
-        $possible_folders = array_unique(array_filter($possible_folders));
-        $source_folder = null;
-
-        foreach ($possible_folders as $folder) {
-            if ($folder !== $proper_destination && $wp_filesystem->exists($folder)) {
-                // Verify this is actually our plugin by checking for main file
-                $main_file = $folder . '/link-manager-widget.php';
-                if ($wp_filesystem->exists($main_file)) {
-                    $source_folder = $folder;
-                    $this->log_debug('Found source folder: ' . $source_folder);
-                    break;
-                }
-            }
-        }
-
-        if (!$source_folder) {
-            $this->log_debug('No source folder found to move');
-            delete_transient('lmw_update_check');
-            return $response;
-        }
-
-        // Remove old proper destination if exists (backup first)
-        if ($wp_filesystem->exists($proper_destination)) {
-            $backup_path = WP_PLUGIN_DIR . '/link-manager-widget-backup-' . time();
-            $this->log_debug('Backing up existing folder to: ' . $backup_path);
-
-            if (!$wp_filesystem->move($proper_destination, $backup_path)) {
-                $this->log_debug('ERROR: Failed to backup existing folder, trying delete');
-                if (!$wp_filesystem->delete($proper_destination, true)) {
-                    $this->log_debug('ERROR: Failed to delete existing folder');
-                    return $response;
-                }
-            }
-        }
-
-        // Move source to proper location
-        $this->log_debug('Moving ' . $source_folder . ' to ' . $proper_destination);
-        $move_result = $wp_filesystem->move($source_folder, $proper_destination);
-
-        if ($move_result) {
-            $this->log_debug('SUCCESS: Plugin folder renamed correctly');
-            $result['destination'] = $proper_destination;
-            $result['destination_name'] = 'link-manager-widget';
-
-            // Clean up backup if move was successful
+        // Clean up any old backup folders from previous updates
+        if ($wp_filesystem) {
             $backup_dirs = glob(WP_PLUGIN_DIR . '/link-manager-widget-backup-*', GLOB_ONLYDIR);
-            foreach ($backup_dirs as $backup) {
-                $wp_filesystem->delete($backup, true);
-                $this->log_debug('Cleaned up backup: ' . $backup);
-            }
-        } else {
-            $this->log_debug('ERROR: Failed to move plugin folder');
-
-            // Try copy + delete as fallback
-            $this->log_debug('Attempting copy + delete fallback');
-            if ($wp_filesystem->copy($source_folder, $proper_destination, true, FS_CHMOD_DIR)) {
-                $wp_filesystem->delete($source_folder, true);
-                $this->log_debug('SUCCESS: Plugin folder copied via fallback method');
-                $result['destination'] = $proper_destination;
-                $result['destination_name'] = 'link-manager-widget';
-            } else {
-                $this->log_debug('ERROR: Fallback copy also failed');
+            if ($backup_dirs) {
+                foreach ($backup_dirs as $backup) {
+                    $wp_filesystem->delete($backup, true);
+                    $this->log_debug('Cleaned up old backup: ' . $backup);
+                }
             }
         }
 
         // Clear update cache
         delete_transient('lmw_update_check');
+        $this->log_debug('Update cache cleared');
 
         return $response;
     }

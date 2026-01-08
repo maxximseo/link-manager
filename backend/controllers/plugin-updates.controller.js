@@ -6,7 +6,7 @@ const logger = require('../config/logger');
 const PLUGIN_INFO = {
   name: 'Serparium Link Widget',
   slug: 'link-manager-widget',
-  version: '2.7.7',
+  version: '2.7.8',
   author: 'NDA Team (SEO is Dead)',
   author_profile: 'https://serparium.com',
   homepage: 'https://serparium.com',
