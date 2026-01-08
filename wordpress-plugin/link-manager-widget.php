@@ -3,9 +3,11 @@
  * Plugin Name: Serparium Link Widget
  * Plugin URI: https://serparium.com
  * Description: Display placed links and articles from Serparium.com
- * Version: 2.7.3
+ * Version: 2.7.5
  * Author: NDA Team (SEO is Dead)
  * License: GPL v2 or later
+ * Text Domain: link-manager-widget
+ * Domain Path: /languages
  */
 
 // Prevent direct access
@@ -14,7 +16,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('LMW_VERSION', '2.7.3');
+define('LMW_VERSION', '2.7.5');
 define('LMW_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('LMW_PLUGIN_PATH', plugin_dir_path(__FILE__));
 
@@ -23,9 +25,12 @@ if (!defined('LMW_API_ENDPOINT')) {
     define('LMW_API_ENDPOINT', 'https://shark-app-9kv6u.ondigitalocean.app/api');
 }
 
-// Persistent cache TTL (7 days) for fallback when API is unavailable
-define('LMW_PERSISTENT_TTL', 604800);
-// File cache is UNLIMITED - survives until API returns successful response
+// Cache and timeout constants
+define('LMW_CACHE_DURATION', 300);        // 5 minutes transient cache
+define('LMW_PERSISTENT_TTL', 604800);     // 7 days persistent storage
+define('LMW_API_TIMEOUT', 15);            // API request timeout in seconds
+define('LMW_UPDATE_CHECK_TTL', 43200);    // 12 hours between update checks
+define('LMW_EXCERPT_LENGTH', 150);        // Default excerpt length
 
 /**
  * Main plugin class
@@ -39,7 +44,10 @@ class LinkManagerWidget {
     public function __construct() {
         $this->api_key = get_option('lmw_api_key', '');
         $this->api_endpoint = get_option('lmw_api_endpoint', LMW_API_ENDPOINT);
-        
+
+        // Load translations
+        add_action('plugins_loaded', array($this, 'load_textdomain'));
+
         // Initialize hooks
         add_action('init', array($this, 'init'));
         add_action('widgets_init', array($this, 'register_widgets'));
@@ -64,6 +72,13 @@ class LinkManagerWidget {
         add_filter('upgrader_post_install', array($this, 'after_plugin_install'), 10, 3);
     }
     
+    /**
+     * Load plugin textdomain for translations
+     */
+    public function load_textdomain() {
+        load_plugin_textdomain('link-manager-widget', false, dirname(plugin_basename(__FILE__)) . '/languages');
+    }
+
     /**
      * Initialize plugin
      */
@@ -121,16 +136,43 @@ class LinkManagerWidget {
             }
         }
 
+        // Handle cache clear request
+        if (isset($_POST['clear_cache'])) {
+            if (!isset($_POST['lmw_settings_nonce']) || !wp_verify_nonce($_POST['lmw_settings_nonce'], 'lmw_save_settings')) {
+                echo '<div class="notice notice-error"><p>' . esc_html__('Security check failed. Please try again.', 'link-manager-widget') . '</p></div>';
+            } else {
+                $this->clear_all_cache();
+                echo '<div class="notice notice-success"><p>' . esc_html__('Cache cleared successfully!', 'link-manager-widget') . '</p></div>';
+            }
+        }
+
         // Handle settings form submission
         if (isset($_POST['submit'])) {
             // Verify nonce for CSRF protection
             if (!isset($_POST['lmw_settings_nonce']) || !wp_verify_nonce($_POST['lmw_settings_nonce'], 'lmw_save_settings')) {
-                echo '<div class="notice notice-error"><p>Security check failed. Please try again.</p></div>';
+                echo '<div class="notice notice-error"><p>' . esc_html__('Security check failed. Please try again.', 'link-manager-widget') . '</p></div>';
             } else {
-                update_option('lmw_api_key', sanitize_text_field($_POST['api_key']));
-                update_option('lmw_api_endpoint', esc_url_raw($_POST['api_endpoint']));
+                $old_api_key = get_option('lmw_api_key', '');
+                $old_api_endpoint = get_option('lmw_api_endpoint', '');
+
+                $new_api_key = sanitize_text_field($_POST['api_key']);
+                $new_api_endpoint = esc_url_raw($_POST['api_endpoint']);
+
+                update_option('lmw_api_key', $new_api_key);
+                update_option('lmw_api_endpoint', $new_api_endpoint);
                 update_option('lmw_cache_duration', intval($_POST['cache_duration']));
-                echo '<div class="notice notice-success"><p>Settings saved!</p></div>';
+
+                // Invalidate cache if API key or endpoint changed
+                if ($old_api_key !== $new_api_key || $old_api_endpoint !== $new_api_endpoint) {
+                    $this->clear_all_cache();
+                    echo '<div class="notice notice-success"><p>' . esc_html__('Settings saved! Cache cleared due to API configuration change.', 'link-manager-widget') . '</p></div>';
+                } else {
+                    echo '<div class="notice notice-success"><p>' . esc_html__('Settings saved!', 'link-manager-widget') . '</p></div>';
+                }
+
+                // Update class properties
+                $this->api_key = $new_api_key;
+                $this->api_endpoint = $new_api_endpoint;
             }
         }
         
@@ -139,41 +181,45 @@ class LinkManagerWidget {
         $cache_duration = get_option('lmw_cache_duration', 300);
         ?>
         <div class="wrap">
-            <h1>Link Manager Widget Settings</h1>
+            <h1><?php esc_html_e('Link Manager Widget Settings', 'link-manager-widget'); ?></h1>
 
             <?php if (empty($api_key)): ?>
             <!-- Quick Registration Form (shown when no API key) -->
             <div class="notice notice-info" style="padding: 20px; border-left: 4px solid #00a0d2;">
-                <h2 style="margin-top: 0;">🚀 Quick Site Registration</h2>
-                <p>Don't have an API key yet? Use a registration token from your Link Manager dashboard to quickly register this site.</p>
+                <h2 style="margin-top: 0;">🚀 <?php esc_html_e('Quick Site Registration', 'link-manager-widget'); ?></h2>
+                <p><?php esc_html_e('Don\'t have an API key yet? Use a registration token from your Link Manager dashboard to quickly register this site.', 'link-manager-widget'); ?></p>
 
                 <form method="post" action="" style="max-width: 600px;" autocomplete="off">
                     <?php wp_nonce_field('lmw_register_site', 'lmw_register_nonce'); ?>
                     <table class="form-table">
                         <tr>
-                            <th scope="row">Registration Token</th>
+                            <th scope="row"><?php esc_html_e('Registration Token', 'link-manager-widget'); ?></th>
                             <td>
                                 <p class="description" style="margin-bottom: 8px;">
-                                    <strong>Step 1:</strong> Get a registration token from your Link Manager dashboard (Sites page)<br>
-                                    <strong>Step 2:</strong> Paste it below and click "Register This Site"
+                                    <strong><?php esc_html_e('Step 1:', 'link-manager-widget'); ?></strong> <?php esc_html_e('Get a registration token from your Link Manager dashboard (Sites page)', 'link-manager-widget'); ?><br>
+                                    <strong><?php esc_html_e('Step 2:', 'link-manager-widget'); ?></strong> <?php esc_html_e('Paste it below and click "Register This Site"', 'link-manager-widget'); ?>
                                 </p>
-                                <input type="text" name="registration_token" value="" class="regular-text" placeholder="Paste your registration token here..." autocomplete="off" required />
+                                <input type="text" name="registration_token" value="" class="regular-text"
+                                       pattern="^reg_[a-f0-9]{64}$"
+                                       title="<?php esc_attr_e('Token must start with reg_ followed by 64 hexadecimal characters', 'link-manager-widget'); ?>"
+                                       placeholder="<?php esc_attr_e('Paste your registration token here...', 'link-manager-widget'); ?>"
+                                       autocomplete="off" required />
                                 <p class="description" style="margin-top: 8px;">
-                                    The token should start with <code>reg_</code> and be about 68 characters long.<br>
-                                    <em>Don't have a token? Contact your Link Manager administrator.</em>
+                                    <?php esc_html_e('The token should start with', 'link-manager-widget'); ?> <code>reg_</code> <?php esc_html_e('and be about 68 characters long.', 'link-manager-widget'); ?><br>
+                                    <em><?php esc_html_e('Don\'t have a token? Contact your Link Manager administrator.', 'link-manager-widget'); ?></em>
                                 </p>
                             </td>
                         </tr>
                     </table>
                     <p>
-                        <button type="submit" name="register_site" class="button button-primary">Register This Site</button>
+                        <button type="submit" name="register_site" class="button button-primary"><?php esc_html_e('Register This Site', 'link-manager-widget'); ?></button>
                     </p>
                 </form>
                 <hr>
             </div>
             <?php endif; ?>
 
-            <h2>Status</h2>
+            <h2><?php esc_html_e('Status', 'link-manager-widget'); ?></h2>
             <?php
             // Get placed content
             $content = $this->fetch_content_from_api();
@@ -224,8 +270,17 @@ class LinkManagerWidget {
                     echo '<p><strong>Placed content on this site:</strong> ' . $link_count . ' links, ' . $article_count . ' articles</p>';
                 }
             } else {
-                echo '<p style="color: red;">❌ Not connected to Link Manager API</p>';
-                echo '<p>Please check your API key and endpoint settings.</p>';
+                echo '<p style="color: red;">❌ ' . esc_html__('Not connected to Link Manager API', 'link-manager-widget') . '</p>';
+                echo '<div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; margin: 10px 0;">';
+                echo '<strong>' . esc_html__('Troubleshooting:', 'link-manager-widget') . '</strong><ul style="margin: 10px 0 0 20px;">';
+                if (empty($api_key)) {
+                    echo '<li>' . esc_html__('API key is empty. Please enter your API key or register this site.', 'link-manager-widget') . '</li>';
+                } else {
+                    echo '<li>' . esc_html__('Verify your API key is correct', 'link-manager-widget') . '</li>';
+                    echo '<li>' . esc_html__('Check that the API endpoint URL is reachable', 'link-manager-widget') . '</li>';
+                    echo '<li>' . esc_html__('Ensure your server allows outbound HTTPS connections', 'link-manager-widget') . '</li>';
+                }
+                echo '</ul></div>';
             }
             ?>
 
@@ -233,32 +288,60 @@ class LinkManagerWidget {
                 <?php wp_nonce_field('lmw_save_settings', 'lmw_settings_nonce'); ?>
                 <table class="form-table">
                     <tr>
-                        <th scope="row">API Key</th>
+                        <th scope="row"><?php esc_html_e('API Key', 'link-manager-widget'); ?></th>
                         <td>
                             <input type="text" name="api_key" value="<?php echo esc_attr($api_key); ?>" class="regular-text" />
-                            <p class="description">Your site's API key for Link Manager system</p>
+                            <p class="description"><?php esc_html_e('Your site\'s API key for Link Manager system', 'link-manager-widget'); ?></p>
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row">API Endpoint</th>
+                        <th scope="row"><?php esc_html_e('API Endpoint', 'link-manager-widget'); ?></th>
                         <td>
                             <input type="url" name="api_endpoint" value="<?php echo esc_attr($api_endpoint); ?>" class="regular-text" />
-                            <p class="description">Link Manager API endpoint URL</p>
+                            <p class="description"><?php esc_html_e('Link Manager API endpoint URL', 'link-manager-widget'); ?></p>
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row">Cache Duration</th>
+                        <th scope="row"><?php esc_html_e('Cache Duration', 'link-manager-widget'); ?></th>
                         <td>
-                            <input type="number" name="cache_duration" value="<?php echo esc_attr($cache_duration); ?>" class="small-text" /> seconds
-                            <p class="description">How long to cache content from API</p>
+                            <input type="number" name="cache_duration" value="<?php echo esc_attr($cache_duration); ?>" class="small-text" /> <?php esc_html_e('seconds', 'link-manager-widget'); ?>
+                            <p class="description"><?php esc_html_e('How long to cache content from API', 'link-manager-widget'); ?></p>
                         </td>
                     </tr>
                 </table>
-                
-                <?php submit_button(); ?>
+
+                <p class="submit">
+                    <?php submit_button(null, 'primary', 'submit', false); ?>
+                    <button type="submit" name="clear_cache" class="button button-secondary" style="margin-left: 10px;">
+                        <?php esc_html_e('Clear Cache', 'link-manager-widget'); ?>
+                    </button>
+                </p>
             </form>
         </div>
         <?php
+    }
+
+    /**
+     * Clear all cache layers
+     */
+    private function clear_all_cache() {
+        // Clear transient cache
+        $cache_key = 'lmw_content_' . md5($this->api_key);
+        delete_transient($cache_key);
+        delete_transient('lmw_verify_' . md5($this->api_key));
+        delete_transient('lmw_update_check');
+
+        // Clear persistent storage
+        delete_option('lmw_persistent_content_' . md5($this->api_key));
+
+        // Clear file cache
+        $cache_dir = WP_CONTENT_DIR . '/cache/link-manager';
+        $cache_file = $cache_dir . '/lmw_' . md5($this->api_key) . '.json';
+        if (file_exists($cache_file)) {
+            @unlink($cache_file);
+        }
+
+        $this->log_debug('All cache layers cleared');
     }
     
     /**
@@ -286,7 +369,8 @@ class LinkManagerWidget {
             $response = wp_remote_get(
                 $this->api_endpoint . '/plugin-updates/check',
                 array(
-                    'timeout' => 10,
+                    'timeout' => LMW_API_TIMEOUT,
+                    'sslverify' => true,
                     'headers' => array(
                         'Accept' => 'application/json'
                     )
@@ -346,7 +430,8 @@ class LinkManagerWidget {
         $response = wp_remote_get(
             $this->api_endpoint . '/plugin-updates/info',
             array(
-                'timeout' => 10,
+                'timeout' => LMW_API_TIMEOUT,
+                'sslverify' => true,
                 'headers' => array(
                     'Accept' => 'application/json'
                 )
@@ -369,7 +454,7 @@ class LinkManagerWidget {
 
     /**
      * After plugin install - fix folder name if needed
-     * WordPress extracts ZIP and may have wrong folder name
+     * WordPress extracts ZIP and may have wrong folder name (e.g., link-manager-widget-main)
      */
     public function after_plugin_install($response, $hook_extra, $result) {
         global $wp_filesystem;
@@ -379,29 +464,130 @@ class LinkManagerWidget {
             return $response;
         }
 
-        // Check if the folder needs to be renamed
+        $this->log_debug('after_plugin_install triggered for: ' . ($hook_extra['plugin'] ?? 'unknown'));
+
+        // Initialize WP_Filesystem if needed
+        if (!$wp_filesystem) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+            WP_Filesystem();
+            global $wp_filesystem;
+        }
+
+        if (!$wp_filesystem) {
+            $this->log_debug('ERROR: WP_Filesystem not available');
+            return $response;
+        }
+
         $proper_destination = WP_PLUGIN_DIR . '/link-manager-widget';
-        $current_destination = $result['destination'];
+        $current_destination = isset($result['destination']) ? $result['destination'] : '';
 
-        // If destination doesn't match expected, rename it
-        if ($current_destination !== $proper_destination) {
-            // Remove old folder if exists
-            if ($wp_filesystem->exists($proper_destination)) {
-                $wp_filesystem->delete($proper_destination, true);
+        $this->log_debug('Current destination: ' . $current_destination);
+        $this->log_debug('Proper destination: ' . $proper_destination);
+
+        // If already in correct location, nothing to do
+        if ($current_destination === $proper_destination && $wp_filesystem->exists($proper_destination)) {
+            $this->log_debug('Plugin already in correct location');
+            delete_transient('lmw_update_check');
+            return $response;
+        }
+
+        // Search for plugin folder with various possible names
+        $possible_folders = array(
+            $current_destination,
+            WP_PLUGIN_DIR . '/link-manager-widget-main',
+            WP_PLUGIN_DIR . '/link-manager-widget-master',
+            WP_PLUGIN_DIR . '/link-manager-widget-develop',
+            WP_PLUGIN_DIR . '/link-manager-widget-v' . LMW_VERSION,
+        );
+
+        // Also scan for any folder matching our pattern
+        $plugin_dirs = glob(WP_PLUGIN_DIR . '/link-manager-widget*', GLOB_ONLYDIR);
+        if ($plugin_dirs) {
+            $possible_folders = array_merge($possible_folders, $plugin_dirs);
+        }
+
+        $possible_folders = array_unique(array_filter($possible_folders));
+        $source_folder = null;
+
+        foreach ($possible_folders as $folder) {
+            if ($folder !== $proper_destination && $wp_filesystem->exists($folder)) {
+                // Verify this is actually our plugin by checking for main file
+                $main_file = $folder . '/link-manager-widget.php';
+                if ($wp_filesystem->exists($main_file)) {
+                    $source_folder = $folder;
+                    $this->log_debug('Found source folder: ' . $source_folder);
+                    break;
+                }
             }
+        }
 
-            // Move to correct location
-            $wp_filesystem->move($current_destination, $proper_destination);
+        if (!$source_folder) {
+            $this->log_debug('No source folder found to move');
+            delete_transient('lmw_update_check');
+            return $response;
+        }
 
-            // Update result
+        // Remove old proper destination if exists (backup first)
+        if ($wp_filesystem->exists($proper_destination)) {
+            $backup_path = WP_PLUGIN_DIR . '/link-manager-widget-backup-' . time();
+            $this->log_debug('Backing up existing folder to: ' . $backup_path);
+
+            if (!$wp_filesystem->move($proper_destination, $backup_path)) {
+                $this->log_debug('ERROR: Failed to backup existing folder, trying delete');
+                if (!$wp_filesystem->delete($proper_destination, true)) {
+                    $this->log_debug('ERROR: Failed to delete existing folder');
+                    return $response;
+                }
+            }
+        }
+
+        // Move source to proper location
+        $this->log_debug('Moving ' . $source_folder . ' to ' . $proper_destination);
+        $move_result = $wp_filesystem->move($source_folder, $proper_destination);
+
+        if ($move_result) {
+            $this->log_debug('SUCCESS: Plugin folder renamed correctly');
             $result['destination'] = $proper_destination;
             $result['destination_name'] = 'link-manager-widget';
+
+            // Clean up backup if move was successful
+            $backup_dirs = glob(WP_PLUGIN_DIR . '/link-manager-widget-backup-*', GLOB_ONLYDIR);
+            foreach ($backup_dirs as $backup) {
+                $wp_filesystem->delete($backup, true);
+                $this->log_debug('Cleaned up backup: ' . $backup);
+            }
+        } else {
+            $this->log_debug('ERROR: Failed to move plugin folder');
+
+            // Try copy + delete as fallback
+            $this->log_debug('Attempting copy + delete fallback');
+            if ($wp_filesystem->copy($source_folder, $proper_destination, true, FS_CHMOD_DIR)) {
+                $wp_filesystem->delete($source_folder, true);
+                $this->log_debug('SUCCESS: Plugin folder copied via fallback method');
+                $result['destination'] = $proper_destination;
+                $result['destination_name'] = 'link-manager-widget';
+            } else {
+                $this->log_debug('ERROR: Fallback copy also failed');
+            }
         }
 
         // Clear update cache
         delete_transient('lmw_update_check');
 
         return $response;
+    }
+
+    /**
+     * Log debug messages for troubleshooting
+     */
+    private function log_debug($message) {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[Serparium Link Widget] ' . $message);
+        }
+        // Always log to our own file for troubleshooting updates
+        $log_file = WP_PLUGIN_DIR . '/link-manager-widget/update.log';
+        $timestamp = date('Y-m-d H:i:s');
+        @file_put_contents($log_file, "[$timestamp] $message\n", FILE_APPEND | LOCK_EX);
     }
 
     /**
@@ -416,6 +602,7 @@ class LinkManagerWidget {
             $this->api_endpoint . '/sites/register-from-wordpress',
             array(
                 'timeout' => 30,
+                'sslverify' => true,
                 'headers' => array(
                     'Content-Type' => 'application/json'
                 ),
@@ -473,7 +660,8 @@ class LinkManagerWidget {
         $response = wp_remote_post(
             $this->api_endpoint . '/wordpress/verify',
             array(
-                'timeout' => 30,
+                'timeout' => LMW_API_TIMEOUT,
+                'sslverify' => true,
                 'headers' => array(
                     'Content-Type' => 'application/json',
                     'X-API-Key' => $this->api_key
@@ -566,7 +754,18 @@ class LinkManagerWidget {
 
         // Create cache directory if it doesn't exist
         if (!is_dir($cache_dir)) {
-            @mkdir($cache_dir, 0755, true);
+            $created = @mkdir($cache_dir, 0755, true);
+
+            // Create .htaccess to protect cache files from public access
+            if ($created) {
+                $htaccess_file = $cache_dir . '/.htaccess';
+                $htaccess_content = "# Protect cache files from public access\nDeny from all\n";
+                @file_put_contents($htaccess_file, $htaccess_content);
+
+                // Also create index.php as additional protection
+                $index_file = $cache_dir . '/index.php';
+                @file_put_contents($index_file, "<?php\n// Silence is golden.\n");
+            }
         }
 
         $cache_file = $cache_dir . '/lmw_' . md5($this->api_key) . '.json';
@@ -618,7 +817,8 @@ class LinkManagerWidget {
         $response = wp_remote_post(
             $old_endpoint . '/wordpress/confirm-endpoint-update',
             array(
-                'timeout' => 10,
+                'timeout' => LMW_API_TIMEOUT,
+                'sslverify' => true,
                 'headers' => array(
                     'Content-Type' => 'application/json',
                     'X-API-Key' => $this->api_key
@@ -665,7 +865,8 @@ class LinkManagerWidget {
         $response = wp_remote_get(
             $this->api_endpoint . '/wordpress/get-content',
             array(
-                'timeout' => 15, // Reduced from 30 for faster fallback
+                'timeout' => LMW_API_TIMEOUT,
+                'sslverify' => true,
                 'headers' => array(
                     'Accept' => 'application/json',
                     'X-API-Key' => $this->api_key

@@ -1,5 +1,41 @@
 # Serparium Link Widget - Changelog
 
+## Version 2.7.5 (2026-01-08)
+
+### Security
+- **File cache protection**: Added `.htaccess` and `index.php` to protect cache files from public access
+- **SSL verification**: All API requests now use explicit `sslverify => true`
+
+### Added
+- **Clear Cache button**: Manual cache clear option in admin settings
+- **Cache invalidation**: Automatic cache clearing when API key or endpoint changes
+- **Token validation**: Client-side pattern validation for registration tokens (`^reg_[a-f0-9]{64}$`)
+- **i18n support**: Added `load_plugin_textdomain()` and wrapped admin strings with `__()` and `_e()`
+
+### Improved
+- **Better error messages**: Detailed troubleshooting tips when API connection fails
+- **Template CSS**: Added complete styles for `with_image`, `card`, and `custom` templates
+- **Constants**: Replaced magic numbers with named constants (LMW_API_TIMEOUT, LMW_CACHE_DURATION, etc.)
+
+### Changed
+- Updated CSS file version to 2.7.5 with new template styles
+- All API calls now use LMW_API_TIMEOUT constant (15 seconds)
+
+---
+
+## Version 2.7.4 (2026-01-08)
+
+### Fixed
+- **Robust auto-update folder handling**: Completely rewrote `after_plugin_install()` function to prevent plugin disappearing after updates
+- Added automatic detection of various folder naming patterns (main, master, develop, version suffix)
+- Added glob-based scanning for any folder matching `link-manager-widget*` pattern
+- Added backup mechanism before moving folders
+- Added fallback copy+delete method when move fails
+- Added detailed logging to `update.log` file for troubleshooting
+- Proper WP_Filesystem initialization check
+
+---
+
 ## Version 2.7.3 (2026-01-08)
 
 ### Changed

@@ -1,6 +1,6 @@
 /**
- * Link Manager Widget Pro - Frontend Styles
- * Version: 2.2.2
+ * Serparium Link Widget - Frontend Styles
+ * Version: 2.7.5
  */
 
 /* Links Container */
@@ -107,5 +107,164 @@
     .lmw-style-list .lmw-link-list li {
         padding: 6px 10px;
         font-size: 0.95em;
+    }
+}
+
+/* =================================================================
+   Template: with_image - Link with thumbnail image
+   ================================================================= */
+.lmw-link-with-image {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 12px 0;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    transition: background 0.2s ease;
+}
+
+.lmw-link-with-image:hover {
+    background: #e9ecef;
+}
+
+.lmw-link-image {
+    flex-shrink: 0;
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+}
+
+.lmw-link-with-image a {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: 500;
+    flex: 1;
+}
+
+.lmw-link-with-image a:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+/* =================================================================
+   Template: card - Card layout with image, title and description
+   ================================================================= */
+.lmw-link-card {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 15px 0;
+    background: #ffffff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.lmw-link-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+}
+
+.lmw-card-image {
+    width: 100%;
+    overflow: hidden;
+}
+
+.lmw-card-image img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    display: block;
+}
+
+.lmw-card-content {
+    padding: 15px;
+}
+
+.lmw-card-title {
+    margin: 0 0 8px 0;
+    font-size: 1.1em;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.lmw-card-title a {
+    color: #212529;
+    text-decoration: none;
+}
+
+.lmw-card-title a:hover {
+    color: #007bff;
+}
+
+.lmw-card-description {
+    margin: 0;
+    color: #6c757d;
+    font-size: 0.9em;
+    line-height: 1.5;
+}
+
+/* Card grid layout for multiple cards */
+.lmw-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.lmw-cards-grid .lmw-link-card {
+    margin: 0;
+}
+
+/* =================================================================
+   Template: custom - Custom HTML wrapper styles
+   ================================================================= */
+.lmw-custom-wrapper {
+    margin: 10px 0;
+}
+
+.lmw-custom-wrapper a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.lmw-custom-wrapper a:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+/* =================================================================
+   Responsive adjustments for templates
+   ================================================================= */
+@media (max-width: 768px) {
+    .lmw-link-with-image {
+        padding: 8px;
+        gap: 10px;
+    }
+
+    .lmw-link-image {
+        width: 40px;
+        height: 40px;
+    }
+
+    .lmw-card-image img {
+        height: 140px;
+    }
+
+    .lmw-card-content {
+        padding: 12px;
+    }
+
+    .lmw-card-title {
+        font-size: 1em;
+    }
+
+    .lmw-cards-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
     }
 }
