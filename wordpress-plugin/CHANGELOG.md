@@ -1,5 +1,29 @@
 # Link Manager Widget Pro - Changelog
 
+## Version 2.6.1 (2026-01-08)
+
+### Changed
+- **Simplified admin interface**: Removed redundant sections for cleaner settings page
+- **Status section moved to top**: Connection status and quotas now displayed immediately after page title
+- No need to scroll down or click buttons to see site connection status
+
+### Removed
+- **Test Connection button**: Status is now shown automatically at page load
+- **Basic Usage documentation**: Shortcode examples removed from settings
+- **Templates documentation**: Template examples removed from settings
+- **Extended Fields Support section**: Technical documentation removed from settings
+- **Widgets section**: Widget documentation removed from settings
+
+### UI/UX
+- Admin page now shows only essential information:
+  1. Quick Registration Form (only if no API key)
+  2. Status (connection, site name, quotas)
+  3. Settings (API Key, Endpoint, Cache Duration)
+- Faster page load without JavaScript for test connection
+- Cleaner interface focused on configuration
+
+---
+
 ## Version 2.6.0 (2025-12-26)
 
 ### Added
