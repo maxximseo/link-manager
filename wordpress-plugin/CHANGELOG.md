@@ -1,4 +1,13 @@
-# Link Manager Widget Pro - Changelog
+# Serparium Link Widget - Changelog
+
+## Version 2.7.2 (2026-01-08)
+
+### Changed
+- **Rebranding**: Plugin renamed from "Link Manager Widget Pro" to "Serparium Link Widget"
+- Updated author to "NDA Team (SEO is Dead)"
+- Updated plugin URI to serparium.com
+
+---
 
 ## Version 2.7.1 (2026-01-08)
 
