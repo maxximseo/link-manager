@@ -105,6 +105,62 @@ npm run lint:fix   # Auto-fix issues
 npm run format     # Auto-format files
 ```
 
+### WordPress Plugin Development
+
+**Current Version**: 2.7.6 (January 2026)
+
+**Source files**: `wordpress-plugin/`
+**Build output**: `backend/build/link-manager-widget.zip`
+
+#### Building Plugin ZIP (CRITICAL!)
+
+**⚠️ ALWAYS use the build script - NEVER manually zip!**
+
+```bash
+# CORRECT way - use build script
+./build-plugin-zip.sh
+
+# Or manually with correct structure:
+mkdir -p link-manager-widget
+cp -r wordpress-plugin/* link-manager-widget/
+zip -r backend/build/link-manager-widget.zip link-manager-widget/
+rm -rf link-manager-widget
+```
+
+**❌ WRONG (causes plugin to disappear after update):**
+```bash
+# NEVER DO THIS - creates wrong folder structure!
+zip -r backend/build/link-manager-widget.zip wordpress-plugin/
+```
+
+**Why this matters**: WordPress extracts ZIP to folder matching the archive's root folder name. If ZIP contains `wordpress-plugin/`, WordPress extracts to `wp-content/plugins/wordpress-plugin/` but expects files in `wp-content/plugins/link-manager-widget/`. Plugin "disappears" because WordPress can't find it.
+
+#### Version Update Checklist
+
+When releasing new plugin version:
+1. Edit `wordpress-plugin/link-manager-widget.php`:
+   - Update `Version:` in header comment (line 6)
+   - Update `define('LMW_VERSION', '...')` constant (line 19)
+2. Update `wordpress-plugin/CHANGELOG.md` with changes
+3. Update `backend/controllers/plugin-updates.controller.js`:
+   - Update `version` in `PLUGIN_INFO` object (line 9)
+   - Update `upgrade_notice` message (line 53)
+4. **Rebuild ZIP**: `./build-plugin-zip.sh`
+5. Commit and push all changes
+
+#### Auto-Update System
+
+Plugin checks for updates via:
+- `GET /api/plugin-updates/check` - Version comparison
+- `GET /api/plugin-updates/info` - Plugin details popup
+- `GET /api/plugin-updates/download` - ZIP download
+
+WordPress caches update checks for 12 hours. To force check:
+```sql
+DELETE FROM wp_options WHERE option_name = '_transient_lmw_update_check';
+DELETE FROM wp_options WHERE option_name = '_site_transient_update_plugins';
+```
+
 ---
 
 ## Architecture Overview
