@@ -473,8 +473,9 @@ const purchasePlacement = async ({
 
     // 4. CRITICAL FIX (BUG #5): Check site quotas BEFORE creating placement (with lock to prevent race condition)
     // But if user has active rental with available slots, they can use those instead
+    // FIX: Always check for rental slots, not just for private sites (hasActiveRental was only set for private sites)
     let userRentalSlots = null;
-    if (hasActiveRental && type === 'link') {
+    if (type === 'link') {
       const rentalResult = await client.query(
         `SELECT id, slots_count, slots_used FROM site_slot_rentals
          WHERE site_id = $1 AND tenant_id = $2 AND status = 'active' AND expires_at > NOW()
