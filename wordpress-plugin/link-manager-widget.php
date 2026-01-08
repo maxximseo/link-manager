@@ -3,7 +3,7 @@
  * Plugin Name: Serparium Link Widget
  * Plugin URI: https://serparium.com
  * Description: Display placed links and articles from Serparium.com
- * Version: 2.7.2
+ * Version: 2.7.3
  * Author: NDA Team (SEO is Dead)
  * License: GPL v2 or later
  */
@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('LMW_VERSION', '2.7.2');
+define('LMW_VERSION', '2.7.3');
 define('LMW_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('LMW_PLUGIN_PATH', plugin_dir_path(__FILE__));
 
@@ -84,12 +84,14 @@ class LinkManagerWidget {
      * Add admin menu
      */
     public function add_admin_menu() {
-        add_options_page(
-            'Link Manager Widget Settings',
-            'Link Manager Widget',
-            'manage_options',
-            'link-manager-widget',
-            array($this, 'admin_page')
+        add_menu_page(
+            'Serparium Link Widget Settings',  // Page title
+            'Serparium Links',                 // Menu title (short for sidebar)
+            'manage_options',                  // Capability
+            'link-manager-widget',             // Menu slug
+            array($this, 'admin_page'),        // Callback
+            'dashicons-admin-links',           // Icon
+            80                                 // Position in menu
         );
     }
     
