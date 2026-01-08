@@ -5,7 +5,17 @@
 
 require('dotenv').config({ path: './backend/.env' });
 const bcrypt = require('bcryptjs');
-const { query, pool } = require('../backend/config/database');
+const { Client } = require('pg');
+
+// Direct connection (bypasses pool)
+const client = new Client({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
+
+async function query(text, params) {
+  return client.query(text, params);
+}
 
 const USERNAME = 'maximator';
 const NEW_PASSWORD = 'Sv^xc7iwbV75AU6!';
@@ -14,6 +24,9 @@ async function changePassword() {
   console.log('='.repeat(50));
   console.log('PASSWORD CHANGE SCRIPT');
   console.log('='.repeat(50));
+
+  await client.connect();
+  console.log('Connected to database');
 
   try {
     // 1. Check user exists
@@ -64,7 +77,7 @@ async function changePassword() {
     console.error('\nError:', error.message);
     process.exit(1);
   } finally {
-    await pool.end();
+    await client.end();
   }
 }
 
