@@ -360,7 +360,7 @@ async function viewUserTransactions(userId, username) {
 
     } catch (error) {
         console.error('Error loading transactions:', error);
-        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Ошибка загрузки: ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Ошибка загрузки: ${escapeHtml(error.message)}</td></tr>`;
     }
 }
 
