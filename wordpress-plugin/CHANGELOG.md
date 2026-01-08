@@ -1,5 +1,27 @@
 # Link Manager Widget Pro - Changelog
 
+## Version 2.7.0 (2026-01-08)
+
+### Added
+- **Automatic plugin updates**: Plugin now checks for updates from Link Manager server
+- Update notifications appear in WordPress admin when new version is available
+- "View details" popup shows full changelog and plugin info
+- Click "Update Now" to install updates directly from WordPress admin
+
+### Technical
+- New hooks: `pre_set_site_transient_update_plugins`, `plugins_api`, `upgrader_post_install`
+- Update check cached for 12 hours (respects WordPress update schedule)
+- Automatic folder name correction after update installation
+- Backend API endpoints: `/api/plugin-updates/check`, `/info`, `/download`
+
+### How it works
+1. WordPress checks for updates every 12 hours
+2. Plugin queries our server for latest version
+3. If newer version available, notification appears
+4. User clicks "Update Now" → WordPress downloads and installs automatically
+
+---
+
 ## Version 2.6.1 (2026-01-08)
 
 ### Changed
