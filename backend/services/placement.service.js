@@ -159,9 +159,9 @@ const getUserPlacements = async (userId, page = 0, limit = 0, filters = {}) => {
       const countParams = [userId];
       let countParamIndex = 2;
 
-      if (project_id) {
+      if (safeProjectId) {
         countQuery += ` AND p.project_id = $${countParamIndex}`;
-        countParams.push(project_id);
+        countParams.push(safeProjectId);
         countParamIndex++;
       }
 
