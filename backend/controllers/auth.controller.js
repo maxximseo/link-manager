@@ -36,7 +36,7 @@ const login = async (req, res) => {
     const { username, password } = req.body;
 
     if (!username || !password) {
-      return res.status(400).json({ error: 'Логин и пароль обязательны' });
+      return res.status(400).json({ error: 'Username and password are required' });
     }
 
     const result = await authService.authenticateUser(username, password);
@@ -74,7 +74,7 @@ const login = async (req, res) => {
         );
 
         // SECURITY: Return generic error to not reveal IP restriction exists
-        return res.status(401).json({ error: 'Неверные учетные данные' });
+        return res.status(401).json({ error: 'Invalid credentials' });
       }
     }
 
@@ -87,7 +87,7 @@ const login = async (req, res) => {
     });
   } catch (error) {
     logger.error('Login error:', error);
-    res.status(500).json({ error: 'Ошибка сервера при входе' });
+    res.status(500).json({ error: 'Server error during login' });
   }
 };
 
