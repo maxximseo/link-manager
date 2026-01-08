@@ -50,7 +50,7 @@ const checkForUpdates = async (req, res) => {
       requires: PLUGIN_INFO.requires,
       requires_php: PLUGIN_INFO.requires_php,
       tested: PLUGIN_INFO.tested,
-      upgrade_notice: 'Fix: Status now shows correctly after site registration'
+      upgrade_notice: 'Fix: Plugin folder naming issue after auto-update'
     };
 
     // Log update check for monitoring

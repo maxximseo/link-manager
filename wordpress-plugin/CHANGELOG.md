@@ -1,5 +1,15 @@
 # Serparium Link Widget - Changelog
 
+## Version 2.7.8 (2026-01-08)
+
+### Fixed
+- **Critical: Plugin folder naming after update**: Simplified `after_plugin_install()` function
+  - Removed complex folder renaming logic that was creating backup folders incorrectly
+  - ZIP now has correct structure (`link-manager-widget/`), so no renaming needed
+  - Function now only cleans up old backup folders and clears cache
+
+---
+
 ## Version 2.7.7 (2026-01-08)
 
 ### Changed
