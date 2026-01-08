@@ -881,7 +881,7 @@ async function checkPromoCode() {
             validatedPromoCode = code;
         } else {
             // Invalid promo code - show error
-            if (statusEl) statusEl.innerHTML = `<i class="bi bi-x-circle-fill text-danger"></i> <span class="text-danger">${result.error || 'Промокод недействителен'}</span>`;
+            if (statusEl) statusEl.innerHTML = `<i class="bi bi-x-circle-fill text-danger"></i> <span class="text-danger">${escapeHtml(result.error || 'Промокод недействителен')}</span>`;
             if (previewEl) previewEl.style.display = 'none';
             if (totalPreviewEl) totalPreviewEl.style.display = 'none';
             window.currentPromoBonus = 0;
