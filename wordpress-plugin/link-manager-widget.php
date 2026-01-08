@@ -3,7 +3,7 @@
  * Plugin Name: Link Manager Widget Pro
  * Plugin URI: https://github.com/maxximseo/link-manager
  * Description: Display placed links and articles from Link Manager system
- * Version: 2.6.0
+ * Version: 2.6.1
  * Author: Link Manager Team
  * License: GPL v2 or later
  */
@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('LMW_VERSION', '2.6.0');
+define('LMW_VERSION', '2.6.1');
 define('LMW_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('LMW_PLUGIN_PATH', plugin_dir_path(__FILE__));
 
@@ -166,134 +166,6 @@ class LinkManagerWidget {
             </div>
             <?php endif; ?>
 
-            <form method="post" action="">
-                <?php wp_nonce_field('lmw_save_settings', 'lmw_settings_nonce'); ?>
-                <table class="form-table">
-                    <tr>
-                        <th scope="row">API Key</th>
-                        <td>
-                            <input type="text" name="api_key" value="<?php echo esc_attr($api_key); ?>" class="regular-text" />
-                            <p class="description">Your site's API key for Link Manager system</p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row">API Endpoint</th>
-                        <td>
-                            <input type="url" name="api_endpoint" value="<?php echo esc_attr($api_endpoint); ?>" class="regular-text" />
-                            <p class="description">Link Manager API endpoint URL</p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row">Cache Duration</th>
-                        <td>
-                            <input type="number" name="cache_duration" value="<?php echo esc_attr($cache_duration); ?>" class="small-text" /> seconds
-                            <p class="description">How long to cache content from API</p>
-                        </td>
-                    </tr>
-                </table>
-                
-                <?php submit_button(); ?>
-            </form>
-            
-            <h2>Test Connection</h2>
-            <p>Click the button below to test your connection to the Link Manager API:</p>
-            <button type="button" class="button button-secondary" onclick="testLinkManagerConnection()">Test Connection</button>
-            <div id="test-connection-result" style="margin-top: 15px;"></div>
-            
-            <script>
-            function testLinkManagerConnection() {
-                var apiKey = document.querySelector('input[name="api_key"]').value;
-                var apiEndpoint = document.querySelector('input[name="api_endpoint"]').value || '<?php echo LMW_API_ENDPOINT; ?>';
-                
-                if (!apiKey) {
-                    document.getElementById('test-connection-result').innerHTML = 
-                        '<div class="notice notice-error"><p>Please enter an API key first.</p></div>';
-                    return;
-                }
-                
-                document.getElementById('test-connection-result').innerHTML = 
-                    '<div class="notice notice-info"><p>Testing connection...</p></div>';
-                
-                // Test connection to the API
-                fetch(apiEndpoint + '/wordpress/verify', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ api_key: apiKey })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        var resultHtml = '<div class="notice notice-success">';
-                        resultHtml += '<p><strong>✅ Connected to Link Manager API</strong></p>';
-                        if (data.site_name) {
-                            resultHtml += '<p><strong>Site:</strong> ' + data.site_name + '</p>';
-                        }
-
-                        // Display available content
-                        var availableLinks = data.available_links || 0;
-                        var availableArticles = data.available_articles || 0;
-                        resultHtml += '<p><strong>Available content:</strong> ' + availableLinks + ' links, ' + availableArticles + ' articles</p>';
-
-                        // Display usage statistics
-                        if (typeof data.used_links !== 'undefined' && typeof data.max_links !== 'undefined') {
-                            resultHtml += '<p><strong>Links:</strong> ' + data.used_links + ' / ' + data.max_links + ' used</p>';
-                        }
-                        if (typeof data.used_articles !== 'undefined' && typeof data.max_articles !== 'undefined') {
-                            resultHtml += '<p><strong>Articles:</strong> ' + data.used_articles + ' / ' + data.max_articles + ' used</p>';
-                        }
-
-                        resultHtml += '</div>';
-                        document.getElementById('test-connection-result').innerHTML = resultHtml;
-                    } else {
-                        document.getElementById('test-connection-result').innerHTML =
-                            '<div class="notice notice-error"><p>❌ Connection failed: ' + (data.error || 'Unknown error') + '</p></div>';
-                    }
-                })
-                .catch(error => {
-                    document.getElementById('test-connection-result').innerHTML = 
-                        '<div class="notice notice-error"><p>❌ Connection error: ' + error.message + '</p>' +
-                        '<p>Make sure the API endpoint is correct: <strong>' + apiEndpoint + '</strong></p></div>';
-                });
-            }
-            </script>
-            
-            <h2>Usage</h2>
-            <p>Use these shortcodes to display content:</p>
-
-            <h3>Basic Usage</h3>
-            <ul>
-                <li><code>[lm_links]</code> - <strong>Display links on homepage only (default template)</strong></li>
-                <li><code>[lm_links home_only="false"]</code> - Display links on all pages</li>
-                <li><code>[lm_links limit="5"]</code> - Limit number of links</li>
-            </ul>
-
-            <h3>Templates (NEW in v2.5.0)</h3>
-            <ul>
-                <li><code>[lm_links template="default"]</code> - Default rendering (html_context or simple anchor)</li>
-                <li><code>[lm_links template="with_image"]</code> - Display with image (if image_url provided)</li>
-                <li><code>[lm_links template="card"]</code> - Card layout with image and description</li>
-                <li><code>[lm_links template="custom"]</code> - Fully custom HTML (via custom_data)</li>
-            </ul>
-
-            <h3>Extended Fields Support</h3>
-            <p>Version 2.5.0+ supports flexible content through API:</p>
-            <ul>
-                <li><strong>image_url</strong> - Add images to links</li>
-                <li><strong>link_attributes</strong> - Custom class, style, rel, target, data-* attributes</li>
-                <li><strong>wrapper_config</strong> - Wrap links in custom HTML tags with classes/styles</li>
-                <li><strong>custom_data</strong> - Any additional data (description, category, etc.)</li>
-            </ul>
-            <p><strong>Default behavior:</strong> Links show only on homepage with 5 minutes cache.</p>
-            
-            <h2>Widgets</h2>
-            <p>You can also add Link Manager widgets through Appearance → Widgets:</p>
-            <ul>
-                <li><strong>Link Manager Links</strong> - Display placed links in widget areas</li>
-            </ul>
-            <p><strong>Note:</strong> Articles are now published as full WordPress posts, not as widgets.</p>
-
             <h2>Status</h2>
             <?php
             // Get placed content
@@ -349,6 +221,35 @@ class LinkManagerWidget {
                 echo '<p>Please check your API key and endpoint settings.</p>';
             }
             ?>
+
+            <form method="post" action="">
+                <?php wp_nonce_field('lmw_save_settings', 'lmw_settings_nonce'); ?>
+                <table class="form-table">
+                    <tr>
+                        <th scope="row">API Key</th>
+                        <td>
+                            <input type="text" name="api_key" value="<?php echo esc_attr($api_key); ?>" class="regular-text" />
+                            <p class="description">Your site's API key for Link Manager system</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">API Endpoint</th>
+                        <td>
+                            <input type="url" name="api_endpoint" value="<?php echo esc_attr($api_endpoint); ?>" class="regular-text" />
+                            <p class="description">Link Manager API endpoint URL</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Cache Duration</th>
+                        <td>
+                            <input type="number" name="cache_duration" value="<?php echo esc_attr($cache_duration); ?>" class="small-text" /> seconds
+                            <p class="description">How long to cache content from API</p>
+                        </td>
+                    </tr>
+                </table>
+                
+                <?php submit_button(); ?>
+            </form>
         </div>
         <?php
     }
