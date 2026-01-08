@@ -1,5 +1,6 @@
 const rateLimit = require('express-rate-limit');
 const { RATE_LIMITS } = require('../config/constants');
+const { getClientIP } = require('../utils/ipUtils');
 
 const createLimiter = config =>
   rateLimit({
@@ -7,7 +8,9 @@ const createLimiter = config =>
     max: config.max,
     message: { error: 'Too many requests, please try again later.' },
     standardHeaders: true,
-    legacyHeaders: false
+    legacyHeaders: false,
+    // SECURITY: Use validated connection IP (not spoofable X-Forwarded-For)
+    keyGenerator: req => getClientIP(req)
   });
 
 const loginLimiter = createLimiter(RATE_LIMITS.LOGIN);
