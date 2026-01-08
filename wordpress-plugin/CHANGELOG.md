@@ -1,5 +1,13 @@
 # Link Manager Widget Pro - Changelog
 
+## Version 2.7.1 (2026-01-08)
+
+### Fixed
+- Minor stability improvements for auto-update system
+- Improved update check reliability
+
+---
+
 ## Version 2.7.0 (2026-01-08)
 
 ### Added
