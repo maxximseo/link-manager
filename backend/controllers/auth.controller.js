@@ -6,6 +6,7 @@
 const authService = require('../services/auth.service');
 const logger = require('../config/logger');
 const { trackFailedLogin, notifyAdmins } = require('../services/security-alerts.service');
+const { getClientIP } = require('../utils/ipUtils');
 
 // SECURITY: Admin IP whitelist from environment
 const getAdminWhitelist = () => {
@@ -14,17 +15,6 @@ const getAdminWhitelist = () => {
     .split(',')
     .map(ip => ip.trim())
     .filter(ip => ip.length > 0);
-};
-
-// Extract real client IP (handles proxies)
-const getClientIP = req => {
-  // X-Forwarded-For can contain multiple IPs: client, proxy1, proxy2...
-  const forwarded = req.headers['x-forwarded-for'];
-  if (forwarded) {
-    const ips = forwarded.split(',').map(ip => ip.trim());
-    return ips[0]; // First IP is the original client
-  }
-  return req.ip || req.connection?.remoteAddress || 'unknown';
 };
 
 // Check if IP is in whitelist
