@@ -2859,11 +2859,6 @@ const createSlotRental = async (
       throw new Error('Только владелец сайта может создавать аренду');
     }
 
-    // 1.5. Check site moderation status - only approved sites can be rented out
-    if (site.moderation_status !== 'approved') {
-      throw new Error('Сайт не прошёл модерацию. Дождитесь одобрения администратором.');
-    }
-
     // 2. Get tenant by username or email
     const tenantResult = await client.query(
       `SELECT id, username, balance, current_discount FROM users

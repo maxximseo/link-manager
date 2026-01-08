@@ -1,5 +1,14 @@
 # Serparium Link Widget - Changelog
 
+## Version 2.7.6 (2026-01-08)
+
+### Fixed
+- **Critical: Status not showing after registration**: Fixed bug where status showed "Not connected" immediately after successful site registration
+  - Issue: `$this->api_key` class property was not updated after saving to database
+  - API key is now set on both `wp_options` and class property for immediate use
+
+---
+
 ## Version 2.7.5 (2026-01-08)
 
 ### Security

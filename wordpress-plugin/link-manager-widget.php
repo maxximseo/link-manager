@@ -3,7 +3,7 @@
  * Plugin Name: Serparium Link Widget
  * Plugin URI: https://serparium.com
  * Description: Display placed links and articles from Serparium.com
- * Version: 2.7.5
+ * Version: 2.7.6
  * Author: NDA Team (SEO is Dead)
  * License: GPL v2 or later
  * Text Domain: link-manager-widget
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('LMW_VERSION', '2.7.5');
+define('LMW_VERSION', '2.7.6');
 define('LMW_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('LMW_PLUGIN_PATH', plugin_dir_path(__FILE__));
 
@@ -127,6 +127,7 @@ class LinkManagerWidget {
                     echo '<p>Your site has been added to the Link Manager system.</p>';
                     if (isset($result['api_key'])) {
                         update_option('lmw_api_key', $result['api_key']);
+                        $this->api_key = $result['api_key'];  // Update class property for immediate status check
                         echo '<p>API key has been saved automatically.</p>';
                     }
                     echo '</div>';

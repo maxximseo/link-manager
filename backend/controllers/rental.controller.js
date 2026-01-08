@@ -63,7 +63,9 @@ const createRental = async (req, res) => {
       error.message.includes('не владеете') ||
       error.message.includes('не найден') ||
       error.message.includes('Недостаточно') ||
-      error.message.includes('нельзя')
+      error.message.includes('нельзя') ||
+      error.message.includes('не прошёл модерацию') ||
+      error.message.includes('владелец')
     ) {
       return res.status(400).json({ error: error.message });
     }
