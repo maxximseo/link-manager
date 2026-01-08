@@ -74,6 +74,7 @@ router.use('/promo', promoRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/webhooks', webhookRoutes); // Public webhook endpoints (no auth)
 router.use('/rentals', rentalRoutes);
+router.use('/plugin-updates', pluginUpdatesRoutes); // Public plugin update endpoints (no auth)
 
 // Queue routes (if available)
 if (queueRoutes) {
