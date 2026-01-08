@@ -4,12 +4,12 @@ const logger = require('../config/logger');
 
 // Plugin metadata - update these when releasing new versions
 const PLUGIN_INFO = {
-  name: 'Link Manager Widget Pro',
+  name: 'Serparium Link Widget',
   slug: 'link-manager-widget',
-  version: '2.7.1',
-  author: 'Link Manager Team',
-  author_profile: 'https://github.com/maxximseo',
-  homepage: 'https://github.com/maxximseo/link-manager',
+  version: '2.7.2',
+  author: 'NDA Team (SEO is Dead)',
+  author_profile: 'https://serparium.com',
+  homepage: 'https://serparium.com',
   requires: '5.0',
   requires_php: '7.2',
   tested: '6.4',
