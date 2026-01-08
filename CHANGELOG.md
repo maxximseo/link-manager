@@ -7,6 +7,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.8.3] - 2026-01-08
+
+### 📚 Documentation Structure Consolidation (ADR-040)
+
+Major documentation restructure to improve maintainability and Claude Code compatibility.
+
+#### Problem
+- CLAUDE.md grew to 2800+ lines (~98KB)
+- Exceeded Claude Code's token limits
+- Duplicated architectural decisions between CLAUDE.md and ADR.md
+- Hard to navigate and maintain
+
+#### Solution
+Consolidated documentation into clear hierarchy with single sources of truth.
+
+#### Changes
+
+| File | Before | After | Change |
+|------|--------|-------|--------|
+| CLAUDE.md | ~2800 lines (98KB) | ~380 lines (11KB) | **-86%** |
+| ADR.md | 39 decisions | 40 decisions | +ADR-040 |
+
+#### What Stayed in CLAUDE.md
+- Development commands (essential for Claude)
+- Quick architecture overview with links to ADR.md
+- File locations reference
+- Environment variables
+- Migration order
+- Quick debugging table
+- Links to all other docs
+
+#### What Moved to Other Docs
+- Detailed architecture explanations → ADR.md
+- Full API documentation → API_REFERENCE.md
+- Detailed runbook procedures → RUNBOOK.md
+- Long code examples → Reference source files
+
+#### Documentation Hierarchy
+```
+CLAUDE.md ──→ Entry point, essential commands (~380 lines)
+    ↓
+ADR.md ──→ WHY things are built this way (40 decisions)
+    ↓
+API_REFERENCE.md ──→ HOW to use the API (60+ routes)
+    ↓
+RUNBOOK.md ──→ WHAT to do for operations
+    ↓
+DECISIONS.md ──→ Quick patterns for daily work
+```
+
+#### Files Changed
+- `CLAUDE.md` - Complete rewrite (2800 → 380 lines)
+- `ADR.md` - Added ADR-040 documenting this restructure
+
+#### Benefits
+- ✅ CLAUDE.md now loads without token issues
+- ✅ Single source of truth for each topic
+- ✅ Clear navigation between documents
+- ✅ Easier to maintain and update
+
+---
+
 ## [2.8.2] - 2025-12-27
 
 ### 🎨 UI Fix: Remove Misleading Guest Posts Column from Rentals

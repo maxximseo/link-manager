@@ -5,57 +5,40 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 📚 Documentation Index
 
 ### Core Documentation (Must Read)
-- **[CLAUDE.md](CLAUDE.md)** - This file: Complete development guide
-- **[ADR.md](ADR.md)** - Architecture Decision Records (20 major design decisions)
-- **[README.md](README.md)** - Quick start guide and project overview
-- **[API_REFERENCE.md](API_REFERENCE.md)** - Complete API endpoint reference (60+ routes)
+| Document | Purpose | When to Read |
+|----------|---------|--------------|
+| **[CLAUDE.md](CLAUDE.md)** | Development guide | Start here |
+| **[ADR.md](ADR.md)** | 40 architectural decisions | Before making changes |
+| **[README.md](README.md)** | Quick start guide | First time setup |
+| **[API_REFERENCE.md](API_REFERENCE.md)** | 60+ API endpoints | API development |
 
 ### Operational Documentation
-- **[RUNBOOK.md](RUNBOOK.md)** - Step-by-step procedures for common operations
-- **[CHANGELOG.md](CHANGELOG.md)** - Version history and all changes (v1.0.0 → v2.5.4)
-- **[DECISIONS.md](DECISIONS.md)** - Quick technical patterns and gotchas
+| Document | Purpose | When to Read |
+|----------|---------|--------------|
+| **[RUNBOOK.md](RUNBOOK.md)** | Step-by-step procedures | Operations/deployment |
+| **[CHANGELOG.md](CHANGELOG.md)** | Version history (v1.0.0 → v2.8.3) | Before releases |
+| **[DECISIONS.md](DECISIONS.md)** | Quick patterns & gotchas | Daily coding |
 
 ### Specialized Guides
-- **[EXTENDED_FIELDS_GUIDE.md](EXTENDED_FIELDS_GUIDE.md)** - Extended fields system (JSONB)
-- **[OPTIMIZATION_PRINCIPLES.md](OPTIMIZATION_PRINCIPLES.md)** - Code optimization framework (LEVER methodology)
-- **[database/MIGRATION_INSTRUCTIONS.md](database/MIGRATION_INSTRUCTIONS.md)** - Database migration guide
-- **[wordpress-plugin/CHANGELOG.md](wordpress-plugin/CHANGELOG.md)** - Plugin version history
+- **[EXTENDED_FIELDS_GUIDE.md](EXTENDED_FIELDS_GUIDE.md)** - JSONB extended fields system
+- **[OPTIMIZATION_PRINCIPLES.md](OPTIMIZATION_PRINCIPLES.md)** - LEVER methodology
+- **[database/MIGRATION_INSTRUCTIONS.md](database/MIGRATION_INSTRUCTIONS.md)** - Migration guide
+- **[wordpress-plugin/CHANGELOG.md](wordpress-plugin/CHANGELOG.md)** - Plugin history
 
 ### Documentation Hierarchy
 ```
-┌─────────────────────────────────────────┐
-│ CLAUDE.md - Start here                  │
-│ ├─ Development commands                 │
-│ ├─ Architecture overview                │
-│ └─ Links to all other docs              │
-└─────────────────────────────────────────┘
-         ↓
-┌─────────────────────────────────────────┐
-│ ADR.md - Architectural decisions        │
-│ WHY things are built this way           │
-└─────────────────────────────────────────┘
-         ↓
-┌─────────────────────────────────────────┐
-│ API_REFERENCE.md - API contracts        │
-│ HOW to use the system                   │
-└─────────────────────────────────────────┘
-         ↓
-┌─────────────────────────────────────────┐
-│ RUNBOOK.md - Operations                 │
-│ WHAT to do when issues arise            │
-└─────────────────────────────────────────┘
-         ↓
-┌─────────────────────────────────────────┐
-│ DECISIONS.md - Quick patterns           │
-│ Daily development shortcuts             │
-└─────────────────────────────────────────┘
+CLAUDE.md ──→ Development commands, architecture overview
+    ↓
+ADR.md ──→ WHY things are built this way (40 decisions)
+    ↓
+API_REFERENCE.md ──→ HOW to use the API (60+ routes)
+    ↓
+RUNBOOK.md ──→ WHAT to do for operations
+    ↓
+DECISIONS.md ──→ Quick patterns for daily work
 ```
 
-**IMPORTANT**:
-- Before architectural changes → Read [ADR.md](ADR.md)
-- Before API changes → Read [API_REFERENCE.md](API_REFERENCE.md)
-- Before deployment → Read [RUNBOOK.md](RUNBOOK.md)
-- Quick coding questions → Read [DECISIONS.md](DECISIONS.md)
+---
 
 ## Development Commands
 
@@ -63,99 +46,37 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **IMPORTANT: Auto-restart server after backend changes**
 
-When you make changes to backend files (controllers, services, routes), you MUST restart the server:
+When you make changes to backend files, you MUST restart the server:
 ```bash
-# Kill current process and restart
 lsof -ti:3003 | xargs kill -9 2>/dev/null
 npm run dev > /dev/null 2>&1 &
-sleep 3 && echo "✅ Сервер перезапущен"
+sleep 3 && echo "✅ Server restarted"
 ```
 
 **When to restart:**
-- ✅ Changes to `backend/services/*.js` (API logic changes)
-- ✅ Changes to `backend/controllers/*.js` (endpoint handlers)
-- ✅ Changes to `backend/routes/*.js` (route definitions)
-- ✅ Changes to `backend/config/*.js` (configuration)
-- ✅ Changes to database schemas or migrations
-- ❌ NO restart needed for `backend/build/*.html` or `backend/build/js/*.js` (frontend files)
+- ✅ Changes to `backend/services/*.js`, `backend/controllers/*.js`, `backend/routes/*.js`
+- ✅ Changes to `backend/config/*.js` or database schemas
+- ❌ NO restart for `backend/build/*.html` or `backend/build/js/*.js`
 
-**Use `npm run build`** to check if code compiles correctly:
+**Use `npm run build`** to check compilation:
 ```bash
-npm run build
-```
-- Check the results for any compilation errors
-- Fix any errors before considering the task complete
-- This ensures code quality without interfering with the running server
-
-### Running the Server (User Only)
-```bash
-# Development with nodemon (auto-reload on file changes) - USER RUNS THIS
-npm run dev
-
-# Development without nodemon
-cd backend && PORT=3003 NODE_ENV=development node server-new.js
-
-# Production
-npm start
+npm run build  # Check for errors before completing task
 ```
 
-**Nodemon**: Installed globally and as devDependency. Watches all `.js`, `.mjs`, `.json` files and auto-restarts server on changes.
+### Server Commands
+```bash
+npm run dev        # Development with nodemon (USER RUNS THIS)
+npm run dev:auto   # Auto-restart with port kill
+npm start          # Production
+```
 
 ### Database Operations
-
-**CRITICAL: Standard Migration Pattern for Claude**
-
-When adding new columns/tables to existing schema, use this simplified pattern:
-
 ```bash
-# Step 1: Create test migration script (fastest, no SSL hassle)
-# File: database/test-<feature>-migration.js
-
-const { query } = require('../backend/config/database');
-
-async function test() {
-  try {
-    console.log('Adding column...');
-    await query(`ALTER TABLE table_name ADD COLUMN IF NOT EXISTS column_name TYPE DEFAULT 'value'`);
-    console.log('✅ Column added');
-
-    console.log('Creating index...');
-    await query('CREATE INDEX IF NOT EXISTS idx_name ON table_name (column_name)');
-    console.log('✅ Index created');
-
-    console.log('\n✅ Migration completed successfully!');
-  } catch (error) {
-    console.error('❌ Error:', error.message);
-    process.exit(1);
-  }
-  process.exit(0);
-}
-
-test();
-```
-
-```bash
-# Step 2: Run migration (uses existing database.js config, no SSL issues)
+# Standard migration pattern (recommended)
 node database/test-<feature>-migration.js
-```
 
-**Why this pattern:**
-- ✅ Reuses existing database.js config (SSL already configured)
-- ✅ No need for new Pool/Client setup
-- ✅ Faster to write (3 lines vs 50+ lines)
-- ✅ No SSL certificate issues
-- ✅ Works with both Supabase and local PostgreSQL
-
-**Traditional migrations (only when necessary):**
-```bash
-# Complex migrations with multiple SQL files
-PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f database/migrate_usage_limits.sql
-
-# Or use migration runner (for .sql files)
+# Run specific migration
 node database/run_migration.js
-
-# CRITICAL: If you get "column user_id does not exist" error, run this migration first:
-node database/run_user_id_migration.js
 
 # Initialize fresh database
 psql -d linkmanager -f database/init.sql
@@ -164,144 +85,49 @@ psql -d linkmanager -f database/seed.sql
 
 ### Port Management
 ```bash
-# Kill process on port 3003/3005
-lsof -ti:3003 | xargs kill -9
-lsof -ti:3005 | xargs kill -9
+lsof -ti:3003 | xargs kill -9  # Kill port 3003
+lsof -ti:3005 | xargs kill -9  # Kill port 3005
 ```
 
-### Testing API Endpoints
+### Testing API
 ```bash
-# Login and get token
 TOKEN=$(curl -X POST http://localhost:3003/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin123"}' \
-  | jq -r '.token')
+  -d '{"username":"admin","password":"admin123"}' | jq -r '.token')
 
-# Use authenticated endpoints
 curl -H "Authorization: Bearer $TOKEN" http://localhost:3003/api/projects
 ```
 
-### Code Quality (ESLint + Prettier)
-
-**Status**: Active since December 2025
-
+### Code Quality
 ```bash
-# Check for errors and warnings
-npm run lint
-
-# Auto-fix most issues (formatting + some code issues)
-npm run lint:fix
-
-# Check formatting only
-npm run format:check
-
-# Auto-format all files
-npm run format
+npm run lint       # Check for errors
+npm run lint:fix   # Auto-fix issues
+npm run format     # Auto-format files
 ```
 
-**Configuration Files**:
-- `eslint.config.js` - ESLint 9 flat config with rules
-- `.prettierrc` - Prettier formatting settings
-- `.prettierignore` - Files excluded from formatting
-
-**ESLint Rules** (all set to `warn` except `no-var` which is `error`):
-| Rule | Purpose |
-|------|---------|
-| `no-unused-vars` | Catches dead code (prefix with `_` to ignore) |
-| `require-await` | Flags async functions without await |
-| `no-console` | Reminds to remove console.log (allows warn/error/info) |
-| `prefer-const` | Suggests const where let is unnecessary |
-| `no-var` | **Error** - use let/const instead |
-| `eqeqeq` | Prefer === over == |
-| `prettier/prettier` | Enforces consistent formatting |
-
-**Prettier Settings** (`.prettierrc`):
-```json
-{
-  "semi": true,
-  "singleQuote": true,
-  "tabWidth": 2,
-  "trailingComma": "none",
-  "printWidth": 100
-}
-```
-
-**Ignored Paths**:
-- `node_modules/` - dependencies
-- `backend/build/` - compiled frontend (HTML, minified JS)
-- `coverage/` - Jest coverage reports
-- `*.min.js`, `*.min.css` - minified files
-
-**Typical Workflow**:
-```bash
-# Before committing, run lint to check for issues
-npm run lint
-
-# If mostly formatting warnings, auto-fix them
-npm run lint:fix
-
-# Review remaining warnings (actual code issues to consider)
-```
-
-### Development Scripts
-
-**Auto-restart with kill on port change** (recommended for development):
-```bash
-npm run dev:auto
-```
-This script:
-1. Kills any existing process on port 3003
-2. Starts server with nodemon in watch mode
-3. Auto-restarts on file changes
-4. Ideal for rapid development iteration
-
-**Manual server control**:
-```bash
-# Start development server
-npm run dev
-
-# Start production server
-npm start
-
-# Kill process manually
-lsof -ti:3003 | xargs kill -9
-```
-
-**Quick testing scripts** (root directory):
-```bash
-# Test static PHP sites functionality
-node test-static-sites.js
-
-# Test critical billing features
-node test-billing-critical.js
-
-# Quick test script (custom tests)
-./quick-test.sh
-```
+---
 
 ## Architecture Overview
 
+> **Full details**: See [ADR.md](ADR.md) for 40 architectural decisions
+
 ### Request Flow
 ```
-HTTP Request
-    ↓
-Routes (backend/routes/*.routes.js) - Define endpoints
-    ↓
-Controllers (backend/controllers/*.controller.js) - Extract params, validate
-    ↓
-Services (backend/services/*.service.js) - Business logic
-    ↓
-Database (config/database.js) - Direct query() calls with parameterized SQL
-    ↓
-PostgreSQL (Supabase)
+HTTP Request → Routes → Controllers → Services → Database (PostgreSQL)
 ```
 
-**Key Pattern**: This codebase does NOT use ORM models. Services call `query()` directly with parameterized SQL.
+### Key Patterns
+
+| Pattern | Description | ADR Reference |
+|---------|-------------|---------------|
+| No ORM | Direct SQL queries via `pg` driver | [ADR-001](ADR.md#adr-001-no-orm---direct-sql-queries) |
+| JWT Auth | No database lookup in middleware | [ADR-002](ADR.md#adr-002-jwt-authentication-without-database-lookups) |
+| Redis Cache | Graceful degradation when unavailable | [ADR-003](ADR.md#adr-003-redis-cache-with-graceful-degradation) |
+| Transactions | All multi-step ops wrapped | [ADR-004](ADR.md#adr-004-transaction-wrapped-multi-step-operations) |
+| Vanilla JS | Modular frontend, no framework | [ADR-005](ADR.md#adr-005-modular-frontend-vanilla-js) |
+| Rate Limiting | 5-tier strategy | [ADR-006](ADR.md#adr-006-comprehensive-rate-limiting-strategy) |
 
 ### Service Layer Pattern
-All services use direct SQL queries via `const { query } = require('../config/database')`. There is NO ORM or model abstraction layer.
-
-Example service pattern:
 ```javascript
 const { query } = require('../config/database');
 
@@ -316,2570 +142,236 @@ const getSomething = async (id, userId) => {
 
 ### Database Schema Critical Fields
 
-**Sites Table** uses `api_key` NOT `wp_username`/`wp_password`:
-- `api_key VARCHAR(100)` - API token from WordPress plugin
-- Frontend must send `api_key` field, not credentials
-- **Schema**: `name`, `url`, `api_key`, `max_links`, `used_links`, `max_articles`, `used_articles`
-- **Do NOT use**: `status`, `notes` - these columns do not exist
+**Sites Table**:
+- `api_key` (NOT wp_username/wp_password)
+- `site_type`: 'wordpress' | 'static_php'
+- Do NOT use: `status`, `notes` (columns don't exist)
 
-**Placements Table** critical columns:
-- `status VARCHAR(50) DEFAULT 'pending'` - Placement status (pending/placed/failed)
-- `wordpress_post_id INTEGER` - WordPress post ID after publication
-- Must be included in all CREATE TABLE and migrations
+**Placements Table**:
+- `status`: 'pending' | 'placed' | 'failed'
+- `wordpress_post_id`: Post ID after publication
 
-**Usage Tracking System** (added via migration):
-- `project_links`: `usage_limit` (default 999), `usage_count`, `status`
-- `project_articles`: `usage_limit` (default 1), `usage_count`, `status`
-- Articles are single-use only (limit=1)
-- Used articles (usage_count >= 1) cannot be deleted
+**Extended Fields (JSONB)** - See [ADR-008](ADR.md#adr-008-extended-fields-system-jsonb):
+- `image_url`, `link_attributes`, `wrapper_config`, `custom_data`
 
-**Extended Fields (v2.5.0+)** (added via migration):
-- `project_links` JSONB columns:
-  - `image_url` - Image URL for link display
-  - `link_attributes` - JSON object with HTML attributes (class, style, rel, target, data-*)
-  - `wrapper_config` - JSON object with wrapper element config (wrapper_tag, wrapper_class, wrapper_style)
-  - `custom_data` - JSON object with any additional custom data
-- All fields are OPTIONAL (nullable)
-- No uniqueness constraint on `anchor_text` (removed January 2025)
-
-### Route Parameter Conventions
-**CRITICAL**: Route definitions use `:id` for project ID, NOT `:projectId`:
+### Route Parameter Convention
 ```javascript
-// Correct route parameter access
+// CRITICAL: Use :id not :projectId
 router.delete('/:id/articles/:articleId', ...)
-
-// In controller, use:
 const projectId = req.params.id;  // NOT req.params.projectId
-const articleId = req.params.articleId;
 ```
 
-### Database Connection
-- **Production**: Supabase PostgreSQL with SSL (`rejectUnauthorized: false`)
-- **Local**: Standard PostgreSQL connection or Supabase
-- Connection is initialized via `DATABASE_URL` or individual `DB_*` env vars
-- Uses connection pooling (max 25 connections)
-
-### Authentication
-JWT-based authentication without database lookups in middleware:
-- Token payload: `{ userId, username, role, iat, exp }`
-- Expiry: 7 days
-- Access via `req.user.id`, `req.user.username`, `req.user.role`
-
-### Frontend Architecture (ADR-021)
-Vanilla JavaScript with modular shared utilities architecture:
-
-**Static files**: `backend/build/` (HTML, CSS, JS)
-
-**Script Loading Order** (CRITICAL - must be in this order):
-```html
-<!-- 1. Security (XSS protection) - FIRST -->
-<script src="/js/security.js"></script>    <!-- escapeHtml(), showAlert() -->
-
-<!-- 2. Auth (token management) -->
-<script src="/js/auth.js"></script>         <!-- getToken(), isAdmin() -->
-
-<!-- 3. Shared utilities -->
-<script src="/js/badge-utils.js"></script>  <!-- All badge/color functions -->
-<script src="/js/api.js"></script>          <!-- ProjectsAPI, SitesAPI, etc. -->
-
-<!-- 4. Page-specific -->
-<script src="/js/placements-manager.js"></script>
-```
-
-**Key Frontend Files**:
-| File | Purpose | Exports |
-|------|---------|---------|
-| `security.js` | XSS protection | `escapeHtml()`, `showAlert()` |
-| `auth.js` | Auth & tokens | `getToken()`, `isAdmin()`, `isAuthenticated()` |
-| `badge-utils.js` | UI utilities | `getPlacementStatusBadge()`, `formatDate()`, etc. |
-| `api.js` | API client | `ProjectsAPI`, `SitesAPI`, `BillingAPI`, `PlacementsAPI` |
-| `navbar.js` | Navigation | `initNavbar()`, notifications |
-| `purchase-modal.js` | Purchase UI | Modal handlers |
-
-**Badge Utils Functions** (badge-utils.js):
-```javascript
-// Status badges
-getPlacementStatusBadge(status)   // 'placed' → green badge
-getPlacementTypeBadge(type)       // 'link' | 'article'
-getSiteTypeBadge(siteType)        // 'wordpress' | 'static_php'
-getTransactionTypeBadge(type)     // deposit, purchase, renewal...
-getUserRoleBadge(role)            // admin, user
-
-// Color utilities
-getAmountColorClass(amount)       // text-success/danger/muted
-formatExpiryWithColor(expiresAt)  // Returns { text, class, daysLeft }
-getDrColorClass(dr)               // SEO metric colors
-
-// Date formatting
-formatDate(dateString)            // DD.MM.YYYY
-formatDateTime(dateString)        // DD.MM.YYYY HH:MM
-
-// Tier utilities
-getDiscountTierName(discount)     // 0→'Стандарт', 10→'Bronze'...
-```
-
-**Pages**: Individual HTML files (dashboard.html, sites.html, placements-manager.html, etc.)
-
-Bootstrap 5.3.0 for UI with custom styles in `backend/build/css/styles.css`.
-
-### Figma Design System
-
-**Project URL**: https://www.figma.com/make/29nqv8OoZuTgVyGv8AITVL/Design-User-Interface
-
-**File Key**: `29nqv8OoZuTgVyGv8AITVL`
-
-**⚠️ IMPORTANT**: This is a **Figma Make** file (not Design/FigJam). Figma MCP tools do NOT support Make files.
-
-**How to use designs from Make file:**
-
-1. **User provides screenshot or link** to specific component
-2. Claude analyzes visual design from screenshot
-3. Implements HTML/CSS based on visual specs
-
-**Alternative workflow (for regular Figma Design files):**
-```javascript
-// Extract from URL: https://figma.com/design/:fileKey/:fileName?node-id=1-2
-fileKey: 'abc123'
-nodeId: '1:2' // from ?node-id=1-2
-
-// Use mcp__figma__get_design_context
-mcp__figma__get_design_context({
-  fileKey: 'abc123',
-  nodeId: '1:2',
-  clientLanguages: 'javascript,html,css',
-  clientFrameworks: 'vanilla js'
-})
-```
-
-**How to work with Figma Make files:**
-
-1. **Get list of source files**:
-   ```javascript
-   mcp__figma__get_design_context({
-     fileKey: '29nqv8OoZuTgVyGv8AITVL',
-     nodeId: '0:1',
-     clientLanguages: 'html,css,javascript',
-     clientFrameworks: 'vanilla js'
-   })
-   // Returns list of all .tsx components and images
-   ```
-
-2. **Read specific component**:
-   ```javascript
-   ReadMcpResourceTool({
-     server: 'figma',
-     uri: 'file://figma/make/source/29nqv8OoZuTgVyGv8AITVL/components/Rentals.tsx'
-   })
-   // Returns React/TypeScript code with exact styling
-   ```
-
-3. **Available components** (read these for UI specs):
-   - `components/Rentals.tsx` - Rental modal form
-   - `components/Sites.tsx` - Sites table
-   - `components/EditSiteModal.tsx` - Site edit modal
-   - `components/ui/dialog.tsx` - Dialog/modal base component
-   - `components/ui/button.tsx` - Button styles
-   - `components/ui/input.tsx` - Input field styles
-
-**Current UI specs from Figma:**
-- **Modal width**: max-w-md (28rem/448px) - ADJUSTED to 36rem for Russian text
-- **Modal header**: bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-500
-- **Content padding**: p-5 (1.25rem)
-- **Form spacing**: space-y-3 (0.75rem between fields)
-- **Labels**: text-xs font-semibold text-gray-900
-- **Inputs**: border-2 border-gray-200, focus:border-blue-500, rounded-lg, px-3 py-2
-- **Summary box**: bg-gradient from-green-50 to-emerald-50, border-2 border-green-200, p-3.5
-- **Primary btn**: bg-gradient from-purple-600 to-blue-600, rounded-lg, shadow-lg
-- **Secondary btn**: bg-gray-100 hover:bg-gray-200, border-2 border-gray-200
-
-**Color palette:**
-- Purple: #9333ea, #7c3aed
-- Blue: #2563eb, #0ea5e9 (cyan)
-- Green: #22c55e, #10b981 (emerald)
-- Gray: #f9fafb (bg-50), #e5e7eb (border-200), #6b7280 (text-600)
-
-## Important Patterns & Conventions
-
-### Database Transactions (CRITICAL)
-**Always use transactions** for multi-step database operations to ensure data consistency:
-
-```javascript
-const { pool } = require('../config/database');
-
-const client = await pool.connect();
-try {
-  await client.query('BEGIN');
-
-  // Multiple operations
-  await client.query('INSERT INTO table1...');
-  await client.query('UPDATE table2...');
-
-  await client.query('COMMIT');
-  return result;
-} catch (error) {
-  await client.query('ROLLBACK');
-  throw error;
-} finally {
-  client.release();
-}
-```
-
-**When to use transactions:**
-- Creating placements (insert placement + placement_content + update usage_count)
-- Deleting placements (delete placement + decrement usage_count + update quotas)
-- Any operation that modifies multiple related tables
-- Operations where partial failure would leave database in inconsistent state
-
-**Row-level locking** with `FOR UPDATE` to prevent race conditions:
-```sql
-SELECT * FROM placements WHERE id = $1 FOR UPDATE OF p
-```
-
-### Partial Updates with COALESCE
-All UPDATE queries should use COALESCE for partial updates:
-```sql
-UPDATE table
-SET field1 = COALESCE($1, field1),
-    field2 = COALESCE($2, field2)
-WHERE id = $3
-```
-
-### Modal Windows
-Modals must support both `.active` and `.show` classes:
-```css
-.modal.active,
-.modal.show {
-    display: flex;
-}
-```
-
-### API Response Format
-```javascript
-// Success
-res.json({ data: result });
-
-// Error
-res.status(400).json({ error: 'Error message' });
-```
-
-### Service Error Handling
-Services throw errors, controllers catch and return HTTP responses:
-```javascript
-// Service
-throw new Error('Not found');
-
-// Controller
-try {
-  await service.doSomething();
-} catch (error) {
-  logger.error('Operation failed:', error);
-  res.status(500).json({ error: 'Failed to do something' });
-}
-```
-
-## Critical Business Logic
-
-### Usage Tracking
-- **Links**: Configurable limit (default 999), can be used multiple times until limit reached
-- **Articles**: Fixed limit of 1, single-use only
-- **Deletion protection**: Used articles (usage_count >= 1) cannot be deleted
-- **Visual indicators**: Progress bars with color coding (green < 70%, yellow < 90%, red >= 90%, gray = exhausted)
-
-### Article Duplication
-Articles can be duplicated to reuse content with a new usage count:
-```javascript
-// Creates new article with same title/content but fresh usage_count=0
-POST /api/projects/:id/articles/:articleId/duplicate
-```
-
-### Allow Duplicate Anchor Texts (Updated January 2025)
-
-**BREAKING CHANGE**: The UNIQUE constraint on `project_links.anchor_text` has been REMOVED.
-
-**Previous Behavior** (Before January 2025):
-- Each anchor text could only be used ONCE per project
-- Attempting to create duplicate anchor caused database error
-- `UNIQUE (project_id, anchor_text)` constraint enforced uniqueness
-
-**Current Behavior** (January 2025+):
-- Same anchor text can be used MULTIPLE times in same project
-- No uniqueness validation on anchor text
-- Allows flexibility for common anchors (e.g., "click here", "read more")
-
-**Migration Required**:
-```bash
-node database/run_remove_anchor_unique.js
-```
-
-**SQL executed**:
-```sql
-ALTER TABLE project_links
-  DROP CONSTRAINT IF EXISTS project_links_project_id_anchor_text_key;
-```
-
-**Impact on Existing Code**:
-- ✅ No API changes required - endpoints work identically
-- ✅ Frontend forms work without modification
-- ✅ Validation logic removed from `project.service.js`
-- ⚠️ Old error handling for "duplicate anchor" no longer needed
-
-**Use Cases Enabled**:
-1. Multiple links with same anchor to different URLs
-2. A/B testing same anchor with different destinations
-3. Common anchors like "Learn More", "Buy Now" across multiple links
-4. Seasonal campaigns reusing same anchor text
-
-**Example** (now allowed):
-```javascript
-// Link 1
-POST /api/projects/123/links
-{ "anchor_text": "Buy Now", "url": "https://shop1.com" }
-
-// Link 2 - SAME anchor, different URL
-POST /api/projects/123/links
-{ "anchor_text": "Buy Now", "url": "https://shop2.com" }
-
-// Both succeed - no duplicate error
-```
-
-**Database Schema Before/After**:
-```sql
--- BEFORE (constraint exists)
-CREATE TABLE project_links (
-  ...
-  UNIQUE (project_id, anchor_text)  -- This prevented duplicates
-);
-
--- AFTER (constraint removed)
-CREATE TABLE project_links (
-  ...
-  -- No anchor_text uniqueness constraint
-  -- Only PRIMARY KEY on id remains
-);
-```
-
-### WordPress Plugin Integration (v2.4.5)
-**Current Version**: 2.4.5 (January 2025)
-
-- Plugin generates API token (not username/password)
-- Token must be added to site record via `api_key` field
-- **Plugin structure**:
-  - `wordpress-plugin/link-manager-widget.php` - Main plugin file (v2.4.5)
-  - `wordpress-plugin/assets/styles.css` - Frontend styles for links and articles
-  - `wordpress-plugin/CHANGELOG.md` - Version history
-- **Download**: Available as ZIP at `backend/build/link-manager-widget.zip`
-- **Security**: CSRF-protected settings form with WordPress nonce verification
-- **Repository**: https://github.com/maxximseo/link-manager (unified repo, no separate plugin repo)
-
-**Version History**:
-- **v2.4.5** (Jan 2025): Extended fields support (image_url, link_attributes, wrapper_config, custom_data), multiple templates
-- **v2.4.4** (Jan 2025): Display available content statistics in admin
-- **v2.4.3** (Dec 2024): Remove "Number of links" field from widget
-- **v2.4.2** (Dec 2024): Fix browser autofill issue in registration form
-- **v2.4.1** (Dec 2024): Improve registration form UX
-- **v2.4.0** (Nov 2025): Bulk registration support with tokens
-- **v2.2.2** (Oct 2024): Initial stable release
-
-**Features in v2.4.5**:
-- Template system: default, with_image, card, custom
-- JSONB extended fields rendering
-- Dynamic link attribute injection
-- Wrapper element configuration
-- Custom HTML support with XSS protection
-- Shortcode parameters: template, limit, home_only
-
-**API Response Format:**
-WordPress service `publishArticle()` returns:
-```javascript
-{
-  success: true,
-  post_id: 123,  // CRITICAL: Use post_id not wordpress_id
-  url: 'https://...'
-}
-```
-This `post_id` is saved to `placements.wordpress_post_id` column.
-
-### WordPress Plugin Development
-When updating the plugin:
-1. Edit `wordpress-plugin/link-manager-widget.php`
-2. Update version in both header comment and `LMW_VERSION` constant
-3. Add/edit styles in `wordpress-plugin/assets/styles.css`
-4. Copy to build: `cp -r wordpress-plugin/* backend/build/wordpress-plugin/`
-5. Create ZIP: `cd /path/to/project && zip -r backend/build/link-manager-widget.zip wordpress-plugin/ -x "*.DS_Store"`
-6. Test plugin on WordPress site before committing
-
-**Security requirements**:
-- All forms must use `wp_nonce_field()` and `wp_verify_nonce()`
-- Sanitize all user inputs: `sanitize_text_field()`, `esc_url_raw()`, `esc_attr()`
-- Escape all outputs: `esc_html()`, `esc_url()`, `wp_kses_post()`
-
-### Static PHP Sites Integration
-
-**Two site types supported:**
-1. **wordpress** - Full-featured WordPress sites with article support
-2. **static_php** - Static HTML/PHP sites (links only, no articles)
-
-**API Key Authentication:**
-Both site types now use API key authentication (domain-based is legacy):
-- API key is auto-generated if not provided: `api_${crypto.randomBytes(12).toString('hex')}`
-- Static sites use same `/api/wordpress/get-content?api_key=XXX` endpoint as WordPress
-
-**Widget Files (static-widget/):**
-- `link-manager-widget.php` - **PRIMARY**: API key-based widget (recommended)
-- `static-code.php` - **LEGACY**: Domain-based widget (backward compatibility only)
-
-**Primary Widget Installation:**
-```php
-// 1. Copy your API key from site settings in dashboard
-// 2. Edit link-manager-widget.php, line 15:
-define('LM_API_KEY', 'your_api_key_here');
-
-// 3. Upload to server and include in your HTML/PHP:
-<?php include 'link-manager-widget.php'; ?>
-```
-
-**Widget Features:**
-- 5-minute file-based caching
-- XSS protection (URL and HTML escaping)
-- SSL compatibility (verify_peer=false for older PHP)
-- Silent failure (no error display to users)
-
-**Site Type Constraints:**
-- `static_php`: max_articles forced to 0 (links only)
-- `wordpress`: supports both links and articles
-- API key required for both types
-
-**Content Retrieval Endpoints:**
-- **Recommended**: `/api/wordpress/get-content?api_key=XXX` (works for both types)
-- **Legacy**: `/api/static/get-content-by-domain?domain=example.com` (backward compatibility)
-
-### Automatic Article Publication
-When a placement is created with articles, they are **automatically published** to WordPress:
-- `placement.service.js` imports `wordpressService.publishArticle()`
-- After placement creation, each article is published synchronously
-- On success: `placement.status = 'placed'`, `wordpress_post_id` is stored
-- On failure: `placement.status = 'failed'`, error is logged
-- Publication happens in `createPlacement()` function after site quota updates
-
-### Placements UI Logic
-The placements creation interface (`placements.html`) uses a streamlined 3-step flow:
-
-**Step 1 - Project Selection**: Auto-selects first project on page load
-
-**Step 2 - Content Type Selection**: Radio buttons for Links OR Articles (auto-selects Links)
-
-**Step 3 - Site Selection with Round-Robin Assignment**:
-- Sites table shows color-coded availability:
-  - 🟢 **Green (table-success)**: Site available - no placements for this project yet
-  - 🔴 **Red (table-danger)**: Already purchased - site has link OR article for this project (cannot buy again)
-- When user checks a site, dropdown appears with available content
-- **Auto-assignment**: First available content is auto-selected using round-robin
-- **Round-robin cycling**: Each subsequent site gets next content item (cycles back to start if needed)
-- **Usage counters**: Dropdown shows `(0/1)` for articles, `(0/999)` for links
-- User can manually change auto-selected content via dropdown
-- `nextContentIndex` variable tracks round-robin position, resets on project/type change
-
-**Placement Restrictions** (enforced in `placement.service.js`):
-- **NEW LOGIC**: Only ONE placement (link OR article) allowed per site per project
-- If site already has ANY placement for the project, it's marked red and disabled
-- Cannot purchase the same site twice for the same project
-- Site quota limits checked: `used_links < max_links`, `used_articles < max_articles`
+---
 
 ## File Locations Reference
 
 ### Backend Core
-- Entry point: `backend/server-new.js`
-- Express app: `backend/app.js`
-- Database config: `backend/config/database.js`
-- Logger: `backend/config/logger.js` (Winston)
-
-### Key Controllers
-- Auth: `backend/controllers/auth.controller.js`
-- Projects: `backend/controllers/project.controller.js`
-- Sites: `backend/controllers/site.controller.js`
+| File | Purpose |
+|------|---------|
+| `backend/server-new.js` | Entry point |
+| `backend/app.js` | Express app |
+| `backend/config/database.js` | Database config |
+| `backend/config/logger.js` | Winston logger |
 
 ### Key Services
-- Project: `backend/services/project.service.js`
-- Site: `backend/services/site.service.js`
-- Placement: `backend/services/placement.service.js`
-- WordPress: `backend/services/wordpress.service.js`
-- Auth: `backend/services/auth.service.js`
-- Cache: `backend/services/cache.service.js` (Redis wrapper with graceful degradation)
+| Service | Purpose |
+|---------|---------|
+| `backend/services/project.service.js` | Project operations |
+| `backend/services/site.service.js` | Site management |
+| `backend/services/placement.service.js` | Placement logic |
+| `backend/services/billing.service.js` | Billing & rentals |
+| `backend/services/wordpress.service.js` | WP integration |
+| `backend/services/cache.service.js` | Redis wrapper |
 
 ### Frontend Pages
-- Dashboard (merged with projects list): `backend/build/dashboard.html` - Title: "Мои Проекты"
-- Project detail (links/articles management): `backend/build/project-detail.html`
-- Sites: `backend/build/sites.html`
-- Placements (purchase): `backend/build/placements.html`
-- Placements manager (view/manage): `backend/build/placements-manager.html`
-- Balance: `backend/build/balance.html`
-
-**Note**: `projects.html` was merged into `dashboard.html` (January 2025). Navigation menu shows "Мои Проекты" → dashboard.html.
+| Page | Purpose |
+|------|---------|
+| `backend/build/dashboard.html` | Project list |
+| `backend/build/project-detail.html` | Links/articles |
+| `backend/build/sites.html` | Site management |
+| `backend/build/placements.html` | Create placements |
+| `backend/build/placements-manager.html` | View placements |
+| `backend/build/balance.html` | Billing |
 
 ### Database
-- Schema: `database/init.sql`
-- Seed data: `database/seed.sql`
-- Migrations:
-  - `database/migrate_usage_limits.sql` - Usage tracking system
-  - `database/migrate_add_wordpress_post_id.sql` - Add status and wordpress_post_id to placements
-  - `database/migrate_add_user_id_to_placements.sql` - Add user_id column to placements (REQUIRED for billing system)
-  - `database/migrate_add_billing_system.sql` - Full billing system with transactions, discounts, renewals
-- Migration runners:
-  - `database/run_migration.js` - General purpose migration runner
-  - `database/run_user_id_migration.js` - Adds user_id to placements table
-  - `database/run_billing_migration.js` - Installs full billing system
-- See `database/MIGRATION_INSTRUCTIONS.md` for detailed migration instructions
+| File | Purpose |
+|------|---------|
+| `database/init.sql` | Schema |
+| `database/seed.sql` | Test data |
+| `database/run_*.js` | Migration runners |
 
-## Performance & Caching System
-
-### Redis Cache (cache.service.js)
-**Status**: Active with 10-19x performance improvement
-
-Cached endpoints with TTL:
-- **WordPress API** (`/api/wordpress/get-content/:api_key`): 5 minutes
-  - Cache key: `wp:content:{api_key}`
-  - 152ms → 8ms (19x faster)
-- **Placements API** (`/api/placements`): 2 minutes
-  - Cache key: `placements:user:{userId}:p{page}:l{limit}`
-  - 173ms → 9ms (19x faster)
-
-**Cache Invalidation**: Automatic on placement create/delete
-- Clears: `placements:user:*`, `projects:user:*`, `wp:content:*`
-
-### Bull Queue Workers
-**Status**: 3 workers active (placement, wordpress, batch)
-
-Queue processing pattern:
-```javascript
-const queueService = require('../config/queue');
-const queue = queueService.createQueue('placement');
-
-// Add job
-await queue.add('batch-placement', {
-  userId,
-  project_id,
-  site_ids: [1, 2, 3],
-  link_ids: [10],
-  article_ids: [5]
-});
-
-// Worker processes in background (workers/placement.worker.js)
-```
-
-**Workers Location**: `backend/workers/`
-- `placement.worker.js` - Batch placement processing
-- `wordpress.worker.js` - Article publishing
-- `batch.worker.js` - Export operations
-
-**Queue Management**:
-```bash
-# Check Redis queues
-redis-cli keys 'bull:*'
-
-# Monitor queue status
-curl http://localhost:3003/api/queue/status
-```
-
-### Database Performance Indexes
-**15 active indexes** for optimal JOIN performance:
-- `placement_content(link_id, article_id)` - WordPress API queries
-- `placements(site_id, project_id, status)` - Dashboard queries
-- `sites(api_key, created_at)` - Plugin authentication
-- **Result**: 0 slow queries (was 4 queries >1000ms)
-
-**Critical**: Always use indexed columns in WHERE clauses:
-```sql
--- Good (uses index)
-WHERE s.api_key = $1
-
--- Bad (table scan)
-WHERE s.site_name LIKE '%keyword%'
-```
+---
 
 ## Environment Variables
 
-Required:
-- `DATABASE_URL` - Full PostgreSQL connection string
-- `JWT_SECRET` - Min 32 characters
-- `NODE_ENV` - development/production
-- `PORT` - Server port (default 3003)
-
-Redis Configuration (optional, graceful degradation):
-- `REDIS_HOST` - Redis host (default: localhost)
-- `REDIS_PORT` - Redis port (default: 6379)
-- `REDIS_DB` - Redis database number (default: 0)
-- `REDIS_PASSWORD` - Redis password (if required)
-- `REDIS_USER` - Redis username (cloud providers typically use 'default')
-
-Security Configuration (recommended for production):
-- `CORS_ORIGINS` - Comma-separated list of allowed origins (e.g., `https://yourdomain.com,https://api.yourdomain.com`)
-  - If not set, defaults to `*` (all origins allowed)
-  - Recommended to set in production for security
-
-Optional:
-- `BCRYPT_ROUNDS` - 8 for dev, 10 for prod
-
-Backup Configuration (optional, enables automated encrypted backups):
-- `BACKUP_ENCRYPTION_KEY` - Min 32 characters, AES-256 encryption key
-- `DO_SPACES_KEY` - DigitalOcean Spaces access key
-- `DO_SPACES_SECRET` - DigitalOcean Spaces secret key
-- `DO_SPACES_BUCKET` - Spaces bucket name (e.g., `serpium`)
-- `DO_SPACES_REGION` - Spaces region (e.g., `atl1`, `nyc3`)
-- `BACKUP_RETENTION_DAYS` - Days to keep backups (default: 7)
-
-Sentry Configuration (optional, enables error tracking):
-- `SENTRY_DSN` - Sentry Data Source Name for error reporting
-
-CryptoCloud Payment Integration (required for cryptocurrency deposits):
-- `CRYPTOCLOUD_API_KEY` - CryptoCloud.plus API token (format: `eyJhbGciOi...`)
-- `CRYPTOCLOUD_SHOP_ID` - Shop ID from CryptoCloud dashboard
-- `CRYPTOCLOUD_SECRET_KEY` - Secret key for JWT webhook signature verification (HS256)
-
-Resend Email Service (required for transactional emails):
-- `RESEND_API_KEY` - Resend.com API key (format: `re_xxx...`)
-- `RESEND_FROM_EMAIL` - Sender email address (e.g., `noreply@serparium.com`)
-- `RESEND_FROM_NAME` - Sender display name (e.g., `Serparium`)
-
-## Site Slot Rentals System (v2.8.0+)
-
-**Status**: Active since December 2025
-
-P2P slot rental system allowing site owners to rent out link slots to other users.
-
-### Architecture Overview
-
-```
-Owner creates rental → Tenant receives notification → Tenant approves/pays → Slots reserved
-                                                                              ↓
-                                                        Tenant places links using rented slots
-                                                                              ↓
-                                                        Monthly auto-renewal or expiration
-```
-
-### Database Schema
-
-**Table**: `site_slot_rentals`
-```sql
-CREATE TABLE site_slot_rentals (
-    id SERIAL PRIMARY KEY,
-    site_id INTEGER NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
-    owner_id INTEGER NOT NULL REFERENCES users(id),
-    tenant_id INTEGER NOT NULL REFERENCES users(id),
-    slots_count INTEGER NOT NULL,           -- Number of slots rented
-    slots_used INTEGER DEFAULT 0,           -- Slots currently in use
-    price_per_slot DECIMAL(10,2) NOT NULL,  -- Monthly price per slot
-    total_price DECIMAL(10,2) NOT NULL,     -- Total monthly payment
-    status VARCHAR(20) DEFAULT 'pending_approval',
-    expires_at TIMESTAMP,                   -- Rental expiration date
-    auto_renewal BOOLEAN DEFAULT false,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-**Status Values**:
-- `pending_approval` - Awaiting tenant confirmation
-- `active` - Rental active, slots available for use
-- `expired` - Rental period ended
-- `cancelled` - Cancelled by owner or tenant
-
-### Key Files
-
-| File | Purpose |
-|------|---------|
-| `backend/controllers/rental.controller.js` | HTTP handlers (9 endpoints) |
-| `backend/services/billing.service.js` | Rental business logic (createSlotRental, etc.) |
-| `backend/routes/rental.routes.js` | Route definitions |
-| `backend/cron/cleanup-expired-rentals.cron.js` | Auto-expire old rentals |
-| `backend/build/sites.html` | Rental modal UI |
-
-### API Endpoints
-
-```
-POST   /api/rentals                    - Create rental (owner)
-GET    /api/rentals?role=owner|tenant  - Get user's rentals
-GET    /api/rentals/:siteId/available  - Check available slots
-POST   /api/rentals/:id/approve        - Approve rental (tenant)
-POST   /api/rentals/:id/reject         - Reject rental (tenant)
-POST   /api/rentals/:id/renew          - Renew rental (tenant)
-DELETE /api/rentals/:id                - Cancel rental (owner)
-PATCH  /api/rentals/:id/auto-renewal   - Toggle auto-renewal
-GET    /api/rentals/site/:siteId       - Get site's rentals (owner)
-```
-
-### Tenant Lookup
-
-**IMPORTANT**: When creating a rental, tenant is looked up by **username OR email**:
-
-```sql
-SELECT id, username, balance, current_discount FROM users
-WHERE username = $1 OR email = $1 FOR UPDATE
-```
-
-**UI Field Label**: "Логин арендатора" - accepts both username and email address.
-
-**Example**:
-- Input: `mmmmm135788@gmail.com` → Finds user with that email
-- Input: `mmmmm135788` → Finds user with that username
-
-### Admin vs Regular Owner
-
-**Admin Owner** (owner has role='admin'):
-- Rental created as `active` immediately
-- Payment deducted from tenant's balance instantly
-- Money credited to owner's balance instantly
-
-**Regular Owner**:
-- Rental created as `pending_approval`
-- Tenant receives notification to approve
-- Tenant must click "Approve" and have sufficient balance
-- Only then payment is processed
-
-### Slot Availability Calculation
-
-```javascript
-availableSlots = site.max_links - site.used_links - reservedSlots
-
-// reservedSlots = SUM of slots in active/pending rentals
-```
-
-### Rental Modal (sites.html)
-
-**Location**: Line ~1705 in `backend/build/sites.html`
-
-**Key Elements**:
-- `#createRentalModal` - Modal container
-- `#rentalSiteId` - Hidden site ID
-- `#rentalTenantUsername` - Username/email input
-- `#rentalSlotsCount` - Number of slots
-- `#rentalPricePerSlot` - Price per slot
-- `#rentalCalcTotal` - Calculated total
-
-**Width**: `max-width: 28rem` (Figma design spec)
-
-### Common Issues
-
-**"Пользователь не найден"**
-- User doesn't exist in system
-- Check username AND email spelling
-- User must be registered before rental creation
-
-**"Ошибка при создании аренды" (generic)**
-- Check server logs for actual error
-- Common causes: insufficient balance, no available slots, duplicate rental
-
-**Modal closes when clicking input field**
-- Fixed by adding `class="modal-content"` to inner div
-- Bootstrap requires this class for proper click handling
-
-### Migration Required
-
+### Required
 ```bash
-# Run slot rentals migration
-node database/run_slot_rentals_migration.js
+DATABASE_URL=postgresql://...   # Full connection string
+JWT_SECRET=<min 32 chars>       # JWT signing key
+NODE_ENV=development|production
+PORT=3003                       # Server port
 ```
 
-## Resend Email Integration (v2.6.13+)
-
-**Status**: Active since December 2025
-
-Transactional email system via Resend.com API for serparium.com domain.
-
-### Domain Verification Required
-
-Before emails can be sent from serparium.com:
-1. Go to https://resend.com/domains
-2. Add domain: `serparium.com`
-3. Add DNS records (SPF, DKIM, DMARC) as instructed by Resend
-4. Wait for verification (5-10 minutes)
-
-### Key Files
-
-| File | Purpose |
-|------|---------|
-| `backend/services/email.service.js` | Email sending service (450+ lines) |
-
-### Available Email Functions
-
-```javascript
-const emailService = require('./services/email.service');
-
-// Generic email
-await emailService.sendEmail({ to, subject, text, html });
-
-// User registration
-await emailService.sendVerificationEmail(email, token, username);
-await emailService.sendWelcomeEmail(email, username);
-
-// Password reset
-await emailService.sendPasswordResetEmail(email, token, username);
-
-// Payment notification
-await emailService.sendPaymentConfirmationEmail(email, username, amount, currency);
-
-// Admin alerts
-await emailService.sendAlertEmail(alertType, title, message, details);
-```
-
-### Testing Email Service
-
+### Redis (Optional - graceful degradation)
 ```bash
-# Test configuration
-node -e "
-require('dotenv').config({ path: './backend/.env' });
-const emailService = require('./backend/services/email.service');
-console.log('Email configured:', emailService.isConfigured());
-"
-
-# Send test email (after domain verification)
-node -e "
-require('dotenv').config({ path: './backend/.env' });
-const emailService = require('./backend/services/email.service');
-emailService.sendEmail({
-  to: 'test@example.com',
-  subject: 'Test',
-  text: 'Test email'
-}).then(console.log);
-"
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=<if required>
 ```
 
-### Common Issues
-
-**"Domain not verified" error**
-- Domain serparium.com needs verification in Resend dashboard
-- Add required DNS records and wait for propagation
-
-**Emails not being received**
-- Check spam folder
-- Verify DKIM/SPF/DMARC records are correct
-- Check Resend dashboard for delivery status
-
-## CryptoCloud Payment Integration (v2.6.12+)
-
-**Status**: Active since December 2025
-
-Cryptocurrency payment system for balance deposits via CryptoCloud.plus gateway.
-
-### Architecture Overview
-
-```
-User Balance Page → Create Invoice → CryptoCloud API → Payment Link
-                                                          ↓
-User Pays in Crypto → CryptoCloud Webhook → JWT Verify → Add Balance
-```
-
-### Key Files
-
-| File | Purpose |
-|------|---------|
-| `backend/services/payment.service.js` | Core business logic (435 lines, 9 functions) |
-| `backend/controllers/payment.controller.js` | HTTP handlers (6 endpoints) |
-| `backend/routes/payment.routes.js` | Routes with rate limiting |
-| `backend/routes/webhook.routes.js` | Public webhook endpoint |
-| `database/migrate_add_payment_invoices.sql` | Database schema |
-
-### API Endpoints
-
-**Authenticated (require JWT token):**
-- `GET /api/payments/config` - Payment configuration (min/max amounts)
-- `POST /api/payments/create-invoice` - Create deposit invoice
-- `GET /api/payments/pending` - User's pending invoices
-- `GET /api/payments/history` - User's payment history
-- `GET /api/payments/invoice/:orderId` - Specific invoice status
-
-**Public (webhook):**
-- `POST /api/webhooks/cryptocloud` - CryptoCloud payment notification
-
-### Rate Limiting
-
-- Invoice creation: 10/minute (prevent abuse)
-- General payment endpoints: 100/minute
-
-### Database Schema
-
-Table: `payment_invoices`
-```sql
-CREATE TABLE payment_invoices (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id),
-    invoice_uuid VARCHAR(100),    -- CryptoCloud UUID
-    order_id VARCHAR(100) UNIQUE, -- Internal order ID
-    amount DECIMAL(10,2) NOT NULL,
-    status VARCHAR(20) DEFAULT 'pending',
-    crypto_currency VARCHAR(10),
-    crypto_amount DECIMAL(20,10),
-    payment_link TEXT,
-    expires_at TIMESTAMP,
-    paid_at TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-### Webhook Security
-
-CryptoCloud sends JWT token in webhook payload. Service verifies signature using HS256 algorithm with `CRYPTOCLOUD_SECRET_KEY`.
-
-**Verification in payment.service.js:**
-```javascript
-const decoded = jwt.verify(token, secretKey, { algorithms: ['HS256'] });
-```
-
-### Amount Limits
-
-- Minimum: $10
-- Maximum: $10,000
-- Currency: USD (CryptoCloud converts to crypto)
-
-### Supported Cryptocurrencies
-
-USDT, BTC, ETH, LTC, TRX, XMR, DOGE, TON
-
-### Testing Payment Integration
-
+### Optional Services
 ```bash
-# Get fresh auth token
-TOKEN=$(curl -s -X POST http://localhost:3003/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin123"}' | jq -r '.token')
+# CryptoCloud Payments
+CRYPTOCLOUD_API_KEY=eyJhbG...
+CRYPTOCLOUD_SHOP_ID=<shop_id>
+CRYPTOCLOUD_SECRET_KEY=<webhook_key>
 
-# Check payment config
-curl -H "Authorization: Bearer $TOKEN" http://localhost:3003/api/payments/config
+# Email (Resend)
+RESEND_API_KEY=re_xxx...
+RESEND_FROM_EMAIL=noreply@serparium.com
 
-# Create test invoice ($15)
-curl -X POST http://localhost:3003/api/payments/create-invoice \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"amount": 15}'
+# Sentry Error Tracking
+SENTRY_DSN=https://...
 
-# Check pending invoices
-curl -H "Authorization: Bearer $TOKEN" http://localhost:3003/api/payments/pending
+# Security
+ADMIN_IP_WHITELIST=91.84.98.55,127.0.0.1
+BACKUP_ADMIN_KEY=<64-char hex>
 ```
 
-### Common Issues
+---
 
-**"Payment system not configured"**
-- Check `CRYPTOCLOUD_API_KEY` and `CRYPTOCLOUD_SHOP_ID` in .env
+## Migration Order (Critical)
 
-**"Invalid signature" on webhook**
-- Verify `CRYPTOCLOUD_SECRET_KEY` matches CryptoCloud dashboard
-
-**Invoice stuck in "pending"**
-- User hasn't paid yet, or webhook failed
-- Check server logs for webhook errors
-
-## Pagination Limits (Updated January 2025)
-
-**CRITICAL**: System-wide pagination limits increased to support high-volume operations (5000+ placements).
-
-### Configuration Files
-
-**backend/config/constants.js**:
-```javascript
-PAGINATION: {
-  DEFAULT_PAGE: 1,
-  DEFAULT_LIMIT: 20,      // Default for API responses (keeps light load)
-  MAX_LIMIT: 5000         // Maximum allowed limit (increased from 100)
-}
-```
-
-**backend/utils/validators.js**:
-- `validatePagination()` default `maxLimit`: 5000 (was 100)
-- All controllers use this validator for consistent limits
-
-### Controller Limits
-
-All controllers updated to support `maxLimit: 5000`:
-- `backend/controllers/placement.controller.js` - Line 16
-- `backend/controllers/project.controller.js` - Line 16
-- `backend/controllers/site.controller.js` - Line 15
-
-**Batch Operation Limits** (placement.controller.js):
-- `MAX_SITES_PER_BATCH: 1000` (was 100)
-- `MAX_LINKS_PER_BATCH: 5000` (was 500)
-- `MAX_ARTICLES_PER_BATCH: 1000` (was 100)
-
-### Service Safety Limits
-
-**backend/services/placement.service.js**:
-- `DEFAULT_MAX_RESULTS: 10000` - Prevents unbounded queries (was 1000)
-- Applied when no pagination parameters provided
-
-### Frontend API Calls
-
-**CRITICAL**: Frontend must explicitly request high limits to fetch all data:
-
-```javascript
-// backend/build/dashboard.html (line 154)
-PlacementsAPI.getAll({ limit: 5000 })
-
-// backend/build/js/placements-manager.js (line 96, 428)
-fetch('/api/placements?status=placed&limit=5000')
-fetch('/api/placements?limit=5000')  // For updateTabCounts()
-```
-
-**Common Bug**: Forgetting `limit` parameter causes default limit of 20, resulting in incomplete data display.
-
-### Frontend Functions Requiring Explicit Limits
-
-1. **updateTabCounts()** - Must include `?limit=5000` to count all placements
-2. **loadActivePlacements()** - Must include `?limit=5000` to display all
-3. **Dashboard stats** - Must include `{ limit: 5000 }` in API call
-
-**Example of Missing Limit Bug**:
-```javascript
-// WRONG - gets only 20 records
-fetch('/api/placements')
-
-// CORRECT - gets up to 5000 records
-fetch('/api/placements?limit=5000')
-```
-
-### Debugging Pagination Issues
-
-**Symptom**: Frontend displays 20 items then resets or shows wrong count
-
-**Root Cause**: API call missing `limit` parameter, receiving default 20 records
-
-**Fix**: Add `?limit=5000` or `{ limit: 5000 }` to all frontend API calls that need full data
-
-**Check console logs**:
-```javascript
-console.log('API response:', result);
-console.log('Array length:', placements.length);
-// If shows 20 when expecting more, check if limit param was sent
-```
-
-## Recent Critical Fixes (2025-01)
-
-### Transaction Implementation
-All multi-step database operations now use transactions:
-- **createPlacement**: Wrapped in BEGIN/COMMIT/ROLLBACK (15+ operations)
-- **deletePlacement**: Uses SELECT FOR UPDATE to prevent race conditions
-- All operations atomic - either all succeed or all rollback
-
-### Type Safety Improvements
-- Fixed parseInt() usage for PostgreSQL COUNT() results
-- COUNT() returns string "0" not number 0 - always use parseInt()
-- Consistent type handling across placement.service.js
-
-### Redis Performance
-- Replaced `redis.keys()` with `redis.scan()` cursor-based iteration
-- Prevents blocking Redis server in production
-- Implemented in cache.service.js:delPattern()
-
-### Schema Corrections
-- Added `status` and `wordpress_post_id` columns to placements table
-- Removed non-existent `status`/`notes` from sites controller
-- WordPress service now returns `post_id` (not wordpress_id)
-
-### WordPress Article Publication Bugs (Fixed November 2025)
-**Commit**: 46a11ea
-
-**Bug 1 - wordpress.controller.js:61**: Using wrong field name
-```javascript
-// Before (WRONG):
-if (result.success && result.wordpress_id) {
-  await wordpressService.updatePlacementWithPostId(site_id, article_id, result.wordpress_id);
-}
-
-// After (FIXED):
-if (result.success && result.post_id) {
-  await wordpressService.updatePlacementWithPostId(site_id, article_id, result.post_id);
-}
-```
-**Impact**: WordPress post IDs weren't being saved, leaving placements stuck in "pending" status.
-
-**Bug 2 - billing.service.js:526**: Wrong parameter order
-```javascript
-// Before (WRONG):
-const result = await wordpressService.publishArticle(
-  placement.api_key,
-  content.title,
-  content.content,
-  placement.site_url
-);
-
-// After (FIXED):
-const result = await wordpressService.publishArticle(
-  placement.site_url,
-  placement.api_key,
-  {
-    title: content.title,
-    content: content.content,
-    slug: content.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')
-  }
-);
-```
-**Impact**: Article publication would crash due to mismatched parameters.
-
-**Bug 3 - database/init.sql:28**: Missing site_type in base schema
-- Added `site_type VARCHAR(20) DEFAULT 'wordpress'` to CREATE TABLE statement
-- **Impact**: Fresh database installations would fail when creating static sites
-
-### HTML/JavaScript Synchronization Bug (Fixed November 2025)
-**Commit**: beb7afb
-
-**Root Cause**: Incomplete refactoring when removing non-existent database fields (status, notes) from sites.html.
-
-**The Problem**:
-1. Removed HTML form fields for `status` and `notes` (correct - these columns don't exist in database)
-2. Forgot to remove JavaScript code that referenced these deleted fields (error - caused "Add Site" button to break)
-
-**Files Fixed**: `backend/build/sites.html`
-```javascript
-// REMOVED from showCreateModal() (line 325):
-document.getElementById('siteStatus').value = 'active';
-
-// REMOVED from editSite() (lines 344-345):
-document.getElementById('siteStatus').value = site.status || 'active';
-document.getElementById('notes').value = site.notes || '';
-
-// REMOVED from saveSite() (lines 370-371):
-status: document.getElementById('siteStatus').value,
-notes: document.getElementById('notes').value
-```
-
-**Lesson Learned**: When removing HTML form fields, ALWAYS check for JavaScript references:
-1. Search for `getElementById('fieldName')` across entire file
-2. Check modal initialization functions (showCreateModal, showEditModal)
-3. Check form submission functions (saveSite, updateSite, etc.)
-4. Verify no orphaned references to deleted fields in data objects
-
-**Impact**: "Add Site" button was completely broken - JavaScript threw errors when trying to access non-existent DOM elements, halting all execution.
-
-### Migration Required
-If upgrading existing database, run migrations in this order:
-
+Run in this exact order for new environments:
 ```bash
-# 1. Add user_id to placements (REQUIRED for billing system)
-node database/run_user_id_migration.js
+# Core schema
+psql -d linkmanager -f database/init.sql
 
-# 2. Add WordPress post_id and status columns
-PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f database/migrate_add_wordpress_post_id.sql
+# Required migrations (DO NOT SKIP)
+node database/run_user_id_migration.js          # 1. User ID
+node database/run_site_types_migration.js       # 2. Site types
+node database/run_nullable_migration.js         # 3. API key nullable
+node database/run_remove_anchor_unique.js       # 4. Anchor duplicates
+node database/run_extended_fields_migration.js  # 5. JSONB fields
+node database/run_limits_cooldown_migration.js  # 6. 6-month cooldown
+node database/run_slot_rentals_migration.js     # 7. Slot rentals
 
-# 3. Install full billing system (optional, if using billing features)
-node database/run_billing_migration.js
+# WordPress post ID
+psql -d linkmanager -f database/migrate_add_wordpress_post_id.sql
+
+# Optional
+node database/run_billing_migration.js          # Billing system
+node database/run_registration_tokens_migration.js  # Bulk registration
+
+# Seed data
+psql -d linkmanager -f database/seed.sql
 ```
 
-See `database/MIGRATION_INSTRUCTIONS.md` for detailed instructions and troubleshooting.
+---
 
 ## Git Workflow
 
 Repository: https://github.com/maxximseo/link-manager.git
-- Branch: `main`
-- **Auto-commit on file changes**: Nodemon automatically commits and pushes changes when files are modified
-- Auto-deploy on push
-- Always commit with message ending in:
-  ```
-  🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
-  Co-Authored-By: Claude <noreply@anthropic.com>
-  ```
+**Auto-commit on file changes** (via nodemon):
+- Format: `Auto-commit: Development changes at YYYY-MM-DD HH:MM:SS`
+- Auto-push to GitHub after commit
 
-### Automatic Git Commits
-
-The development server (`npm run dev`) has auto-commit functionality built-in:
-
-1. **On file changes**: Nodemon detects file modifications and triggers auto-commit
-2. **Commit message format**: `Auto-commit: Development changes at YYYY-MM-DD HH:MM:SS`
-3. **Auto-push**: Changes are automatically pushed to GitHub after commit
-4. **Status messages**:
-   - `✅ Changes committed and pushed successfully!` - Changes uploaded
-   - `✨ No changes to commit` - Working tree clean
-
-**Manual commits** (when needed):
+**Manual commits**:
 ```bash
 git add -A
-git commit -m "Your message here
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+git commit -m "Your message
 
 Co-Authored-By: Claude <noreply@anthropic.com>"
 git push
 ```
 
-**IMPORTANT**: Auto-commit is for development convenience. For production/feature releases, use manual commits with descriptive messages.
+---
 
-## Security Alerts System (December 2025)
+## 🔐 Local Credentials Management
 
-### Overview
-Admin notification system for security-related events. Automatically notifies all admin users via database notifications.
+**NEVER commit credentials!** Use `.credentials.local` (in `.gitignore`).
 
-### Service Location
-**File**: `backend/services/security-alerts.service.js`
+**Contains**:
+- GitHub tokens
+- Supabase PostgreSQL credentials
+- Redis/Valkey credentials
+- JWT secrets
+- Admin login credentials
 
-### Alert Types
+**When testing API**: Always read credentials from `.credentials.local` first.
 
-#### 1. Anomalous Transactions
-**Threshold**: Transactions > $1000
-**Trigger**: After successful deposit or purchase
-**Integration**: `backend/services/billing.service.js`
-
-```javascript
-// Called automatically after COMMIT in addBalance() and purchasePlacement()
-checkAnomalousTransaction(userId, amount, 'deposit');
-checkAnomalousTransaction(userId, finalPrice, 'purchase');
-```
-
-#### 2. Failed Login Attempts
-**Threshold**: 5+ failed attempts from same IP within 15 minutes
-**Trigger**: On authentication failure
-**Integration**: `backend/controllers/auth.controller.js`
-
-```javascript
-// Called on login failure
-const clientIP = req.ip || req.connection?.remoteAddress || 'unknown';
-trackFailedLogin(clientIP, username);
-```
-
-**Note**: Rate limiter (5/15min) also applies - user gets blocked on 6th attempt.
-
-#### 3. Server 500 Errors
-**Threshold**: Any 500+ status code
-**Debounce**: 1 minute (same error won't spam admins)
-**Integration**: `backend/middleware/errorHandler.js`
-
-```javascript
-// Called automatically when statusCode >= 500
-notify500Error(err, req);
-```
-
-### Configuration Thresholds
-Located in `security-alerts.service.js`:
-
-```javascript
-const THRESHOLDS = {
-  ANOMALOUS_TRANSACTION_MIN: 1000,     // $1000+
-  FAILED_LOGINS_MAX: 5,                 // 5 attempts
-  FAILED_LOGINS_WINDOW: 15 * 60 * 1000, // 15 minutes
-  ERROR_500_DEBOUNCE: 60 * 1000         // 1 minute debounce
-};
-```
-
-### Database Storage
-Notifications stored in `notifications` table:
-- `type`: 'security_alert' or 'error_alert'
-- `title`: Alert title
-- `message`: Detailed message
-- `metadata`: JSONB with context (IP, userId, timestamp, etc.)
-
-### Memory Management
-- In-memory tracking for failed logins (Map)
-- Automatic cleanup of old entries (1% chance per request)
-- Error debounce map with periodic cleanup
-
-### Testing Security Alerts
+**Verify before push**:
 ```bash
-# Test failed logins (triggers alert after 5 attempts)
-for i in 1 2 3 4 5; do
-  curl -X POST http://localhost:3003/api/auth/login \
-    -H "Content-Type: application/json" \
-    -d '{"username":"test","password":"wrong"}'
-done
-
-# Check notifications in DB
-SELECT * FROM notifications WHERE type = 'security_alert' ORDER BY created_at DESC LIMIT 5;
+git diff --cached | grep -i "password\|secret\|token\|AVNS_"
 ```
 
-### Environment Variables
+---
 
-**BACKUP_ADMIN_KEY** - Backup endpoint authentication:
-```bash
-BACKUP_ADMIN_KEY=<64-character hex key>
-```
-Used in `backend/routes/health.routes.js` with constant-time comparison.
-
-**ADMIN_IP_WHITELIST** - Admin login IP restriction:
-```bash
-ADMIN_IP_WHITELIST=91.84.98.55,127.0.0.1,::1
-```
-Comma-separated list of allowed IPs. Only these IPs can login as admin.
-
-### Admin IP Whitelist (December 2025)
-
-**Location**: `backend/controllers/auth.controller.js`
-
-**Behavior**:
-1. After successful password verification, checks if user is admin
-2. If admin, extracts client IP (supports X-Forwarded-For for proxies)
-3. Checks IP against whitelist from `ADMIN_IP_WHITELIST` env var
-4. If IP not in whitelist:
-   - Logs warning with username, IP, and whitelist
-   - Sends notification to other admins about blocked attempt
-   - **Returns generic "Invalid credentials" error** (security: doesn't reveal IP restriction exists)
-
-**Helper Functions**:
-```javascript
-getAdminWhitelist()     // Parses ADMIN_IP_WHITELIST from env
-getClientIP(req)        // Extracts real IP (handles X-Forwarded-For)
-isIPWhitelisted(ip, whitelist)  // Checks if IP is allowed
-```
-
-**Security Features**:
-- IPv6 localhost normalization (`::ffff:127.0.0.1` → `127.0.0.1`)
-- Generic error response hides IP restriction from attackers
-- Admin notification on blocked attempts
-- Empty whitelist = allow all (backward compatible)
-
-**Testing**:
-```bash
-# Login from allowed IP (should succeed)
-curl -X POST http://localhost:3003/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"maximator","password":"your_password"}'
-
-# Login with spoofed IP (will be blocked)
-curl -X POST http://localhost:3003/api/auth/login \
-  -H "Content-Type: application/json" \
-  -H "X-Forwarded-For: 1.2.3.4" \
-  -d '{"username":"maximator","password":"your_password"}'
-# Returns: {"error":"Invalid credentials"}
-```
-
-## Common Debugging
-
-### Type Coercion Issues
-**CRITICAL**: PostgreSQL `COUNT()` returns string `"0"` not number `0`:
-```javascript
-// Wrong - will always fail
-if (count === 0) { ... }
-
-// Correct - convert to number first
-if (parseInt(count) === 0) { ... }
-```
-**Always use parseInt()** for COUNT results throughout codebase. Fixed in `placement.service.js:131-132`.
-
-### Redis Production Patterns
-**NEVER use `redis.keys(pattern)` in production** - it blocks entire Redis server:
-```javascript
-// Wrong - blocks Redis
-const keys = await redis.keys(pattern);
-
-// Correct - use SCAN with cursor
-let cursor = '0';
-do {
-  const result = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
-  cursor = result[0];
-  const keys = result[1];
-  // Process keys
-} while (cursor !== '0');
-```
-Implemented in `cache.service.js:delPattern()`.
-
-### Database Schema Mismatch Errors
-**Error**: `column "user_id" of relation "placements" does not exist`
-
-**Cause**: Production database was created from an older version of init.sql that didn't include user_id in placements table.
-
-**Solution**:
-1. Run the user_id migration: `node database/run_user_id_migration.js`
-2. Or manually execute: `ALTER TABLE placements ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE CASCADE;`
-3. See `database/MIGRATION_INSTRUCTIONS.md` for detailed instructions
-
-**Prevention**: Always run all migrations when deploying to new environments. Check `database/` folder for all `migrate_*.sql` files.
-
-### Server Won't Start
-1. Check if port is in use: `lsof -ti:3003`
-2. Check database connectivity via logs
-3. Verify .env file exists with DATABASE_URL
-4. Check Redis connection (optional): `redis-cli ping` should return `PONG`
-
-### Redis/Queue Issues
-1. **Redis not available** warning: System uses graceful degradation, caching disabled but app works
-2. **Bull Queue workers not starting**: Check `redisAvailable` in logs, workers initialize after Redis test
-3. **Cache not working**: Verify Redis running: `brew services start redis`
-4. **Clear cache manually**: `redis-cli FLUSHDB`
-
-### Performance Issues
-1. **Slow queries** (>1000ms): Check if indexes exist in database
-2. **Cache not hitting**: Check TTL expiry, verify cache keys in Redis: `redis-cli keys '*'`
-3. **High memory usage**: Check Redis memory: `redis-cli info memory`
-
-### Database Errors
-1. Check connection in logs: "Successfully parsed DATABASE_URL"
-2. For Supabase: Ensure SSL config present (`rejectUnauthorized: false`)
-3. Verify tables exist: Run `database/init.sql` if needed
-4. **Slow queries**: Run `EXPLAIN ANALYZE` on problematic queries
-
-### Frontend Not Loading
-1. Static files served from `backend/build/`
-2. Check browser console for 404s
-3. Verify Bootstrap CDN accessible
-
-### API Token Issues
-1. Check token in localStorage: `localStorage.getItem('token')`
-2. Decode JWT: https://jwt.io
-3. Verify token not expired (7-day expiry)
-
-### WordPress Plugin Integration Issues
-1. **Links not showing**: Check cache in plugin (5 min TTL), verify API key in sites table
-2. **API returns empty**: Verify placements exist with `placement_content` records
-3. **403 errors**: Check API key matches between plugin and database
-4. **Article not publishing**: Check `placements.status` - should be 'placed' not 'pending'
-   - Articles auto-publish during placement creation
-   - Check logs for publication errors
-   - Verify WordPress site URL and API key are correct
-   - Check `wordpress_post_id` column is populated
-
-### Database Column Existence
-Before updating, verify columns exist in schema:
-```sql
--- Check table columns
-\d sites
-\d projects
-\d placements
-```
-Common issue: Trying to update non-existent columns like `status` or `notes` in `sites` table causes UPDATE failures. Always check [database/init.sql](database/init.sql) for actual schema.
-
-### Frontend Form Buttons Not Working
-**Symptom**: "Add Site", "Save", or other form buttons do nothing when clicked.
-
-**Common Causes**:
-1. **Orphaned JavaScript references to deleted HTML fields**
-   - Check browser console for errors like: `Cannot read property 'value' of null`
-   - Search entire HTML file for `getElementById('deletedFieldName')`
-   - Look in modal initialization functions (showCreateModal, showEditModal)
-   - Look in form submission functions (saveSite, createProject, etc.)
-
-2. **Missing form field IDs**
-   - Verify all `document.getElementById()` calls match actual HTML `id=""` attributes
-   - Check that modal HTML includes all fields referenced in JavaScript
-
-3. **JavaScript syntax errors**
-   - Open browser DevTools Console tab
-   - Look for red error messages that stop script execution
-   - Common: missing commas in object literals, unclosed parentheses
-
-**Debugging Steps**:
-```javascript
-// Add console.log() at function start to verify it's called:
-function saveSite() {
-  console.log('saveSite called');
-
-  // Log each field access:
-  const name = document.getElementById('siteName').value;
-  console.log('Site name:', name);
-
-  // Continue debugging...
-}
-```
-
-**Prevention**: When removing HTML fields, use multi-step approach:
-1. Find all JavaScript references: `grep -r "getElementById('fieldName')" file.html`
-2. Remove JavaScript references first
-3. Then remove HTML elements
-4. Test in browser before committing
-
-## Static PHP Sites (NEW - November 2025)
-
-Static PHP sites are a new site type that doesn't require WordPress integration.
-
-### Key Features
-- **No API key required** - Uses domain-based authentication
-- **Links only** - Cannot publish articles (max_articles automatically set to 0)
-- **Simple widget** - Direct HTTP endpoint, no WordPress plugin needed
-- **Domain normalization** - Matches by clean domain (no protocol/www/path)
-
-### Creating Static PHP Site
-```bash
-curl -X POST http://localhost:3003/api/sites \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"site_url":"https://example.com","site_type":"static_php","max_links":20}'
-
-# Response: api_key will be null, max_articles will be 0
-```
-
-### Widget Integration
-Place this PHP code on static site:
-```php
-<?php
-$domain = $_SERVER['HTTP_HOST'];
-$api_url = "https://your-api.com/api/static/get-content-by-domain?domain=" . urlencode($domain);
-$response = file_get_contents($api_url);
-$data = json_decode($response, true);
-
-foreach ($data['links'] as $link) {
-    echo '<a href="' . htmlspecialchars($link['url']) . '">'
-       . htmlspecialchars($link['anchor_text']) . '</a>';
-}
-?>
-```
-
-### Static Widget Endpoint
-```
-GET /api/static/get-content-by-domain?domain=example.com
-
-Response:
-{
-  "links": [
-    {"url": "https://...", "anchor_text": "Link Text"}
-  ],
-  "articles": []  // Always empty for static sites
-}
-```
-
-### Domain Normalization
-- `https://www.example.com/path` → `example.com`
-- `http://example.com` → `example.com`
-- Allows widget to work on any subdomain/protocol
-
-### Critical Migration
-**REQUIRED**: Make api_key nullable:
-```bash
-node database/run_nullable_migration.js
-```
-
-Without this migration, static site creation will fail with:
-```
-null value in column "api_key" violates not-null constraint
-```
-
-## Billing System API (NEW - November 2025)
-
-Placement creation moved to billing system. Old `/api/placements` endpoint is DEPRECATED.
-
-### New Endpoint Format
-```javascript
-POST /api/billing/purchase
-{
-  "projectId": 123,        // Single ID (not project_id)
-  "siteId": 456,          // Single ID (not site_ids array)
-  "type": "link",         // "link" or "article"
-  "contentIds": [789],    // Array with exactly 1 ID
-  "scheduledDate": "2025-01-15T10:00:00Z",  // Optional
-  "autoRenewal": false    // Optional
-}
-
-Response:
-{
-  "success": true,
-  "data": {
-    "placement": {...},
-    "newBalance": 95.50,
-    "newDiscount": 0.05,
-    "newTier": "Bronze"
-  }
-}
-```
-
-### Old Endpoint (DEPRECATED)
-```
-POST /api/placements
-→ Returns 410 Gone with migration instructions
-```
-
-### Validation Rules
-1. **Static PHP sites CANNOT purchase articles**
-   - Returns 400 with error details
-   - Check `billing.service.js:207-210`
-
-2. **One placement per site per project**
-   - Cannot purchase same site twice for same project
-   - Enforced in billing.service.js
-
-3. **Site quota limits**
-   - `used_links < max_links`
-   - `used_articles < max_articles`
-
-### Error Response Format
-```javascript
-{
-  "error": "Failed to purchase placement",
-  "details": "Site \"example.com\" is a static PHP site and does not support article placements"
-}
-```
-
-Use `details` field for specific error information.
-
-## Testing
-
-### Run Test Suite
-```bash
-node test-static-sites.js
-```
-
-### Test Coverage
-1. ✅ Create static PHP site via API
-2. ✅ Validate site_type restrictions
-3. ✅ Create placement with link on static site
-4. ✅ Block article placement on static site  
-5. ✅ Test widget endpoint for static site
-6. ✅ Update site type WordPress → Static
-
-All 6 tests should pass when system is properly configured.
-
-### Test Requirements
-- Server running on port 3003
-- Database with migrations applied (including nullable api_key)
-- Admin user: username='admin', password='admin123'
-
-### Puppeteer Visual Testing (December 2025)
-
-**Status**: Active - installed as devDependency
-
-Puppeteer is used for automated visual testing of frontend pages. This allows Claude to verify UI styling changes before showing them to the user.
-
-**Installation**: Already included in `package.json` devDependencies
-```bash
-npm install puppeteer --save-dev
-```
-
-**Test Scripts Location**: `tests/visual/`
-
-**Available Visual Tests**:
-```bash
-# Screenshot placements page and verify styling
-node tests/visual/screenshot-placements.js
-```
-
-**Output**: Screenshots saved to `tests/visual/screenshots/`
-- `placements-full.png` - Full page screenshot
-- `placements-header-settings.png` - Settings block header
-- `placements-header-calendar.png` - Calendar block header
-- `placements-slider-section.png` - Distribution slider
-- `placements-zone-cards.png` - Zone cards (Быстро/Средне/Долго)
-
-**Test Configuration**:
-- Credentials: Uses admin account (maximator)
-- Viewport: 1920x1080
-- Headless mode: enabled
-
-**When to Run Visual Tests**:
-1. After CSS/styling changes
-2. After HTML structure changes
-3. Before finalizing UI updates
-4. When user reports visual discrepancies
-
-**Test Output Format**:
-```
-📸 Taking screenshot of Settings block header...
-   Saved: placements-header-settings.png
-   Computed styles:
-     - backgroundColor: rgb(249, 250, 251)  ✅ #f9fafb
-     - borderBottom: 2px solid rgb(229, 231, 235)  ✅ #e5e7eb
-     - padding: 16px 24px
-```
-
-**Adding New Visual Tests**:
-1. Create new script in `tests/visual/`
-2. Use existing pattern from `screenshot-placements.js`
-3. Save screenshots to `tests/visual/screenshots/`
-4. Log computed styles for verification
-
-## Recent Critical Updates (November 2025)
-
-### 1. API Key Made Nullable
-**Issue**: Static PHP sites don't need API keys
-**Fix**: `ALTER TABLE sites ALTER COLUMN api_key DROP NOT NULL`
-**Migration**: `node database/run_nullable_migration.js`
-
-### 2. Site Types Added
-**New column**: `site_type VARCHAR(20) DEFAULT 'wordpress'`
-**Values**: 'wordpress' | 'static_php'
-**Migration**: `node database/run_site_types_migration.js`
-
-### 3. Billing API Refactor
-**Old**: `POST /api/placements` (DEPRECATED)
-**New**: `POST /api/billing/purchase`
-**Breaking change**: Request format completely different
-
-### 4. Site Type Validation
-**Controller**: `backend/controllers/site.controller.js`
-- Lines 56, 70-72, 109, 120-122: site_type extraction and validation
-**Service**: `backend/services/site.service.js`
-- Lines 92-107: Static site logic (force api_key=null, max_articles=0)
-
-### 5. Static Widget Endpoint
-**Route**: `GET /api/static/get-content-by-domain`
-**Service**: `backend/services/site.service.js:getSiteByDomain()`
-- Domain normalization for matching
-- Returns links only (no articles)
-
-### 6. Static Widget Output Format (Updated November 2025)
-**Files**: `static-widget/static.php` and `backend/build/static.php`
-
-**Output format changed** from wrapped HTML to clean links:
-```php
-// Old format (removed):
-<div class="link-manager-widget">
-  <ul class="link-manager-links">
-    <li><a href="..." rel="nofollow">Text</a></li>
-  </ul>
-</div>
-
-// New format (current):
-<a href="URL" target="_blank">Anchor Text</a><br>
-<a href="URL" target="_blank">Anchor Text</a><br>
-```
-
-**Key changes**:
-- Removed div/ul/li wrappers for cleaner SEO
-- Removed rel="nofollow" attribute
-- Uses <br> as link separator
-- Maintains XSS protection (lm_esc_url, lm_esc_html)
-
-**Important**: Both widget files must stay synchronized:
-- Primary: `static-widget/static.php` (users download this)
-- Build: `backend/build/static.php` (served via UI download button)
-
-## Debugging Static PHP Sites
-
-### Error: `api_key constraint violation`
-**Cause**: Database has NOT NULL on api_key
-**Fix**: Run `node database/run_nullable_migration.js`
-
-### Error: `Site type must be wordpress or static_php`
-**Cause**: Invalid site_type value or missing validation
-**Fix**: Only send 'wordpress' or 'static_php'
-
-### Error: `static PHP site does not support article placements`
-**Cause**: Trying to purchase article on static site
-**Fix**: This is expected - use type='link' instead
-
-### Error: `This endpoint is deprecated`  
-**Cause**: Using old `/api/placements` endpoint
-**Fix**: Use `/api/billing/purchase` with new format
-
-### Widget Returns Empty
-**For static sites**:
-1. Check domain normalization matches
-2. Verify site exists with site_type='static_php'
-3. Check placement_content has link records
-4. Cache TTL is 5 minutes - wait or clear
-
-**For WordPress sites**:
-1. Check api_key exists in sites table
-2. Verify placements have placement_content records
-3. Check WordPress plugin is active
-
-## Migration Order (Critical)
-
-Run migrations in this exact order for new environments:
-
-```bash
-# 1. Core schema
-psql -d linkmanager -f database/init.sql
-
-# 2. Add user_id to placements (REQUIRED)
-node database/run_user_id_migration.js
-
-# 3. Add site_type column
-node database/run_site_types_migration.js
-
-# 4. Make api_key nullable (REQUIRED for static sites)
-node database/run_nullable_migration.js
-
-# 5. Add WordPress post_id and status
-psql -d linkmanager -f database/migrate_add_wordpress_post_id.sql
-
-# 6. Install billing system (optional)
-node database/run_billing_migration.js
-
-# 7. Add registration tokens table (optional, for bulk registration)
-node database/run_registration_tokens_migration.js
-
-# 8. Remove anchor_text uniqueness constraint (REQUIRED for v2.5.0+)
-node database/run_remove_anchor_unique.js
-
-# 9. Add extended fields to project_links (REQUIRED for v2.5.0+)
-node database/run_extended_fields_migration.js
-
-# 10. Add limits_changed_at for 6-month cooldown (REQUIRED for v2.6.5+)
-node database/run_limits_cooldown_migration.js
-
-# 11. Add slot rentals tables (REQUIRED for v2.8.0+)
-node database/run_slot_rentals_migration.js
-
-# 12. Add updated_at columns to users/sites (REQUIRED for v2.8.1+)
-psql -d linkmanager -f database/migrate_add_updated_at_users_sites.sql
-
-# 13. Seed data
-psql -d linkmanager -f database/seed.sql
-```
-
-**DO NOT SKIP** migrations #2, #3, #4, #8, #9, #10, #11, or #12 - system will not work without them.
-
-**Optional migrations**: #6 (billing), #7 (bulk registration)
-
-**New in v2.5.0**: Migrations #8 and #9 add support for duplicate anchor texts and extended JSONB fields.
-
-**New in v2.6.5**: Migration #10 adds limits_changed_at column for 6-month cooldown on max_links/max_articles changes.
-
-**New in v2.8.0**: Migrations #11 and #12 add site slot rental system (P2P slot leasing).
-
-## Bulk WordPress Site Registration (NEW - November 2025)
-
-System for mass-registering WordPress sites using registration tokens instead of manual one-by-one entry.
-
-### Architecture
-
-**Flow**:
-1. Admin generates registration token in dashboard (Sites page)
-2. Token distributed to multiple WordPress installations via plugin
-3. WordPress sites self-register using token
-4. Sites automatically added to system with unique API keys
-
-### Database Schema
-
-**Table**: `registration_tokens` (created via `database/migrate_add_registration_tokens.sql`)
-```sql
-CREATE TABLE registration_tokens (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    token VARCHAR(128) UNIQUE NOT NULL,  -- Format: 'reg_' + 64 hex chars
-    label VARCHAR(255),                   -- Human-readable label
-    max_uses INTEGER DEFAULT 0,           -- 0 = unlimited
-    current_uses INTEGER DEFAULT 0,       -- Increments on each use
-    expires_at TIMESTAMP,                 -- Optional expiry date
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-**CRITICAL**: Token column must be VARCHAR(128) or larger to accommodate `'reg_' + crypto.randomBytes(32).toString('hex')` (68 characters total).
-
-### Backend Implementation
-
-**Service Methods** (`backend/services/site.service.js`):
-- `generateRegistrationToken(userId, options)` - Creates secure token
-- `validateRegistrationToken(token)` - Validates token (expiry, usage limits)
-- `incrementTokenUsage(token)` - Increments usage counter
-- `getSiteByUrlForUser(siteUrl, userId)` - Checks for duplicates
-- `getUserTokens(userId)` - Retrieves all user tokens
-
-**Controller Endpoints** (`backend/controllers/site.controller.js`):
-- `POST /api/sites/generate-token` - Generate new token (requires auth)
-- `POST /api/sites/register-from-wordpress` - Self-registration (NO auth, token IS the auth)
-- `GET /api/sites/tokens` - List all user tokens (requires auth)
-
-**Routes** (`backend/routes/site.routes.js`):
-```javascript
-// NO auth - token-based registration (BEFORE auth middleware)
-router.post('/register-from-wordpress', registerLimiter, siteController.registerFromWordPress);
-
-// Apply auth middleware
-router.use(authMiddleware);
-
-// Auth required routes
-router.post('/generate-token', generalLimiter, siteController.generateToken);
-router.get('/tokens', generalLimiter, siteController.getTokens);
-```
-
-**Rate Limiting**:
-- Token generation: 100 requests/minute
-- WordPress registration: 5 requests/minute (prevent abuse)
-
-### Frontend Implementation
-
-**UI Location**: `backend/build/sites.html` (bottom of page, after sites list)
-
-**Token Generation Form**:
-- Label input (e.g., "January 2025")
-- Max uses (0 = unlimited)
-- Expiry days (default 30)
-- Generate button → displays token with copy button
-
-**JavaScript Functions**:
-```javascript
-generateRegistrationToken()  // Calls POST /api/sites/generate-token
-copyToken()                   // Copies token to clipboard
-hideToken()                   // Hides token display, resets form
-```
-
-### WordPress Plugin Integration
-
-**Plugin Version**: 2.4.0 (updated in `wordpress-plugin/link-manager-widget.php`)
-
-**Registration Form** (auto-shows when no API key exists):
-```php
-// In admin settings page
-if (empty($api_key)):
-  // Show registration form with token input
-  <input name="registration_token" placeholder="reg_..." required />
-  <button name="register_site">Register This Site</button>
-endif;
-```
-
-**Registration Method** (`register_site_with_token()`):
-```php
-private function register_site_with_token($registration_token) {
-  // Auto-generate API key
-  $api_key = 'api_' . substr(md5(site_url() . time()), 0, 24);
-
-  // Call backend endpoint
-  wp_remote_post($this->api_endpoint . '/sites/register-from-wordpress', [
-    'body' => json_encode([
-      'registration_token' => $registration_token,
-      'site_url' => site_url(),
-      'api_key' => $api_key
-    ])
-  ]);
-
-  // Save API key on success
-  update_option('lmw_api_key', $api_key);
-}
-```
-
-### Security Features
-
-1. **Token Format**: `reg_` prefix + 64 random hex characters (128 total length)
-2. **Token Validation**: Checks expiry date and usage limits before registration
-3. **Rate Limiting**: Maximum 5 WordPress registrations per minute
-4. **CSRF Protection**: WordPress nonce verification on registration form
-5. **Duplicate Prevention**: Checks for existing site_url before registration
-6. **API Key Generation**: Secure random generation using MD5 hash
-
-### Migration Required
-
-**Run migration** before using this feature:
-```bash
-node database/run_registration_tokens_migration.js
-```
-
-**Migration creates**:
-- `registration_tokens` table
-- Indexes on `token` and `user_id` columns
-- Proper foreign key constraints
-
-**CRITICAL FIX**: If you get "value too long for type character varying(64)" error:
-```sql
-ALTER TABLE registration_tokens ALTER COLUMN token TYPE VARCHAR(128);
-```
+## Quick Debugging
 
 ### Common Issues
 
-**Error: "Failed to generate registration token"**
-- Check server logs for actual database error
-- Most common: token column too small (must be VARCHAR(128))
-- Solution: Run `ALTER TABLE registration_tokens ALTER COLUMN token TYPE VARCHAR(128);`
+| Issue | Solution |
+|-------|----------|
+| `column "user_id" does not exist` | Run `node database/run_user_id_migration.js` |
+| API key constraint violation | Run `node database/run_nullable_migration.js` |
+| Server won't start | Check port: `lsof -ti:3003`, check DATABASE_URL |
+| Cache not working | Redis optional - verify: `redis-cli ping` |
+| Frontend button not working | Check browser console for JS errors |
 
-**Error: "Invalid, expired, or exhausted registration token"**
-- Token has expired (check `expires_at`)
-- Token has reached max usage limit (check `current_uses` vs `max_uses`)
-- Token doesn't exist in database
-
-**Error: "Site already registered"**
-- Duplicate `site_url` for the same user
-- Returns 409 Conflict with existing site_id
-
-### Usage Example
-
-**Admin Workflow**:
-1. Go to Sites page → scroll to bottom
-2. Enter label: "Batch January 2025"
-3. Set max uses: 10 (or 0 for unlimited)
-4. Set expiry: 30 days
-5. Click "Создать" (Create)
-6. Copy generated token (starts with `reg_`)
-
-**WordPress Site Owner Workflow**:
-1. Install Link Manager Widget Pro plugin
-2. Go to Settings → Link Manager Widget
-3. See registration form (if no API key)
-4. Paste token from admin
-5. Click "Register This Site"
-6. API key auto-saved, site registered
-
-### Plugin Update Process
-
-When adding features to bulk registration:
-1. Edit `wordpress-plugin/link-manager-widget.php`
-2. Update version in header comment AND `LMW_VERSION` constant
-3. Update `wordpress-plugin/CHANGELOG.md`
-4. Copy to build: `cp -r wordpress-plugin/* backend/build/wordpress-plugin/`
-5. Create ZIP: `zip -r backend/build/link-manager-widget.zip wordpress-plugin/ -x "*.DS_Store"`
-6. Test on WordPress site before deployment
-
-## Extended Fields System (v2.5.0+)
-
-**Status**: Active since January 2025
-
-The Extended Fields System allows passing ANY custom data to WordPress sites without modifying plugin code.
-
-### New JSONB Columns in project_links Table
-
-Added via `database/migrate_extended_fields.sql`:
-
-1. **image_url** (JSONB) - URL for link images
-2. **link_attributes** (JSONB) - Custom HTML attributes (class, style, rel, target, data-*)
-3. **wrapper_config** (JSONB) - Wrapper element configuration (tag, class, style)
-4. **custom_data** (JSONB) - Any additional custom data
-
-### Migration
-
-```bash
-node database/run_extended_fields_migration.js
-```
-
-**SQL Schema**:
-```sql
-ALTER TABLE project_links
-  ADD COLUMN IF NOT EXISTS image_url JSONB,
-  ADD COLUMN IF NOT EXISTS link_attributes JSONB,
-  ADD COLUMN IF NOT EXISTS wrapper_config JSONB,
-  ADD COLUMN IF NOT EXISTS custom_data JSONB;
-```
-
-### API Usage
-
-**Creating link with extended fields**:
+### Type Coercion
 ```javascript
-POST /api/projects/:id/links
-{
-  "anchor_text": "Download Game",
-  "url": "https://example.com",
-  "image_url": "https://example.com/icon.png",
-  "link_attributes": {
-    "class": "btn btn-primary",
-    "style": "color: red; font-weight: bold;",
-    "rel": "nofollow",
-    "target": "_blank"
-  },
-  "wrapper_config": {
-    "wrapper_tag": "div",
-    "wrapper_class": "special-offer highlighted",
-    "wrapper_style": "border: 2px solid gold; padding: 15px;"
-  },
-  "custom_data": {
-    "description": "Best service for your business",
-    "category": "premium"
-  }
-}
+// PostgreSQL COUNT() returns string "0" not number 0
+// WRONG: if (count === 0)
+// CORRECT:
+if (parseInt(count) === 0) { ... }
 ```
 
-### WordPress Plugin Templates
-
-WordPress plugin (v2.4.5+) supports multiple display templates via shortcode:
-
-**Default Template** (existing behavior):
+### Visual Testing
+```bash
+node tests/visual/test-notifications.js  # Full test
 ```
-[lm_links]
-```
-Outputs: `html_context` or simple anchor
-
-**With Image Template**:
-```
-[lm_links template="with_image"]
-```
-Outputs:
-```html
-<div class="lmw-link-with-image">
-  <img src="IMAGE_URL" alt="ANCHOR" class="lmw-link-image" />
-  <a href="URL">ANCHOR</a>
-</div>
-```
-
-**Card Template**:
-```
-[lm_links template="card"]
-```
-Outputs:
-```html
-<div class="lmw-link-card">
-  <div class="lmw-card-image"><img src="IMAGE_URL" /></div>
-  <div class="lmw-card-content">
-    <h4 class="lmw-card-title"><a href="URL">ANCHOR</a></h4>
-    <p class="lmw-card-description">CUSTOM_DATA.description</p>
-  </div>
-</div>
-```
-
-**Custom Template**:
-```
-[lm_links template="custom"]
-```
-Outputs: Raw HTML from `custom_data.html` field (XSS-protected via `wp_kses_post()`)
-
-**Additional Shortcode Parameters**:
-```
-[lm_links template="card" limit="3" home_only="false"]
-```
-- `template`: default|with_image|card|custom
-- `limit`: Maximum links to display (default: all)
-- `home_only`: true|false (default: true, only show on homepage)
-
-### Link Attributes Rendering
-
-When `link_attributes` is provided, plugin automatically applies to `<a>` tag:
-
-**Example**:
-```json
-{
-  "link_attributes": {
-    "class": "btn btn-primary custom-link",
-    "style": "color: blue;",
-    "data-category": "featured"
-  }
-}
-```
-
-**Renders as**:
-```html
-<a href="URL" class="btn btn-primary custom-link" style="color: blue;" data-category="featured">Text</a>
-```
-
-### Wrapper Configuration
-
-When `wrapper_config` is provided, link is wrapped in custom element:
-
-**Example**:
-```json
-{
-  "wrapper_config": {
-    "wrapper_tag": "div",
-    "wrapper_class": "featured-box premium",
-    "wrapper_style": "background: #f0f0f0; padding: 20px;"
-  }
-}
-```
-
-**Renders as**:
-```html
-<div class="featured-box premium" style="background: #f0f0f0; padding: 20px;">
-  <a href="URL">Text</a>
-</div>
-```
-
-### Frontend CSS Styling
-
-Add to WordPress theme's `style.css`:
-
-```css
-/* Link with image */
-.lmw-link-with-image {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 10px 0;
-}
-
-.lmw-link-image {
-  max-width: 50px;
-  height: auto;
-  border-radius: 5px;
-}
-
-/* Card template */
-.lmw-link-card {
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  overflow: hidden;
-  margin: 15px 0;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.lmw-card-image img {
-  width: 100%;
-  height: auto;
-}
-
-.lmw-card-content {
-  padding: 15px;
-}
-
-.lmw-card-title {
-  margin: 0 0 10px 0;
-  font-size: 18px;
-}
-
-.lmw-card-description {
-  color: #666;
-  font-size: 14px;
-}
-```
-
-### Backward Compatibility
-
-**CRITICAL**: All extended fields are OPTIONAL. Existing links without these fields continue to work with default template.
-
-- Links without `image_url`: Image not displayed
-- Links without `link_attributes`: Uses default `<a>` tag styling
-- Links without `wrapper_config`: No wrapper element
-- Links without `custom_data`: Template-specific fallbacks used
-
-### Security
-
-**XSS Protection**:
-- `image_url`: Validated as URL, escaped via `esc_url()`
-- `link_attributes`: Keys whitelisted, values escaped via `esc_attr()`
-- `wrapper_config`: Tag whitelisted (div, span, section), attributes escaped
-- `custom_data.html`: Sanitized via `wp_kses_post()` (allows safe HTML only)
-
-**Allowed HTML tags in custom HTML**:
-- Text: `<p>`, `<span>`, `<div>`, `<h1>`-`<h6>`
-- Links: `<a>` (with href, class, style, target attributes)
-- Formatting: `<strong>`, `<em>`, `<br>`, `<ul>`, `<ol>`, `<li>`
-- NOT allowed: `<script>`, `<iframe>`, `<object>`, event handlers (onclick, etc.)
+Screenshots saved to `tests/visual/screenshots/`.
 
 ---
 
 ## 📐 Architecture Decision Records (ADR)
 
-**See [ADR.md](ADR.md) for comprehensive documentation of all architectural decisions.**
+**See [ADR.md](ADR.md) for all 40 architectural decisions.**
 
-### Quick Reference of Active ADRs
+### Quick Reference
 
-The following major architectural decisions govern this codebase:
-
-1. **[ADR-001: No ORM - Direct SQL Queries](ADR.md#adr-001-no-orm---direct-sql-queries)**
-   - Use parameterized SQL queries via `pg` driver, no ORM layer
-   - Performance-first approach with full SQL control
-
-2. **[ADR-002: JWT Authentication Without Database Lookups](ADR.md#adr-002-jwt-authentication-without-database-lookups)**
-   - All user info embedded in JWT payload
-   - 0ms auth overhead (no database queries in middleware)
-
-3. **[ADR-003: Redis Cache with Graceful Degradation](ADR.md#adr-003-redis-cache-with-graceful-degradation)**
-   - Optional Redis caching with automatic fallback
-   - 10-19x performance boost when available
-
-4. **[ADR-004: Transaction-Wrapped Multi-Step Operations](ADR.md#adr-004-transaction-wrapped-multi-step-operations)**
-   - All multi-table operations wrapped in PostgreSQL transactions
-   - Row-level locking to prevent race conditions
-
-5. **[ADR-005: Modular Frontend (Vanilla JS)](ADR.md#adr-005-modular-frontend-vanilla-js)**
-   - No framework overhead (React/Vue/Angular)
-   - Modular architecture with centralized API client
-
-6. **[ADR-006: 5-Tier Rate Limiting Strategy](ADR.md#adr-006-5-tier-rate-limiting-strategy)**
-   - Different limits for different operation types
-   - LOGIN (5/15min), API (100/min), CREATE (10/min), PLACEMENT (20/min), FINANCIAL (50/min)
-
-7. **[ADR-007: Parameterized Queries Only](ADR.md#adr-007-parameterized-queries-only)** ⚠️ CRITICAL
-   - NEVER concatenate user input into SQL
-   - Complete SQL injection protection
-
-8. **[ADR-008: Extended Fields System (JSONB)](ADR.md#adr-008-extended-fields-system-jsonb)**
-   - 4 JSONB columns for unlimited extensibility
-   - No schema migrations for new metadata fields
-
-9. **[ADR-009: Remove Anchor Text Uniqueness Constraint](ADR.md#adr-009-remove-anchor-text-uniqueness-constraint)**
-   - Allow duplicate anchor texts in same project
-   - Enables A/B testing and common CTAs
-
-10. **[ADR-010: Bull Queue Workers (Optional)](ADR.md#adr-010-bull-queue-workers-optional)**
-    - Background processing for heavy operations
-    - Graceful degradation without Redis
-
-11. **[ADR-011: Static PHP Sites Support](ADR.md#adr-011-static-php-sites-support)**
-    - Two site types: wordpress and static_php
-    - Domain-based authentication for static sites
-
-12. **[ADR-012: Billing System Architecture](ADR.md#adr-012-billing-system-architecture)**
-    - Transaction-based prepaid billing
-    - 5-tier discount system based on total_spent
-
-13. **[ADR-013: Bulk Registration via Tokens](ADR.md#adr-013-bulk-registration-via-tokens)**
-    - Token-based self-service site registration
-    - Scales to 1000+ WordPress installations
-
-14. **[ADR-014: COALESCE Pattern for Partial Updates](ADR.md#adr-014-coalesce-pattern-for-partial-updates)**
-    - All UPDATE queries use COALESCE for partial updates
-    - True REST PATCH semantics
-
-15. **[ADR-015: Pagination Limits (5000 Max)](ADR.md#adr-015-pagination-limits-5000-max)**
-    - MAX_LIMIT increased from 100 to 5000
-    - Supports high-volume bulk operations
-
-16. **[ADR-016: Winston Logging Strategy](ADR.md#adr-016-winston-logging-strategy)**
-    - Structured JSON logging with daily rotation
-    - Error logs: 14 days, Combined: 30 days
-
-17. **[ADR-017: Context-Aware Validation for Site Parameters](ADR.md#adr-017-context-aware-validation-for-site-parameters)**
-    - DR/DA: validation 0-100 (ratings)
-    - ref_domains, rd_main, norm: validation min 0, no max limit (counts)
-
-18. **[ADR-018: GEO Parameter System](ADR.md#adr-018-geo-parameter-system)**
-    - Geographic targeting via `geo` column
-    - Client-side filtering on placements page
-
-19. **[ADR-019: Optimization Principles Documentation](ADR.md#adr-019-optimization-principles-documentation)**
-    - LEVER framework for code optimization
-    - Measurable targets: >50% code reduction, >70% pattern reuse
-
-20. **[ADR-020: Admin-Only Public Site Control](ADR.md#adr-020-admin-only-public-site-control)** ⚠️ SECURITY
-    - Only admin can set `is_public = true` on sites
-    - API validation + UI controls to prevent non-admin access
-
-21. **[ADR-021: Frontend Shared Utilities Architecture](ADR.md#adr-021-frontend-shared-utilities-architecture)**
-    - Centralized badge-utils.js with all badge/color functions
-    - Script loading order: security.js → auth.js → badge-utils.js → api.js → page.js
-
-22. **[ADR-022: ESLint + Prettier Code Quality](ADR.md#adr-022-eslint--prettier-code-quality)**
-    - Code linting and formatting tools
-    - npm run lint / npm run lint:fix
-
-23. **[ADR-023: URL Masking for Premium Sites](ADR.md#adr-023-url-masking-for-premium-sites)** ⚠️ SECURITY
-    - Premium sites (DR >= 20 OR DA >= 30) have masked URLs
-    - Exceptions: Admin users and Gold+ tier (20%+ discount)
-
-24. **[ADR-024: 6-Month Cooldown for Site Limits](ADR.md#adr-024-6-month-cooldown-for-site-limits)**
-    - Non-admin users can change max_links/max_articles once per 6 months
-    - limits_changed_at column tracks last change
-
-25. **[ADR-025: Notification Mark-All-Read Fix](ADR.md#adr-025-notification-mark-all-read-fix)**
-    - Fixed HTTP method and endpoint URL
-    - Bootstrap dropdown auto-close configuration
-
-26. **[ADR-026: Local Credentials Management](ADR.md#adr-026-local-credentials-management)**
-    - All credentials in `.credentials.local`
-    - Never commit to version control
-
-27. **[ADR-027: Puppeteer Visual Testing Strategy](ADR.md#adr-027-puppeteer-visual-testing-strategy)**
-    - Automated UI verification
-    - Tests in `tests/visual/`
-
-28. **[ADR-028: Complete Field Pass-Through in Controller-Service Layer](ADR.md#adr-028-complete-field-pass-through-in-controller-service-layer)** ⚠️ CRITICAL
-    - All editable fields must be extracted in controller AND included in service SQL
-    - Fixed link edit bug where `html_context` was not saved
-
-29. **[ADR-029: Database Timestamp Columns (updated_at)](ADR.md#adr-029-database-timestamp-columns-updated_at)**
-    - All mutable tables must have `updated_at` column
-    - Migration: `run_updated_at_migration.js`
-
-30. **[ADR-030: Database Migration from DigitalOcean to Supabase](ADR.md#adr-030-database-migration-from-digitalocean-to-supabase)**
-    - PostgreSQL moved from DigitalOcean to Supabase
-    - Redis/Valkey remains on DigitalOcean
-
-31. **[ADR-031: Project Cleanup - Remove Unused Files](ADR.md#adr-031-project-cleanup---remove-unused-files)**
-    - Removed 24+ unused test files, docs, and old migrations
-    - Cleaner project structure
-
-32. **[ADR-032: Complete Removal of DigitalOcean Database References](ADR.md#adr-032-complete-removal-of-digitalocean-database-references)**
-    - Deleted 29 migration/export scripts
-    - Updated all docs to reference Supabase only
-    - Preserved DO Spaces (backups) and Redis (cache)
-
-33. **[ADR-033: Modern Modal Design System (Figma-style)](ADR.md#adr-033-modern-modal-design-system-figma-style)**
-    - Consistent modal design across all pages
-    - Gradient headers, icon boxes, modern inputs
-
-34. **[ADR-034: Claude Code Build vs Dev Workflow](ADR.md#adr-034-claude-code-build-vs-dev-workflow)** ⚠️ CRITICAL
-    - Claude must NEVER run `npm run dev`
-    - Use `npm run build` to check code compiles
-
-35. **[ADR-035: QA Expert Agent for Interface Verification](ADR.md#adr-035-qa-expert-agent-for-interface-verification)**
-    - 73 localization issues documented
-    - QA process for Russian interface
-
-36. **[ADR-036: CryptoCloud Payment Integration](ADR.md#adr-036-cryptocloud-payment-integration)**
-    - Cryptocurrency deposits via CryptoCloud.plus gateway
-    - JWT webhook verification with HS256
-
-37. **[ADR-037: Remember Me - 7-Day Session Persistence](ADR.md#adr-037-remember-me---7-day-session-persistence)**
-    - Auto-refresh expired access tokens on page load
-    - 7-day session persistence using refresh tokens
-
-38. **[ADR-038: Resend Email Integration](ADR.md#adr-038-resend-email-integration)**
-    - Resend.com API for transactional emails
-    - Domain: serparium.com with SMTP fallback
-
-39. **[ADR-039: P2P Site Slot Rentals System](ADR.md#adr-039-p2p-site-slot-rentals-system)**
-    - P2P slot rental system for site monetization
-    - Slots reserved at creation (not approval) to prevent race conditions
-    - Links only (no articles through rental)
-    - Auto-renewal cron at 08:00 UTC daily
+| ADR | Topic | Impact |
+|-----|-------|--------|
+| ADR-001 | No ORM | All SQL direct via `query()` |
+| ADR-002 | JWT Auth | No DB lookup in middleware |
+| ADR-004 | Transactions | All multi-step ops wrapped |
+| ADR-007 | SQL Injection | ⚠️ CRITICAL: Parameterized only |
+| ADR-020 | Public Sites | ⚠️ SECURITY: Admin-only |
+| ADR-023 | URL Masking | ⚠️ SECURITY: Premium sites |
+| ADR-028 | Field Pass-Through | ⚠️ CRITICAL: All fields in SQL |
+| ADR-034 | Build vs Dev | ⚠️ CRITICAL: Claude uses `npm run build` |
 
 ### When to Consult ADR
 
-**Before making these changes, read relevant ADRs**:
-- ✅ Adding new database tables or columns → ADR-001, ADR-004, ADR-007, ADR-029
-- ✅ Changing authentication logic → ADR-002
-- ✅ Adding caching layer → ADR-003
-- ✅ Modifying frontend architecture → ADR-005, ADR-021
-- ✅ Adding new API endpoints → ADR-006, ADR-007
-- ✅ Database schema changes → ADR-001, ADR-008, ADR-014, ADR-024, ADR-029
-- ✅ Performance optimization → ADR-003, ADR-010, ADR-015
-- ✅ Security improvements → ADR-007, ADR-011, ADR-020, ADR-023
-- ✅ Site public status changes → ADR-020
-- ✅ Site limits changes → ADR-024
-- ✅ URL masking/visibility → ADR-023
-- ✅ Code quality/linting → ADR-022
-- ✅ API controller/service field handling → ADR-028 ⚠️ CRITICAL
-- ✅ Visual testing → ADR-027
-- ✅ Database provider/infrastructure → ADR-030, ADR-032
-- ✅ Claude Code workflow rules → ADR-034 ⚠️ CRITICAL
-- ✅ Interface localization QA → ADR-035
-- ✅ Payment integration → ADR-036
-- ✅ Session/token management → ADR-002, ADR-037
-- ✅ Email/notifications → ADR-038
-- ✅ Slot rentals system → ADR-039
-
-**ADR Review Schedule**:
-- **Last Review**: December 2025
-- **Next Review**: June 2026
-- **Trigger**: Major version bump, security issues, or performance problems
+- Before adding database tables/columns → ADR-001, ADR-004, ADR-007
+- Before changing auth logic → ADR-002
+- Before API changes → ADR-006, ADR-007
+- Before security changes → ADR-007, ADR-020, ADR-023
+- Before controller/service changes → ADR-028
 
 ---
 
-## Git Workflow
+## Related Documents
 
-Repository: https://github.com/maxximseo/link-manager.git
-- Branch: `main`
-- **Auto-commit on file changes**: Nodemon automatically commits and pushes changes when files are modified
-- Auto-deploy on push
-- Always commit with message ending in:
-  ```
-  🤖 Generated with [Claude Code](https://claude.com/claude-code)
+For detailed information on specific topics:
 
-  Co-Authored-By: Claude <noreply@anthropic.com>
-  ```
-
-### Automatic Git Commits
-
-The development server (`npm run dev`) has auto-commit functionality built-in:
-
-1. **On file changes**: Nodemon detects file modifications and triggers auto-commit
-2. **Commit message format**: `Auto-commit: Development changes at YYYY-MM-DD HH:MM:SS`
-3. **Auto-push**: Changes are automatically pushed to GitHub after commit
-4. **Status messages**:
-   - `✅ Changes committed and pushed successfully!` - Changes uploaded
-   - `✨ No changes to commit` - Working tree clean
-
-**Manual commits** (when needed):
-```bash
-git add -A
-git commit -m "Your message here
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>"
-git push
-```
-
-**IMPORTANT**: Auto-commit is for development convenience. For production/feature releases, use manual commits with descriptive messages.
-
-## 🔐 Local Credentials Management
-
-### CRITICAL: Credentials Security Rules
-
-**NEVER commit credentials to GitHub!** All sensitive data must stay local.
-
-**Local credentials file**: `.credentials.local`
-- Location: Project root (same level as package.json)
-- Contains: All passwords, API tokens, database credentials
-- **Added to `.gitignore`** - will never be pushed to GitHub
-
-**What's in `.credentials.local`**:
-```
-# GitHub tokens
-# Supabase PostgreSQL connection details (host, password, etc.)
-# Redis/Valkey credentials
-# JWT secrets
-# Admin login credentials
-# Backup/CDN keys
-```
-
-**How to use credentials in Claude Code**:
-1. **ALWAYS check `.credentials.local` first** when testing API or needing auth credentials
-2. Read from `.credentials.local` file when needed
-3. NEVER hardcode credentials in code
-4. NEVER include in commits or logs
-5. Use environment variables in production
-
-**When testing API endpoints**: Always read admin credentials from `.credentials.local` before making authenticated requests.
-
-**Protected files in `.gitignore`**:
-```
-.env
-.credentials.local
-*.log
-backend/logs/
-```
-
-### Verification Before Push
-Before any git push, verify no credentials in staged files:
-```bash
-git diff --cached | grep -i "password\|secret\|token\|AVNS_"
-```
-If matches found - **DO NOT PUSH**. Remove sensitive data first.
-
-## 🎭 Visual Testing with Puppeteer
-
-### When to Use Puppeteer Tests
-
-**ALWAYS use Puppeteer for visual/UI verification**:
-- After CSS/styling changes
-- After notification system changes
-- After modal/dropdown behavior changes
-- When user reports UI bugs
-- Before finalizing any frontend changes
-
-### Test Files Location
-
-```
-tests/visual/
-├── test-notifications.js       # Full notification test suite
-├── test-notifications-debug.js # Debug version with network logs
-├── test-time.js                # Timestamp verification test
-└── screenshots/                # Test output screenshots
-    ├── notifications-1-before.png
-    ├── notifications-2-dropdown-open.png
-    ├── notifications-3-after-mark-read.png
-    └── notifications-4-text-selection.png
-```
-
-### Running Visual Tests
-
-```bash
-# Full notification test
-node tests/visual/test-notifications.js
-
-# Debug test with API call logs
-node tests/visual/test-notifications-debug.js
-
-# Timestamp verification
-node tests/test-time.js
-```
-
-### Test Requirements
-
-- Server must be running on port 3003
-- Uses credentials from `.credentials.local`
-- Screenshots saved to `tests/visual/screenshots/`
-- Headless mode by default
-
-### Creating New Visual Tests
-
-Template for new visual test:
-```javascript
-const puppeteer = require('puppeteer');
-
-const CONFIG = {
-  baseUrl: 'http://localhost:3003',
-  credentials: {
-    username: 'maximator',
-    password: '***' // Read from .credentials.local
-  }
-};
-
-async function test() {
-  const browser = await puppeteer.launch({ headless: true });
-  const page = await browser.newPage();
-  await page.setViewport({ width: 1920, height: 1080 });
-
-  // Login
-  await page.goto(`${CONFIG.baseUrl}/login.html`);
-  await page.type('#username', CONFIG.credentials.username);
-  await page.type('#password', CONFIG.credentials.password);
-  await page.click('button[type="submit"]');
-  await page.waitForNavigation();
-
-  // Your test logic here...
-
-  await browser.close();
-}
-```
-
-### Test Output Format
-
-```
-📊 TEST SUMMARY:
-═══════════════════════════════════════════
-   Badge hidden after mark read: ✅ YES
-   Header text updated: ✅ YES
-   Dropdown stays open on text select: ✅ YES
-═══════════════════════════════════════════
-```
+| Topic | Document |
+|-------|----------|
+| API endpoints | [API_REFERENCE.md](API_REFERENCE.md) |
+| Operations & deployment | [RUNBOOK.md](RUNBOOK.md) |
+| Quick patterns | [DECISIONS.md](DECISIONS.md) |
+| Extended fields | [EXTENDED_FIELDS_GUIDE.md](EXTENDED_FIELDS_GUIDE.md) |
+| Code optimization | [OPTIMIZATION_PRINCIPLES.md](OPTIMIZATION_PRINCIPLES.md) |
+| All architectural decisions | [ADR.md](ADR.md) |

@@ -3126,6 +3126,115 @@ CREATE TABLE rental_placements (
 
 ---
 
+## ADR-040: Documentation Structure Consolidation
+
+**Status**: ✅ ACTIVE
+**Date**: January 2026
+**Decision Makers**: Development Team
+
+### Context
+CLAUDE.md grew to 2800+ lines, making it difficult to navigate and maintain. Architectural decisions were documented both in CLAUDE.md and ADR.md, causing duplication and potential inconsistencies.
+
+### Decision
+Consolidate documentation into a clear hierarchy with single sources of truth:
+
+**Shortened CLAUDE.md** (~380 lines):
+- Development commands (essential)
+- Architecture overview with ADR references
+- File locations reference
+- Environment variables
+- Migration order
+- Quick debugging
+- Links to detailed docs
+
+**ADR.md** (39 decisions → primary source for architecture):
+- All architectural decisions documented once
+- Referenced from CLAUDE.md via anchor links
+- Complete rationale and consequences
+
+### Documentation Hierarchy
+
+| Document | Purpose | Size |
+|----------|---------|------|
+| CLAUDE.md | Entry point, essential commands | ~380 lines |
+| ADR.md | Architectural decisions (WHY) | ~3200 lines |
+| API_REFERENCE.md | API contracts (HOW) | ~1500 lines |
+| RUNBOOK.md | Operations procedures (WHAT) | ~1200 lines |
+| DECISIONS.md | Quick patterns (gotchas) | ~900 lines |
+| CHANGELOG.md | Version history | ~2000 lines |
+
+### Rationale
+
+**Problems with 2800-line CLAUDE.md**:
+- ❌ Token limit issues for Claude Code
+- ❌ Duplicate architectural documentation
+- ❌ Inconsistencies between CLAUDE.md and ADR.md
+- ❌ Hard to find specific information
+
+**Benefits of consolidation**:
+- ✅ Single source of truth for each topic
+- ✅ CLAUDE.md fits in context window
+- ✅ Easier to maintain and update
+- ✅ Clear navigation via table links
+
+### Implementation
+
+**Removed from CLAUDE.md**:
+- Detailed architecture explanations (→ ADR.md)
+- Full API documentation (→ API_REFERENCE.md)
+- Detailed runbook procedures (→ RUNBOOK.md)
+- Long code examples (→ reference source files)
+- Feature-specific deep dives (→ specialized guides)
+
+**Kept in CLAUDE.md**:
+- Development commands (essential for Claude)
+- Quick architecture overview with links
+- File locations (quick reference)
+- Environment variables (essential)
+- Migration order (critical)
+- Quick debugging table
+
+**Reference pattern**:
+```markdown
+### Key Patterns
+| Pattern | ADR Reference |
+|---------|---------------|
+| No ORM | [ADR-001](ADR.md#adr-001-no-orm---direct-sql-queries) |
+```
+
+### File Changes
+
+| File | Before | After | Change |
+|------|--------|-------|--------|
+| CLAUDE.md | ~2800 lines | ~380 lines | -86% |
+| ADR.md | ~3100 lines | ~3200 lines | +3% (ADR-040) |
+
+### Consequences
+- ✅ CLAUDE.md now loads without token issues
+- ✅ Single source of truth for architecture
+- ✅ Clear navigation between documents
+- ✅ Easier maintenance
+- ⚠️ Requires following links for detailed info
+- ⚠️ Must keep cross-references updated
+
+### Verification
+
+Ensure all documents exist and are referenced:
+```bash
+ls -la *.md  # Should show all 7 core documents
+```
+
+Required documents:
+- [x] CLAUDE.md - Development guide
+- [x] ADR.md - Architectural decisions
+- [x] README.md - Quick start
+- [x] API_REFERENCE.md - API documentation
+- [x] RUNBOOK.md - Operations
+- [x] CHANGELOG.md - Version history
+- [x] DECISIONS.md - Quick patterns
+
+---
+
 ## Decision Review Process
 
 ADRs should be reviewed when:
@@ -3134,5 +3243,5 @@ ADRs should be reviewed when:
 - 🔄 Security vulnerabilities discovered
 - 🔄 Technology landscape changes (e.g., new PostgreSQL features)
 
-**Last Review**: December 2025
-**Next Review**: June 2026
+**Last Review**: January 2026
+**Next Review**: July 2026
