@@ -36,7 +36,7 @@ const login = async (req, res) => {
     const { username, password } = req.body;
 
     if (!username || !password) {
-      return res.status(400).json({ error: 'Username and password are required' });
+      return res.status(400).json({ error: 'Логин и пароль обязательны' });
     }
 
     const result = await authService.authenticateUser(username, password);
