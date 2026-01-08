@@ -50,7 +50,7 @@ const checkForUpdates = async (req, res) => {
       requires: PLUGIN_INFO.requires,
       requires_php: PLUGIN_INFO.requires_php,
       tested: PLUGIN_INFO.tested,
-      upgrade_notice: 'Security improvements, Clear Cache button, better error messages, i18n support'
+      upgrade_notice: 'Fix: Status now shows correctly after site registration'
     };
 
     // Log update check for monitoring
