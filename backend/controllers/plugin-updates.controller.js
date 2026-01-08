@@ -6,7 +6,7 @@ const logger = require('../config/logger');
 const PLUGIN_INFO = {
   name: 'Link Manager Widget Pro',
   slug: 'link-manager-widget',
-  version: '2.7.0',
+  version: '2.7.1',
   author: 'Link Manager Team',
   author_profile: 'https://github.com/maxximseo',
   homepage: 'https://github.com/maxximseo/link-manager',
