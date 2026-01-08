@@ -17,8 +17,10 @@ const routes = require('./routes');
 
 const app = express();
 
-// Trust proxy for load balancer (enables req.ip to work correctly)
-app.set('trust proxy', 1);
+// SECURITY: Trust proxy disabled - server has direct access (no CDN/proxy)
+// With false, X-Forwarded-For header is ignored, preventing IP spoofing attacks
+// If you add Cloudflare/nginx later, change this to appropriate value (1, 2, etc.)
+app.set('trust proxy', false);
 
 // Security middleware
 // Configure helmet for production security
