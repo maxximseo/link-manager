@@ -1,5 +1,13 @@
 # Serparium Link Widget - Changelog
 
+## Version 2.7.3 (2026-01-08)
+
+### Changed
+- **Top-level admin menu**: Plugin settings now appear directly in WordPress sidebar as "Serparium Links" with link icon
+- No longer buried under Settings submenu - easier to find and access
+
+---
+
 ## Version 2.7.2 (2026-01-08)
 
 ### Changed
