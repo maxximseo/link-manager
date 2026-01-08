@@ -6,7 +6,7 @@ const logger = require('../config/logger');
 const PLUGIN_INFO = {
   name: 'Serparium Link Widget',
   slug: 'link-manager-widget',
-  version: '2.7.3',
+  version: '2.7.5',
   author: 'NDA Team (SEO is Dead)',
   author_profile: 'https://serparium.com',
   homepage: 'https://serparium.com',
@@ -50,7 +50,7 @@ const checkForUpdates = async (req, res) => {
       requires: PLUGIN_INFO.requires,
       requires_php: PLUGIN_INFO.requires_php,
       tested: PLUGIN_INFO.tested,
-      upgrade_notice: 'Added automatic plugin updates support'
+      upgrade_notice: 'Security improvements, Clear Cache button, better error messages, i18n support'
     };
 
     // Log update check for monitoring
