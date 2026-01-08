@@ -1,5 +1,12 @@
 # Serparium Link Widget - Changelog
 
+## Version 2.7.7 (2026-01-08)
+
+### Changed
+- **Test version**: Auto-update system verification release
+
+---
+
 ## Version 2.7.6 (2026-01-08)
 
 ### Fixed
