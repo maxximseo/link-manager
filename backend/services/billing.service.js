@@ -2104,17 +2104,9 @@ const deleteAndRefundPlacement = async (placementId, userId, userRole = 'user') 
 
     const placement = placementResult.rows[0];
 
-    // 2. ADMIN-ONLY: Verify authorization
-    // Only admins can delete placements (enforced by adminMiddleware at route level)
-    // This is a safety check in case service is called directly
-    if (userRole !== 'admin') {
-      await client.query('ROLLBACK');
-      throw new Error('Unauthorized: Only administrators can delete placements');
-    }
-
-    // 2.1 Check if placement is linked to an active rental (slots_used must be decremented)
+    // 2. Check if placement is linked to a rental (for authorization and slots_used)
     const rentalCheck = await client.query(
-      `SELECT rp.rental_id, ssr.slots_used, ssr.status
+      `SELECT rp.rental_id, ssr.slots_used, ssr.status, ssr.tenant_id
        FROM rental_placements rp
        JOIN site_slot_rentals ssr ON rp.rental_id = ssr.id
        WHERE rp.placement_id = $1`,
@@ -2123,6 +2115,13 @@ const deleteAndRefundPlacement = async (placementId, userId, userRole = 'user') 
 
     const rentalInfo = rentalCheck.rows[0];
     const isRentalPlacement = !!rentalInfo;
+    const isTenant = rentalInfo && rentalInfo.tenant_id === userId;
+
+    // 2.1 Authorization: Admin can delete any, tenant can delete their rental placements
+    if (userRole !== 'admin' && !isTenant) {
+      await client.query('ROLLBACK');
+      throw new Error('Unauthorized: Only administrators or rental tenants can delete placements');
+    }
 
     // If rental placement with active rental, decrement slots_used
     if (isRentalPlacement && rentalInfo.status === 'active') {
