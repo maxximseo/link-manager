@@ -51,14 +51,13 @@ router.get('/job/:jobId', generalLimiter, placementController.getJobStatus);
 router.post('/job/:jobId/cancel', generalLimiter, placementController.cancelJob);
 // Publish scheduled placement NOW (manual trigger)
 router.post('/:id/publish-now', generalLimiter, placementController.publishScheduledPlacement);
-// ADMIN ONLY: Only administrators can delete placements (with refund)
-router.delete('/:id', generalLimiter, adminMiddleware, placementController.deletePlacement);
+// Delete placement: Admin OR rental tenant can delete
+router.delete('/:id', generalLimiter, placementController.deletePlacement);
 
-// ADMIN ONLY: Batch delete placements with refund (parallel processing - 5-10x faster)
+// Batch delete placements: Admin OR rental tenant can delete their rentals
 router.post(
   '/batch-delete',
   generalLimiter,
-  adminMiddleware,
   placementController.batchDeletePlacements
 );
 

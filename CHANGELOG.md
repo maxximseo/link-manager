@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.8.4] - 2026-01-09
+
+### 🔌 WordPress Plugin Auto-Update System Verified (ADR-041)
+
+Full end-to-end testing of plugin auto-update mechanism confirmed working.
+
+#### Test Procedure Executed
+1. Modified plugin source from v2.7.8 to v2.7.7
+2. Rebuilt ZIP package with older version
+3. Deleted existing plugin from test WordPress site (onepanwonders.com)
+4. Installed v2.7.7 via manual ZIP upload
+5. Navigated to Dashboard → Updates
+6. Clicked "Check again" to force update check
+7. WordPress detected update: "You have version 2.7.7 installed. Update to 2.7.8"
+8. Clicked "Update Plugins" button
+9. Update completed successfully via WordPress admin
+
+#### Test Results
+| Step | Result |
+|------|--------|
+| Install v2.7.7 via ZIP | ✅ Success |
+| Force update check | ✅ WordPress detected v2.7.8 |
+| Click "Update Plugins" | ✅ Update completed |
+| Version after update | ✅ v2.7.8 confirmed |
+| Plugin activation | ✅ Working |
+
+#### Files Documented
+- **ADR.md**: Added ADR-041 documenting the auto-update architecture
+- **RUNBOOK.md**: Added procedure for testing plugin auto-updates
+- **DECISIONS.md**: Added quick pattern for plugin versioning
+
+#### Architecture Reference
+See [ADR-041](ADR.md#adr-041-wordpress-plugin-auto-update-system) for complete auto-update system documentation.
+
+---
+
 ## [2.8.3] - 2026-01-08
 
 ### 📚 Documentation Structure Consolidation (ADR-040)

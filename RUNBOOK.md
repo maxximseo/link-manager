@@ -22,6 +22,9 @@ This document contains step-by-step procedures for common operational tasks in t
    - [Rental Auto-Renewal Job](#rental-auto-renewal-job-v280)
    - [Rental Expiration Job](#rental-expiration-job-v280)
 10. [Slot Rental Operations](#slot-rental-operations-v280)
+11. [WordPress Plugin Operations](#wordpress-plugin-operations-v270)
+    - [Release New Plugin Version](#release-new-plugin-version)
+    - [Test Auto-Update System](#test-auto-update-system)
 
 ---
 
@@ -1453,6 +1456,194 @@ UPDATE sites SET used_links = 0 WHERE id = 123;
 
 ---
 
+## WordPress Plugin Operations (v2.7.0+)
+
+Operations for managing the Serparium Link Widget WordPress plugin.
+
+**See**: [ADR-041](ADR.md#adr-041-wordpress-plugin-auto-update-system) for complete architecture documentation.
+
+---
+
+### Release New Plugin Version
+
+**When**: Releasing a new version of the WordPress plugin.
+
+#### Step 1: Update Version Numbers
+
+```bash
+# Edit plugin file - TWO places must be updated!
+vim wordpress-plugin/link-manager-widget.php
+```
+
+**Line 6** (header comment):
+```php
+* Version: 2.7.9  # ← Update this
+```
+
+**Line 19** (constant):
+```php
+define('LMW_VERSION', '2.7.9');  # ← Update this
+```
+
+#### Step 2: Update Backend Version
+
+```bash
+vim backend/controllers/plugin-updates.controller.js
+```
+
+**Line 9** (PLUGIN_INFO):
+```javascript
+const PLUGIN_INFO = {
+  version: '2.7.9',  // ← Must match plugin version
+  // ...
+};
+```
+
+#### Step 3: Update Changelog
+
+```bash
+vim wordpress-plugin/CHANGELOG.md
+# Add new version entry at top
+```
+
+#### Step 4: Rebuild ZIP
+
+```bash
+./build-plugin-zip.sh
+# Creates: backend/build/link-manager-widget.zip
+```
+
+#### Step 5: Verify ZIP Structure
+
+```bash
+unzip -l backend/build/link-manager-widget.zip
+# Should show:
+# link-manager-widget/
+# link-manager-widget/link-manager-widget.php
+# link-manager-widget/assets/styles.css
+# link-manager-widget/CHANGELOG.md
+```
+
+**CRITICAL**: Folder name MUST be `link-manager-widget/`, not `wordpress-plugin/`.
+
+#### Step 6: Commit and Deploy
+
+```bash
+git add -A
+git commit -m "Release plugin v2.7.9: [description]"
+git push
+# Auto-deploy to DigitalOcean
+```
+
+#### Verification
+
+After deployment, test on a WordPress site:
+1. Go to Dashboard → Updates
+2. Click "Check again"
+3. Should see new version available
+
+---
+
+### Test Auto-Update System
+
+**When**: After making changes to the update system or before major plugin releases.
+
+**Tested**: January 2026 (v2.7.8) - All tests passed ✅
+
+#### Prerequisites
+
+- Test WordPress site with plugin installed
+- Access to WordPress admin
+- Access to plugin source code
+
+#### Procedure
+
+**Step 1: Downgrade Plugin Source**
+
+```bash
+# Edit plugin version to older number
+vim wordpress-plugin/link-manager-widget.php
+
+# Change BOTH version locations to older version (e.g., 2.7.7)
+# Line 6:  * Version: 2.7.7
+# Line 19: define('LMW_VERSION', '2.7.7');
+```
+
+**Step 2: Rebuild ZIP with Older Version**
+
+```bash
+./build-plugin-zip.sh
+```
+
+**Step 3: Install Older Version on Test Site**
+
+1. Go to WordPress admin → Plugins
+2. Deactivate current plugin
+3. Delete current plugin
+4. Add New → Upload Plugin
+5. Select ZIP file with older version
+6. Install and Activate
+
+**Step 4: Force Update Check**
+
+1. Go to Dashboard → Updates
+2. Click "Check again" link
+3. Should see: "Serparium Link Widget - You have version 2.7.7 installed. Update to 2.7.8"
+
+**Step 5: Perform Update**
+
+1. Check the checkbox for plugin
+2. Click "Update Plugins"
+3. Wait for "updated successfully" message
+4. Click "Go to Plugins page"
+
+**Step 6: Verify Update**
+
+1. Plugin should show version 2.7.8
+2. Plugin should be active
+3. Go to Serparium Links settings
+4. Verify connection status works
+
+**Step 7: Restore Source Code**
+
+```bash
+# Restore version back to latest
+vim wordpress-plugin/link-manager-widget.php
+# Change back to 2.7.8 (or current version)
+
+# Rebuild ZIP
+./build-plugin-zip.sh
+```
+
+#### Expected Results
+
+| Step | Expected Outcome |
+|------|------------------|
+| Install older version | Plugin v2.7.7 shows in list |
+| Force update check | WordPress detects v2.7.8 available |
+| Click Update | "updated successfully" message |
+| Verify version | Plugin shows v2.7.8 |
+| Settings page | Connection working |
+
+#### Troubleshooting
+
+**"Your plugins are all up to date" (no update shown)**
+- Clear WordPress transient: `DELETE FROM wp_options WHERE option_name LIKE '%_transient_update_%'`
+- Or wait 12 hours for cache to expire
+- Or reinstall plugin via ZIP
+
+**Plugin folder renamed/broken after update**
+- Check `after_plugin_install()` function in plugin
+- ZIP folder structure may be wrong
+- Manually rename folder via FTP to `link-manager-widget`
+
+**Version not changing after update**
+- Check if both version locations were updated
+- Check if ZIP was rebuilt after version change
+- Check backend `PLUGIN_INFO.version` matches
+
+---
+
 ## Escalation Procedures
 
 ### Severity Levels
@@ -1490,6 +1681,7 @@ UPDATE sites SET used_links = 0 WHERE id = 123;
 | 2025-12-03 | Added Encrypted Backup System documentation (DO Spaces + AES-256) | Development Team |
 | 2025-12-27 | Added Slot Rental Operations section (v2.8.0+) | Claude Code |
 | 2025-12-27 | Added Rental Auto-Renewal and Expiration cron documentation | Claude Code |
+| 2026-01-09 | Added WordPress Plugin Operations section (v2.7.0+) | Claude Code |
 
 ---
 

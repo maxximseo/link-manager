@@ -1025,3 +1025,99 @@ WHERE p.expires_at < NOW()  -- Will delete active rental placements!
 1. **Slot counts** → Check [ADR-039](ADR.md#adr-039-p2p-site-slot-rentals-system)
 2. **Cron jobs** → Check [RUNBOOK.md#slot-rental-operations](RUNBOOK.md#slot-rental-operations-v280)
 3. **API endpoints** → Check [API_REFERENCE.md#rentals](API_REFERENCE.md#rentals-slot-rentals)
+
+---
+
+## WordPress Plugin Patterns
+
+### ✅ Update Version in THREE Places
+
+When releasing a new plugin version, update ALL three locations:
+
+```php
+// 1. Plugin header (wordpress-plugin/link-manager-widget.php, line 6)
+* Version: 2.7.8
+
+// 2. PHP constant (wordpress-plugin/link-manager-widget.php, line 19)
+define('LMW_VERSION', '2.7.8');
+```
+
+```javascript
+// 3. Backend PLUGIN_INFO (backend/controllers/plugin-updates.controller.js, line 9)
+const PLUGIN_INFO = {
+  version: '2.7.8',
+  // ...
+};
+```
+
+**CRITICAL**: All three MUST match, or auto-update detection will fail.
+
+**See**: [ADR-041](ADR.md#adr-041-wordpress-plugin-auto-update-system)
+
+---
+
+### ✅ ZIP Folder Structure is CRITICAL
+
+```bash
+# ✅ CORRECT - Folder name matches plugin slug
+link-manager-widget.zip
+└── link-manager-widget/
+    └── link-manager-widget.php
+
+# ❌ WRONG - Source folder name used
+link-manager-widget.zip
+└── wordpress-plugin/        # WordPress won't find plugin after update!
+    └── link-manager-widget.php
+```
+
+**Solution**: Always use `build-plugin-zip.sh` which handles folder naming.
+
+```bash
+./build-plugin-zip.sh
+# Automatically renames wordpress-plugin/ → link-manager-widget/
+```
+
+---
+
+### ✅ Test Auto-Update After Changes
+
+```bash
+# 1. Change plugin version to older (e.g., 2.7.7)
+# 2. Rebuild ZIP
+./build-plugin-zip.sh
+
+# 3. Install on test WordPress site
+# 4. Go to Dashboard → Updates → Check again
+# 5. Should see "Update to 2.7.8"
+# 6. Click Update → Verify success
+
+# 7. Restore source code to current version
+# 8. Rebuild ZIP
+./build-plugin-zip.sh
+```
+
+**Full procedure**: [RUNBOOK.md#test-auto-update-system](RUNBOOK.md#test-auto-update-system)
+
+---
+
+### ✅ Don't Wait 12 Hours for Update Detection
+
+```bash
+# WordPress caches update checks for 12 hours
+# Force immediate check:
+
+# Option 1: WordPress Admin
+# Dashboard → Updates → Click "Check again"
+
+# Option 2: Clear transient via SQL
+DELETE FROM wp_options WHERE option_name LIKE '%_transient_update_%';
+```
+
+---
+
+### When in Doubt About Plugin Updates
+
+1. **Architecture** → Check [ADR-041](ADR.md#adr-041-wordpress-plugin-auto-update-system)
+2. **Release procedure** → Check [RUNBOOK.md#release-new-plugin-version](RUNBOOK.md#release-new-plugin-version)
+3. **Testing procedure** → Check [RUNBOOK.md#test-auto-update-system](RUNBOOK.md#test-auto-update-system)
+4. **Plugin changelog** → Check [wordpress-plugin/CHANGELOG.md](wordpress-plugin/CHANGELOG.md)

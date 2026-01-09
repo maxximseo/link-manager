@@ -394,7 +394,7 @@ Screenshots saved to `tests/visual/screenshots/`.
 
 ## 📐 Architecture Decision Records (ADR)
 
-**See [ADR.md](ADR.md) for all 40 architectural decisions.**
+**See [ADR.md](ADR.md) for all 41 architectural decisions.**
 
 ### Quick Reference
 
@@ -408,6 +408,7 @@ Screenshots saved to `tests/visual/screenshots/`.
 | ADR-023 | URL Masking | ⚠️ SECURITY: Premium sites |
 | ADR-028 | Field Pass-Through | ⚠️ CRITICAL: All fields in SQL |
 | ADR-034 | Build vs Dev | ⚠️ CRITICAL: Claude uses `npm run build` |
+| ADR-041 | Plugin Auto-Update | Custom WP update server |
 
 ### When to Consult ADR
 
@@ -416,6 +417,7 @@ Screenshots saved to `tests/visual/screenshots/`.
 - Before API changes → ADR-006, ADR-007
 - Before security changes → ADR-007, ADR-020, ADR-023
 - Before controller/service changes → ADR-028
+- Before plugin version release → ADR-041
 
 ---
 

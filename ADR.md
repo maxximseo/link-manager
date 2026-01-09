@@ -3235,6 +3235,172 @@ Required documents:
 
 ---
 
+## ADR-041: WordPress Plugin Auto-Update System
+
+**Status**: ✅ ACTIVE
+**Date**: January 2026
+**Version**: 2.7.0+
+
+### Context
+Need to provide automatic plugin updates to 200+ WordPress sites without manual intervention, maintaining consistency across all installations.
+
+### Decision
+Implement **custom WordPress update server** integrated with main backend, using WordPress standard hooks.
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    WORDPRESS PLUGIN AUTO-UPDATE                      │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                       │
+│   WordPress Site                    Backend Server                    │
+│   ┌─────────────┐                  ┌─────────────────┐               │
+│   │   Plugin    │  ─── check ───►  │ /check endpoint │               │
+│   │  (v2.7.7)   │  ◄── v2.7.8 ───  │  returns latest │               │
+│   └─────────────┘                  └─────────────────┘               │
+│         │                                  │                          │
+│         │ click "Update Now"               │                          │
+│         ▼                                  ▼                          │
+│   ┌─────────────┐                  ┌─────────────────┐               │
+│   │  WP Admin   │  ─── GET ─────►  │ /download       │               │
+│   │  Updates    │  ◄── ZIP ──────  │  serves ZIP     │               │
+│   └─────────────┘                  └─────────────────┘               │
+│         │                                                             │
+│         ▼                                                             │
+│   ┌─────────────┐                                                    │
+│   │  Plugin     │  ←── after_plugin_install()                        │
+│   │  (v2.7.8)   │      cleans old folders, clears cache              │
+│   └─────────────┘                                                    │
+│                                                                       │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### API Endpoints
+
+| Endpoint | Purpose | Response |
+|----------|---------|----------|
+| `GET /api/plugin-updates/check` | Check for updates | `{ new_version, package, requires... }` |
+| `GET /api/plugin-updates/info` | Plugin details popup | Full plugin info with changelog |
+| `GET /api/plugin-updates/download` | Serve ZIP file | Binary ZIP stream |
+
+### WordPress Hooks Used
+
+```php
+// Check for updates
+add_filter('pre_set_site_transient_update_plugins', [$this, 'check_for_updates']);
+
+// Plugin details popup
+add_filter('plugins_api', [$this, 'plugin_info'], 20, 3);
+
+// Post-install cleanup
+add_filter('upgrader_post_install', [$this, 'after_plugin_install'], 10, 3);
+```
+
+### Version Management
+
+**Two places must be synchronized**:
+```php
+// 1. Plugin header (line 6)
+* Version: 2.7.8
+
+// 2. PHP constant (line 19)
+define('LMW_VERSION', '2.7.8');
+```
+
+**Backend version** (`plugin-updates.controller.js`):
+```javascript
+const PLUGIN_INFO = {
+  version: '2.7.8',  // Must match plugin version
+  // ...
+};
+```
+
+### ZIP Structure Requirements
+
+```
+link-manager-widget.zip
+└── link-manager-widget/          ← MUST be this folder name
+    ├── link-manager-widget.php
+    ├── assets/
+    │   └── styles.css
+    └── CHANGELOG.md
+```
+
+**CRITICAL**: WordPress expects folder name to match plugin slug. If ZIP contains wrong folder name (e.g., `wordpress-plugin/`), plugin breaks after update.
+
+### Build Process
+
+```bash
+./build-plugin-zip.sh
+# Creates: backend/build/link-manager-widget.zip
+# Structure: link-manager-widget/...
+```
+
+### Testing Procedure
+
+1. **Change plugin source to older version** (e.g., 2.7.7)
+2. **Rebuild ZIP** with older version
+3. **Install older version** on test WordPress site
+4. **Go to Dashboard → Updates**
+5. **Click "Check again"** to force update check
+6. **WordPress shows update available** (2.7.7 → 2.7.8)
+7. **Click "Update Plugins"**
+8. **Verify successful update** to new version
+
+### Verified Test Results (January 2026)
+
+| Step | Result |
+|------|--------|
+| Install v2.7.7 via ZIP | ✅ Success |
+| Force update check | ✅ WordPress detected v2.7.8 |
+| Click "Update Plugins" | ✅ Update completed |
+| Version after update | ✅ v2.7.8 |
+| Plugin activation | ✅ Working |
+
+### Files Involved
+
+| File | Purpose |
+|------|---------|
+| `backend/controllers/plugin-updates.controller.js` | Update server endpoints |
+| `backend/routes/plugin-updates.routes.js` | Route definitions |
+| `wordpress-plugin/link-manager-widget.php` | Plugin with update hooks |
+| `wordpress-plugin/CHANGELOG.md` | Version history (shown in WP popup) |
+| `build-plugin-zip.sh` | ZIP builder script |
+| `backend/build/link-manager-widget.zip` | Distributable package |
+
+### Security Considerations
+
+- ✅ ZIP served over HTTPS only
+- ✅ No authentication required for public download (WordPress standard)
+- ✅ Version comparison prevents downgrade attacks
+- ✅ WordPress validates ZIP integrity before extraction
+
+### Consequences
+
+**Advantages**:
+- ✅ One-click updates for all 200+ sites
+- ✅ No manual ZIP upload required
+- ✅ Consistent versions across all installations
+- ✅ Update notifications in WordPress admin
+- ✅ Full changelog visible in update popup
+
+**Trade-offs**:
+- ❌ Must keep backend server available for updates
+- ❌ Two-place version synchronization required
+- ❌ ZIP must be rebuilt for each release
+
+### Rollback Procedure
+
+If update causes issues:
+1. Download previous version ZIP from backup
+2. Deactivate current plugin
+3. Delete plugin folder via FTP
+4. Upload previous version ZIP manually
+5. Activate plugin
+
+---
+
 ## Decision Review Process
 
 ADRs should be reviewed when:
