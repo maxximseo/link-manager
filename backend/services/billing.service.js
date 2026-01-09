@@ -2583,10 +2583,13 @@ const batchPurchasePlacements = async (userId, purchases) => {
 /**
  * Batch delete placements with refund (parallel processing)
  * OPTIMIZATION: Process multiple deletes in parallel for 5-10x speed improvement
- * ADMIN ONLY: Only administrators can delete placements
  *
- * @param {number} userId - Admin user making the deletions
- * @param {string} userRole - User role (must be 'admin')
+ * Authorization (per placement):
+ * - Admins can delete any placement
+ * - Rental tenants can delete their own rental placements
+ *
+ * @param {number} userId - User making the deletions
+ * @param {string} userRole - User role ('admin' or 'user')
  * @param {Array} placementIds - Array of placement IDs to delete
  * @returns {Object} - { successful: number, failed: number, totalRefunded: number, results: Array, errors: Array }
  */
