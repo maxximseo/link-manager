@@ -1657,13 +1657,20 @@
         async function bulkDeleteSelected() {
             if (selectedIds.size === 0) return;
 
-            // Check if user is admin
-            if (!isAdmin()) {
-                showAlert('Удаление размещений доступно только администраторам', 'warning');
+            // Check authorization: admin can delete any, tenant can delete only rental placements
+            const selectedPlacements = filteredPlacements.filter(p => selectedIds.has(p.id));
+            const allRentals = selectedPlacements.every(p => p.is_rental);
+
+            if (!isAdmin() && !allRentals) {
+                showAlert('Удаление доступно только для арендных размещений', 'warning');
                 return;
             }
 
-            if (!confirm(`Удалить ${selectedIds.size} размещений? Средства будут возвращены на баланс.`)) return;
+            const confirmMsg = allRentals && !isAdmin()
+                ? `Удалить ${selectedIds.size} арендных размещений? Слоты вернутся в аренду.`
+                : `Удалить ${selectedIds.size} размещений? Средства будут возвращены на баланс.`;
+
+            if (!confirm(confirmMsg)) return;
 
             const ids = Array.from(selectedIds);
             try {
