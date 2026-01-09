@@ -2057,12 +2057,13 @@ const restoreUsageCountsInTransaction = async (client, placementId) => {
  * Prevents race conditions and ensures money safety
  *
  * @param {number} placementId - ID of placement to delete
- * @param {number} userId - ID of user requesting deletion (for refund target)
+ * @param {number} userId - ID of user requesting deletion
  * @param {string} userRole - Role of user ('admin' or 'user')
  *
- * ADMIN-ONLY: Only administrators can delete placements
- * - Admins can delete ANY placement (no ownership check)
- * - Refund always goes to the placement owner, not the admin
+ * Authorization:
+ * - Admins can delete ANY placement
+ * - Rental tenants can delete their own rental placements
+ * - Refund always goes to the placement owner (rental placements have $0 price)
  */
 const deleteAndRefundPlacement = async (placementId, userId, userRole = 'user') => {
   const client = await pool.connect();
