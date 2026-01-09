@@ -804,6 +804,10 @@
                         <span data-i18n="projectSite">Проект / Площадка</span>
                     </label>
                     <label class="column-checkbox">
+                        <input type="checkbox" id="col-anchor" checked onchange="toggleColumn('anchor')">
+                        <span data-i18n="anchorColumn">Анкор</span>
+                    </label>
+                    <label class="column-checkbox">
                         <input type="checkbox" id="col-published" checked onchange="toggleColumn('published')">
                         <span data-i18n="published">Опубликовано</span>
                     </label>
@@ -880,6 +884,7 @@
                             </th>
                             <th class="col-id">ID</th>
                             <th class="col-project" data-i18n="thProjectSite">ПРОЕКТ / ПЛОЩАДКА</th>
+                            <th class="col-anchor" data-i18n="thAnchor">АНКОР</th>
                             <th class="col-published" data-i18n="thPublished">Опубл.</th>
                             <th class="col-status" data-i18n="thStatus">Статус</th>
                             <th class="col-expires"><i class="bi bi-clock"></i> <span data-i18n="thExpires">Истекает</span></th>
@@ -901,7 +906,7 @@
                     </thead>
                     <tbody id="placementsTable">
                         <tr>
-                            <td colspan="21" class="text-center text-muted py-4" data-i18n="loading">Загрузка...</td>
+                            <td colspan="22" class="text-center text-muted py-4" data-i18n="loading">Загрузка...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -1169,9 +1174,9 @@
         }
 
         // Column visibility
-        const COLUMN_STORAGE_KEY = 'placements_columns_v3';
-        const defaultColumns = ['id', 'project', 'published', 'expires', 'price', 'autorenewal', 'actions', 'dr', 'da', 'type'];
-        const allColumns = ['id', 'project', 'published', 'expires', 'price', 'autorenewal', 'actions', 'dr', 'da', 'tf', 'cf', 'rd', 'rdm', 'norm', 'kw', 'traf', 'geo', 'type'];
+        const COLUMN_STORAGE_KEY = 'placements_columns_v4';
+        const defaultColumns = ['id', 'project', 'anchor', 'published', 'expires', 'price', 'autorenewal', 'actions', 'dr', 'da', 'type'];
+        const allColumns = ['id', 'project', 'anchor', 'published', 'expires', 'price', 'autorenewal', 'actions', 'dr', 'da', 'tf', 'cf', 'rd', 'rdm', 'norm', 'kw', 'traf', 'geo', 'type'];
 
         // Load placements
         async function loadPlacements() {
@@ -1196,7 +1201,7 @@
             } catch (error) {
                 console.error('Error loading placements:', error);
                 document.getElementById('placementsTable').innerHTML =
-                    '<tr><td colspan="21" class="text-center text-danger py-5">Ошибка загрузки данных</td></tr>';
+                    '<tr><td colspan="22" class="text-center text-danger py-5">Ошибка загрузки данных</td></tr>';
             }
         }
 
@@ -1315,7 +1320,7 @@
             const tbody = document.getElementById('placementsTable');
 
             if (filteredPlacements.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="21" class="text-center text-muted py-5">Нет данных</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="22" class="text-center text-muted py-5">Нет данных</td></tr>';
                 updatePagination();
                 return;
             }
@@ -1345,6 +1350,7 @@
                                 </a>
                             </div>
                         </td>
+                        <td class="col-anchor">${escapeHtml(p.type === 'link' ? (p.link_title || '—') : (p.article_title || '—'))}</td>
                         <td class="col-published">
                             ${p.status === 'scheduled'
                                 ? `<div class="scheduled-date-cell">
@@ -1585,12 +1591,13 @@
                 return;
             }
 
-            const headers = ['ID', 'Проект', 'Площадка', 'URL', 'Опубликовано', 'Истекает', 'Цена', 'Автопродление', 'Статус', 'DR', 'DA', 'TF', 'CF', 'RD', 'RDm', 'Norm', 'KW', 'Traf', 'GEO', 'Тип сайта', 'Тип'];
+            const headers = ['ID', 'Проект', 'Площадка', 'URL', 'Анкор', 'Опубликовано', 'Истекает', 'Цена', 'Автопродление', 'Статус', 'DR', 'DA', 'TF', 'CF', 'RD', 'RDm', 'Norm', 'KW', 'Traf', 'GEO', 'Тип сайта', 'Тип'];
             const rows = dataToExport.map(p => [
                 p.id,
                 p.project_name || '',
                 p.site_name || '',
                 p.site_url || '',
+                p.type === 'link' ? (p.link_title || '') : (p.article_title || ''),
                 formatDate(p.placed_at || p.created_at),
                 p.expires_at ? formatDate(p.expires_at) : '',
                 parseFloat(p.final_price || 0).toFixed(2),
