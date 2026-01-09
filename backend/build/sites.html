@@ -1284,6 +1284,7 @@
                             <i class="bi bi-funnel"></i> <span data-i18n="filters">Фильтры</span>
                             <span id="activeFiltersCount" class="badge bg-primary ms-1" style="display: none;">0</span>
                         </button>
+                        <span id="filteredSitesCount" class="badge bg-success ms-2" style="display: none;">0 сайтов</span>
                         <div class="filters-panel" id="filtersPanel">
                             <div class="filter-group">
                                 <label data-i18n="guestPosts">Гест-посты</label>
@@ -1907,6 +1908,7 @@
         let currentLimit = 100;
         let totalSites = 0;
         let totalPages = 0;
+        let filteredTotal = null; // null = не фильтровано, число = количество после фильтра
 
         // ===== PRICE EDITING FUNCTIONS (must be before addEventListener) =====
 
@@ -2245,11 +2247,14 @@
             // Update window.sites with filtered results
             window.sites = filteredSites;
 
+            // Set filtered total for pagination display
+            filteredTotal = filteredSites.length;
+
             // Re-render table
             displaySites();
 
-            // Update total count display - use totalSites (from API) not allSites.length (current page only)
-            updateFilteredCount(filteredSites.length, totalSites);
+            // Update pagination to show filtered count
+            updatePaginationControls();
 
             // Update filter button state
             updateFiltersButtonState();
@@ -2276,9 +2281,13 @@
                 window.sites = [...window.allSites];
             }
 
+            // Reset filtered total to show original count
+            filteredTotal = null;
+
             displaySites();
-            // Update counter to show all sites - use totalSites from API pagination
-            updateFilteredCount(window.sites.length, totalSites);
+
+            // Update pagination to show original count
+            updatePaginationControls();
 
             // Update filter button state
             updateFiltersButtonState();
@@ -2337,8 +2346,10 @@
                 });
 
                 window.sites = filteredSites;
+                filteredTotal = filteredSites.length;
                 displaySites();
-                updateFilteredCount(filteredSites.length, domains.length);
+                updatePaginationControls();
+                updateFiltersButtonState();
 
                 // Show reset button
                 resetBtn.style.display = 'flex';
@@ -2367,6 +2378,7 @@
         function resetSearch() {
             document.getElementById('searchInput').value = '';
             document.getElementById('resetSearchBtn').style.display = 'none';
+            filteredTotal = null; // Reset to show original count
             loadSites(currentPage, currentLimit);
         }
 
@@ -2397,6 +2409,17 @@
             } else {
                 badge.style.display = 'none';
                 btn.classList.remove('active');
+            }
+
+            // Update filtered sites count badge
+            const sitesCountBadge = document.getElementById('filteredSitesCount');
+            if (sitesCountBadge) {
+                if (filteredTotal !== null) {
+                    sitesCountBadge.textContent = `${filteredTotal} сайтов`;
+                    sitesCountBadge.style.display = 'inline';
+                } else {
+                    sitesCountBadge.style.display = 'none';
+                }
             }
         }
 
@@ -2771,10 +2794,11 @@
             }
 
             // Обновить информацию о показанных записях
-            const startItem = totalSites > 0 ? (currentPage - 1) * currentLimit + 1 : 0;
-            const endItem = Math.min(currentPage * currentLimit, totalSites);
+            const displayTotal = filteredTotal !== null ? filteredTotal : totalSites;
+            const startItem = displayTotal > 0 ? (currentPage - 1) * currentLimit + 1 : 0;
+            const endItem = Math.min(currentPage * currentLimit, displayTotal);
             if (paginationInfo) {
-                paginationInfo.textContent = `${t('showing')} ${startItem}–${endItem} ${t('of')} ${totalSites}`;
+                paginationInfo.textContent = `${t('showing')} ${startItem}–${endItem} ${t('of')} ${displayTotal}`;
             }
 
             // Обновить кнопки prev/next
