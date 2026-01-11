@@ -14,3 +14,4 @@ dev.log
 backend/logs/
 .DS_Store
 .credentials.local
+.git 2/
